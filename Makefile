@@ -1,12 +1,15 @@
-.PHONY: help vet fmt lint test install dev-install type-check clean all
+.PHONY: help vet fmt lint test install dev-install type-check clean all venv
 
 PYTHON := python3
-PIPENV := pipenv
 SRC_DIR := src
 TEST_DIR := tests
+VENV := .venv
+VENV_PYTHON := $(VENV)/bin/python
+VENV_PIP := $(VENV)/bin/pip
 
 help:
 	@echo "Available targets:"
+	@echo "  venv             Create virtual environment"
 	@echo "  install          Install package dependencies"
 	@echo "  dev-install      Install package and development dependencies"
 	@echo "  fmt              Format code with ruff"
@@ -16,25 +19,31 @@ help:
 	@echo "  clean            Clean build artifacts and cache"
 	@echo "  all              Run clean + dev-install + fmt + lint + test"
 
-install:
-	$(PIPENV) install -e .
+$(VENV)/bin/activate: pyproject.toml
+	$(PYTHON) -m venv $(VENV)
+	$(VENV_PIP) install --upgrade pip
 
-dev-install:
-	$(PIPENV) install -e ".[dev]"
+venv: $(VENV)/bin/activate
 
-fmt:
-	$(PIPENV) run ruff format .
-	$(PIPENV) run ruff check --fix .
+install: venv
+	$(VENV_PIP) install -e .
 
-lint:
-	$(PIPENV) run ruff check .
-	$(PIPENV) run mypy $(SRC_DIR)
+dev-install: venv
+	$(VENV_PIP) install -e ".[dev]"
 
-type-check:
-	$(PIPENV) run mypy $(SRC_DIR)
+fmt: dev-install
+	$(VENV_PYTHON) -m ruff format .
+	$(VENV_PYTHON) -m ruff check --fix .
 
-test:
-	$(PIPENV) run pytest
+lint: dev-install
+	$(VENV_PYTHON) -m ruff check .
+	$(VENV_PYTHON) -m mypy $(SRC_DIR)
+
+type-check: dev-install
+	$(VENV_PYTHON) -m mypy $(SRC_DIR)
+
+test: dev-install
+	$(VENV_PYTHON) -m pytest
 
 clean:
 	find . -type f -name "*.pyc" -delete
@@ -43,6 +52,6 @@ clean:
 	find . -type d -name ".pytest_cache" -exec rm -rf {} +
 	find . -type d -name ".mypy_cache" -exec rm -rf {} +
 	find . -type d -name ".ruff_cache" -exec rm -rf {} +
-	rm -rf build/ dist/
+	rm -rf build/ dist/ $(VENV)
 
 all: clean dev-install fmt lint test

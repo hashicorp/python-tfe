@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.13"]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
 
     steps:
       - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
@@ -20,18 +20,14 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install pipenv
-        run: |
-          python -m pip install --upgrade pip
-          pip install pipenv
-
       - name: Install dependencies
         run: |
+          python -m pip install --upgrade pip
           make dev-install
 
       - name: Check code formatting
         run: |
-          pipenv run ruff format --check .
+          python -m ruff format --check .
 
       - name: Run linting
         run: |

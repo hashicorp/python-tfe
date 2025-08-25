@@ -11,6 +11,8 @@ htmlcov
 .venv
 .pyre
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Visual Studio Code
 .vscode/
