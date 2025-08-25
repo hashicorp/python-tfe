@@ -25,10 +25,6 @@ jobs:
           python -m pip install --upgrade pip
           make dev-install
 
-      - name: Check code formatting
+      - name: Run code quality checks
         run: |
-          python -m ruff format --check .
-
-      - name: Run linting
-        run: |
-          make lint
+          make check
