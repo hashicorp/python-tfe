@@ -39,16 +39,11 @@ _Include any links here that might be helpful for people reviewing your PR. If t
 -->
 
 ## Output from tests
-
 Including output from tests may require access to a TFE instance. Ignore this section if you have no environment to test against.
 
 <!--
 _Please run the tests locally for any files you changes and include the output here._
 -->
-
-```
-...
-```
 
 ## Rollback Plan
 
