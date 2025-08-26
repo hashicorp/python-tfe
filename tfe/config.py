@@ -15,13 +15,13 @@ DEFAULT_REGISTRY_PATH = "/api/registry"
 @dataclass
 class Config:
     # Address of the Terraform Enterprise API
-    address: str | None = field(default_factory=lambda: os.getenv("TFE_ADDRESS"))
+    address: str = ""
 
     # Base path for which the API is served
-    base_path: str | None = DEFAULT_BASE_PATH
+    base_path: str = DEFAULT_BASE_PATH
 
     # Base path for the Terraform Enterprise Registry API
-    registry_base_path: str | None = DEFAULT_REGISTRY_PATH
+    registry_base_path: str = DEFAULT_REGISTRY_PATH
 
     # API token used to access the terraform enterprise API
     token: str | None = field(default_factory=lambda: os.getenv("TFE_TOKEN"))
@@ -40,10 +40,13 @@ class Config:
     retry_server_errors: bool = False
 
     def __post_init__(self) -> None:
+        tfe_address = os.getenv("TFE_ADDRESS", "")
+        if tfe_address:
+            self.address = tfe_address
+
         if not self.address:
-            host = os.getenv("TFE_HOST")
-            if host:
-                self.address = f"https://{host}"
+            if os.getenv("TFE_HOST"):
+                self.address = f"https://{os.getenv('TFE_HOST')}"
             else:
                 self.address = DEFAULT_ADDRESS
 
