@@ -13,16 +13,22 @@ requires-python = ">=3.10"
 dependencies = ["requests>=2.25.0"]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0.0", "mypy>=1.17.1", "ruff>=0.12.10"]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-mock>=3.14.1",
+    "mypy>=1.17.1",
+    "ruff>=0.12.10",
+    "types-requests>=2.32.4.20250809",
+]
 
 [project.urls]
 Repository = "https://github.com/hashicorp/python-tfe"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["tfe"]
 
 [tool.setuptools.package-dir]
-"" = "src"
+"" = "tfe"
 
 # Ruff configuration
 [tool.ruff]

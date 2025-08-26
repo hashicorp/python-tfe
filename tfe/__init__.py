@@ -6,6 +6,7 @@ and Terraform Cloud APIs, allowing you to programmatically manage
 workspaces, runs, state files, and other TFE/TFC resources.
 """
 
-from .client import TerraformEnterpriseClient
+from tfe.client import TerraformEnterpriseClient
+from tfe.config import Config
 
-__all__ = ["TerraformEnterpriseClient"]
+__all__ = ["TerraformEnterpriseClient", "Config"]

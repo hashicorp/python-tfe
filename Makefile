@@ -1,7 +1,7 @@
 .PHONY: help fmt fmt-check lint check test install dev-install type-check clean all venv activate
 
 PYTHON := python3
-SRC_DIR := src
+SRC_DIR := tfe
 TEST_DIR := tests
 VENV := .venv
 VENV_PYTHON := $(VENV)/bin/python
@@ -59,7 +59,7 @@ type-check:
 	$(VENV_PYTHON) -m mypy $(SRC_DIR)
 
 test:
-	$(VENV_PYTHON) -m pytest
+	$(VENV_PYTHON) -m pytest -v
 
 clean:
 	find . -type f -name "*.pyc" -delete

@@ -2,7 +2,7 @@
 Simple tests for the client.
 """
 
-from python_tfe.client import TerraformEnterpriseClient
+from tfe.client import TerraformEnterpriseClient
 
 
 def test_foo():
