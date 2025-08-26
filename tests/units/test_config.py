@@ -34,7 +34,7 @@ class TestConfig:
         assert cfg.address == config.DEFAULT_ADDRESS
         assert cfg.base_path == config.DEFAULT_BASE_PATH
         assert cfg.registry_base_path == config.DEFAULT_REGISTRY_PATH
-        assert cfg.token is None
+        assert cfg.token == ""
         assert isinstance(cfg.http_client, requests.Session)
         assert "User-Agent" in cfg.http_client.headers
         assert "Authorization" not in cfg.http_client.headers

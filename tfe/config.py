@@ -15,7 +15,7 @@ DEFAULT_REGISTRY_PATH = "/api/registry"
 @dataclass
 class Config:
     # Address of the Terraform Enterprise API
-    address: str = ""
+    address: str = field(default="")
 
     # Base path for which the API is served
     base_path: str = DEFAULT_BASE_PATH
@@ -24,7 +24,7 @@ class Config:
     registry_base_path: str = DEFAULT_REGISTRY_PATH
 
     # API token used to access the terraform enterprise API
-    token: str | None = field(default_factory=lambda: os.getenv("TFE_TOKEN"))
+    token: str = field(default="")
 
     # Headers to include in API requests
     # TODO: Do we need headers ? we can pass them directly to http_client, but this will differ from the go-tfe module
@@ -49,6 +49,9 @@ class Config:
                 self.address = f"https://{os.getenv('TFE_HOST')}"
             else:
                 self.address = DEFAULT_ADDRESS
+
+        if not self.token:
+            self.token = os.getenv("TFE_TOKEN", "")
 
         if self.headers is None:
             self.headers = {}

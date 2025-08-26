@@ -3,7 +3,6 @@ Main client class for Terraform Enterprise/Cloud API.
 """
 
 import logging
-from typing import cast
 from urllib.parse import urljoin, urlparse
 
 from tfe.config import Config
@@ -97,10 +96,9 @@ class Client:
         ping_url = urljoin(self.base_url, "ping")
 
         # After validation, we know token is not None
-        token = cast(str, self.config.token)
         headers = {
             "Accept": "application/vnd.api+json",
-            "Authorization": f"Bearer {token}",
+            "Authorization": f"Bearer {self.config.token}",
         }
         if self.config.headers:
             headers.update(self.config.headers)
