@@ -3,7 +3,7 @@ Main client class for Terraform Enterprise/Cloud API.
 """
 
 import logging
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 from tfe.config import Config
 
@@ -23,12 +23,7 @@ class Client:
     """
 
     def __init__(self, config: Config | None = None) -> None:
-        self.config = Config()
-
-        if config is not None:
-            self._merge_config(config)
-
-        self._validate_config()
+        self.config = config or Config()
         self._setup_urls()
 
         self._api_version = ""
@@ -36,69 +31,25 @@ class Client:
         self._app_name = ""
         self._fetch_api_metadata()
 
-    def _merge_config(self, config: Config) -> None:
-        """Merge provided config with defaults, preserving non-empty values."""
-        if config.address:
-            self.config.address = config.address
-        if config.base_path:
-            self.config.base_path = config.base_path
-        if config.registry_base_path:
-            self.config.registry_base_path = config.registry_base_path
-        if config.token:
-            self.config.token = config.token
-        if config.headers:
-            if self.config.headers is None:
-                self.config.headers = {}
-            self.config.headers.update(config.headers)
-        if config.http_client:
-            self.config.http_client = config.http_client
-        if config.retry_log_hook:
-            self.config.retry_log_hook = config.retry_log_hook
-        self.config.retry_server_errors = config.retry_server_errors
-
-    def _validate_config(self) -> None:
-        """Validate required configuration."""
-        if not self.config.token:
-            raise TFEClientError("API token is required")
-
-        if not self.config.address:
-            raise TFEClientError("API address is required")
-
-        # Type narrowing: after validation, we know these are not None
-        assert self.config.address is not None
-        assert self.config.token is not None
-
     def _setup_urls(self) -> None:
         """Parse and setup base URLs."""
-        try:
-            # After validation, we know address is not None
-            parsed_url = urlparse(self.config.address)
-            if not parsed_url.scheme:
-                raise ValueError("Address must include protocol (http/https)")
+        # Ensure base path ends with /
+        base_path = self.config.base_path
+        if not base_path.endswith("/"):
+            base_path += "/"
 
-            # Ensure base path ends with /
-            base_path = self.config.base_path
-            if not base_path.endswith("/"):
-                base_path += "/"
+        registry_path = self.config.registry_base_path
+        if not registry_path.endswith("/"):
+            registry_path += "/"
 
-            registry_path = self.config.registry_base_path
-            if not registry_path.endswith("/"):
-                registry_path += "/"
-
-            self.base_url = urljoin(self.config.address, base_path)
-            self.registry_base_url = urljoin(self.config.address, registry_path)
-
-        except Exception as e:
-            raise TFEClientError(f"Invalid address '{self.config.address}': {e}") from e
+        self.base_url = urljoin(self.config.address, base_path)
+        self.registry_base_url = urljoin(self.config.address, registry_path)
 
     def _fetch_api_metadata(self) -> None:
         """Fetch API metadata from the server."""
         ping_url = urljoin(self.base_url, "ping")
-
-        # After validation, we know token is not None
         headers = {
             "Accept": "application/vnd.api+json",
-            "Authorization": f"Bearer {self.config.token}",
         }
         if self.config.headers:
             headers.update(self.config.headers)

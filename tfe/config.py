@@ -2,6 +2,7 @@ import logging
 import os
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from urllib.parse import urlparse
 
 import requests
 
@@ -28,7 +29,7 @@ class Config:
 
     # Headers to include in API requests
     # TODO: Do we need headers ? we can pass them directly to http_client, but this will differ from the go-tfe module
-    headers: dict[str, str] | None = None
+    headers: dict[str, str] = field(default_factory=dict)
 
     # Custom request session which needs to be used
     http_client: requests.Session = field(default_factory=requests.Session)
@@ -39,7 +40,7 @@ class Config:
     # Enable/Disable retry logic
     retry_server_errors: bool = False
 
-    def __post_init__(self) -> None:
+    def _set_address(self) -> None:
         tfe_address = os.getenv("TFE_ADDRESS", "")
         if tfe_address:
             self.address = tfe_address
@@ -50,17 +51,9 @@ class Config:
             else:
                 self.address = DEFAULT_ADDRESS
 
+    def _set_token(self) -> None:
         if not self.token:
             self.token = os.getenv("TFE_TOKEN", "")
-
-        if self.headers is None:
-            self.headers = {}
-
-        if (
-            "User-Agent" not in self.http_client.headers
-            and "User-Agent" not in self.headers
-        ):
-            self.headers["User-Agent"] = "python-tfe"
 
         if (
             self.token
@@ -69,4 +62,25 @@ class Config:
         ):
             self.headers["Authorization"] = f"Bearer {self.token}"
 
+    def _set_user_agent(self) -> None:
+        if (
+            "User-Agent" not in self.http_client.headers
+            and "User-Agent" not in self.headers
+        ):
+            self.headers["User-Agent"] = "python-tfe"
+
+    def _validate_config(self) -> None:
+        if not self.http_client.headers.get("Authorization"):
+            raise ValueError(
+                "API token is required, please set the TFE_TOKEN environment variable or the token field in the configuration."
+            )
+        parsed_url = urlparse(self.address)
+        if not parsed_url.scheme:
+            raise ValueError("Address must include protocol (http/https)")
+
+    def __post_init__(self) -> None:
+        self._set_address()
+        self._set_token()
+        self._set_user_agent()
         self.http_client.headers.update(self.headers)
+        self._validate_config()

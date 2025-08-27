@@ -10,6 +10,7 @@ def reset_environment(monkeypatch):
     monkeypatch.delenv("TFE_ADDRESS", raising=False)
     monkeypatch.delenv("TFE_TOKEN", raising=False)
     monkeypatch.delenv("TFE_HOST", raising=False)
+    monkeypatch.setenv("TFE_TOKEN", "abc123")
     yield
 
 
@@ -34,17 +35,14 @@ class TestConfig:
         assert cfg.address == config.DEFAULT_ADDRESS
         assert cfg.base_path == config.DEFAULT_BASE_PATH
         assert cfg.registry_base_path == config.DEFAULT_REGISTRY_PATH
-        assert cfg.token == ""
         assert isinstance(cfg.http_client, requests.Session)
         assert "User-Agent" in cfg.http_client.headers
-        assert "Authorization" not in cfg.http_client.headers
         assert cfg.retry_log_hook is None
         assert cfg.retry_server_errors is False
 
     def test_env_address_and_token(self, monkeypatch):
         """Test that environment variables TFE_ADDRESS and TFE_TOKEN are read correctly."""
         monkeypatch.setenv("TFE_ADDRESS", "https://custom.tfe")
-        monkeypatch.setenv("TFE_TOKEN", "abc123")
         cfg = config.Config()
         assert cfg.address == "https://custom.tfe"
         assert cfg.token == "abc123"
@@ -86,3 +84,14 @@ class TestConfig:
         assert "User-Agent" in cfg.http_client.headers
         assert cfg.http_client.headers["User-Agent"] == "test"
         assert cfg.http_client.headers["Authorization"] == "Bearer test"
+
+    def test_validate_config(self, monkeypatch):
+        """Test that configuration validation works as expected."""
+        with pytest.raises(ValueError, match="API token is required") as _:
+            monkeypatch.setenv("TFE_TOKEN", "")
+            cfg = config.Config(token="")
+
+        with pytest.raises(ValueError, match="Address must include protocol") as _:
+            monkeypatch.setenv("TFE_TOKEN", "test-token")
+            monkeypatch.setenv("TFE_ADDRESS", "test.foo.bar")
+            cfg = config.Config()
