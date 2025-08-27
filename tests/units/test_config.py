@@ -89,9 +89,9 @@ class TestConfig:
         """Test that configuration validation works as expected."""
         with pytest.raises(ValueError, match="API token is required") as _:
             monkeypatch.setenv("TFE_TOKEN", "")
-            cfg = config.Config(token="")
+            _ = config.Config(token="")
 
         with pytest.raises(ValueError, match="Address must include protocol") as _:
             monkeypatch.setenv("TFE_TOKEN", "test-token")
             monkeypatch.setenv("TFE_ADDRESS", "test.foo.bar")
-            cfg = config.Config()
+            _ = config.Config()
