@@ -1,0 +1,34 @@
+set -euo pipefail
+
+# Call block to block the commit with a message.
+block() {
+  echo "$@"
+  echo "Commit blocked - see errors above."
+  exit 1
+}
+
+# Add all check functions to this space separated list.
+# They are executed in this order (see end of file).
+CHECKS="fmt lint"
+
+# Run fmt against changed files compared to origin/main
+fmt() {
+  echo "==> Running fmt on all files"
+  make fmt || block "Formatting failed"
+
+  # Re-add any files that were changed by the fixers
+  git add -u
+}
+
+lint() {
+  echo "==> Running lint on all files"
+  make lint || block "Linting failed"
+
+  # Re-add any files that were changed by the fixers
+  git add -u
+}
+
+for CHECK in $CHECKS; do
+  # Force each check into a subshell to avoid crosstalk.
+  ( $CHECK ) || exit $?
+done
