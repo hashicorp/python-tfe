@@ -8,5 +8,6 @@ workspaces, runs, state files, and other TFE/TFC resources.
 
 from tfe.client import Client, TFEClientError
 from tfe.config import Config
+from tfe.endpoint import Endpoint, ResourceDataProtocol, ResourceResponseProtocol
 
-__all__ = ["Client", "TFEClientError", "Config"]
+__all__ = ["Client", "TFEClientError", "Config", "Endpoint", "ResourceDataProtocol", "ResourceResponseProtocol"]
