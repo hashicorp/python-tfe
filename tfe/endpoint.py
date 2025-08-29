@@ -45,7 +45,6 @@ class Endpoint:
         Returns:
             The HTTP response from requests library
         """
-        # Build full URL
         method = method.upper()
 
         # Make the request
