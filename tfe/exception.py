@@ -1,5 +1,6 @@
 from typing import Any
 
+
 class TFEEndpointException(Exception):
     """Base exception for all TFE endpoint-related errors."""
 
