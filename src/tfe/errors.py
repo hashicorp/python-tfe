@@ -44,3 +44,16 @@ class UnsupportedInCloud(TFEError): ...
 
 
 class UnsupportedInEnterprise(TFEError): ...
+
+
+class InvalidValues(TFEError): ...
+
+
+class RequiredFieldMissing(TFEError): ...
+
+
+# Error message constants
+ERR_INVALID_NAME = "invalid value for name"
+ERR_REQUIRED_NAME = "name is required"
+ERR_INVALID_ORG = "invalid organization name"
+ERR_REQUIRED_EMAIL = "email is required"
