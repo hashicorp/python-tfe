@@ -19,3 +19,77 @@ class Projects(_Service):
             proj_id = _safe_str(item.get("id"))
             name = _safe_str(attr.get("name"))
             yield Project(id=proj_id, name=name, organization=organization)
+  
+
+    def create(self, organization: str, name: str) -> Project:
+        """Create a new project in an organization"""
+        path = f"/api/v2/organizations/{organization}/projects"
+        payload = {
+            "data": {
+                "type": "projects",
+                "attributes": {
+                    "name": name
+                }
+            }
+        }
+        
+        response = self.t.request("POST", path, json=payload)
+        data = response.json()["data"]
+        attr = data.get("attributes", {}) or {}
+        
+        return Project(
+            id=_safe_str(data.get("id")),
+            name=_safe_str(attr.get("name")),
+            organization=organization
+        )
+
+    def read(self, project_id: str) -> Project:
+        """Get a specific project by ID"""
+        path = f"/api/v2/projects/{project_id}"
+        response = self.t.request("GET", path)
+        data = response.json()["data"]
+        attr = data.get("attributes", {}) or {}
+        
+        # Get organization from relationships if available
+        relationships = data.get("relationships", {})
+        org_data = relationships.get("organization", {}).get("data", {})
+        organization = _safe_str(org_data.get("id"))
+        
+        return Project(
+            id=_safe_str(data.get("id")),
+            name=_safe_str(attr.get("name")),
+            organization=organization
+        )
+
+    def update(self, project_id: str, name: str) -> Project:
+        """Update a project's name"""
+        path = f"/api/v2/projects/{project_id}"
+        payload = {
+            "data": {
+                "type": "projects",
+                "id": project_id,
+                "attributes": {
+                    "name": name
+                }
+            }
+        }
+        
+        response = self.t.request("PATCH", path, json=payload)
+        data = response.json()["data"]
+        attr = data.get("attributes", {}) or {}
+        
+        # Get organization from relationships if available
+        relationships = data.get("relationships", {})
+        org_data = relationships.get("organization", {}).get("data", {})
+        organization = _safe_str(org_data.get("id"))
+        
+        return Project(
+            id=_safe_str(data.get("id")),
+            name=_safe_str(attr.get("name")),
+            organization=organization
+        )
+
+    def delete(self, project_id: str) -> None:
+        """Delete a project"""
+        path = f"/api/v2/projects/{project_id}"
+        self.t.request("DELETE", path)
