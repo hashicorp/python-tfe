@@ -31,12 +31,12 @@ class Projects(_Service):
                 }
             }
         }
-        
+
         # Use json_body parameter (correct parameter name)
         response = self.t.request("POST", path, json_body=payload)
         data = response.json()["data"]
         attr = data.get("attributes", {}) or {}
-        
+
         return Project(
             id=_safe_str(data.get("id")),
             name=_safe_str(attr.get("name")),
@@ -49,12 +49,12 @@ class Projects(_Service):
         response = self.t.request("GET", path)
         data = response.json()["data"]
         attr = data.get("attributes", {}) or {}
-        
+
         # Get organization from relationships if available
         relationships = data.get("relationships", {})
         org_data = relationships.get("organization", {}).get("data", {})
         organization = _safe_str(org_data.get("id"))
-        
+
         return Project(
             id=_safe_str(data.get("id")),
             name=_safe_str(attr.get("name")),
@@ -73,17 +73,17 @@ class Projects(_Service):
                 }
             }
         }
-        
+
         # Use json_body parameter (correct parameter name)
         response = self.t.request("PATCH", path, json_body=payload)
         data = response.json()["data"]
         attr = data.get("attributes", {}) or {}
-        
+
         # Get organization from relationships if available
         relationships = data.get("relationships", {})
         org_data = relationships.get("organization", {}).get("data", {})
         organization = _safe_str(org_data.get("id"))
-        
+
         return Project(
             id=_safe_str(data.get("id")),
             name=_safe_str(attr.get("name")),
