@@ -25,17 +25,13 @@ class TestProjects:
             {
                 "id": "prj-123",
                 "type": "projects",
-                "attributes": {
-                    "name": "Test Project 1"
-                }
+                "attributes": {"name": "Test Project 1"},
             },
             {
                 "id": "prj-456",
                 "type": "projects",
-                "attributes": {
-                    "name": "Test Project 2"
-                }
-            }
+                "attributes": {"name": "Test Project 2"},
+            },
         ]
 
         # Mock the _list method to return our test data
@@ -74,9 +70,7 @@ class TestProjects:
             "data": {
                 "id": "prj-123",
                 "type": "projects",
-                "attributes": {
-                    "name": project_name
-                }
+                "attributes": {"name": project_name},
             }
         }
         self.mock_transport.request.return_value = mock_response
@@ -92,14 +86,11 @@ class TestProjects:
         # Verify API call
         expected_path = f"/api/v2/organizations/{organization}/projects"
         expected_payload = {
-            "data": {
-                "type": "projects",
-                "attributes": {
-                    "name": project_name
-                }
-            }
+            "data": {"type": "projects", "attributes": {"name": project_name}}
         }
-        self.mock_transport.request.assert_called_once_with("POST", expected_path, json_body=expected_payload)
+        self.mock_transport.request.assert_called_once_with(
+            "POST", expected_path, json_body=expected_payload
+        )
 
     def test_read_project_success(self):
         """Test successful project read"""
@@ -111,16 +102,8 @@ class TestProjects:
             "data": {
                 "id": project_id,
                 "type": "projects",
-                "attributes": {
-                    "name": "Test Project"
-                },
-                "relationships": {
-                    "organization": {
-                        "data": {
-                            "id": "test-org"
-                        }
-                    }
-                }
+                "attributes": {"name": "Test Project"},
+                "relationships": {"organization": {"data": {"id": "test-org"}}},
             }
         }
         self.mock_transport.request.return_value = mock_response
@@ -148,16 +131,8 @@ class TestProjects:
             "data": {
                 "id": project_id,
                 "type": "projects",
-                "attributes": {
-                    "name": new_name
-                },
-                "relationships": {
-                    "organization": {
-                        "data": {
-                            "id": "test-org"
-                        }
-                    }
-                }
+                "attributes": {"name": new_name},
+                "relationships": {"organization": {"data": {"id": "test-org"}}},
             }
         }
         self.mock_transport.request.return_value = mock_response
@@ -176,12 +151,12 @@ class TestProjects:
             "data": {
                 "type": "projects",
                 "id": project_id,
-                "attributes": {
-                    "name": new_name
-                }
+                "attributes": {"name": new_name},
             }
         }
-        self.mock_transport.request.assert_called_once_with("PATCH", expected_path, json_body=expected_payload)
+        self.mock_transport.request.assert_called_once_with(
+            "PATCH", expected_path, json_body=expected_payload
+        )
 
     def test_delete_project_success(self):
         """Test successful project deletion"""
@@ -236,9 +211,7 @@ class TestProjects:
             "data": {
                 "id": project_id,
                 "type": "projects",
-                "attributes": {
-                    "name": "Test Project"
-                }
+                "attributes": {"name": "Test Project"},
                 # No relationships field
             }
         }

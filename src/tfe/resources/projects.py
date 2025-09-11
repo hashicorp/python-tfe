@@ -23,14 +23,7 @@ class Projects(_Service):
     def create(self, organization: str, name: str) -> Project:
         """Create a new project in an organization"""
         path = f"/api/v2/organizations/{organization}/projects"
-        payload = {
-            "data": {
-                "type": "projects",
-                "attributes": {
-                    "name": name
-                }
-            }
-        }
+        payload = {"data": {"type": "projects", "attributes": {"name": name}}}
 
         # Use json_body parameter (correct parameter name)
         response = self.t.request("POST", path, json_body=payload)
@@ -40,7 +33,7 @@ class Projects(_Service):
         return Project(
             id=_safe_str(data.get("id")),
             name=_safe_str(attr.get("name")),
-            organization=organization
+            organization=organization,
         )
 
     def read(self, project_id: str) -> Project:
@@ -58,20 +51,14 @@ class Projects(_Service):
         return Project(
             id=_safe_str(data.get("id")),
             name=_safe_str(attr.get("name")),
-            organization=organization
+            organization=organization,
         )
 
     def update(self, project_id: str, name: str) -> Project:
         """Update a project's name"""
         path = f"/api/v2/projects/{project_id}"
         payload = {
-            "data": {
-                "type": "projects",
-                "id": project_id,
-                "attributes": {
-                    "name": name
-                }
-            }
+            "data": {"type": "projects", "id": project_id, "attributes": {"name": name}}
         }
 
         # Use json_body parameter (correct parameter name)
@@ -87,7 +74,7 @@ class Projects(_Service):
         return Project(
             id=_safe_str(data.get("id")),
             name=_safe_str(attr.get("name")),
-            organization=organization
+            organization=organization,
         )
 
     def delete(self, project_id: str) -> None:

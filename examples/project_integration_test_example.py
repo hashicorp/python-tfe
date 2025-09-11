@@ -91,9 +91,11 @@ def test_list_projects_integration(integration_client):
 
         if project_list:
             project = project_list[0]
-            assert hasattr(project, 'id'), "Project should have an ID"
-            assert hasattr(project, 'name'), "Project should have a name"
-            assert hasattr(project, 'organization'), "Project should have an organization"
+            assert hasattr(project, "id"), "Project should have an ID"
+            assert hasattr(project, "name"), "Project should have a name"
+            assert hasattr(project, "organization"), (
+                "Project should have an organization"
+            )
             print(f"📋 Example project: {project.name} (ID: {project.id})")
         else:
             print("📋 No projects found - this is normal for a new organization")
@@ -123,9 +125,15 @@ def test_project_crud_integration(integration_client):
         print(f"🔨 Creating project: {test_name}")
         created_project = projects.create(org, test_name)
 
-        assert created_project.name == test_name, f"Expected name {test_name}, got {created_project.name}"
-        assert created_project.organization == org, f"Expected org {org}, got {created_project.organization}"
-        assert created_project.id.startswith("prj-"), f"Project ID should start with 'prj-', got {created_project.id}"
+        assert created_project.name == test_name, (
+            f"Expected name {test_name}, got {created_project.name}"
+        )
+        assert created_project.organization == org, (
+            f"Expected org {org}, got {created_project.organization}"
+        )
+        assert created_project.id.startswith("prj-"), (
+            f"Project ID should start with 'prj-', got {created_project.id}"
+        )
 
         project_id = created_project.id
         print(f"✅ Created project: {project_id}")
@@ -134,16 +142,24 @@ def test_project_crud_integration(integration_client):
         print(f"📖 Reading project: {project_id}")
         read_project = projects.read(project_id)
 
-        assert read_project.id == project_id, f"Expected ID {project_id}, got {read_project.id}"
-        assert read_project.name == test_name, f"Expected name {test_name}, got {read_project.name}"
+        assert read_project.id == project_id, (
+            f"Expected ID {project_id}, got {read_project.id}"
+        )
+        assert read_project.name == test_name, (
+            f"Expected name {test_name}, got {read_project.name}"
+        )
         print(f"✅ Successfully read project: {read_project.name}")
 
         # UPDATE - Test updating the project name
         print(f"✏️  Updating project name to: {updated_name}")
         updated_project = projects.update(project_id, updated_name)
 
-        assert updated_project.id == project_id, f"Project ID should remain {project_id}"
-        assert updated_project.name == updated_name, f"Expected updated name {updated_name}, got {updated_project.name}"
+        assert updated_project.id == project_id, (
+            f"Project ID should remain {project_id}"
+        )
+        assert updated_project.name == updated_name, (
+            f"Expected updated name {updated_name}, got {updated_project.name}"
+        )
         print(f"✅ Successfully updated project: {updated_project.name}")
 
     except Exception as e:
@@ -158,7 +174,9 @@ def test_project_crud_integration(integration_client):
                 print("✅ Test project deleted successfully")
             except Exception as e:
                 print(f"❌ Warning: Failed to clean up project {project_id}: {e}")
-                print("   You may need to manually delete this project in HCP Terraform")
+                print(
+                    "   You may need to manually delete this project in HCP Terraform"
+                )
 
 
 def test_error_handling_integration(integration_client):
@@ -172,7 +190,9 @@ def test_error_handling_integration(integration_client):
         projects.read(fake_project_id)
         pytest.fail("Should have raised an exception for non-existent project")
     except Exception as e:
-        print(f"✅ Correctly handled error for non-existent project: {type(e).__name__}")
+        print(
+            f"✅ Correctly handled error for non-existent project: {type(e).__name__}"
+        )
         # This should raise a NotFound or similar error
         assert "not found" in str(e).lower() or "404" in str(e)
 
@@ -197,7 +217,9 @@ if __name__ == "__main__":
         sys.exit(1)
 
     print("🧪 Running integration tests directly...")
-    print("   For full pytest features, use: pytest examples/integration_test_example.py -v -s")
+    print(
+        "   For full pytest features, use: pytest examples/integration_test_example.py -v -s"
+    )
 
     # Simple direct execution
     pytest.main([__file__, "-v", "-s"])
