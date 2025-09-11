@@ -19,7 +19,6 @@ class Projects(_Service):
             proj_id = _safe_str(item.get("id"))
             name = _safe_str(attr.get("name"))
             yield Project(id=proj_id, name=name, organization=organization)
-  
 
     def create(self, organization: str, name: str) -> Project:
         """Create a new project in an organization"""
@@ -33,7 +32,8 @@ class Projects(_Service):
             }
         }
         
-        response = self.t.request("POST", path, json=payload)
+        # Use json_body parameter (correct parameter name)
+        response = self.t.request("POST", path, json_body=payload)
         data = response.json()["data"]
         attr = data.get("attributes", {}) or {}
         
@@ -74,7 +74,8 @@ class Projects(_Service):
             }
         }
         
-        response = self.t.request("PATCH", path, json=payload)
+        # Use json_body parameter (correct parameter name)
+        response = self.t.request("PATCH", path, json_body=payload)
         data = response.json()["data"]
         attr = data.get("attributes", {}) or {}
         
