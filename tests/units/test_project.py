@@ -99,7 +99,7 @@ class TestProjects:
                 }
             }
         }
-        self.mock_transport.request.assert_called_once_with("POST", expected_path, json=expected_payload)
+        self.mock_transport.request.assert_called_once_with("POST", expected_path, json_body=expected_payload)
 
     def test_read_project_success(self):
         """Test successful project read"""
@@ -181,7 +181,7 @@ class TestProjects:
                 }
             }
         }
-        self.mock_transport.request.assert_called_once_with("PATCH", expected_path, json=expected_payload)
+        self.mock_transport.request.assert_called_once_with("PATCH", expected_path, json_body=expected_payload)
 
     def test_delete_project_success(self):
         """Test successful project deletion"""
