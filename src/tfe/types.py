@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -104,7 +105,7 @@ class Organization(BaseModel):
 class Project(BaseModel):
     id: str
     name: str
-    organization: str
+    organization: Organization | str | None = None
 
 
 class Workspace(BaseModel):
@@ -113,8 +114,64 @@ class Workspace(BaseModel):
     organization: str
     execution_mode: ExecutionMode | None = None
     project_id: str | None = None
-    tags: list[str] = Field(default_factory=list)
+    
+    # Core attributes
+    actions: WorkspaceActions | None = None
+    allow_destroy_plan: bool = False
+    assessments_enabled: bool = False
+    auto_apply: bool = False
+    auto_apply_run_trigger: bool = False
+    auto_destroy_at: datetime | None = None
+    auto_destroy_activity_duration: str | None = None
+    can_queue_destroy_plan: bool = False
+    created_at: datetime | None = None
+    description: str = ""
+    environment: str = ""
+    file_triggers_enabled: bool = False
+    global_remote_state: bool = False
+    inherits_project_auto_destroy: bool = False
+    locked: bool = False
+    migration_environment: str = ""
+    no_code_upgrade_available: bool = False
+    operations: bool = False
+    permissions: WorkspacePermissions | None = None
+    queue_all_runs: bool = False
+    speculative_enabled: bool = False
+    source: WorkspaceSource | None = None
+    source_name: str = ""
+    source_url: str = ""
+    structured_run_output_enabled: bool = False
+    terraform_version: str = ""
+    trigger_prefixes: list[str] = Field(default_factory=list)
+    trigger_patterns: list[str] = Field(default_factory=list)
+    vcs_repo: VCSRepo | None = None
+    working_directory: str = ""
+    updated_at: datetime | None = None
+    resource_count: int = 0
+    apply_duration_average: float | None = None  # in seconds
+    plan_duration_average: float | None = None  # in seconds
+    policy_check_failures: int = 0
+    run_failures: int = 0
+    runs_count: int = 0
+    tag_names: list[str] = Field(default_factory=list)
+    setting_overwrites: WorkspaceSettingOverwrites | None = None
 
+    # Relations
+    agent_pool: Any | None = None  # AgentPool object
+    current_run: Any | None = None  # Run object
+    current_state_version: Any | None = None  # StateVersion object
+    project: Project | None = None
+    ssh_key: Any | None = None  # SSHKey object
+    outputs: list[WorkspaceOutputs] = Field(default_factory=list)
+    tags: list[Tag] = Field(default_factory=list)
+    current_configuration_version: Any | None = None  # ConfigurationVersion object
+    locked_by: LockedByChoice | None = None
+    variables: list[Any] = Field(default_factory=list)  # Variable objects
+    tag_bindings: list[TagBinding] = Field(default_factory=list)
+    effective_tag_bindings: list[EffectiveTagBinding] = Field(default_factory=list)
+
+    # Links
+    links: dict[str, Any] = Field(default_factory=dict)
 
 class Capacity(BaseModel):
     organization: str
@@ -222,3 +279,233 @@ class DataRetentionPolicyDeleteOlderSetOptions(BaseModel):
 
 class DataRetentionPolicyDontDeleteSetOptions(BaseModel):
     pass  # No additional fields needed
+
+class Tag(BaseModel):
+    id: str | None = None
+    name: str = ""
+
+
+class TagBinding(BaseModel):
+    id: str | None = None  # Optional for new tag bindings
+    tag: Tag | None = None
+    value: str | None = None
+
+
+class EffectiveTagBinding(BaseModel):
+    id: str
+    tag: Tag | None = None
+    value: str | None = None
+    inherited: bool = False
+
+
+class WorkspaceIncludeOpt(str, Enum):
+    ORGANIZATION = "organization"
+    CURRENT_CONFIG_VER = "current_configuration_version"
+    CURRENT_CONFIG_VER_INGRESS = "current_configuration_version.ingress_attributes"
+    CURRENT_RUN = "current_run"
+    CURRENT_RUN_PLAN = "current_run.plan"
+    CURRENT_RUN_CONFIG_VER = "current_run.configuration_version"
+    CURRENT_RUN_CONFIG_VER_INGRESS = (
+        "current_run.configuration_version.ingress_attributes"
+    )
+    EFFECTIVE_TAG_BINDINGS = "effective_tag_bindings"
+    LOCKED_BY = "locked_by"
+    README = "readme"
+    OUTPUTS = "outputs"
+    CURRENT_STATE_VER = "current-state-version"
+    PROJECT = "project"
+
+
+class VCSRepo(BaseModel):
+    branch: str | None = None
+    identifier: str | None = None
+    ingress_submodules: bool | None = None
+    oauth_token_id: str | None = None
+    tags_regex: str | None = None
+    gha_installation_id: str | None = None
+
+
+class WorkspaceSource(str, Enum):
+    API = "tfe-api"
+    MODULE = "tfe-module"
+    UI = "tfe-ui"
+    TERRAFORM = "terraform"
+
+
+class WorkspaceActions(BaseModel):
+    is_destroyable: bool = False
+
+
+class WorkspacePermissions(BaseModel):
+    can_destroy: bool = False
+    can_force_unlock: bool = False
+    can_lock: bool = False
+    can_manage_run_tasks: bool = False
+    can_queue_apply: bool = False
+    can_queue_destroy: bool = False
+    can_queue_run: bool = False
+    can_read_settings: bool = False
+    can_unlock: bool = False
+    can_update: bool = False
+    can_update_variable: bool = False
+    can_force_delete: bool | None = None
+
+
+class WorkspaceSettingOverwrites(BaseModel):
+    execution_mode: bool | None = None
+    agent_pool: bool | None = None
+
+
+class WorkspaceOutputs(BaseModel):
+    id: str
+    name: str
+    sensitive: bool = False
+    output_type: str
+    value: Any | None = None
+
+
+class LockedByChoice(BaseModel):
+    run: Any | None = None
+    user: Any | None = None
+    team: Any | None = None
+
+
+class WorkspaceListOptions(BaseModel):
+    """Options for listing workspaces.
+
+    Matches the Go-TFE WorkspaceListOptions struct.
+    """
+
+    # Pagination options (from ListOptions)
+    page_number: int | None = None
+    page_size: int | None = None
+
+    # Search and filter options
+    search: str | None = None  # search[name] - partial workspace name
+    tags: str | None = None  # search[tags] - comma-separated tag names
+    exclude_tags: str | None = (
+        None  # search[exclude-tags] - comma-separated tag names to exclude
+    )
+    wildcard_name: str | None = None  # search[wildcard-name] - substring matching
+    project_id: str | None = None  # filter[project][id] - project ID filter
+    current_run_status: str | None = (
+        None  # filter[current-run][status] - run status filter
+    )
+
+    # Tag binding filters (not URL encoded, handled specially)
+    tag_bindings: list[TagBinding] = Field(default_factory=list)
+
+    # Include related resources
+    include: list[WorkspaceIncludeOpt] = Field(default_factory=list)
+
+    # Sorting options
+    sort: str | None = (
+        None  # "name" (default) or "current-run.created-at", prepend "-" to reverse
+    )
+
+
+class WorkspaceReadOptions(BaseModel):
+    include: list[WorkspaceIncludeOpt] = Field(default_factory=list)
+
+
+class WorkspaceCreateOptions(BaseModel):
+    name: str
+    type: str = "workspaces"
+    agent_pool_id: str | None = None
+    allow_destroy_plan: bool | None = None
+    assessments_enabled: bool | None = None
+    auto_apply: bool | None = None
+    auto_apply_run_trigger: bool | None = None
+    auto_destroy_at: datetime | None = None
+    auto_destroy_activity_duration: str | None = None
+    inherits_project_auto_destroy: bool | None = None
+    description: str | None = None
+    execution_mode: ExecutionMode | None = None
+    file_triggers_enabled: bool | None = None
+    global_remote_state: bool | None = None
+    migration_environment: str | None = None
+    operations: bool | None = None
+    queue_all_runs: bool | None = None
+    speculative_enabled: bool | None = None
+    source_name: str | None = None
+    source_url: str | None = None
+    structured_run_output_enabled: bool | None = None
+    terraform_version: str | None = None
+    trigger_prefixes: list[str] = Field(default_factory=list)
+    trigger_patterns: list[str] = Field(default_factory=list)
+    vcs_repo: VCSRepo | None = None
+    working_directory: str | None = None
+    hyok_enabled: bool | None = None
+    tags: list[Tag] = Field(default_factory=list)
+    setting_overwrites: WorkspaceSettingOverwrites | None = None
+    project: Project | None = None
+    tag_bindings: list[TagBinding] = Field(default_factory=list)
+
+
+class WorkspaceUpdateOptions(BaseModel):
+    name: str
+    type: str = "workspaces"
+    agent_pool_id: str | None = None
+    allow_destroy_plan: bool | None = None
+    assessments_enabled: bool | None = None
+    auto_apply: bool | None = None
+    auto_apply_run_trigger: bool | None = None
+    auto_destroy_at: datetime | None = None
+    auto_destroy_activity_duration: str | None = None
+    inherits_project_auto_destroy: bool | None = None
+    description: str | None = None
+    execution_mode: ExecutionMode | None = None
+    file_triggers_enabled: bool | None = None
+    global_remote_state: bool | None = None
+    operations: bool | None = None
+    queue_all_runs: bool | None = None
+    speculative_enabled: bool | None = None
+    structured_run_output_enabled: bool | None = None
+    terraform_version: str | None = None
+    trigger_prefixes: list[str] = Field(default_factory=list)
+    trigger_patterns: list[str] = Field(default_factory=list)
+    vcs_repo: VCSRepo | None = None
+    working_directory: str | None = None
+    hyok_enabled: bool | None = None
+    setting_overwrites: WorkspaceSettingOverwrites | None = None
+    project: Project | None = None
+    tag_bindings: list[TagBinding] = Field(default_factory=list)
+
+class WorkspaceList(BaseModel):
+    items: list[Workspace] = Field(default_factory=list)
+    pagination: Pagination | None = None
+
+
+class TagList(BaseModel):
+    items: list[Tag] = Field(default_factory=list)
+    pagination: Pagination | None = None
+
+
+class WorkspaceRemoveVCSConnectionOptions(BaseModel):
+    """Options for removing VCS connection from a workspace."""
+
+    # Currently no options are defined, but this class can be extended in the future
+    id: str
+    vcs_repo: VCSRepo | None = None
+
+
+class WorkspaceLockOptions(BaseModel):
+    """Options for locking a workspace."""
+
+    # Specifies the reason for locking the workspace.
+    reason: str
+
+
+class WorkspaceAssignSSHKeyOptions(BaseModel):
+    """Options for assigning an SSH key to a workspace."""
+
+    ssh_key_id: str
+    type: str = "workspaces"
+
+
+class workspaceUnassignSSHKeyOptions(BaseModel):
+    """Options for unassigning an SSH key from a workspace."""
+
+    # Must be nil to unset the currently assigned SSH key.
+    ssh_key_id: str
+    type: str = "workspaces"
