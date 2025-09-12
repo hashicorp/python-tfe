@@ -611,7 +611,7 @@ class Workspaces(_Service):
         body = {"reason": options.reason}
 
         r = self.t.request(
-            "PATCH",
+            "POST",
             f"/api/v2/workspaces/{workspace_id}/actions/lock",
             json_body=body,
         )
@@ -624,7 +624,7 @@ class Workspaces(_Service):
             raise InvalidWorkspaceIDError()
         try:
             r = self.t.request(
-                "PATCH",
+                "POST",
                 f"/api/v2/workspaces/{workspace_id}/actions/unlock",
             )
             return _ws_from(r.json()["data"], None)
@@ -640,7 +640,7 @@ class Workspaces(_Service):
             raise InvalidWorkspaceIDError()
 
         r = self.t.request(
-            "PATCH",
+            "POST",
             f"/api/v2/workspaces/{workspace_id}/actions/force-unlock",
         )
         return _ws_from(r.json()["data"], None)

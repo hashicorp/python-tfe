@@ -22,7 +22,7 @@ from datetime import datetime
 # Add the source directory to the path for direct execution
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from tfe import Client
+from tfe import TFEClient, TFEConfig
 from tfe.errors import (
     InvalidOrgError,
     InvalidWorkspaceIDError,
@@ -32,7 +32,7 @@ from tfe.types import (
     ExecutionMode,
     VCSRepo,
     WorkspaceCreateOptions,
-    WorkspaceInclude,
+    WorkspaceIncludeOpt,
     WorkspaceListOptions,
     WorkspaceLockOptions,
     WorkspaceReadOptions,
@@ -44,9 +44,9 @@ from tfe.types import (
 class WorkspaceManager:
     """Comprehensive workspace management utility."""
 
-    def __init__(self, token: str, address: str = "https://app.terraform.io"):
+    def __init__(self):
         """Initialize the workspace manager."""
-        self.client = Client(token=token, address=address)
+        self.client = TFEClient(TFEConfig.from_env())
         self.workspaces = self.client.workspaces
 
     def demonstrate_all_operations(self, organization: str):
@@ -82,7 +82,7 @@ class WorkspaceManager:
             self.demo_delete_operations(organization, workspace_name, workspace_id)
 
         except Exception as e:
-            print(f"❌ Error during demo: {e}")
+            print(f"Error during demo: {e}")
             raise
 
         print("\n🎉 Comprehensive workspace demo completed successfully!")
@@ -109,7 +109,7 @@ class WorkspaceManager:
         filtered_options = WorkspaceListOptions(
             search="prod",  # Search for workspaces containing "prod"
             tags="production,frontend",  # Filter by tags
-            include=[WorkspaceInclude.current_run],  # Include current run info
+            include=[WorkspaceIncludeOpt.CURRENT_RUN],  # Include current run info
             page_size=5,  # Limit results
         )
 
@@ -135,15 +135,13 @@ class WorkspaceManager:
             name=workspace_name,
             description=f"Demo workspace created at {datetime.now()}",
             auto_apply=False,
-            execution_mode=ExecutionMode.remote,
+            execution_mode=ExecutionMode.REMOTE,
             terraform_version="1.5.0",
             working_directory="terraform/",
             file_triggers_enabled=True,
             queue_all_runs=False,
             speculative_enabled=True,
-            operations=True,
             trigger_prefixes=["modules/", "shared/"],
-            trigger_patterns=["**/*.tf", "**/*.tfvars"],
         )
 
         workspace = self.workspaces.create(organization, options=basic_options)
@@ -212,7 +210,7 @@ class WorkspaceManager:
         # Read with additional include options
         print("\n📄 Reading workspace with include options...")
         read_options = WorkspaceReadOptions(
-            include=[WorkspaceInclude.current_run, WorkspaceInclude.outputs]
+            include=[WorkspaceIncludeOpt.CURRENT_RUN, WorkspaceIncludeOpt.OUTPUTS]
         )
 
         detailed_workspace = self.workspaces.read_with_options(
@@ -232,6 +230,7 @@ class WorkspaceManager:
         # Update by name
         print("🔧 Updating workspace by name...")
         update_options = WorkspaceUpdateOptions(
+            name=workspace_name,  # Required field
             description=f"Updated description at {datetime.now()}",
             auto_apply=True,  # Enable auto-apply
             terraform_version="1.6.0",  # Update Terraform version
@@ -250,6 +249,7 @@ class WorkspaceManager:
         # Update by ID
         print("\n🔧 Updating workspace by ID...")
         id_update_options = WorkspaceUpdateOptions(
+            name=workspace_name,  # Required field
             speculative_enabled=False,  # Disable speculative plans
             operations=False,  # Switch to local execution
         )
@@ -401,20 +401,20 @@ def main():
     organization = os.getenv("TFE_ORG", "your-org-name")  # Replace with your org
 
     if not token:
-        print("❌ Error: TFE_TOKEN environment variable is required")
-        print("📝 Set it with: export TFE_TOKEN=your-token-here")
+        print("Error: TFE_TOKEN environment variable is required")
+        print("Set it with: export TFE_TOKEN=your-token-here")
         sys.exit(1)
 
     if organization == "your-org-name":
-        print("⚠️  Warning: Using default organization name")
-        print("📝 Set TFE_ORG environment variable or update the script")
+        print("Warning: Using default organization name")
+        print("Set TFE_ORG environment variable or update the script")
 
         # Allow user to input organization name
         org_input = input("Enter your organization name: ").strip()
         if org_input:
             organization = org_input
         else:
-            print("❌ Organization name is required")
+            print("Organization name is required")
             sys.exit(1)
 
     print(f"🌐 Terraform Address: {address}")
@@ -425,7 +425,7 @@ def main():
 
     try:
         # Initialize workspace manager
-        manager = WorkspaceManager(token=token, address=address)
+        manager = WorkspaceManager()
 
         # Run comprehensive demo
         manager.demonstrate_all_operations(organization)
@@ -434,7 +434,7 @@ def main():
         manager.demo_error_handling(organization)
 
     except Exception as e:
-        print(f"\n❌ Demo failed with error: {e}")
+        print(f"\nDemo failed with error: {e}")
         print("💡 Common issues:")
         print("   • Invalid token or organization")
         print("   • Network connectivity problems")
