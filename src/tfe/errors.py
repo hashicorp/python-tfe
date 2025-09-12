@@ -58,6 +58,7 @@ ERR_REQUIRED_NAME = "name is required"
 ERR_INVALID_ORG = "invalid organization name"
 ERR_REQUIRED_EMAIL = "email is required"
 
+
 class WorkspaceNotFound(NotFound): ...
 
 

@@ -114,7 +114,7 @@ class Workspace(BaseModel):
     organization: str
     execution_mode: ExecutionMode | None = None
     project_id: str | None = None
-    
+
     # Core attributes
     actions: WorkspaceActions | None = None
     allow_destroy_plan: bool = False
@@ -172,6 +172,7 @@ class Workspace(BaseModel):
 
     # Links
     links: dict[str, Any] = Field(default_factory=dict)
+
 
 class Capacity(BaseModel):
     organization: str
@@ -279,6 +280,7 @@ class DataRetentionPolicyDeleteOlderSetOptions(BaseModel):
 
 class DataRetentionPolicyDontDeleteSetOptions(BaseModel):
     pass  # No additional fields needed
+
 
 class Tag(BaseModel):
     id: str | None = None
@@ -470,6 +472,7 @@ class WorkspaceUpdateOptions(BaseModel):
     setting_overwrites: WorkspaceSettingOverwrites | None = None
     project: Project | None = None
     tag_bindings: list[TagBinding] = Field(default_factory=list)
+
 
 class WorkspaceList(BaseModel):
     items: list[Workspace] = Field(default_factory=list)
