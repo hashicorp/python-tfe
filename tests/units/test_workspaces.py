@@ -484,7 +484,7 @@ class TestWorkspaceOperations:
 
         # Verify PATCH request to lock endpoint
         call_args = mock_transport.request.call_args
-        assert call_args[0][0] == "PATCH"
+        assert call_args[0][0] == "POST"
         assert "workspaces/ws-123/actions/lock" in call_args[0][1]
 
         payload = call_args[1]["json_body"]
@@ -504,7 +504,7 @@ class TestWorkspaceOperations:
 
         # Verify PATCH request to unlock endpoint
         call_args = mock_transport.request.call_args
-        assert call_args[0][0] == "PATCH"
+        assert call_args[0][0] == "POST"
         assert "workspaces/ws-123/actions/unlock" in call_args[0][1]
 
     def test_force_unlock_workspace(
