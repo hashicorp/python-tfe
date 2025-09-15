@@ -52,9 +52,9 @@ from ..types import (
     WorkspaceUpdateOptions,
     WorkspaceUpdateRemoteStateConsumersOptions,
 )
-from ..workspace_validation import (
-    is_valid_string,
-    is_valid_string_id,
+from ..utils import (
+    valid_string,
+    valid_string_id,
     validate_workspace_create_options,
     validate_workspace_update_options,
 )
@@ -266,7 +266,7 @@ class Workspaces(_Service):
         options: WorkspaceListOptions,
     ) -> Iterator[Workspace]:
         # Validate parameters
-        if not is_valid_string_id(organization):
+        if not valid_string_id(organization):
             raise InvalidOrgError()
 
         params: dict[str, Any] = {}
@@ -320,9 +320,9 @@ class Workspaces(_Service):
         options: WorkspaceReadOptions,
     ) -> Workspace:
         # Validate parameters
-        if not is_valid_string_id(organization):
+        if not valid_string_id(organization):
             raise InvalidOrgError()
-        if not is_valid_string_id(name):
+        if not valid_string_id(name):
             raise InvalidWorkspaceValueError()
 
         params: dict[str, Any] = {}
@@ -349,7 +349,7 @@ class Workspaces(_Service):
         self, id: str, *, options: WorkspaceReadOptions
     ) -> Workspace:
         # Validate parameters
-        if not is_valid_string_id(id):
+        if not valid_string_id(id):
             raise InvalidWorkspaceIDError()
 
         params: dict[str, Any] = {}
@@ -371,7 +371,7 @@ class Workspaces(_Service):
     ) -> Workspace:
         """Create a new workspace in the given organization."""
         # Validate parameters
-        if not is_valid_string_id(organization):
+        if not valid_string_id(organization):
             raise InvalidOrgError()
 
         # Validate options before creating workspace
@@ -389,9 +389,9 @@ class Workspaces(_Service):
     ) -> Workspace:
         """Update workspace by organization and name."""
         # Validate parameters
-        if not is_valid_string_id(organization):
+        if not valid_string_id(organization):
             raise InvalidOrgError()
-        if not is_valid_string_id(name):
+        if not valid_string_id(name):
             raise InvalidWorkspaceValueError()
 
         # Validate options before updating workspace
@@ -408,7 +408,7 @@ class Workspaces(_Service):
     def update_by_id(self, id: str, *, options: WorkspaceUpdateOptions) -> Workspace:
         """Update workspace by workspace ID."""
         # Validate parameters
-        if not is_valid_string_id(id):
+        if not valid_string_id(id):
             raise InvalidWorkspaceIDError()
 
         # Validate options before updating workspace
@@ -573,9 +573,9 @@ class Workspaces(_Service):
     def delete(self, organization: str, name: str) -> None:
         """Delete workspace by organization and workspace name."""
         # Validate parameters (similar to Go implementation)
-        if not is_valid_string_id(organization):
+        if not valid_string_id(organization):
             raise InvalidOrgError()
-        if not is_valid_string_id(name):
+        if not valid_string_id(name):
             raise InvalidWorkspaceValueError()
 
         self.t.request(
@@ -585,7 +585,7 @@ class Workspaces(_Service):
     def delete_by_id(self, id: str) -> None:
         """Delete workspace by workspace ID."""
         # Validate parameters (similar to Go implementation)
-        if not is_valid_string_id(id):
+        if not valid_string_id(id):
             raise InvalidWorkspaceIDError()
 
         self.t.request("DELETE", f"/api/v2/workspaces/{id}")
@@ -593,9 +593,9 @@ class Workspaces(_Service):
     def safe_delete(self, organization: str, name: str) -> None:
         """Safely delete workspace by organization and name."""
         # Validate parameters (similar to Go implementation)
-        if not is_valid_string_id(organization):
+        if not valid_string_id(organization):
             raise InvalidOrgError()
-        if not is_valid_string_id(name):
+        if not valid_string_id(name):
             raise InvalidWorkspaceValueError()
 
         self.t.request(
@@ -606,7 +606,7 @@ class Workspaces(_Service):
     def safe_delete_by_id(self, id: str) -> None:
         """Safely delete workspace by workspace ID."""
         # Validate parameters (similar to Go implementation)
-        if not is_valid_string_id(id):
+        if not valid_string_id(id):
             raise InvalidWorkspaceIDError()
 
         self.t.request("POST", f"/api/v2/workspaces/{id}/actions/safe-delete")
@@ -620,9 +620,9 @@ class Workspaces(_Service):
     ) -> Workspace:
         """Remove VCS connection from workspace by organization and name."""
         # Validate parameters
-        if not is_valid_string_id(organization):
+        if not valid_string_id(organization):
             raise InvalidOrgError()
-        if not is_valid_string_id(name):
+        if not valid_string_id(name):
             raise InvalidWorkspaceValueError()
 
         body = {
@@ -647,7 +647,7 @@ class Workspaces(_Service):
     ) -> Workspace:
         """Remove VCS connection from workspace by workspace ID."""
         # Validate parameters
-        if not is_valid_string_id(id):
+        if not valid_string_id(id):
             raise InvalidWorkspaceIDError()
 
         body = {
@@ -670,7 +670,7 @@ class Workspaces(_Service):
     def lock(self, workspace_id: str, *, options: WorkspaceLockOptions) -> Workspace:
         """Lock a workspace by workspace ID."""
         # Validate parameters
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         body = {"reason": options.reason}
@@ -685,7 +685,7 @@ class Workspaces(_Service):
     def unlock(self, workspace_id: str) -> Workspace:
         """Unlock a workspace by workspace ID."""
         # Validate parameters
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         try:
             r = self.t.request(
@@ -701,7 +701,7 @@ class Workspaces(_Service):
     def force_unlock(self, workspace_id: str) -> Workspace:
         """Force unlock a workspace by workspace ID."""
         # Validate parameters
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         r = self.t.request(
@@ -715,13 +715,13 @@ class Workspaces(_Service):
     ) -> Workspace:
         """Assign an SSH key to a workspace by workspace ID."""
         # Validate parameters
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
-        if not is_valid_string(options.ssh_key_id):
+        if not valid_string(options.ssh_key_id):
             raise RequiredSSHKeyIDError()
 
-        if not is_valid_string_id(options.ssh_key_id):
+        if not valid_string_id(options.ssh_key_id):
             raise InvalidSSHKeyIDError()
 
         body = {
@@ -741,7 +741,7 @@ class Workspaces(_Service):
     def unassign_ssh_key(self, workspace_id: str) -> Workspace:
         """Unassign the SSH key from a workspace by workspace ID."""
         # Validate parameters
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         body = {
@@ -764,7 +764,7 @@ class Workspaces(_Service):
     ) -> Iterator[Workspace]:
         """List remote state consumers of a workspace by workspace ID."""
         # Validate parameters
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         params: dict[str, Any] = {}
@@ -783,7 +783,7 @@ class Workspaces(_Service):
         self, workspace_id: str, options: WorkspaceAddRemoteStateConsumersOptions
     ) -> None:
         """Add remote state consumers to a workspace by workspace ID."""
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if options.workspaces is None:
             raise WorkspaceRequiredError()
@@ -803,7 +803,7 @@ class Workspaces(_Service):
         self, workspace_id: str, options: WorkspaceRemoveRemoteStateConsumersOptions
     ) -> None:
         """Remove remote state consumers from a workspace by workspace ID."""
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if options.workspaces is None:
             raise WorkspaceRequiredError()
@@ -822,7 +822,7 @@ class Workspaces(_Service):
         self, workspace_id: str, options: WorkspaceUpdateRemoteStateConsumersOptions
     ) -> None:
         """Update remote state consumers of a workspace by workspace ID."""
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if options.workspaces is None:
             raise WorkspaceRequiredError()
@@ -840,7 +840,7 @@ class Workspaces(_Service):
     def list_tags(
         self, workspace_id: str, options: WorkspaceTagListOptions
     ) -> Iterator[Tag]:
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         params: dict[str, Any] = {}
@@ -858,7 +858,7 @@ class Workspaces(_Service):
 
     def add_tags(self, workspace_id: str, options: WorkspaceAddTagsOptions) -> None:
         """AddTags adds a list of tags to a workspace."""
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if len(options.tags) == 0:
             raise MissingTagIdentifierError()
@@ -882,7 +882,7 @@ class Workspaces(_Service):
         self, workspace_id: str, options: WorkspaceRemoveTagsOptions
     ) -> None:
         """RemoveTags removes a list of tags from a workspace."""
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if len(options.tags) == 0:
             raise MissingTagIdentifierError()
@@ -903,7 +903,7 @@ class Workspaces(_Service):
         )
 
     def list_tag_bindings(self, workspace_id: str) -> Iterator[TagBinding]:
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         path = f"/api/v2/workspaces/{workspace_id}/tag-bindings"
@@ -918,7 +918,7 @@ class Workspaces(_Service):
     def list_effective_tag_bindings(
         self, workspace_id: str
     ) -> Iterator[EffectiveTagBinding]:
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         path = f"/api/v2/workspaces/{workspace_id}/effective-tag-bindings"
@@ -935,7 +935,7 @@ class Workspaces(_Service):
         self, workspace_id: str, options: WorkspaceAddTagBindingsOptions
     ) -> Iterator[TagBinding]:
         """AddTagBindings adds or modifies the value of existing tag binding keys for a workspace."""
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if len(options.tag_bindings) == 0:
             raise MissingTagBindingIdentifierError()
@@ -967,7 +967,7 @@ class Workspaces(_Service):
 
     def delete_all_tag_bindings(self, workspace_id: str) -> None:
         """DeleteAllTagBindings removes all tag bindings associated with a workspace."""
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         body = {
@@ -983,7 +983,7 @@ class Workspaces(_Service):
         self, workspace_id: str
     ) -> DataRetentionPolicy | None:
         """Read a workspace's data retention policy (deprecated: use read_data_retention_policy_choice instead)."""
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         try:
@@ -1010,7 +1010,7 @@ class Workspaces(_Service):
         self, workspace_id: str
     ) -> DataRetentionPolicyChoice | None:
         """Read a workspace's data retention policy choice (polymorphic)."""
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         # First, read the workspace to determine the type of data retention policy
@@ -1064,7 +1064,7 @@ class Workspaces(_Service):
         self, workspace_id: str, *, options: DataRetentionPolicySetOptions
     ) -> DataRetentionPolicy:
         """Set a workspace's data retention policy (deprecated: use set_data_retention_policy_delete_older instead)."""
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         body = {
@@ -1096,7 +1096,7 @@ class Workspaces(_Service):
         self, workspace_id: str, *, options: DataRetentionPolicyDeleteOlderSetOptions
     ) -> DataRetentionPolicyDeleteOlder:
         """Set a workspace's data retention policy to delete data older than a certain number of days."""
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         body = {
@@ -1124,7 +1124,7 @@ class Workspaces(_Service):
         self, workspace_id: str, *, options: DataRetentionPolicyDontDeleteSetOptions
     ) -> DataRetentionPolicyDontDelete:
         """Set a workspace's data retention policy to explicitly not delete data."""
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         body = {
@@ -1142,7 +1142,36 @@ class Workspaces(_Service):
 
     def delete_data_retention_policy(self, workspace_id: str) -> None:
         """Delete a workspace's data retention policy."""
-        if not is_valid_string_id(workspace_id):
+        if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         self.t.request("DELETE", self._data_retention_policy_link(workspace_id))
+
+    def readme(self, workspace_id: str) -> str | None:
+        """Get the README content of a workspace by its ID."""
+        if not valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+        r = self.t.request(
+            "GET", f"/api/v2/workspaces/{workspace_id}", params={"include": "readme"}
+        )
+        payload = r.json()
+
+        # First check if workspace has a readme relationship
+        data = payload.get("data", {})
+        relationships = data.get("relationships", {})
+        readme_rel = relationships.get("readme", {})
+        readme_data = readme_rel.get("data")
+
+        # If no readme relationship or it's null, return None
+        if not readme_data:
+            return None
+
+        # Look for the readme in included section
+        readme_id = readme_data.get("id")
+        included = payload.get("included") or []
+
+        for inc in included:
+            if inc.get("type") == "workspace-readme" and inc.get("id") == readme_id:
+                return (inc.get("attributes") or {}).get("raw-markdown")
+
+        return None
