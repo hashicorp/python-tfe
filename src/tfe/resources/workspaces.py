@@ -9,27 +9,48 @@ from ..errors import (
     InvalidSSHKeyIDError,
     InvalidWorkspaceIDError,
     InvalidWorkspaceValueError,
+    MissingTagBindingIdentifierError,
+    MissingTagIdentifierError,
     RequiredSSHKeyIDError,
     WorkspaceLockedStateVersionStillPending,
+    WorkspaceMinimumLimitError,
+    WorkspaceRequiredError,
 )
 from ..types import (
+    DataRetentionPolicy,
+    DataRetentionPolicyChoice,
+    DataRetentionPolicyDeleteOlder,
+    DataRetentionPolicyDeleteOlderSetOptions,
+    DataRetentionPolicyDontDelete,
+    DataRetentionPolicyDontDeleteSetOptions,
+    DataRetentionPolicySetOptions,
+    EffectiveTagBinding,
     ExecutionMode,
     LockedByChoice,
     Tag,
+    TagBinding,
     VCSRepo,
     Workspace,
     WorkspaceActions,
+    WorkspaceAddRemoteStateConsumersOptions,
+    WorkspaceAddTagBindingsOptions,
+    WorkspaceAddTagsOptions,
     WorkspaceAssignSSHKeyOptions,
     WorkspaceCreateOptions,
     WorkspaceListOptions,
+    WorkspaceListRemoteStateConsumersOptions,
     WorkspaceLockOptions,
     WorkspaceOutputs,
     WorkspacePermissions,
     WorkspaceReadOptions,
+    WorkspaceRemoveRemoteStateConsumersOptions,
+    WorkspaceRemoveTagsOptions,
     WorkspaceRemoveVCSConnectionOptions,
     WorkspaceSettingOverwrites,
     WorkspaceSource,
+    WorkspaceTagListOptions,
     WorkspaceUpdateOptions,
+    WorkspaceUpdateRemoteStateConsumersOptions,
 )
 from ..workspace_validation import (
     is_valid_string,
@@ -151,6 +172,36 @@ def _ws_from(d: dict[str, Any], org: str | None = None) -> Workspace:
                 )
             )
 
+    data_retention_policy_choice: DataRetentionPolicyChoice | None = None
+    if d.get("relationships", {}).get("data-retention-policy-choice"):
+        drp_data = d["relationships"]["data-retention-policy-choice"]["data"]
+        if drp_data:
+            if drp_data.get("type") == "data-retention-policy-delete-olders":
+                data_retention_policy_choice = DataRetentionPolicyChoice(
+                    data_retention_policy_delete_older=DataRetentionPolicyDeleteOlder(
+                        id=drp_data.get("id"),
+                        delete_older_than_n_days=drp_data.get("attributes", {}).get(
+                            "delete-older-than-n-days", 0
+                        ),
+                    )
+                )
+            elif drp_data.get("type") == "data-retention-policy-dont-deletes":
+                data_retention_policy_choice = DataRetentionPolicyChoice(
+                    data_retention_policy_dont_delete=DataRetentionPolicyDontDelete(
+                        id=drp_data.get("id")
+                    )
+                )
+            elif drp_data.get("type") == "data-retention-policies":
+                # Legacy data retention policy
+                data_retention_policy_choice = DataRetentionPolicyChoice(
+                    data_retention_policy=DataRetentionPolicy(
+                        id=drp_data.get("id"),
+                        delete_older_than_n_days=drp_data.get("attributes", {}).get(
+                            "delete-older-than-n-days", 0
+                        ),
+                    )
+                )
+
     return Workspace(
         id=id_str,
         name=name_str,
@@ -201,6 +252,9 @@ def _ws_from(d: dict[str, Any], org: str | None = None) -> Workspace:
         # Relations
         outputs=outputs,
         locked_by=locked_by,
+        data_retention_policy_choice=data_retention_policy_choice
+        if data_retention_policy_choice
+        else None,
     )
 
 
@@ -242,11 +296,11 @@ class Workspaces(_Service):
         # Handle tag binding filters
         if options.tag_bindings:
             for i, binding in enumerate(options.tag_bindings):
-                if binding.tag and binding.value:
-                    params[f"search[tag-bindings][{i}][key]"] = binding.tag.name
+                if binding.key and binding.value:
+                    params[f"search[tag-bindings][{i}][key]"] = binding.key
                     params[f"search[tag-bindings][{i}][value]"] = binding.value
-                elif binding.tag:
-                    params[f"search[tag-bindings][{i}][key]"] = binding.tag.name
+                elif binding.key:
+                    params[f"search[tag-bindings][{i}][key]"] = binding.key
 
         path = f"/api/v2/organizations/{organization}/workspaces"
         for item in self._list(path, params=params):
@@ -279,7 +333,13 @@ class Workspaces(_Service):
             f"/api/v2/organizations/{organization}/workspaces/{name}",
             params=params,
         )
-        return _ws_from(r.json()["data"], organization)
+        ws = _ws_from(r.json()["data"], organization)
+        ws.data_retention_policy = (
+            ws.data_retention_policy_choice.convert_to_legacy_struct()
+            if ws.data_retention_policy_choice
+            else None
+        )
+        return ws
 
     def read_by_id(self, id: str) -> Workspace:
         """Read workspace by workspace ID."""
@@ -296,7 +356,12 @@ class Workspaces(_Service):
         if options.include:
             params["include"] = ",".join([i.value for i in options.include])
         r = self.t.request("GET", f"/api/v2/workspaces/{id}", params=params)
-        return _ws_from(r.json()["data"], None)
+        ws = _ws_from(r.json()["data"], None)
+        if ws.data_retention_policy_choice is not None:
+            ws.data_retention_policy = (
+                ws.data_retention_policy_choice.convert_to_legacy_struct()
+            )
+        return ws
 
     def create(
         self,
@@ -490,11 +555,11 @@ class Workspaces(_Service):
         if hasattr(options, "tag_bindings") and options.tag_bindings:
             relationships["tag-bindings"] = {"data": []}
             for binding in options.tag_bindings:
-                if binding.tag and binding.value:
+                if binding.key and binding.value:
                     tag_binding_data = {
                         "type": "tag-bindings",
                         "attributes": {
-                            "key": binding.tag.name,
+                            "key": binding.key,
                             "value": binding.value,
                         },
                     }
@@ -693,3 +758,391 @@ class Workspaces(_Service):
         )
 
         return _ws_from(r.json()["data"], None)
+
+    def list_remote_state_consumers(
+        self, workspace_id: str, options: WorkspaceListRemoteStateConsumersOptions
+    ) -> Iterator[Workspace]:
+        """List remote state consumers of a workspace by workspace ID."""
+        # Validate parameters
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+
+        params: dict[str, Any] = {}
+
+        # Use structured options
+        if options.page_number:
+            params["page[number]"] = options.page_number
+        if options.page_size:
+            params["page[size]"] = options.page_size
+
+        path = f"/api/v2/workspaces/{workspace_id}/relationships/remote-state-consumers"
+        for item in self._list(path, params=params):
+            yield _ws_from(item, None)
+
+    def add_remote_state_consumers(
+        self, workspace_id: str, options: WorkspaceAddRemoteStateConsumersOptions
+    ) -> None:
+        """Add remote state consumers to a workspace by workspace ID."""
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+        if options.workspaces is None:
+            raise WorkspaceRequiredError()
+        if len(options.workspaces) == 0:
+            raise WorkspaceMinimumLimitError()
+
+        body = {
+            "data": [{"type": "workspaces", "id": ws.id} for ws in options.workspaces]
+        }
+        self.t.request(
+            "POST",
+            f"/api/v2/workspaces/{workspace_id}/relationships/remote-state-consumers",
+            json_body=body,
+        )
+
+    def remove_remote_state_consumers(
+        self, workspace_id: str, options: WorkspaceRemoveRemoteStateConsumersOptions
+    ) -> None:
+        """Remove remote state consumers from a workspace by workspace ID."""
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+        if options.workspaces is None:
+            raise WorkspaceRequiredError()
+        if len(options.workspaces) == 0:
+            raise WorkspaceMinimumLimitError()
+        body = {
+            "data": [{"type": "workspaces", "id": ws.id} for ws in options.workspaces]
+        }
+        self.t.request(
+            "DELETE",
+            f"/api/v2/workspaces/{workspace_id}/relationships/remote-state-consumers",
+            json_body=body,
+        )
+
+    def update_remote_state_consumers(
+        self, workspace_id: str, options: WorkspaceUpdateRemoteStateConsumersOptions
+    ) -> None:
+        """Update remote state consumers of a workspace by workspace ID."""
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+        if options.workspaces is None:
+            raise WorkspaceRequiredError()
+        if len(options.workspaces) == 0:
+            raise WorkspaceMinimumLimitError()
+        body = {
+            "data": [{"type": "workspaces", "id": ws.id} for ws in options.workspaces]
+        }
+        self.t.request(
+            "PATCH",
+            f"/api/v2/workspaces/{workspace_id}/relationships/remote-state-consumers",
+            json_body=body,
+        )
+
+    def list_tags(
+        self, workspace_id: str, options: WorkspaceTagListOptions
+    ) -> Iterator[Tag]:
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+
+        params: dict[str, Any] = {}
+        if options.query is not None:
+            params["name"] = options.query
+        if options.page_number is not None:
+            params["page[number]"] = options.page_number
+        if options.page_size is not None:
+            params["page[size]"] = options.page_size
+
+        path = f"/api/v2/workspaces/{workspace_id}/relationships/tags"
+        for item in self._list(path, params=params):
+            attr = item.get("attributes", {}) or {}
+            yield Tag(id=item.get("id"), name=attr.get("name", ""))
+
+    def add_tags(self, workspace_id: str, options: WorkspaceAddTagsOptions) -> None:
+        """AddTags adds a list of tags to a workspace."""
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+        if len(options.tags) == 0:
+            raise MissingTagIdentifierError()
+        for tag in options.tags:
+            if tag.id == "" and tag.name == "":
+                raise MissingTagIdentifierError()
+        data: list[dict[str, Any]] = []
+        for tag in options.tags:
+            if tag.id:
+                data.append({"type": "tags", "id": tag.id})
+            else:
+                data.append({"type": "tags", "attributes": {"name": tag.name}})
+        body = {"data": data}
+        self.t.request(
+            "POST",
+            f"/api/v2/workspaces/{workspace_id}/relationships/tags",
+            json_body=body,
+        )
+
+    def remove_tags(
+        self, workspace_id: str, options: WorkspaceRemoveTagsOptions
+    ) -> None:
+        """RemoveTags removes a list of tags from a workspace."""
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+        if len(options.tags) == 0:
+            raise MissingTagIdentifierError()
+        for tag in options.tags:
+            if tag.id == "" and tag.name == "":
+                raise MissingTagIdentifierError()
+        data: list[dict[str, Any]] = []
+        for tag in options.tags:
+            if tag.id:
+                data.append({"type": "tags", "id": tag.id})
+            else:
+                data.append({"type": "tags", "attributes": {"name": tag.name}})
+        body = {"data": data}
+        self.t.request(
+            "DELETE",
+            f"/api/v2/workspaces/{workspace_id}/relationships/tags",
+            json_body=body,
+        )
+
+    def list_tag_bindings(self, workspace_id: str) -> Iterator[TagBinding]:
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+
+        path = f"/api/v2/workspaces/{workspace_id}/tag-bindings"
+        for item in self._list(path):
+            attr = item.get("attributes", {}) or {}
+            yield TagBinding(
+                id=item.get("id"),
+                key=attr.get("key", ""),
+                value=attr.get("value", ""),
+            )
+
+    def list_effective_tag_bindings(
+        self, workspace_id: str
+    ) -> Iterator[EffectiveTagBinding]:
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+
+        path = f"/api/v2/workspaces/{workspace_id}/effective-tag-bindings"
+        for item in self._list(path):
+            attr = item.get("attributes", {}) or {}
+            yield EffectiveTagBinding(
+                id=item.get("id", ""),
+                key=attr.get("key", ""),
+                value=attr.get("value", ""),
+                links=attr.get("links", {}),
+            )
+
+    def add_tag_bindings(
+        self, workspace_id: str, options: WorkspaceAddTagBindingsOptions
+    ) -> Iterator[TagBinding]:
+        """AddTagBindings adds or modifies the value of existing tag binding keys for a workspace."""
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+        if len(options.tag_bindings) == 0:
+            raise MissingTagBindingIdentifierError()
+        data: list[dict[str, Any]] = []
+        for binding in options.tag_bindings:
+            data.append(
+                {
+                    "type": "tag-bindings",
+                    "attributes": {"key": binding.key, "value": binding.value},
+                }
+            )
+        body = {"data": data}
+        r = self.t.request(
+            "PATCH",
+            f"/api/v2/workspaces/{workspace_id}/tag-bindings",
+            json_body=body,
+        )
+        out: builtins.list[TagBinding] = []
+        for item in r.json().get("data", []):
+            attr = item.get("attributes", {}) or {}
+            out.append(
+                TagBinding(
+                    id=item.get("id"),
+                    key=attr.get("key", ""),
+                    value=attr.get("value", ""),
+                )
+            )
+        return iter(out)
+
+    def delete_all_tag_bindings(self, workspace_id: str) -> None:
+        """DeleteAllTagBindings removes all tag bindings associated with a workspace."""
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+
+        body = {
+            "data": {
+                "type": "workspaces",
+                "id": workspace_id,
+                "relationships": {"tag-bindings": {"data": []}},
+            }
+        }
+        self.t.request("PATCH", f"/api/v2/workspaces/{workspace_id}", json_body=body)
+
+    def read_data_retention_policy(
+        self, workspace_id: str
+    ) -> DataRetentionPolicy | None:
+        """Read a workspace's data retention policy (deprecated: use read_data_retention_policy_choice instead)."""
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+
+        try:
+            r = self.t.request("GET", self._data_retention_policy_link(workspace_id))
+            d = r.json().get("data")
+            if not d:
+                return None
+
+            return DataRetentionPolicy(
+                id=d.get("id"),
+                delete_older_than_n_days=d.get("attributes", {}).get(
+                    "delete-older-than-n-days"
+                ),
+            )
+        except Exception as e:
+            # Handle the case where TFE >= 202401 and direct user towards the V2 function
+            if "data-retention-policies" in str(e) and "does not match" in str(e):
+                raise ValueError(
+                    "error reading deprecated DataRetentionPolicy, use read_data_retention_policy_choice instead"
+                ) from e
+            raise
+
+    def read_data_retention_policy_choice(
+        self, workspace_id: str
+    ) -> DataRetentionPolicyChoice | None:
+        """Read a workspace's data retention policy choice (polymorphic)."""
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+
+        # First, read the workspace to determine the type of data retention policy
+        ws = self.read_by_id(workspace_id)
+
+        # If there's no data retention policy choice or it's not populated, return it as-is
+        if (
+            ws.data_retention_policy_choice is None
+            or not ws.data_retention_policy_choice.is_populated()
+        ):
+            return ws.data_retention_policy_choice
+
+        # Get the specific data retention policy data from the relationships endpoint
+        r = self.t.request("GET", self._data_retention_policy_link(workspace_id))
+        drp_data = r.json().get("data")
+
+        if not drp_data:
+            return None
+
+        data_retention_policy_choice = DataRetentionPolicyChoice()
+        if (
+            ws.data_retention_policy_choice.data_retention_policy_delete_older
+            is not None
+        ):
+            data_retention_policy_choice.data_retention_policy_delete_older = (
+                DataRetentionPolicyDeleteOlder(
+                    id=drp_data.get("id"),
+                    delete_older_than_n_days=drp_data.get("attributes", {}).get(
+                        "delete-older-than-n-days"
+                    ),
+                )
+            )
+        elif (
+            ws.data_retention_policy_choice.data_retention_policy_dont_delete
+            is not None
+        ):
+            data_retention_policy_choice.data_retention_policy_dont_delete = (
+                DataRetentionPolicyDontDelete(id=drp_data.get("id"))
+            )
+        elif ws.data_retention_policy_choice.data_retention_policy is not None:
+            data_retention_policy_choice.data_retention_policy = DataRetentionPolicy(
+                id=drp_data.get("id"),
+                delete_older_than_n_days=drp_data.get("attributes", {}).get(
+                    "delete-older-than-n-days"
+                ),
+            )
+
+        return data_retention_policy_choice
+
+    def set_data_retention_policy(
+        self, workspace_id: str, *, options: DataRetentionPolicySetOptions
+    ) -> DataRetentionPolicy:
+        """Set a workspace's data retention policy (deprecated: use set_data_retention_policy_delete_older instead)."""
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+
+        body = {
+            "data": {
+                "type": "data-retention-policies",
+                "attributes": {
+                    "delete-older-than-n-days": options.delete_older_than_n_days
+                },
+            }
+        }
+
+        r = self.t.request(
+            "PATCH", self._data_retention_policy_link(workspace_id), json_body=body
+        )
+        d = r.json()["data"]
+
+        return DataRetentionPolicy(
+            id=d.get("id"),
+            delete_older_than_n_days=d.get("attributes", {}).get(
+                "delete-older-than-n-days"
+            ),
+        )
+
+    def _data_retention_policy_link(self, workspace_id: str) -> str:
+        """Helper method to generate the data retention policy relationships URL."""
+        return f"/api/v2/workspaces/{workspace_id}/relationships/data-retention-policy"
+
+    def set_data_retention_policy_delete_older(
+        self, workspace_id: str, *, options: DataRetentionPolicyDeleteOlderSetOptions
+    ) -> DataRetentionPolicyDeleteOlder:
+        """Set a workspace's data retention policy to delete data older than a certain number of days."""
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+
+        body = {
+            "data": {
+                "type": "data-retention-policy-delete-olders",
+                "attributes": {
+                    "delete-older-than-n-days": options.delete_older_than_n_days
+                },
+            }
+        }
+
+        r = self.t.request(
+            "POST", self._data_retention_policy_link(workspace_id), json_body=body
+        )
+        d = r.json()["data"]
+
+        return DataRetentionPolicyDeleteOlder(
+            id=d.get("id"),
+            delete_older_than_n_days=d.get("attributes", {}).get(
+                "delete-older-than-n-days"
+            ),
+        )
+
+    def set_data_retention_policy_dont_delete(
+        self, workspace_id: str, *, options: DataRetentionPolicyDontDeleteSetOptions
+    ) -> DataRetentionPolicyDontDelete:
+        """Set a workspace's data retention policy to explicitly not delete data."""
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+
+        body = {
+            "data": {
+                "type": "data-retention-policy-dont-deletes",
+            }
+        }
+
+        r = self.t.request(
+            "POST", self._data_retention_policy_link(workspace_id), json_body=body
+        )
+        d = r.json()["data"]
+
+        return DataRetentionPolicyDontDelete(id=d.get("id"))
+
+    def delete_data_retention_policy(self, workspace_id: str) -> None:
+        """Delete a workspace's data retention policy."""
+        if not is_valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+
+        self.t.request("DELETE", self._data_retention_policy_link(workspace_id))

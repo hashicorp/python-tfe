@@ -172,6 +172,8 @@ class Workspace(BaseModel):
 
     # Links
     links: dict[str, Any] = Field(default_factory=dict)
+    data_retention_policy: DataRetentionPolicy | None = None
+    data_retention_policy_choice: DataRetentionPolicyChoice | None = None
 
 
 class Capacity(BaseModel):
@@ -208,6 +210,9 @@ class Run(BaseModel):
 class Pagination(BaseModel):
     current_page: int
     total_count: int
+    previous_page: int | None = None
+    next_page: int | None = None
+    total_pages: int | None = None
     # Add other pagination fields as needed
 
 
@@ -288,16 +293,16 @@ class Tag(BaseModel):
 
 
 class TagBinding(BaseModel):
-    id: str | None = None  # Optional for new tag bindings
-    tag: Tag | None = None
+    id: str | None = None
+    key: str
     value: str | None = None
 
 
 class EffectiveTagBinding(BaseModel):
     id: str
-    tag: Tag | None = None
+    key: str
     value: str | None = None
-    inherited: bool = False
+    links: dict[str, Any] = Field(default_factory=dict)
 
 
 class WorkspaceIncludeOpt(str, Enum):
@@ -512,3 +517,56 @@ class workspaceUnassignSSHKeyOptions(BaseModel):
     # Must be nil to unset the currently assigned SSH key.
     ssh_key_id: str
     type: str = "workspaces"
+
+
+class WorkspaceListRemoteStateConsumersOptions(BaseModel):
+    """Options for listing remote state consumers of a workspace."""
+
+    # Pagination options (from ListOptions)
+    page_number: int | None = None
+    page_size: int | None = None
+
+
+class WorkspaceAddRemoteStateConsumersOptions(BaseModel):
+    """Options for adding remote state consumers to a workspace."""
+
+    workspaces: list[Workspace] = Field(default_factory=list)
+
+
+class WorkspaceRemoveRemoteStateConsumersOptions(BaseModel):
+    """Options for removing remote state consumers from a workspace."""
+
+    workspaces: list[Workspace] = Field(default_factory=list)
+
+
+class WorkspaceUpdateRemoteStateConsumersOptions(BaseModel):
+    """Options for updating remote state consumers of a workspace."""
+
+    workspaces: list[Workspace] = Field(default_factory=list)
+
+
+class WorkspaceTagListOptions(BaseModel):
+    """Options for listing tags of a workspace."""
+
+    # Pagination options (from ListOptions)
+    page_number: int | None = None
+    page_size: int | None = None
+    query: str | None = None
+
+
+class WorkspaceAddTagsOptions(BaseModel):
+    """Options for adding tags to a workspace."""
+
+    tags: list[Tag] = Field(default_factory=list)
+
+
+class WorkspaceRemoveTagsOptions(BaseModel):
+    """Options for removing tags from a workspace."""
+
+    tags: list[Tag] = Field(default_factory=list)
+
+
+class WorkspaceAddTagBindingsOptions(BaseModel):
+    """Options for adding tag bindings to a workspace."""
+
+    tag_bindings: list[TagBinding] = Field(default_factory=list)

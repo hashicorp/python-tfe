@@ -187,3 +187,31 @@ class InvalidSSHKeyIDError(WorkspaceValidationError):
 
     def __init__(self) -> None:
         super().__init__("invalid value for SSH key ID")
+
+
+class WorkspaceRequiredError(WorkspaceValidationError):
+    """Raised when workspace parameter is required but not provided."""
+
+    def __init__(self) -> None:
+        super().__init__("workspace is required")
+
+
+class WorkspaceMinimumLimitError(WorkspaceValidationError):
+    """Raised when at least one workspace is required but not provided."""
+
+    def __init__(self) -> None:
+        super().__init__("must provide at least one workspace")
+
+
+class MissingTagIdentifierError(WorkspaceValidationError):
+    """Raised when tag identifier is missing."""
+
+    def __init__(self) -> None:
+        super().__init__("must specify at least one tag by ID or name")
+
+
+class MissingTagBindingIdentifierError(WorkspaceValidationError):
+    """Raised when tag binding identifier is missing."""
+
+    def __init__(self) -> None:
+        super().__init__("TagBindings are required")
