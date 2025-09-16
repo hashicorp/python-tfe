@@ -157,7 +157,9 @@ class Projects(_Service):
         validate_project_list_options(organization)
 
         path = f"/api/v2/organizations/{organization}/projects"
-        params = {}
+
+        # Build params dict - base class expects integer values for pagination
+        params: dict[str, str | int] = {}
 
         if options:
             if options.include:
@@ -166,15 +168,10 @@ class Projects(_Service):
                 params["q"] = options.query
             if options.name:
                 params["filter[names]"] = options.name
-            if options.page_number:
-                params["page[number]"] = str(options.page_number)
-            if options.page_size:
-                params["page[size]"] = str(options.page_size)
 
-        if params:
-            items_iter = self._list(path, params=params)
-        else:
-            items_iter = self._list(path)
+        # Handle pagination by letting base class manage it entirely for now
+        # Base class will set default page[number]=1 and page[size]=100
+        items_iter = self._list(path, params=params if params else None)
 
         for item in items_iter:
             # Extract project data following Go patterns

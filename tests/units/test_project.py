@@ -57,7 +57,7 @@ class TestProjects:
 
         # Verify the correct API path was used
         expected_path = f"/api/v2/organizations/{organization}/projects"
-        self.projects_service._list.assert_called_once_with(expected_path)
+        self.projects_service._list.assert_called_once_with(expected_path, params=None)
 
     def test_create_project_success(self):
         """Test successful project creation"""
