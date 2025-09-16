@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -77,3 +78,27 @@ class Workspace(BaseModel):
     execution_mode: ExecutionMode | None = None
     project_id: str | None = None
     tags: list[str] = Field(default_factory=list)
+
+
+class TagBinding(BaseModel):
+    """Tag binding associates a key-value pair with a resource"""
+
+    id: str | None = None
+    key: str
+    value: str | None = None
+
+
+class EffectiveTagBinding(BaseModel):
+    """Effective tag binding includes inherited bindings"""
+
+    id: str | None = None
+    key: str
+    value: str | None = None
+    # Links indicate inheritance (e.g., from project to workspace)
+    links: dict[str, Any] | None = None
+
+
+class ProjectAddTagBindingsOptions(BaseModel):
+    """Options for adding tag bindings to a project"""
+
+    tag_bindings: list[TagBinding]

@@ -6,10 +6,13 @@ from collections.abc import Iterator
 from typing import Any
 
 from ..types import (
+    EffectiveTagBinding,
     Project,
+    ProjectAddTagBindingsOptions,
     ProjectCreateOptions,
     ProjectListOptions,
     ProjectUpdateOptions,
+    TagBinding,
 )
 from ..utils import valid_string, valid_string_id
 from ._base import _Service
@@ -86,11 +89,61 @@ def validate_project_list_options(
         raise ValueError("Project name must be valid")
 
 
+def valid_tag_key(key: str) -> bool:
+    """Validate tag key format following Go TFE patterns"""
+    if not valid_string(key):
+        return False
+    # Tag keys must be between 1 and 128 characters
+    if len(key) > 128:
+        return False
+    # Tag keys can contain letters, numbers, hyphens, underscores
+    pattern = re.compile(r"^[a-zA-Z0-9_-]+$")
+    return bool(pattern.match(key))
+
+
+def valid_tag_value(value: str | None) -> bool:
+    """Validate tag value format following Go TFE patterns"""
+    # Tag values can be empty/None (for tag existence checks)
+    if value is None or value == "":
+        return True
+    # Tag values must be less than 256 characters
+    if len(value) > 256:
+        return False
+    # Tag values can contain most characters but not control characters
+    return not any(ord(c) < 32 or ord(c) == 127 for c in value)
+
+
 def _safe_str(value: Any, default: str = "") -> str:
     """Safely convert a value to string with optional default."""
     if value is None:
         return default
     return str(value)
+
+
+def validate_tag_binding(tag_binding: TagBinding) -> None:
+    """Validate a tag binding following Go TFE patterns"""
+    if not valid_tag_key(tag_binding.key):
+        raise ValueError(f"Invalid tag key: {tag_binding.key}")
+
+    if not valid_tag_value(tag_binding.value):
+        raise ValueError(f"Invalid tag value: {tag_binding.value}")
+
+
+def validate_project_add_tag_bindings_options(
+    project_id: str, options: ProjectAddTagBindingsOptions
+) -> None:
+    """Validate project add tag bindings parameters following Go TFE patterns"""
+    if not valid_string_id(project_id):
+        raise ValueError("Project ID is required and must be valid")
+
+    if not options.tag_bindings:
+        raise ValueError("Tag bindings are required")
+
+    if len(options.tag_bindings) > 10:
+        raise ValueError("Cannot exceed 10 tag bindings per project")
+
+    for tag_binding in options.tag_bindings:
+        validate_tag_binding(tag_binding)
 
 
 class Projects(_Service):
@@ -261,3 +314,109 @@ class Projects(_Service):
 
         path = f"/api/v2/projects/{project_id}"
         self.t.request("DELETE", path)
+
+    def list_tag_bindings(self, project_id: str) -> builtins.list[TagBinding]:
+        """List all tag bindings associated with the project"""
+        if not valid_string_id(project_id):
+            raise ValueError("Project ID is required and must be valid")
+
+        path = f"/api/v2/projects/{project_id}/tag-bindings"
+        response = self.t.request("GET", path)
+        data = response.json()["data"]
+
+        tag_bindings = []
+        for binding_data in data:
+            attr = binding_data.get("attributes", {})
+            tag_binding = TagBinding(
+                id=binding_data.get("id"),
+                key=_safe_str(attr.get("key")),
+                value=_safe_str(attr.get("value")),
+            )
+            tag_bindings.append(tag_binding)
+
+        return tag_bindings
+
+    def list_effective_tag_bindings(
+        self, project_id: str
+    ) -> builtins.list[EffectiveTagBinding]:
+        """List all effective tag bindings associated with the project"""
+        if not valid_string_id(project_id):
+            raise ValueError("Project ID is required and must be valid")
+
+        path = f"/api/v2/projects/{project_id}/effective-tag-bindings"
+        response = self.t.request("GET", path)
+        data = response.json()["data"]
+
+        effective_bindings = []
+        for binding_data in data:
+            attr = binding_data.get("attributes", {})
+            links = binding_data.get("links", {})
+
+            effective_binding = EffectiveTagBinding(
+                id=binding_data.get("id"),
+                key=_safe_str(attr.get("key")),
+                value=_safe_str(attr.get("value")),
+                links=links if links else None,
+            )
+            effective_bindings.append(effective_binding)
+
+        return effective_bindings
+
+    def add_tag_bindings(
+        self, project_id: str, options: ProjectAddTagBindingsOptions
+    ) -> builtins.list[TagBinding]:
+        """Add or modify tag bindings for a project"""
+        # Validate inputs following Go TFE patterns
+        validate_project_add_tag_bindings_options(project_id, options)
+
+        path = f"/api/v2/projects/{project_id}/tag-bindings"
+
+        # Prepare the tag bindings data for the API
+        tag_bindings_data = []
+        for binding in options.tag_bindings:
+            binding_data = {
+                "type": "tag-bindings",
+                "attributes": {
+                    "key": binding.key,
+                    "value": binding.value or "",
+                },
+            }
+            tag_bindings_data.append(binding_data)
+
+        # Wrap in JSON:API structure
+        payload = {"data": tag_bindings_data}
+
+        response = self.t.request("PATCH", path, json_body=payload)
+        response_data = response.json()["data"]
+
+        # Parse response into TagBinding objects
+        result_bindings = []
+        for binding_data in response_data:
+            attr = binding_data.get("attributes", {})
+            tag_binding = TagBinding(
+                id=binding_data.get("id"),
+                key=_safe_str(attr.get("key")),
+                value=_safe_str(attr.get("value")),
+            )
+            result_bindings.append(tag_binding)
+
+        return result_bindings
+
+    def delete_all_tag_bindings(self, project_id: str) -> None:
+        """Delete all tag bindings associated with a project"""
+        if not valid_string_id(project_id):
+            raise ValueError("Project ID is required and must be valid")
+
+        # Use PATCH request with empty tag bindings array to clear all bindings
+        path = f"/api/v2/projects/{project_id}"
+
+        # Empty tag bindings relationship to clear all
+        data = {
+            "data": {
+                "type": "projects",
+                "id": project_id,
+                "relationships": {"tag-bindings": {"data": []}},
+            }
+        }
+
+        self.t.request("PATCH", path, json_body=data)

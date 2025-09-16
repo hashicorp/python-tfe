@@ -32,7 +32,13 @@ import pytest
 from tfe._http import HTTPTransport
 from tfe.config import TFEConfig
 from tfe.resources.projects import Projects
-from tfe.types import ProjectCreateOptions, ProjectListOptions, ProjectUpdateOptions
+from tfe.types import (
+    ProjectAddTagBindingsOptions,
+    ProjectCreateOptions,
+    ProjectListOptions,
+    ProjectUpdateOptions,
+    TagBinding,
+)
 
 
 @pytest.fixture
@@ -565,6 +571,254 @@ def test_error_handling_integration(integration_client):
         assert "404" in str(e) or "not found" in str(e).lower()
 
     print("✅ All error handling scenarios tested successfully")
+
+
+def test_project_tag_bindings_integration(integration_client):
+    """
+    Integration test for project tag bindings functionality
+    Tests ListTagBindings, ListEffectiveTagBindings, AddTagBindings, and DeleteAllTagBindings
+    """
+    projects_service, org_name = integration_client
+    project_name = f"test-tag-project-{uuid.uuid4().hex[:8]}"
+
+    print("\n🏷️  Testing Project Tag Bindings Integration")
+    print(f"   Organization: {org_name}")
+    print(f"   Test Project: {project_name}")
+
+    # Step 1: Create a test project
+    create_options = ProjectCreateOptions(
+        name=project_name, description="Integration test project for tag bindings"
+    )
+    project = projects_service.create(org_name, create_options)
+    print(f"✅ Created test project: {project.name} (ID: {project.id})")
+
+    try:
+        # Step 2: Test initial empty tag bindings
+        print("\n📝 Testing initial empty tag bindings...")
+        tag_bindings = projects_service.list_tag_bindings(project.id)
+        assert len(tag_bindings) == 0, "New project should have no tag bindings"
+        print("✅ Confirmed project starts with no tag bindings")
+
+        # Step 3: Test initial empty effective tag bindings
+        print("\n📝 Testing initial empty effective tag bindings...")
+        effective_bindings = projects_service.list_effective_tag_bindings(project.id)
+        assert len(effective_bindings) == 0, (
+            "New project should have no effective tag bindings"
+        )
+        print("✅ Confirmed project starts with no effective tag bindings")
+
+        # Step 4: Add tag bindings to the project
+        print("\n➕ Testing add tag bindings...")
+        test_bindings = [
+            TagBinding(key="environment", value="test"),
+            TagBinding(key="team", value="platform"),
+            TagBinding(key="cost-center", value="engineering"),
+        ]
+
+        add_options = ProjectAddTagBindingsOptions(tag_bindings=test_bindings)
+        result_bindings = projects_service.add_tag_bindings(project.id, add_options)
+
+        assert len(result_bindings) == 3, "Should return 3 tag bindings"
+        print(f"✅ Added {len(result_bindings)} tag bindings to project")
+
+        # Verify the added bindings
+        binding_keys = {binding.key for binding in result_bindings}
+        expected_keys = {"environment", "team", "cost-center"}
+        assert binding_keys == expected_keys, (
+            f"Expected keys {expected_keys}, got {binding_keys}"
+        )
+        print("✅ All expected tag binding keys were created")
+
+        # Step 5: List tag bindings and verify they exist
+        print("\n📋 Testing list tag bindings...")
+        tag_bindings = projects_service.list_tag_bindings(project.id)
+        assert len(tag_bindings) == 3, "Should have 3 tag bindings"
+
+        # Verify specific values
+        binding_values = {binding.key: binding.value for binding in tag_bindings}
+        expected_values = {
+            "environment": "test",
+            "team": "platform",
+            "cost-center": "engineering",
+        }
+        for key, expected_value in expected_values.items():
+            assert key in binding_values, f"Key '{key}' not found in tag bindings"
+            assert binding_values[key] == expected_value, (
+                f"Value for '{key}' should be '{expected_value}'"
+            )
+
+        print("✅ All tag bindings verified with correct values")
+
+        # Step 6: List effective tag bindings and verify
+        print("\n📋 Testing list effective tag bindings...")
+        effective_bindings = projects_service.list_effective_tag_bindings(project.id)
+        assert len(effective_bindings) == 3, "Should have 3 effective tag bindings"
+
+        # For project-level bindings, links should be None (not inherited)
+        for binding in effective_bindings:
+            assert binding.links is None or not binding.links, (
+                "Project-level bindings should not have inheritance links"
+            )
+
+        print("✅ All effective tag bindings verified (no inheritance)")
+
+        # Step 7: Modify existing tag bindings (add more and update existing)
+        print("\n✏️  Testing modify tag bindings...")
+        updated_bindings = [
+            TagBinding(key="environment", value="staging"),  # Update existing
+            TagBinding(key="team", value="platform"),  # Keep existing
+            TagBinding(key="region", value="us-east-1"),  # Add new
+            TagBinding(key="owner", value="integration-test"),  # Add new
+        ]
+
+        update_options = ProjectAddTagBindingsOptions(tag_bindings=updated_bindings)
+        updated_result = projects_service.add_tag_bindings(project.id, update_options)
+
+        # The API replaces all bindings with the new set, so we expect the bindings we sent
+        assert len(updated_result) >= 3, (
+            "Should have at least 3 tag bindings after update"
+        )
+        print(f"✅ Updated tag bindings, now have {len(updated_result)} bindings")
+
+        # Verify the environment value was updated
+        updated_binding_values = {
+            binding.key: binding.value for binding in updated_result
+        }
+        assert updated_binding_values.get("environment") == "staging", (
+            "Environment should be updated to 'staging'"
+        )
+        assert updated_binding_values.get("region") == "us-east-1", (
+            "New region binding should exist"
+        )
+        assert updated_binding_values.get("owner") == "integration-test", (
+            "New owner binding should exist"
+        )
+        print("✅ Tag binding values updated correctly")
+
+        # Step 8: Test tag binding limits (try to add too many)
+        print("\n⚠️  Testing tag binding limits...")
+        many_bindings = [
+            TagBinding(key=f"tag-{i}", value=f"value-{i}") for i in range(15)
+        ]
+        many_options = ProjectAddTagBindingsOptions(tag_bindings=many_bindings)
+
+        try:
+            projects_service.add_tag_bindings(project.id, many_options)
+            print("❌ Should have failed with too many bindings")
+            raise AssertionError("Adding 15 tag bindings should exceed the limit")
+        except ValueError as e:
+            assert "Cannot exceed 10 tag bindings" in str(e), (
+                f"Expected limit error, got: {e}"
+            )
+            print("✅ Correctly rejected too many tag bindings")
+
+        # Step 9: Delete all tag bindings
+        print("\n🗑️  Testing delete all tag bindings...")
+        projects_service.delete_all_tag_bindings(project.id)
+        print("✅ Deleted all tag bindings")
+
+        # Verify all bindings are gone
+        empty_bindings = projects_service.list_tag_bindings(project.id)
+        assert len(empty_bindings) == 0, "All tag bindings should be deleted"
+        print("✅ Confirmed all tag bindings were deleted")
+
+        # Verify effective bindings are also gone
+        empty_effective = projects_service.list_effective_tag_bindings(project.id)
+        assert len(empty_effective) == 0, "All effective tag bindings should be deleted"
+        print("✅ Confirmed all effective tag bindings were deleted")
+
+    finally:
+        # Clean up: Delete the test project
+        try:
+            projects_service.delete(project.id)
+            print(f"🧹 Cleaned up test project: {project_name}")
+        except Exception as cleanup_error:
+            print(
+                f"⚠️  Warning: Could not clean up project {project_name}: {cleanup_error}"
+            )
+
+    print("✅ All tag binding integration tests passed!")
+
+
+def test_tag_binding_validation_integration(integration_client):
+    """Test tag binding validation with real API calls"""
+    projects_service, org_name = integration_client
+    project_name = f"test-validation-{uuid.uuid4().hex[:8]}"
+
+    print("\n🔍 Testing Tag Binding Validation Integration")
+
+    # Create a test project
+    create_options = ProjectCreateOptions(
+        name=project_name, description="Validation test"
+    )
+    project = projects_service.create(org_name, create_options)
+
+    try:
+        # Test 1: Invalid tag key (empty)
+        print("\n❌ Testing invalid tag key...")
+        invalid_bindings = [TagBinding(key="", value="test")]
+        invalid_options = ProjectAddTagBindingsOptions(tag_bindings=invalid_bindings)
+
+        try:
+            projects_service.add_tag_bindings(project.id, invalid_options)
+            raise AssertionError("Should have failed with empty key")
+        except ValueError as e:
+            assert "Invalid tag key" in str(e)
+            print("✅ Correctly rejected empty tag key")
+
+        # Test 2: Invalid tag key (too long)
+        print("\n❌ Testing overly long tag key...")
+        long_key = "a" * 150  # Too long (limit is 128)
+        long_key_bindings = [TagBinding(key=long_key, value="test")]
+        long_key_options = ProjectAddTagBindingsOptions(tag_bindings=long_key_bindings)
+
+        try:
+            projects_service.add_tag_bindings(project.id, long_key_options)
+            raise AssertionError("Should have failed with long key")
+        except ValueError as e:
+            assert "Invalid tag key" in str(e)
+            print("✅ Correctly rejected overly long tag key")
+
+        # Test 3: Invalid tag value (too long)
+        print("\n❌ Testing overly long tag value...")
+        long_value = "a" * 300  # Too long (limit is 256)
+        long_value_bindings = [TagBinding(key="test-key", value=long_value)]
+        long_value_options = ProjectAddTagBindingsOptions(
+            tag_bindings=long_value_bindings
+        )
+
+        try:
+            projects_service.add_tag_bindings(project.id, long_value_options)
+            raise AssertionError("Should have failed with long value")
+        except ValueError as e:
+            assert "Invalid tag value" in str(e)
+            print("✅ Correctly rejected overly long tag value")
+
+        # Test 4: Valid edge cases
+        print("\n✅ Testing valid edge cases...")
+        edge_case_bindings = [
+            TagBinding(key="a", value=""),  # Minimum key, empty value
+            TagBinding(
+                key="test-key-123", value=None
+            ),  # Hyphen, underscore, numbers, None value
+        ]
+        edge_case_options = ProjectAddTagBindingsOptions(
+            tag_bindings=edge_case_bindings
+        )
+
+        result = projects_service.add_tag_bindings(project.id, edge_case_options)
+        assert len(result) == 2, "Should accept valid edge cases"
+        print("✅ Valid edge cases accepted")
+
+    finally:
+        # Clean up
+        try:
+            projects_service.delete(project.id)
+            print("🧹 Cleaned up validation test project")
+        except Exception:
+            pass
+
+    print("✅ All validation integration tests passed!")
 
 
 if __name__ == "__main__":
