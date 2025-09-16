@@ -1,13 +1,10 @@
-"""Basic utility functions for the TFE client."""
-
 from __future__ import annotations
 
 import re
 import time
 from collections.abc import Callable
 
-# Pattern for validating string IDs
-_STRING_ID_PATTERN = re.compile(r"^[a-zA-Z0-9\-_]+$")
+_STRING_ID_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{2,}$")
 
 
 def poll_until(
@@ -26,7 +23,6 @@ def poll_until(
         time.sleep(interval_s)
 
 
-# Basic validation functions
 def valid_string(v: str | None) -> bool:
     return v is not None and str(v).strip() != ""
 
