@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 import re
 from collections.abc import Iterator
 from typing import Any
@@ -170,7 +171,9 @@ class Projects(_Service):
         }
         return Project(**project_data)
 
-    def read(self, project_id: str, include: list[str] | None = None) -> Project:
+    def read(
+        self, project_id: str, include: builtins.list[str] | None = None
+    ) -> Project:
         """Get a specific project by ID"""
         # Validate inputs following Go patterns
         if not valid_string_id(project_id):
