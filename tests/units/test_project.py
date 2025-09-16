@@ -1,7 +1,7 @@
 from unittest.mock import Mock
 
 from tfe.resources.projects import Projects, _safe_str
-from tfe.types import Project
+from tfe.types import Project, ProjectCreateOptions, ProjectUpdateOptions
 
 
 class TestProjects:
@@ -63,6 +63,7 @@ class TestProjects:
         """Test successful project creation"""
         organization = "test-org"
         project_name = "New Project"
+        options = ProjectCreateOptions(name=project_name)
 
         # Mock API response
         mock_response = Mock()
@@ -75,7 +76,7 @@ class TestProjects:
         }
         self.mock_transport.request.return_value = mock_response
 
-        result = self.projects_service.create(organization, project_name)
+        result = self.projects_service.create(organization, options)
 
         # Assertions
         assert isinstance(result, Project)
@@ -124,6 +125,7 @@ class TestProjects:
         """Test successful project update"""
         project_id = "prj-123"
         new_name = "Updated Project"
+        options = ProjectUpdateOptions(name=new_name)
 
         # Mock API response
         mock_response = Mock()
@@ -137,7 +139,7 @@ class TestProjects:
         }
         self.mock_transport.request.return_value = mock_response
 
-        result = self.projects_service.update(project_id, new_name)
+        result = self.projects_service.update(project_id, options)
 
         # Assertions
         assert isinstance(result, Project)
