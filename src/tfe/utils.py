@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 import time
 from collections.abc import Callable
+from typing import Any
 
 _STRING_ID_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{2,}$")
 
@@ -29,3 +30,6 @@ def valid_string(v: str | None) -> bool:
 
 def valid_string_id(v: str | None) -> bool:
     return v is not None and _STRING_ID_PATTERN.match(str(v)) is not None
+
+def _safe_str(v: Any, default: str = "") -> str:
+    return v if isinstance(v, str) else (str(v) if v is not None else default)

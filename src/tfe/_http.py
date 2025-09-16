@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import time
+import re
+from urllib.parse import urljoin
 from collections.abc import Mapping
 from typing import Any
 
@@ -17,6 +19,8 @@ from .errors import (
 )
 
 _RETRY_STATUSES = {429, 502, 503, 504}
+
+ABSOLUTE_URL_RE = re.compile(r"^https?://", re.I)
 
 
 class HTTPTransport:
@@ -55,6 +59,12 @@ class HTTPTransport:
         self._async = httpx.AsyncClient(
             http2=http2, timeout=timeout, verify=ca_bundle or verify_tls
         )  # proxies=proxies
+    
+    def _build_url(self, path: str) -> str:
+        # IMPORTANT: don't prefix absolute URLs (hosted_state, signed blobs, etc.)
+        if ABSOLUTE_URL_RE.match(path):
+            return path
+        return urljoin(self.base, path.lstrip("/"))
 
     def request(
         self,
@@ -66,11 +76,12 @@ class HTTPTransport:
         headers: dict[str, str] | None = None,
         allow_redirects: bool = True,
     ) -> httpx.Response:
-        url = f"{self.base}{path}"
+        url = self._build_url(path)
         hdrs = dict(self.headers)
         if headers:
             hdrs.update(headers)
         attempt = 0
+        print (method, url, params,json_body,hdrs)
         while True:
             try:
                 resp = self._sync.request(
@@ -92,6 +103,7 @@ class HTTPTransport:
                 self._sleep(attempt, retry_after)
                 attempt += 1
                 continue
+            print(resp)
             self._raise_if_error(resp)
             return resp
 

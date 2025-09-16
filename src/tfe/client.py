@@ -5,7 +5,8 @@ from .config import TFEConfig
 from .resources.organizations import Organizations
 from .resources.projects import Projects
 from .resources.workspaces import Workspaces
-
+from .resources.state_versions import StateVersions
+from .resources.state_version_outputs import StateVersionOutputs
 
 class TFEClient:
     def __init__(self, config: TFEConfig | None = None):
@@ -27,6 +28,9 @@ class TFEClient:
         self.organizations = Organizations(self._transport)
         self.projects = Projects(self._transport)
         self.workspaces = Workspaces(self._transport)
+
+        self.state_versions = StateVersions(self._transport)
+        self.state_version_outputs = StateVersionOutputs(self._transport)
 
     def close(self) -> None:
         pass
