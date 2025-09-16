@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 __all__ = [
     "OrganizationUpdateOptions",
-    "OrganizationCreateOptions", 
+    "OrganizationCreateOptions",
     "Organization",
 ]
 
