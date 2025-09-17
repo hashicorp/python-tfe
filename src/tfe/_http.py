@@ -81,7 +81,7 @@ class HTTPTransport:
         if headers:
             hdrs.update(headers)
         attempt = 0
-        print(method, url, params, json_body, hdrs)
+        # print(method, url, params, json_body, hdrs)
         while True:
             try:
                 resp = self._sync.request(
@@ -103,7 +103,7 @@ class HTTPTransport:
                 self._sleep(attempt, retry_after)
                 attempt += 1
                 continue
-            print(resp)
+           # print(resp)
             self._raise_if_error(resp)
             return resp
 
