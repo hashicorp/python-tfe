@@ -4,9 +4,10 @@ from ._http import HTTPTransport
 from .config import TFEConfig
 from .resources.organizations import Organizations
 from .resources.projects import Projects
-from .resources.workspaces import Workspaces
-from .resources.state_versions import StateVersions
 from .resources.state_version_outputs import StateVersionOutputs
+from .resources.state_versions import StateVersions
+from .resources.workspaces import Workspaces
+
 
 class TFEClient:
     def __init__(self, config: TFEConfig | None = None):

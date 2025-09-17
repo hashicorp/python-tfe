@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-import time
 import re
-from urllib.parse import urljoin
+import time
 from collections.abc import Mapping
 from typing import Any
+from urllib.parse import urljoin
 
 import anyio
 import httpx
@@ -59,7 +59,7 @@ class HTTPTransport:
         self._async = httpx.AsyncClient(
             http2=http2, timeout=timeout, verify=ca_bundle or verify_tls
         )  # proxies=proxies
-    
+
     def _build_url(self, path: str) -> str:
         # IMPORTANT: don't prefix absolute URLs (hosted_state, signed blobs, etc.)
         if ABSOLUTE_URL_RE.match(path):
@@ -81,7 +81,7 @@ class HTTPTransport:
         if headers:
             hdrs.update(headers)
         attempt = 0
-        print (method, url, params,json_body,hdrs)
+        print(method, url, params, json_body, hdrs)
         while True:
             try:
                 resp = self._sync.request(

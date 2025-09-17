@@ -1,15 +1,14 @@
 from __future__ import annotations
 
-from typing import Any, Optional
-
-from ..utils import valid_string_id
-from ._base import _Service
+from typing import Any
 
 from ..models.state_version_output import (
     StateVersionOutput,
     StateVersionOutputsList,
     StateVersionOutputsListOptions,
 )
+from ..utils import valid_string_id
+from ._base import _Service
 
 
 def _safe_str(v: Any, default: str = "") -> str:
@@ -40,7 +39,9 @@ class StateVersionOutputs(_Service):
         )
 
     def read_current(
-        self, workspace_id: str, options: Optional[StateVersionOutputsListOptions] = None
+        self,
+        workspace_id: str,
+        options: StateVersionOutputsListOptions | None = None,
     ) -> StateVersionOutputsList:
         """
         Read outputs for the workspace's current state version.

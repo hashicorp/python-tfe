@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
-from typing import Any, Optional, Dict
+from typing import Any
 from urllib.parse import urlencode
 
-from ..utils import valid_string_id
-from ._base import _Service
-from ..errors import (
-    ErrStateVersionUploadNotSupported
-)
+from ..errors import NotFound
 
 # Pydantic models for this feature
 from ..models.state_version import (
@@ -20,10 +15,12 @@ from ..models.state_version import (
     StateVersionReadOptions,
 )
 from ..models.state_version_output import (
+    StateVersionOutput,
     StateVersionOutputsList,
     StateVersionOutputsListOptions,
-    StateVersionOutput,
 )
+from ..utils import looks_like_workspace_id, valid_string_id
+from ._base import _Service
 
 
 def _safe_str(v: Any, default: str = "") -> str:
@@ -46,18 +43,33 @@ class StateVersions(_Service):
       - POST /api/v2/state-versions/:id/actions/permanently_delete_backing_data (TFE only)
     """
 
+    def _resolve_workspace_id(self, workspace: str, organization: str | None) -> str:
+        """Accept a workspace ID (ws-xxxxxx) or resolve by name with organization."""
+        if looks_like_workspace_id(workspace):
+            return workspace
+        if not organization:
+            raise ValueError("organization is required when workspace is a name")
+        r = self.t.request(
+            "GET", f"/api/v2/organizations/{organization}/workspaces/{workspace}"
+        )
+        data = r.json().get("data") or {}
+        ws_id = _safe_str(data.get("id"))
+        if not ws_id:
+            raise NotFound(f"workspace '{workspace}' not found in org '{organization}'")
+        return ws_id
+
     # ----------------------------
     # Listing & reading
     # ----------------------------
 
     @staticmethod
-    def _encode_query(params: Dict[str, Any]) -> str:
+    def _encode_query(params: dict[str, Any]) -> str:
         clean = {k: v for k, v in params.items() if v is not None}
         if not clean:
             return ""
         return "?" + urlencode(clean, doseq=True)
 
-    def list(self, options: Optional[StateVersionListOptions] = None) -> StateVersionList:
+    def list(self, options: StateVersionListOptions | None = None) -> StateVersionList:
         """
         GET /state-versions
         Accepts filters for organization and workspace and standard pagination.
@@ -79,7 +91,6 @@ class StateVersions(_Service):
             total_pages=meta.get("pagination", {}).get("total-pages"),
             total_count=meta.get("pagination", {}).get("total-count"),
         )
-
 
     def read(self, state_version_id: str) -> StateVersion:
         """Read a state version by ID."""
@@ -162,20 +173,25 @@ class StateVersions(_Service):
     # ----------------------------
 
     def create(
-        self, workspace_id: str, options: Optional[StateVersionCreateOptions] = None
+        self,
+        workspace: str,
+        options: StateVersionCreateOptions,
+        *,
+        organization: str | None = None,
     ) -> StateVersion:
-        """Create a state version record (server returns signed upload URL)."""
-        if not valid_string_id(workspace_id):
-            raise ValueError("invalid workspace id")
+        """Create a state-version record (returns hosted upload URLs if content omitted)."""
+        ws_id = self._resolve_workspace_id(workspace, organization)
 
-        body = {
-            "data": {
-                "type": "state-versions",
-                "attributes": (options.model_dump(by_alias=True, exclude_none=True) if options else {}),
-            }
-        }
+        attrs = options.model_dump(by_alias=True, exclude_none=True)
+        if not attrs:
+            # API requires attributes; at minimum serial & md5
+            raise ValueError(
+                "state-version create requires attributes (at least serial & md5)"
+            )
+
+        body = {"data": {"type": "state-versions", "attributes": attrs}}
         r = self.t.request(
-            "POST", f"/api/v2/workspaces/{workspace_id}/state-versions", json_body=body
+            "POST", f"/api/v2/workspaces/{ws_id}/state-versions", json_body=body
         )
         d = r.json()["data"]
         attr = d.get("attributes", {}) or {}
@@ -184,41 +200,19 @@ class StateVersions(_Service):
             **{k.replace("-", "_"): v for k, v in attr.items()},
         )
 
-    def upload(self, workspace_id: str, *, raw_state: bytes | None = None, raw_json_state: bytes | None = None,
-               options: Optional[StateVersionCreateOptions] = None) -> StateVersion:
-        """
-        Mirrors go-tfe Upload:
-          1) POST to create (obtain upload URL)
-          2) PUT the raw content to the object store (archivist)
-        """
-        sv = self.create(workspace_id, options or StateVersionCreateOptions())
-        upload_url = sv.hosted_state_upload_url
-        if not upload_url:
-            raise ErrStateVersionUploadNotSupported(
-                message="Server did not return an upload URL for state version",
-                method="PUT", path="(signed upload URL)"
-            )
+    """
+    def upload(
+        self,
+        workspace: str,
+        *,
+        raw_state: bytes | None = None,
+        raw_json_state: bytes | None = None,
+        options: Optional[StateVersionCreateOptions] = None,
+        organization: Optional[str] = None,
+    ) -> StateVersion:
+    # TBD: Implements Upload State Functionality
+    """
 
-        # Choose the content
-        content = raw_json_state if raw_json_state is not None else raw_state
-        if content is None:
-            raise ErrStateVersionUploadNotSupported(message="No state content provided", method="PUT", path=upload_url)
-
-        # Raw PUT to the object store
-        self.t.request(
-            "PUT",
-            upload_url,
-            json_body=None,
-            allow_redirects=True,
-            timeout=120,
-            headers={"Content-Type": "application/octet-stream"},
-            raw_body=content,  # transport should use raw bytes when provided
-            retry_non_idempotent=False,
-        )
-
-        # Read back the created SV to reflect any server-side fields
-        return self.read(sv.id)
-    
     def download(self, state_version_id: str) -> bytes:
         """
         Download the raw state file bytes for a specific state version.
@@ -235,13 +229,16 @@ class StateVersions(_Service):
             # Can happen if SV is missing, not finalized yet, or you lack permissions.
             # Also happens on some older/self-hosted versions if backing data was GC’d.
             from ..errors import NotFound
+
             raise NotFound("download url not available for this state version")
 
         # Download the bytes from the signed Archivist URL (follow redirects).
         # Avoid JSON:API headers here; Accept */* is fine.
-        resp = self.t.request("GET", url, allow_redirects=True, headers={"Accept": "application/json"})
+        resp = self.t.request(
+            "GET", url, allow_redirects=True, headers={"Accept": "application/json"}
+        )
         return resp.content
-    
+
     def download_current(self, workspace_id: str) -> bytes:
         """Download the current state for a workspace."""
         if not valid_string_id(workspace_id):
@@ -251,18 +248,21 @@ class StateVersions(_Service):
         url = sv.hosted_state_download_url
         if not url:
             from ..errors import NotFound
+
             raise NotFound("download url not available for current state")
-        resp = self.t.request("GET", url, allow_redirects=True, headers={"Accept": "*/*"})
+        resp = self.t.request(
+            "GET", url, allow_redirects=True, headers={"Accept": "*/*"}
+        )
         return resp.content
-
-
 
     # ----------------------------
     # Outputs (via state version)
     # ----------------------------
 
     def list_outputs(
-        self, state_version_id: str, options: Optional[StateVersionOutputsListOptions] = None
+        self,
+        state_version_id: str,
+        options: StateVersionOutputsListOptions | None = None,
     ) -> StateVersionOutputsList:
         """List outputs for a given state version (paged)."""
         if not valid_string_id(state_version_id):

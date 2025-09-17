@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import argparse
-import json
 import os
 from pathlib import Path
 
 from tfe import TFEClient, TFEConfig
 from tfe.errors import ErrStateVersionUploadNotSupported
 from tfe.models.state_version import (
-    StateVersionListOptions,
     StateVersionCreateOptions,
     StateVersionCurrentOptions,
+    StateVersionListOptions,
 )
 from tfe.models.state_version_output import StateVersionOutputsListOptions
 
@@ -25,7 +24,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="State Versions demo for python-tfe SDK"
     )
-    parser.add_argument("--address", default=os.getenv("TFE_ADDRESS", "https://app.terraform.io"))
+    parser.add_argument(
+        "--address", default=os.getenv("TFE_ADDRESS", "https://app.terraform.io")
+    )
     parser.add_argument("--token", default=os.getenv("TFE_TOKEN", ""))
     parser.add_argument("--org", required=True, help="Organization name")
     parser.add_argument("--workspace", required=True, help="Workspace name")
@@ -55,30 +56,32 @@ def main():
     for sv in sv_list.items:
         print(f"- {sv.id} | status={sv.status} | created_at={sv.created_at}")
 
-
     # 1) List all state versions across org and workspace filters
     _print_header("Org-scoped listing via /api/v2/state-versions (first page)")
     all_sv = client.state_versions.list(
-        StateVersionListOptions(organization=args.org,workspace=args.workspace,page_size=args.page_size)
+        StateVersionListOptions(
+            organization=args.org, workspace=args.workspace, page_size=args.page_size
+        )
     )
     for sv in all_sv.items:
         print(f"- {sv.id} | status={sv.status} | created_at={sv.created_at}")
-    
+
     # 2) Read the current state version (with outputs included if you want)
     _print_header("Reading current state version")
     current = client.state_versions.read_current_with_options(
-        args.workspace_id,
-        StateVersionCurrentOptions(include=["outputs"])
+        args.workspace_id, StateVersionCurrentOptions(include=["outputs"])
     )
-    print(f"Current SV: {current.id} status={current.status} durl={current.hosted_state_download_url}")
-    
+    print(
+        f"Current SV: {current.id} status={current.status} durl={current.hosted_state_download_url}"
+    )
+
     # 3) (Optional) Download the current state (optional)
     if args.download:
         _print_header(f"Downloading current state to: {args.download}")
         raw = client.state_versions.download(current.id)
         Path(args.download).write_bytes(raw)
         print(f"Wrote {len(raw)} bytes to {args.download}")
-    
+
     # 4) List outputs for the current state version (paged)
     _print_header("Listing outputs (current state version)")
     outs = client.state_versions.list_outputs(
@@ -89,7 +92,7 @@ def main():
     for o in outs.items:
         # Sensitive outputs will have value = None
         print(f"- {o.name}: sensitive={o.sensitive} type={o.type} value={o.value}")
-    
+
     # 5) (Optional) Upload a new state file
     if args.upload:
         _print_header(f"Uploading new state from: {args.upload}")
@@ -108,7 +111,6 @@ def main():
         except ErrStateVersionUploadNotSupported as e:
             # Some older/self-hosted versions don’t support direct upload
             print(f"Upload not supported on this server: {e}")
-
 
 
 if __name__ == "__main__":
