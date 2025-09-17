@@ -103,7 +103,7 @@ class HTTPTransport:
                 self._sleep(attempt, retry_after)
                 attempt += 1
                 continue
-           # print(resp)
+            # print(resp)
             self._raise_if_error(resp)
             return resp
 
