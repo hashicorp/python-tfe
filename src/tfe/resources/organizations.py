@@ -9,7 +9,7 @@ from ..errors import (
     ERR_REQUIRED_EMAIL,
     ERR_REQUIRED_NAME,
 )
-from ..types import (
+from ..types import (  # type: ignore[attr-defined]
     Capacity,
     DataRetentionPolicy,
     DataRetentionPolicyChoice,
@@ -167,7 +167,7 @@ class Organizations(_Service):
         )
         data = r.json()
 
-        from ..types import Pagination, Run, RunStatus
+        from ..types import Pagination, Run, RunStatus  # type: ignore[attr-defined]
 
         runs = []
         for item in data.get("data", []):

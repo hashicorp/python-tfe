@@ -5,6 +5,9 @@ import time
 from collections.abc import Callable
 
 _STRING_ID_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{2,}$")
+_VERSION_PATTERN = re.compile(
+    r"^\d+\.\d+\.\d+(?:-[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)*)?(?:\+[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)*)?$"
+)
 
 
 def poll_until(
@@ -29,3 +32,8 @@ def valid_string(v: str | None) -> bool:
 
 def valid_string_id(v: str | None) -> bool:
     return v is not None and _STRING_ID_PATTERN.match(str(v)) is not None
+
+
+def valid_version(v: str | None) -> bool:
+    """Validate semantic version string."""
+    return v is not None and _VERSION_PATTERN.match(str(v)) is not None

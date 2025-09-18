@@ -4,7 +4,7 @@ import builtins
 from collections.abc import Iterator
 from typing import Any
 
-from ..types import ExecutionMode, Workspace
+from ..types import ExecutionMode, Workspace  # type: ignore[attr-defined]
 from ._base import _Service
 
 
@@ -16,7 +16,7 @@ def _em_safe(v: Any) -> ExecutionMode | None:
     # Only accept strings; map to enum if known, else None
     if not isinstance(v, str):
         return None
-    return ExecutionMode._value2member_map_.get(v)  # type: ignore[return-value]
+    return ExecutionMode._value2member_map_.get(v)
 
 
 def _ws_from(d: dict[str, Any], org: str | None = None) -> Workspace:

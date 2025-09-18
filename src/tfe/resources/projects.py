@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
-from ..types import Project
+from ..types import Project  # type: ignore[attr-defined]
 from ._base import _Service
 
 
