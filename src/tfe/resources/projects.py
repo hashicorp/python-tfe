@@ -104,7 +104,7 @@ class Projects(_Service):
         validate_project_list_options(organization)
 
         path = f"/api/v2/organizations/{organization}/projects"
-        params = {}
+        params: dict[str, str | int] = {}
 
         if options:
             if options.include:
@@ -114,9 +114,9 @@ class Projects(_Service):
             if options.name:
                 params["filter[names]"] = options.name
             if options.page_number:
-                params["page[number]"] = str(options.page_number)
+                params["page[number]"] = options.page_number
             if options.page_size:
-                params["page[size]"] = str(options.page_size)
+                params["page[size]"] = options.page_size
 
         if params:
             items_iter = self._list(path, params=params)

@@ -4,6 +4,7 @@ from ._http import HTTPTransport
 from .config import TFEConfig
 from .resources.organizations import Organizations
 from .resources.projects import Projects
+from .resources.variable import Variables
 from .resources.workspaces import Workspaces
 
 
@@ -26,6 +27,7 @@ class TFEClient:
         )
         self.organizations = Organizations(self._transport)
         self.projects = Projects(self._transport)
+        self.variables = Variables(self._transport)
         self.workspaces = Workspaces(self._transport)
 
     def close(self) -> None:
