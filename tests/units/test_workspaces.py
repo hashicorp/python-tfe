@@ -335,7 +335,7 @@ class TestWorkspaceOperations:
             sample_workspace_response
         )
 
-        project = Project(id="prj-123", name="Test Project")
+        project = Project(id="prj-123", name="Test Project", organization="test-org")
 
         options = WorkspaceCreateOptions(name="project-workspace", project=project)
 
