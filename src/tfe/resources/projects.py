@@ -6,10 +6,13 @@ from collections.abc import Iterator
 from typing import Any
 
 from ..types import (
+    EffectiveTagBinding,
     Project,
+    ProjectAddTagBindingsOptions,
     ProjectCreateOptions,
     ProjectListOptions,
     ProjectUpdateOptions,
+    TagBinding,
 )
 from ..utils import valid_string, valid_string_id
 from ._base import _Service
@@ -260,4 +263,112 @@ class Projects(_Service):
             raise ValueError("Project ID is required and must be valid")
 
         path = f"/api/v2/projects/{project_id}"
+        self.t.request("DELETE", path)
+
+    def list_tag_bindings(self, project_id: str) -> builtins.list[TagBinding]:
+        """List tag bindings for a project"""
+        # Validate inputs
+        if not valid_string_id(project_id):
+            raise ValueError("Project ID is required and must be valid")
+
+        path = f"/api/v2/projects/{project_id}/tag-bindings"
+        response = self.t.request("GET", path)
+        data = response.json()["data"]
+
+        tag_bindings = []
+        for item in data:
+            attr = item.get("attributes", {}) or {}
+            tag_binding = TagBinding(
+                id=_safe_str(item.get("id")),
+                key=_safe_str(attr.get("key")),
+                value=_safe_str(attr.get("value")),
+            )
+            tag_bindings.append(tag_binding)
+
+        return tag_bindings
+
+    def list_effective_tag_bindings(self, project_id: str) -> builtins.list[EffectiveTagBinding]:
+        """List effective tag bindings for a project"""
+        # Validate inputs
+        if not valid_string_id(project_id):
+            raise ValueError("Project ID is required and must be valid")
+
+        path = f"/api/v2/projects/{project_id}/tag-bindings/effective"
+        response = self.t.request("GET", path)
+        data = response.json()["data"]
+
+        effective_tag_bindings = []
+        for item in data:
+            attr = item.get("attributes", {}) or {}
+            links = item.get("links", {}) or {}
+            effective_tag_binding = EffectiveTagBinding(
+                id=_safe_str(item.get("id")),
+                key=_safe_str(attr.get("key")),
+                value=_safe_str(attr.get("value")),
+                links=links,
+            )
+            effective_tag_bindings.append(effective_tag_binding)
+
+        return effective_tag_bindings
+
+    def add_tag_bindings(
+        self, project_id: str, options: ProjectAddTagBindingsOptions
+    ) -> builtins.list[TagBinding]:
+        """Add or update tag bindings on a project
+
+        This endpoint adds key-value tag bindings to an existing project or updates
+        existing tag binding values. It cannot be used to remove tag bindings.
+        This operation is additive.
+
+        Constraints:
+        - A project can have up to 10 tags
+        - Keys can have up to 128 characters
+        - Values can have up to 256 characters
+        - Keys/values support alphanumeric chars and symbols: _, ., =, +, -, @, :
+        - Cannot use hc: and hcp: as key prefixes
+        """
+        # Validate inputs
+        if not valid_string_id(project_id):
+            raise ValueError("Project ID is required and must be valid")
+
+        if not options.tag_bindings:
+            raise ValueError("At least one tag binding is required")
+
+        path = f"/api/v2/projects/{project_id}/tag-bindings"
+
+        # Build payload with tag binding data
+        data_items = []
+        for tag_binding in options.tag_bindings:
+            attributes = {"key": tag_binding.key}
+            if tag_binding.value is not None:
+                attributes["value"] = tag_binding.value
+
+            data_items.append({"type": "tag-bindings", "attributes": attributes})
+
+        payload = {"data": data_items}
+
+        # Use PATCH method as per API documentation
+        response = self.t.request("PATCH", path, json_body=payload)
+        data = response.json()["data"]
+
+        # Parse response into TagBinding objects
+        tag_bindings = []
+        for item in data:
+            attr = item.get("attributes", {}) or {}
+            tag_binding = TagBinding(
+                id=_safe_str(item.get("id")),
+                key=_safe_str(attr.get("key")),
+                value=_safe_str(attr.get("value")),
+            )
+            tag_bindings.append(tag_binding)
+
+        return tag_bindings
+
+    def delete_tag_bindings(self, project_id: str) -> None:
+        """Delete all tag bindings from a project"""
+        # Validate inputs
+        if not valid_string_id(project_id):
+            raise ValueError("Project ID is required and must be valid")
+
+        path = f"/api/v2/projects/{project_id}/tag-bindings"
         self.t.request("DELETE", path)

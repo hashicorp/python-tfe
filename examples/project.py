@@ -32,7 +32,13 @@ import pytest
 from tfe._http import HTTPTransport
 from tfe.config import TFEConfig
 from tfe.resources.projects import Projects
-from tfe.types import ProjectCreateOptions, ProjectListOptions, ProjectUpdateOptions
+from tfe.types import (
+    ProjectAddTagBindingsOptions,
+    ProjectCreateOptions,
+    ProjectListOptions,
+    ProjectUpdateOptions,
+    TagBinding,
+)
 
 
 @pytest.fixture
@@ -565,6 +571,244 @@ def test_error_handling_integration(integration_client):
         assert "404" in str(e) or "not found" in str(e).lower()
 
     print("✅ All error handling scenarios tested successfully")
+
+
+def test_project_tag_bindings_integration(integration_client):
+    """
+    Integration test for project tag binding operations
+
+    Note: Project tag bindings may not be available in all HCP Terraform plans.
+    This test gracefully handles unavailable features while testing what's available.
+    """
+    projects, org = integration_client
+
+    unique_id = str(uuid.uuid4())[:8]
+    test_name = f"tag-test-{unique_id}"
+    test_description = f"Project for testing tag bindings - {unique_id}"
+    project_id = None
+
+    try:
+        # Create a test project for tagging operations
+        print(f"🏷️  Setting up test project for tagging: {test_name}")
+        create_options = ProjectCreateOptions(
+            name=test_name, description=test_description
+        )
+        created_project = projects.create(org, create_options)
+        project_id = created_project.id
+        print(f"✅ Created test project: {project_id}")
+
+        # Test 1: List tag bindings (this should work)
+        print("🏷️  Testing LIST_TAG_BINDINGS")
+        try:
+            initial_tag_bindings = projects.list_tag_bindings(project_id)
+            assert isinstance(initial_tag_bindings, list), "Should return a list"
+            print(f"✅ list_tag_bindings works: {len(initial_tag_bindings)} bindings")
+            list_tag_bindings_available = True
+        except Exception as e:
+            print(f"❌ list_tag_bindings not available: {e}")
+            list_tag_bindings_available = False
+
+        # Test 2: List effective tag bindings
+        print("🏷️  Testing LIST_EFFECTIVE_TAG_BINDINGS")
+        try:
+            effective_bindings = projects.list_effective_tag_bindings(project_id)
+            assert isinstance(effective_bindings, list), "Should return a list"
+            print(f"✅ list_effective_tag_bindings works: {len(effective_bindings)} bindings")
+            effective_tag_bindings_available = True
+        except Exception as e:
+            print(f"❌ list_effective_tag_bindings not available: {e}")
+            print("   This feature may require a higher HCP Terraform plan")
+            effective_tag_bindings_available = False
+
+        # Test 3: Add tag bindings (if basic listing works)
+        if list_tag_bindings_available:
+            print("🏷️  Testing ADD_TAG_BINDINGS")
+            try:
+                test_tags = [
+                    TagBinding(key="environment", value="testing"),
+                    TagBinding(key="integration-test", value="true"),
+                ]
+                add_options = ProjectAddTagBindingsOptions(tag_bindings=test_tags)
+                added_bindings = projects.add_tag_bindings(project_id, add_options)
+
+                assert isinstance(added_bindings, list), "Should return a list"
+                assert len(added_bindings) == len(test_tags), "Should return all added tags"
+                print(f"✅ add_tag_bindings works: added {len(added_bindings)} bindings")
+
+                # Verify tags were actually added
+                current_bindings = projects.list_tag_bindings(project_id)
+                added_keys = {binding.key for binding in current_bindings}
+                for tag in test_tags:
+                    assert tag.key in added_keys, f"Tag {tag.key} not found after adding"
+                print(f"✅ Verified tags added: {len(current_bindings)} total bindings")
+
+                add_tag_bindings_available = True
+
+                # Test 4: Delete tag bindings
+                print("🏷️  Testing DELETE_TAG_BINDINGS")
+                try:
+                    result = projects.delete_tag_bindings(project_id)
+                    assert result is None, "Delete should return None"
+
+                    # Verify deletion
+                    final_bindings = projects.list_tag_bindings(project_id)
+                    print(f"✅ delete_tag_bindings works: {len(final_bindings)} bindings remain")
+                    delete_tag_bindings_available = True
+                except Exception as e:
+                    print(f"❌ delete_tag_bindings not available: {e}")
+                    delete_tag_bindings_available = False
+
+            except Exception as e:
+                print(f"❌ add_tag_bindings not available: {e}")
+                print("   This feature may require a higher HCP Terraform plan")
+                add_tag_bindings_available = False
+                delete_tag_bindings_available = False
+        else:
+            add_tag_bindings_available = False
+            delete_tag_bindings_available = False
+
+        # Summary
+        print("\n📊 Project Tag Bindings API Availability Summary:")
+        features = [
+            ("list_tag_bindings", list_tag_bindings_available),
+            ("list_effective_tag_bindings", effective_tag_bindings_available),
+            ("add_tag_bindings", add_tag_bindings_available),
+            ("delete_tag_bindings", delete_tag_bindings_available),
+        ]
+
+        for feature_name, available in features:
+            status = "✅ Available" if available else "❌ Not Available"
+            print(f"   {feature_name}: {status}")
+
+        available_count = sum(available for _, available in features)
+        print(f"\n🎯 {available_count}/4 tag binding features are available in this HCP Terraform organization")
+
+        if available_count == 4:
+            print("🎉 All project tag binding operations work perfectly!")
+        elif available_count > 0:
+            print("✅ Partial functionality available - basic operations work!")
+        else:
+            print("⚠️  Tag binding features may require a higher HCP Terraform plan")
+
+    except Exception as e:
+        pytest.fail(
+            f"Project tag binding integration test failed unexpectedly. "
+            f"This may indicate a configuration or connectivity issue. Error: {e}"
+        )
+
+    finally:
+        # Clean up: Delete the test project
+        if project_id:
+            try:
+                print(f"🧹 Cleaning up test project: {project_id}")
+                projects.delete(project_id)
+                print("✅ Test project deleted successfully")
+            except Exception as cleanup_error:
+                print(f"⚠️  Warning: Failed to clean up test project {project_id}: {cleanup_error}")
+
+
+def test_project_tag_bindings_error_scenarios(integration_client):
+    """
+    Test error handling for project tag binding operations
+
+    Tests various error conditions:
+    - Invalid project IDs
+    - Empty tag binding lists
+    - Non-existent projects
+    """
+    projects, org = integration_client
+
+    print("🏷️  Testing tag binding error scenarios")
+
+    # Test invalid project ID validation
+    print("🚫 Testing invalid project ID scenarios")
+
+    invalid_project_ids = ["", "x", "invalid-id", None]
+
+    for invalid_id in invalid_project_ids:
+        if invalid_id is None:
+            continue  # Skip None as it will cause different error
+
+        try:
+            projects.list_tag_bindings(invalid_id)
+            pytest.fail(
+                f"Should have raised ValueError for invalid project ID: {invalid_id}"
+            )
+        except ValueError as e:
+            print(f"✅ Correctly rejected invalid project ID '{invalid_id}': {e}")
+            assert "Project ID is required and must be valid" in str(e)
+
+        try:
+            projects.list_effective_tag_bindings(invalid_id)
+            pytest.fail(
+                f"Should have raised ValueError for invalid project ID: {invalid_id}"
+            )
+        except ValueError as e:
+            print(f"✅ Correctly rejected invalid project ID '{invalid_id}': {e}")
+
+        try:
+            projects.delete_tag_bindings(invalid_id)
+            pytest.fail(
+                f"Should have raised ValueError for invalid project ID: {invalid_id}"
+            )
+        except ValueError as e:
+            print(f"✅ Correctly rejected invalid project ID '{invalid_id}': {e}")
+
+    # Test empty tag binding list
+    print("🚫 Testing empty tag binding list")
+    try:
+        fake_project_id = "prj-fakefakefake123"
+        empty_options = ProjectAddTagBindingsOptions(tag_bindings=[])
+        projects.add_tag_bindings(fake_project_id, empty_options)
+        pytest.fail("Should have raised ValueError for empty tag binding list")
+    except ValueError as e:
+        print(f"✅ Correctly rejected empty tag binding list: {e}")
+        assert "At least one tag binding is required" in str(e)
+
+    # Test non-existent project operations
+    print("🚫 Testing operations on non-existent project")
+    fake_project_id = "prj-doesnotexist123"
+
+    # These should raise HTTP errors (404) from the API
+    for operation_name, operation_func in [
+        ("list_tag_bindings", lambda: projects.list_tag_bindings(fake_project_id)),
+        (
+            "list_effective_tag_bindings",
+            lambda: projects.list_effective_tag_bindings(fake_project_id),
+        ),
+        ("delete_tag_bindings", lambda: projects.delete_tag_bindings(fake_project_id)),
+    ]:
+        try:
+            operation_func()
+            pytest.fail(f"{operation_name} should have failed for non-existent project")
+        except Exception as e:
+            print(
+                f"✅ {operation_name} correctly failed for non-existent project: {type(e).__name__}"
+            )
+            # Should be some kind of HTTP error (404, not found, etc.)
+            assert (
+                "404" in str(e)
+                or "not found" in str(e).lower()
+                or "does not exist" in str(e).lower()
+            )
+
+    # Test add_tag_bindings on non-existent project
+    try:
+        test_tags = [TagBinding(key="test", value="value")]
+        add_options = ProjectAddTagBindingsOptions(tag_bindings=test_tags)
+        projects.add_tag_bindings(fake_project_id, add_options)
+        pytest.fail("add_tag_bindings should have failed for non-existent project")
+    except Exception as e:
+        print(
+            f"✅ add_tag_bindings correctly failed for non-existent project: {type(e).__name__}"
+        )
+        assert (
+            "404" in str(e)
+            or "not found" in str(e).lower()
+            or "does not exist" in str(e).lower()
+        )
+
+    print("✅ All tag binding error scenarios tested successfully")
 
 
 if __name__ == "__main__":

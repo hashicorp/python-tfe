@@ -147,6 +147,12 @@ class ProjectUpdateOptions(BaseModel):
     description: str | None = None
 
 
+class ProjectAddTagBindingsOptions(BaseModel):
+    """Options for adding tag bindings to a project"""
+
+    tag_bindings: list[TagBinding] = Field(default_factory=list)
+
+
 class Workspace(BaseModel):
     id: str
     name: str
