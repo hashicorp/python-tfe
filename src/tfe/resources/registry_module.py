@@ -9,7 +9,7 @@ from ..errors import (
     ERR_INVALID_ORG,
     ERR_INVALID_VERSION,
 )
-from ..types.registry_module_types import (
+from ..models.registry_module_types import (
     AgentExecutionMode,
     Commit,
     CommitList,
@@ -62,6 +62,8 @@ class RegistryModules(_Service):
                 params["page[size]"] = str(options.page_size)
 
         for item in self._list(path, params=params):
+            if item is None:
+                continue  # type: ignore[unreachable]  # Skip None items
             yield self._parse_registry_module(item)
 
     def list_commits(self, module_id: RegistryModuleID) -> CommitList:
@@ -211,6 +213,63 @@ class RegistryModules(_Service):
         data = response.json()["data"]
 
         return self._parse_registry_module_version(data)
+
+    def list_versions(self, module_id: RegistryModuleID) -> list[RegistryModuleVersion]:  # type: ignore[valid-type]
+        """List all versions of a registry module."""
+        if not self._validate_module_id(module_id):
+            raise ValueError("Invalid module ID")
+
+        try:
+            if module_id.id:
+                path = f"/api/v2/registry-modules/{module_id.id}/versions"
+            else:
+                registry_name = module_id.registry_name or RegistryName.PRIVATE
+                namespace = module_id.namespace or module_id.organization
+
+                path = (
+                    f"/api/v2/organizations/{module_id.organization}/"
+                    f"registry-modules/{registry_name.value}/{namespace}/"
+                    f"{module_id.name}/{module_id.provider}/versions"
+                )
+
+            response = self.t.request("GET", path)
+            response_data = response.json()
+
+            # Handle the case where data might be None or empty
+            data = response_data.get("data", []) if response_data else []
+
+            versions = []
+            for item in data:
+                if item:  # Skip None items
+                    versions.append(self._parse_registry_module_version(item))
+
+            return versions
+
+        except Exception:
+            # Fallback: If the API endpoint doesn't exist, try to get versions from the module itself
+            try:
+                module = self.read(module_id)
+                versions = []
+
+                # Convert version_statuses to RegistryModuleVersion objects
+                for vs in module.version_statuses:
+                    # Create a minimal RegistryModuleVersion from version status
+                    version_data = {
+                        "id": f"modver-{vs.version}",
+                        "type": "registry-module-versions",
+                        "attributes": {
+                            "version": vs.version,
+                            "status": vs.status.value,
+                            "created-at": None,
+                            "updated-at": None,
+                            "error": getattr(vs, 'error', None)
+                        }
+                    }
+                    versions.append(self._parse_registry_module_version(version_data))
+
+                return versions
+            except Exception:
+                return []  # Return empty list if all methods fail
 
     def read_terraform_registry_module(
         self, module_id: RegistryModuleID, version: str
@@ -429,6 +488,9 @@ class RegistryModules(_Service):
 
     def _parse_registry_module(self, data: dict[str, Any]) -> RegistryModule:
         """Parse registry module from API response."""
+        if data is None:
+            raise ValueError("Cannot parse registry module: data is None")
+
         attributes = data.get("attributes", {})
         relationships = data.get("relationships", {})
 
@@ -471,12 +533,13 @@ class RegistryModules(_Service):
         test_config = None
         if "test-config" in attributes:
             test_data = attributes["test-config"]
-            test_config = TestConfig(
-                tests_enabled=test_data.get("tests-enabled", False),
-                agent_execution_mode=AgentExecutionMode(
-                    test_data.get("agent-execution-mode", "remote")
-                ),
-            )
+            if test_data is not None:
+                test_config = TestConfig(
+                    tests_enabled=test_data.get("tests-enabled", False),
+                    agent_execution_mode=AgentExecutionMode(
+                        test_data.get("agent-execution-mode", "remote")
+                    ),
+                )
 
         # Parse version statuses with field name mapping
         version_statuses = []

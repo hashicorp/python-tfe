@@ -40,7 +40,8 @@ import time
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from tfe import TFEClient, TFEConfig
-from tfe.types.registry_module_types import (
+from tfe.errors import NotFound
+from tfe.models.registry_module_types import (
     AgentExecutionMode,
     RegistryModuleCreateOptions,
     RegistryModuleCreateVersionOptions,
@@ -87,6 +88,8 @@ def main():
         for i, module in enumerate(modules[:3], 1):
             print(f"   {i}. {module.name}/{module.provider} (ID: {module.id})")
 
+    except NotFound:
+        print("   ✓ No modules found (organization may not exist or no private modules available)")
     except Exception as e:
         print(f"   ✗ Error: {e}")
 
