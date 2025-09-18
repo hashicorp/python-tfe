@@ -77,3 +77,166 @@ ERR_AGENT_POOL_NOT_REQUIRED_FOR_REMOTE_EXECUTION = (
     "agent pool not required for remote execution"
 )
 ERR_INVALID_MODULE_ID = "invalid module ID"
+# Workspaces
+ERR_INVALID_WORKSPACE_ID = "invalid workspace ID"
+ERR_INVALID_VARIABLE_ID = "invalid variable ID"
+ERR_REQUIRED_KEY = "key is required"
+ERR_REQUIRED_CATEGORY = "category is required"
+
+
+class WorkspaceNotFound(NotFound): ...
+
+
+class WorkspaceNameConflict(ValidationError): ...
+
+
+class WorkspaceLocked(TFEError): ...
+
+
+class WorkspaceLockedStateVersionStillPending(TFEError): ...
+
+
+# Workspace validation errors
+class WorkspaceValidationError(ValidationError):
+    """Base class for workspace validation errors."""
+
+    pass
+
+
+class RequiredNameError(WorkspaceValidationError):
+    """Raised when workspace name is required but not provided."""
+
+    def __init__(self) -> None:
+        super().__init__("name is required")
+
+
+class InvalidNameError(WorkspaceValidationError):
+    """Raised when workspace name is invalid."""
+
+    def __init__(self) -> None:
+        super().__init__("invalid value for name")
+
+
+class UnsupportedOperationsError(WorkspaceValidationError):
+    """Raised when operations is specified with execution mode."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "operations is deprecated and cannot be specified when execution mode is used"
+        )
+
+
+class RequiredAgentModeError(WorkspaceValidationError):
+    """Raised when agent pool ID is specified without agent execution mode."""
+
+    def __init__(self) -> None:
+        super().__init__("specifying an agent pool ID requires 'agent' execution mode")
+
+
+class RequiredAgentPoolIDError(WorkspaceValidationError):
+    """Raised when agent execution mode is specified without agent pool ID."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "'agent' execution mode requires an agent pool ID to be specified"
+        )
+
+
+class UnsupportedBothTriggerPatternsAndPrefixesError(WorkspaceValidationError):
+    """Raised when both trigger patterns and prefixes are specified."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            '"TriggerPatterns" and "TriggerPrefixes" cannot be populated at the same time'
+        )
+
+
+class UnsupportedBothTagsRegexAndTriggerPatternsError(WorkspaceValidationError):
+    """Raised when both tags regex and trigger patterns are specified."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            '"TagsRegex" and "TriggerPatterns" cannot be populated at the same time'
+        )
+
+
+class UnsupportedBothTagsRegexAndTriggerPrefixesError(WorkspaceValidationError):
+    """Raised when both tags regex and trigger prefixes are specified."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            '"TagsRegex" and "TriggerPrefixes" cannot be populated at the same time'
+        )
+
+
+class UnsupportedBothTagsRegexAndFileTriggersEnabledError(WorkspaceValidationError):
+    """Raised when both tags regex and file triggers are enabled."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            '"TagsRegex" cannot be populated when "FileTriggersEnabled" is true'
+        )
+
+
+# Parameter validation errors
+class InvalidOrgError(WorkspaceValidationError):
+    """Raised when organization parameter is invalid."""
+
+    def __init__(self) -> None:
+        super().__init__("invalid value for organization")
+
+
+class InvalidWorkspaceIDError(WorkspaceValidationError):
+    """Raised when workspace ID parameter is invalid."""
+
+    def __init__(self) -> None:
+        super().__init__("invalid value for workspace ID")
+
+
+class InvalidWorkspaceValueError(WorkspaceValidationError):
+    """Raised when workspace name parameter is invalid."""
+
+    def __init__(self) -> None:
+        super().__init__("invalid value for workspace")
+
+
+class RequiredSSHKeyIDError(WorkspaceValidationError):
+    """Raised when SSH key ID parameter is required but not provided."""
+
+    def __init__(self) -> None:
+        super().__init__("SSH key ID is required")
+
+
+class InvalidSSHKeyIDError(WorkspaceValidationError):
+    """Raised when SSH key ID parameter is invalid."""
+
+    def __init__(self) -> None:
+        super().__init__("invalid value for SSH key ID")
+
+
+class WorkspaceRequiredError(WorkspaceValidationError):
+    """Raised when workspace parameter is required but not provided."""
+
+    def __init__(self) -> None:
+        super().__init__("workspace is required")
+
+
+class WorkspaceMinimumLimitError(WorkspaceValidationError):
+    """Raised when at least one workspace is required but not provided."""
+
+    def __init__(self) -> None:
+        super().__init__("must provide at least one workspace")
+
+
+class MissingTagIdentifierError(WorkspaceValidationError):
+    """Raised when tag identifier is missing."""
+
+    def __init__(self) -> None:
+        super().__init__("must specify at least one tag by ID or name")
+
+
+class MissingTagBindingIdentifierError(WorkspaceValidationError):
+    """Raised when tag binding identifier is missing."""
+
+    def __init__(self) -> None:
+        super().__init__("TagBindings are required")
