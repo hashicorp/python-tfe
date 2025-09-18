@@ -262,8 +262,8 @@ class RegistryModules(_Service):
                             "status": vs.status.value,
                             "created-at": None,
                             "updated-at": None,
-                            "error": getattr(vs, 'error', None)
-                        }
+                            "error": getattr(vs, "error", None),
+                        },
                     }
                     versions.append(self._parse_registry_module_version(version_data))
 

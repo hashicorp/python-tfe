@@ -16,7 +16,7 @@ from ..errors import (
     WorkspaceMinimumLimitError,
     WorkspaceRequiredError,
 )
-from ..types import (  # type: ignore[attr-defined]
+from ..types import (
     DataRetentionPolicy,
     DataRetentionPolicyChoice,
     DataRetentionPolicyDeleteOlder,
@@ -69,7 +69,8 @@ def _em_safe(v: Any) -> ExecutionMode | None:
     # Only accept strings; map to enum if known, else None
     if not isinstance(v, str):
         return None
-    return ExecutionMode._value2member_map_.get(v)
+    result = ExecutionMode._value2member_map_.get(v)
+    return result if isinstance(result, ExecutionMode) else None
 
 
 def _ws_from(d: dict[str, Any], org: str | None = None) -> Workspace:

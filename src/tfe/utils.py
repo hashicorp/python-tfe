@@ -15,7 +15,7 @@ from .errors import (
     UnsupportedBothTriggerPatternsAndPrefixesError,
     UnsupportedOperationsError,
 )
-from .types import (  # type: ignore[attr-defined]
+from .types import (
     VCSRepo,
     WorkspaceCreateOptions,
     WorkspaceUpdateOptions,

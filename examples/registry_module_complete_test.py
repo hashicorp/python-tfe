@@ -89,7 +89,9 @@ def main():
             print(f"   {i}. {module.name}/{module.provider} (ID: {module.id})")
 
     except NotFound:
-        print("   ✓ No modules found (organization may not exist or no private modules available)")
+        print(
+            "   ✓ No modules found (organization may not exist or no private modules available)"
+        )
     except Exception as e:
         print(f"   ✗ Error: {e}")
 

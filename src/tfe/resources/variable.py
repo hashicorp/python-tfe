@@ -9,7 +9,7 @@ from ..errors import (
     ERR_REQUIRED_CATEGORY,
     ERR_REQUIRED_KEY,
 )
-from ..types import (  # type: ignore[attr-defined]
+from ..types import (
     Variable,
     VariableCreateOptions,
     VariableListOptions,
