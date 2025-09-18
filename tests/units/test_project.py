@@ -21,9 +21,7 @@ class TestProjects:
     def test_add_tag_bindings_with_none_value(self):
         """Test adding tag bindings with None value"""
         # Prepare test data with None value
-        tag_bindings = [
-            TagBinding(key="flag", value=None)
-        ]
+        tag_bindings = [TagBinding(key="flag", value=None)]
         options = ProjectAddTagBindingsOptions(tag_bindings=tag_bindings)
 
         # Mock API response
@@ -33,10 +31,7 @@ class TestProjects:
                 {
                     "id": "tb-flag123",
                     "type": "tag-bindings",
-                    "attributes": {
-                        "key": "flag",
-                        "value": None
-                    }
+                    "attributes": {"key": "flag", "value": None},
                 }
             ]
         }
@@ -50,14 +45,14 @@ class TestProjects:
             "data": [
                 {
                     "type": "tag-bindings",
-                    "attributes": {"key": "flag"}  # No value field
+                    "attributes": {"key": "flag"},  # No value field
                 }
             ]
         }
         self.mock_transport.request.assert_called_once_with(
             "PATCH",
             f"/api/v2/projects/{self.project_id}/tag-bindings",
-            json_body=expected_payload
+            json_body=expected_payload,
         )
 
     def test_projects_service_init(self):

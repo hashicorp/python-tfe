@@ -287,7 +287,9 @@ class Projects(_Service):
 
         return tag_bindings
 
-    def list_effective_tag_bindings(self, project_id: str) -> builtins.list[EffectiveTagBinding]:
+    def list_effective_tag_bindings(
+        self, project_id: str
+    ) -> builtins.list[EffectiveTagBinding]:
         """List effective tag bindings for a project"""
         # Validate inputs
         if not valid_string_id(project_id):

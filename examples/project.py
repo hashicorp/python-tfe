@@ -613,7 +613,9 @@ def test_project_tag_bindings_integration(integration_client):
         try:
             effective_bindings = projects.list_effective_tag_bindings(project_id)
             assert isinstance(effective_bindings, list), "Should return a list"
-            print(f"✅ list_effective_tag_bindings works: {len(effective_bindings)} bindings")
+            print(
+                f"✅ list_effective_tag_bindings works: {len(effective_bindings)} bindings"
+            )
             effective_tag_bindings_available = True
         except Exception as e:
             print(f"❌ list_effective_tag_bindings not available: {e}")
@@ -632,14 +634,20 @@ def test_project_tag_bindings_integration(integration_client):
                 added_bindings = projects.add_tag_bindings(project_id, add_options)
 
                 assert isinstance(added_bindings, list), "Should return a list"
-                assert len(added_bindings) == len(test_tags), "Should return all added tags"
-                print(f"✅ add_tag_bindings works: added {len(added_bindings)} bindings")
+                assert len(added_bindings) == len(test_tags), (
+                    "Should return all added tags"
+                )
+                print(
+                    f"✅ add_tag_bindings works: added {len(added_bindings)} bindings"
+                )
 
                 # Verify tags were actually added
                 current_bindings = projects.list_tag_bindings(project_id)
                 added_keys = {binding.key for binding in current_bindings}
                 for tag in test_tags:
-                    assert tag.key in added_keys, f"Tag {tag.key} not found after adding"
+                    assert tag.key in added_keys, (
+                        f"Tag {tag.key} not found after adding"
+                    )
                 print(f"✅ Verified tags added: {len(current_bindings)} total bindings")
 
                 add_tag_bindings_available = True
@@ -652,7 +660,9 @@ def test_project_tag_bindings_integration(integration_client):
 
                     # Verify deletion
                     final_bindings = projects.list_tag_bindings(project_id)
-                    print(f"✅ delete_tag_bindings works: {len(final_bindings)} bindings remain")
+                    print(
+                        f"✅ delete_tag_bindings works: {len(final_bindings)} bindings remain"
+                    )
                     delete_tag_bindings_available = True
                 except Exception as e:
                     print(f"❌ delete_tag_bindings not available: {e}")
@@ -681,7 +691,9 @@ def test_project_tag_bindings_integration(integration_client):
             print(f"   {feature_name}: {status}")
 
         available_count = sum(available for _, available in features)
-        print(f"\n🎯 {available_count}/4 tag binding features are available in this HCP Terraform organization")
+        print(
+            f"\n🎯 {available_count}/4 tag binding features are available in this HCP Terraform organization"
+        )
 
         if available_count == 4:
             print("🎉 All project tag binding operations work perfectly!")
@@ -704,7 +716,9 @@ def test_project_tag_bindings_integration(integration_client):
                 projects.delete(project_id)
                 print("✅ Test project deleted successfully")
             except Exception as cleanup_error:
-                print(f"⚠️  Warning: Failed to clean up test project {project_id}: {cleanup_error}")
+                print(
+                    f"⚠️  Warning: Failed to clean up test project {project_id}: {cleanup_error}"
+                )
 
 
 def test_project_tag_bindings_error_scenarios(integration_client):
