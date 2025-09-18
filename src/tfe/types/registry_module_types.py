@@ -87,8 +87,8 @@ class RegistryModulePermissions(BaseModel):
     can_retry: bool
 
 
-class VCSRepo(BaseModel):
-    """VCS repository configuration."""
+class RegistryModuleVCSRepo(BaseModel):
+    """VCS repository configuration for registry modules."""
 
     branch: str | None = None
     display_identifier: str | None = None
@@ -101,6 +101,7 @@ class VCSRepo(BaseModel):
     tags: bool | None = None
     source_directory: str | None = None
     tag_prefix: str | None = None
+    organization_name: str | None = None
 
 
 class TestConfig(BaseModel):
@@ -132,7 +133,7 @@ class RegistryModule(BaseModel):
     publishing_mechanism: PublishingMechanism | None = None
     status: RegistryModuleStatus | None = None
     test_config: TestConfig | None = None
-    vcs_repo: VCSRepo | None = None
+    vcs_repo: RegistryModuleVCSRepo | None = None
     version_statuses: list[RegistryModuleVersionStatuses] = Field(default_factory=list)
     created_at: str | None = None
     updated_at: str | None = None

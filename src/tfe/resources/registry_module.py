@@ -21,12 +21,12 @@ from ..types.registry_module_types import (
     RegistryModuleListOptions,
     RegistryModulePermissions,
     RegistryModuleUpdateOptions,
+    RegistryModuleVCSRepo,
     RegistryModuleVersion,
     RegistryModuleVersionStatuses,
     RegistryName,
     TerraformRegistryModule,
     TestConfig,
-    VCSRepo,
 )
 from ..utils import valid_string, valid_string_id, valid_version
 from ._base import _Service
@@ -453,7 +453,7 @@ class RegistryModules(_Service):
         vcs_repo = None
         if "vcs-repo" in attributes:
             vcs_data = attributes["vcs-repo"]
-            vcs_repo = VCSRepo(
+            vcs_repo = RegistryModuleVCSRepo(
                 branch=vcs_data.get("branch"),
                 display_identifier=vcs_data.get("display-identifier"),
                 identifier=vcs_data.get("identifier"),
