@@ -19,7 +19,13 @@ class _Service:
             p.setdefault("page[number]", page)
             p.setdefault("page[size]", 100)
             r = self.t.request("GET", path, params=p)
-            data = r.json().get("data", [])
+
+            # Handle cases where r.json() returns None or is not a dict
+            json_response = r.json()
+            if json_response is None:
+                json_response = {}
+
+            data = json_response.get("data", [])
             yield from data
             if len(data) < p["page[size]"]:
                 break

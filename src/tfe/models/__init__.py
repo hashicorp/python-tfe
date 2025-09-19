@@ -1,0 +1,137 @@
+"""Types package for TFE client."""
+
+# Import all types from the main types module by using importlib to avoid circular imports
+import importlib.util
+import os
+
+# Re-export all registry module types
+from .registry_module_types import (
+    AgentExecutionMode,
+    Commit,
+    CommitList,
+    Input,
+    Output,
+    ProviderDependency,
+    PublishingMechanism,
+    RegistryModule,
+    RegistryModuleCreateOptions,
+    RegistryModuleCreateVersionOptions,
+    RegistryModuleCreateWithVCSConnectionOptions,
+    RegistryModuleID,
+    RegistryModuleList,
+    RegistryModuleListIncludeOpt,
+    RegistryModuleListOptions,
+    RegistryModulePermissions,
+    RegistryModuleStatus,
+    RegistryModuleUpdateOptions,
+    RegistryModuleVCSRepo,
+    RegistryModuleVCSRepoOptions,
+    RegistryModuleVCSRepoUpdateOptions,
+    RegistryModuleVersion,
+    RegistryModuleVersionStatus,
+    RegistryModuleVersionStatuses,
+    RegistryName,
+    Resource,
+    Root,
+    TerraformRegistryModule,
+    TestConfig,
+)
+
+# Define what should be available when importing with *
+__all__ = [
+    # Registry module types
+    "AgentExecutionMode",
+    "Commit",
+    "CommitList",
+    "Input",
+    "Output",
+    "ProviderDependency",
+    "PublishingMechanism",
+    "RegistryModule",
+    "RegistryModuleCreateOptions",
+    "RegistryModuleCreateVersionOptions",
+    "RegistryModuleCreateWithVCSConnectionOptions",
+    "RegistryModuleID",
+    "RegistryModuleList",
+    "RegistryModuleListIncludeOpt",
+    "RegistryModuleListOptions",
+    "RegistryModulePermissions",
+    "RegistryModuleStatus",
+    "RegistryModuleUpdateOptions",
+    "RegistryModuleVCSRepo",
+    "RegistryModuleVCSRepoOptions",
+    "RegistryModuleVCSRepoUpdateOptions",
+    "RegistryModuleVersion",
+    "RegistryModuleVersionStatus",
+    "RegistryModuleVersionStatuses",
+    "RegistryName",
+    "Resource",
+    "Root",
+    "TestConfig",
+    "TerraformRegistryModule",
+    # Main types from types.py (will be dynamically added below)
+    "Capacity",
+    "DataRetentionPolicy",
+    "DataRetentionPolicyChoice",
+    "DataRetentionPolicyDeleteOlder",
+    "DataRetentionPolicyDeleteOlderSetOptions",
+    "DataRetentionPolicyDontDelete",
+    "DataRetentionPolicyDontDeleteSetOptions",
+    "DataRetentionPolicySetOptions",
+    "EffectiveTagBinding",
+    "Entitlements",
+    "ExecutionMode",
+    "LockedByChoice",
+    "Organization",
+    "OrganizationCreateOptions",
+    "OrganizationUpdateOptions",
+    "Pagination",
+    "Project",
+    "ReadRunQueueOptions",
+    "Run",
+    "RunQueue",
+    "RunStatus",
+    "Tag",
+    "TagBinding",
+    "TagList",
+    "Variable",
+    "VariableCreateOptions",
+    "VariableListOptions",
+    "VariableUpdateOptions",
+    "VCSRepo",
+    "Workspace",
+    "WorkspaceActions",
+    "WorkspaceAddRemoteStateConsumersOptions",
+    "WorkspaceAddTagBindingsOptions",
+    "WorkspaceAddTagsOptions",
+    "WorkspaceAssignSSHKeyOptions",
+    "WorkspaceCreateOptions",
+    "WorkspaceIncludeOpt",
+    "WorkspaceList",
+    "WorkspaceListOptions",
+    "WorkspaceListRemoteStateConsumersOptions",
+    "WorkspaceLockOptions",
+    "WorkspaceOutputs",
+    "WorkspacePermissions",
+    "WorkspaceReadOptions",
+    "WorkspaceRemoveRemoteStateConsumersOptions",
+    "WorkspaceRemoveTagsOptions",
+    "WorkspaceRemoveVCSConnectionOptions",
+    "WorkspaceSettingOverwrites",
+    "WorkspaceSource",
+    "WorkspaceTagListOptions",
+    "WorkspaceUpdateOptions",
+    "WorkspaceUpdateRemoteStateConsumersOptions",
+]
+
+# Load the main types.py file that's at the same level as this types/ directory
+types_py_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "types.py")
+spec = importlib.util.spec_from_file_location("main_types", types_py_path)
+if spec is not None and spec.loader is not None:
+    main_types = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(main_types)
+
+    # Re-export all main types
+    for name in dir(main_types):
+        if not name.startswith("_"):
+            globals()[name] = getattr(main_types, name)
