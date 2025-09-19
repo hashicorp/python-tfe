@@ -80,6 +80,7 @@ def encode_query(params: Mapping[str, Any] | None) -> str:
         parts.append(f"{k}={sv}")
     return ("?" + "&".join(parts)) if parts else ""
 
+
 def valid_version(v: str | None) -> bool:
     """Validate semantic version string."""
     return v is not None and _VERSION_PATTERN.match(str(v)) is not None
@@ -196,4 +197,3 @@ def validate_workspace_update_options(options: WorkspaceUpdateOptions) -> None:
 
         if options.file_triggers_enabled is not None and options.file_triggers_enabled:
             raise UnsupportedBothTagsRegexAndFileTriggersEnabledError()
-

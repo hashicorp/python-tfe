@@ -2,12 +2,11 @@ from __future__ import annotations
 
 from ._http import HTTPTransport
 from .config import TFEConfig
-
 from .resources.organizations import Organizations
 from .resources.projects import Projects
+from .resources.registry_module import RegistryModules
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
-from .resources.registry_module import RegistryModules
 from .resources.variable import Variables
 from .resources.workspaces import Workspaces
 
