@@ -27,7 +27,7 @@ class _Service:
 
             data = json_response.get("data", [])
             yield from data
-            if len(data) < p["page[size]"]:
+            if len(data) < int(p["page[size]"]):
                 break
             page += 1
 

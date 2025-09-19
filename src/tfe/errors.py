@@ -106,13 +106,6 @@ class WorkspaceValidationError(ValidationError):
     pass
 
 
-class RequiredNameError(WorkspaceValidationError):
-    """Raised when workspace name is required but not provided."""
-
-    def __init__(self) -> None:
-        super().__init__("name is required")
-
-
 class InvalidNameError(WorkspaceValidationError):
     """Raised when workspace name is invalid."""
 
@@ -182,20 +175,6 @@ class UnsupportedBothTagsRegexAndFileTriggersEnabledError(WorkspaceValidationErr
 
 
 # Parameter validation errors
-class InvalidOrgError(WorkspaceValidationError):
-    """Raised when organization parameter is invalid."""
-
-    def __init__(self) -> None:
-        super().__init__("invalid value for organization")
-
-
-class InvalidWorkspaceIDError(WorkspaceValidationError):
-    """Raised when workspace ID parameter is invalid."""
-
-    def __init__(self) -> None:
-        super().__init__("invalid value for workspace ID")
-
-
 class InvalidWorkspaceValueError(WorkspaceValidationError):
     """Raised when workspace name parameter is invalid."""
 
@@ -243,3 +222,94 @@ class MissingTagBindingIdentifierError(WorkspaceValidationError):
 
     def __init__(self) -> None:
         super().__init__("TagBindings are required")
+
+
+class InvalidOrgError(InvalidValues):
+    """Raised when an invalid run task ID is provided."""
+
+    def __init__(self, message: str = "invalid value for organization"):
+        super().__init__(message)
+
+
+class InvalidWorkspaceIDError(InvalidValues):
+    """Raised when an invalid run workspace ID is provided."""
+
+    def __init__(self, message: str = "invalid value for workspace ID"):
+        super().__init__(message)
+
+
+class RequiredNameError(RequiredFieldMissing):
+    """Raised when a required name field is missing."""
+
+    def __init__(self, message: str = "name is required"):
+        super().__init__(message)
+
+
+# Run Task errors
+class InvalidRunTaskIDError(InvalidValues):
+    """Raised when an invalid run task ID is provided."""
+
+    def __init__(self, message: str = "invalid value for run task ID"):
+        super().__init__(message)
+
+
+class InvalidRunTaskNameError(InvalidValues):
+    """Raised when an invalid run task name is provided."""
+
+    pass
+
+
+class InvalidRunTaskURLError(InvalidValues):
+    """Raised when an invalid run task URL is provided."""
+
+    def __init__(self, message: str = "invalid url for run task URL"):
+        super().__init__(message)
+
+
+class InvalidRunTaskCategoryError(InvalidValues):
+    """Raised when an invalid run task category is provided."""
+
+    def __init__(self, message: str = 'category must be "task"'):
+        super().__init__(message)
+
+
+# Run Trigger errors
+class RequiredRunTriggerListOpsError(RequiredFieldMissing):
+    """Raised when required run trigger list options are missing."""
+
+    def __init__(self, message: str = "required run trigger list options"):
+        super().__init__(message)
+
+
+class RequiredSourceableError(RequiredFieldMissing):
+    """Raised when a required sourceable field is missing."""
+
+    def __init__(self, message: str = "sourceable is required"):
+        super().__init__(message)
+
+
+class InvalidRunTriggerTypeError(InvalidValues):
+    """Raised when an invalid run trigger type is provided."""
+
+    def __init__(
+        self,
+        message: str = 'invalid value or no value for RunTriggerType. It must be either "inbound" or "outbound"',
+    ):
+        super().__init__(message)
+
+
+class UnsupportedRunTriggerTypeError(InvalidValues):
+    """Raised when an unsupported run trigger type is provided with include params."""
+
+    def __init__(
+        self,
+        message: str = 'unsupported RunTriggerType. It must be "inbound" when requesting "include" query params',
+    ):
+        super().__init__(message)
+
+
+class InvalidRunTriggerIDError(InvalidValues):
+    """Raised when an invalid run trigger ID is provided."""
+
+    def __init__(self, message: str = "invalid value for run trigger ID"):
+        super().__init__(message)

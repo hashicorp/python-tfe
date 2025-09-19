@@ -73,7 +73,7 @@ def encode_query(params: Mapping[str, Any] | None) -> str:
     for k, v in params.items():
         if v is None:
             continue
-        if isinstance(v, (list, tuple)):
+        if isinstance(v, (list | tuple)):
             sv = ",".join(str(x) for x in v)
         else:
             sv = str(v)
