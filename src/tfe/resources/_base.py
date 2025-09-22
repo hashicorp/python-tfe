@@ -27,7 +27,8 @@ class _Service:
 
             data = json_response.get("data", [])
             yield from data
-            if len(data) < int(p["page[size]"]):
+            page_size = int(p["page[size]"])
+            if len(data) < page_size:
                 break
             page += 1
 
@@ -53,6 +54,7 @@ class _AService:
             data = r.json().get("data", [])
             for item in data:
                 yield item
-            if len(data) < p["page[size]"]:
+            page_size = int(p["page[size]"])
+            if len(data) < page_size:
                 break
             page += 1

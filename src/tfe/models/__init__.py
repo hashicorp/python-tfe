@@ -37,6 +37,18 @@ from .registry_module_types import (
     TestConfig,
 )
 
+# Re-export all registry provider types
+from .registry_provider_types import (
+    RegistryProvider,
+    RegistryProviderCreateOptions,
+    RegistryProviderID,
+    RegistryProviderIncludeOps,
+    RegistryProviderList,
+    RegistryProviderListOptions,
+    RegistryProviderPermissions,
+    RegistryProviderReadOptions,
+)
+
 # Define what should be available when importing with *
 __all__ = [
     # Registry module types
@@ -69,6 +81,15 @@ __all__ = [
     "Root",
     "TestConfig",
     "TerraformRegistryModule",
+    # Registry provider types
+    "RegistryProvider",
+    "RegistryProviderCreateOptions",
+    "RegistryProviderID",
+    "RegistryProviderIncludeOps",
+    "RegistryProviderList",
+    "RegistryProviderListOptions",
+    "RegistryProviderPermissions",
+    "RegistryProviderReadOptions",
     # Main types from types.py (will be dynamically added below)
     "Capacity",
     "DataRetentionPolicy",

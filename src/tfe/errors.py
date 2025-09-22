@@ -66,6 +66,7 @@ ERR_REQUIRED_PROVIDER = "provider is required"
 ERR_INVALID_PROVIDER = "invalid value for provider"
 ERR_REQUIRED_VERSION = "version is required"
 ERR_INVALID_VERSION = "invalid value for version"
+ERR_INVALID_NAMESPACE = "invalid value for namespace"
 ERR_REQUIRED_NAMESPACE = "namespace is required"
 ERR_INVALID_REGISTRY_NAME = "invalid registry name"
 ERR_UNSUPPORTED_BOTH_NAMESPACE_AND_PRIVATE_REGISTRY_NAME = (

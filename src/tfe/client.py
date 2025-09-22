@@ -5,6 +5,7 @@ from .config import TFEConfig
 from .resources.organizations import Organizations
 from .resources.projects import Projects
 from .resources.registry_module import RegistryModules
+from .resources.registry_provider import RegistryProviders
 from .resources.run_task import RunTasks
 from .resources.run_trigger import RunTriggers
 from .resources.state_version_outputs import StateVersionOutputs
@@ -35,6 +36,7 @@ class TFEClient:
         self.variables = Variables(self._transport)
         self.workspaces = Workspaces(self._transport)
         self.registry_modules = RegistryModules(self._transport)
+        self.registry_providers = RegistryProviders(self._transport)
 
         self.state_versions = StateVersions(self._transport)
         self.state_version_outputs = StateVersionOutputs(self._transport)
