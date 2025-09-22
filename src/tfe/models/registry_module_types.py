@@ -5,7 +5,7 @@ import os
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # Load the main types.py file to get Organization and other main types
 # Path: from /src/tfe/types/registry_module_types.py to /src/tfe/types.py
@@ -298,8 +298,7 @@ class RegistryModuleVCSRepoOptions(BaseModel):
     source_directory: str | None = Field(alias="source-directory", default=None)
     tag_prefix: str | None = Field(alias="tag-prefix", default=None)
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class RegistryModuleVCSRepoUpdateOptions(BaseModel):
@@ -333,8 +332,7 @@ class RegistryModuleCreateWithVCSConnectionOptions(BaseModel):
         default=None, description="Namespace for public modules"
     )
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class RegistryModuleUpdateOptions(BaseModel):

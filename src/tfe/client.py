@@ -10,6 +10,7 @@ from .resources.run_trigger import RunTriggers
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
 from .resources.variable import Variables
+from .resources.variable_sets import VariableSets, VariableSetVariables
 from .resources.workspaces import Workspaces
 
 
@@ -33,6 +34,8 @@ class TFEClient:
         self.organizations = Organizations(self._transport)
         self.projects = Projects(self._transport)
         self.variables = Variables(self._transport)
+        self.variable_sets = VariableSets(self._transport)
+        self.variable_set_variables = VariableSetVariables(self._transport)
         self.workspaces = Workspaces(self._transport)
         self.registry_modules = RegistryModules(self._transport)
 
