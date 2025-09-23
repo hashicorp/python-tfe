@@ -4,9 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from tfe.resources.variable_sets import VariableSets, VariableSetVariables
-from tfe.types import (
-    CategoryType,
+from tfe.models import (
     Parent,
     Project,
     VariableSet,
@@ -23,6 +21,10 @@ from tfe.types import (
     VariableSetVariable,
     VariableSetVariableCreateOptions,
     VariableSetVariableUpdateOptions,
+)
+from tfe.resources.variable_sets import VariableSets, VariableSetVariables
+from tfe.types import (
+    CategoryType,
     Workspace,
 )
 

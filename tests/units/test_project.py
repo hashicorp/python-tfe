@@ -1,12 +1,14 @@
 from unittest.mock import Mock
 
-from tfe.resources.projects import Projects, _safe_str
-from tfe.types import (
-    EffectiveTagBinding,
+from tfe.models.project import (
     Project,
     ProjectAddTagBindingsOptions,
     ProjectCreateOptions,
     ProjectUpdateOptions,
+)
+from tfe.resources.projects import Projects, _safe_str
+from tfe.types import (
+    EffectiveTagBinding,
     TagBinding,
 )
 

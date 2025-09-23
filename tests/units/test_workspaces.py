@@ -19,6 +19,7 @@ from src.tfe.errors import (
     RequiredSSHKeyIDError,
     WorkspaceMinimumLimitError,
 )
+from src.tfe.models.project import Project
 from src.tfe.resources.workspaces import Workspaces, _ws_from
 from src.tfe.types import (
     DataRetentionPolicyDeleteOlderSetOptions,
@@ -26,7 +27,6 @@ from src.tfe.types import (
     DataRetentionPolicySetOptions,
     EffectiveTagBinding,
     ExecutionMode,
-    Project,
     Tag,
     TagBinding,
     VCSRepo,

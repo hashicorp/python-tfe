@@ -4,6 +4,15 @@
 import importlib.util
 import os
 
+# Re-export all project types
+from .project import (
+    Project,
+    ProjectAddTagBindingsOptions,
+    ProjectCreateOptions,
+    ProjectListOptions,
+    ProjectUpdateOptions,
+)
+
 # Re-export all registry module types
 from .registry_module_types import (
     AgentExecutionMode,
@@ -49,6 +58,26 @@ from .registry_provider_types import (
     RegistryProviderReadOptions,
 )
 
+# Re-export all variable set types
+from .variable_set import (
+    Parent,
+    VariableSet,
+    VariableSetApplyToProjectsOptions,
+    VariableSetApplyToWorkspacesOptions,
+    VariableSetCreateOptions,
+    VariableSetIncludeOpt,
+    VariableSetListOptions,
+    VariableSetReadOptions,
+    VariableSetRemoveFromProjectsOptions,
+    VariableSetRemoveFromWorkspacesOptions,
+    VariableSetUpdateOptions,
+    VariableSetUpdateWorkspacesOptions,
+    VariableSetVariable,
+    VariableSetVariableCreateOptions,
+    VariableSetVariableListOptions,
+    VariableSetVariableUpdateOptions,
+)
+
 # Define what should be available when importing with *
 __all__ = [
     # Registry module types
@@ -90,6 +119,29 @@ __all__ = [
     "RegistryProviderListOptions",
     "RegistryProviderPermissions",
     "RegistryProviderReadOptions",
+    # Project types
+    "Project",
+    "ProjectAddTagBindingsOptions",
+    "ProjectCreateOptions",
+    "ProjectListOptions",
+    "ProjectUpdateOptions",
+    # Variable set types
+    "Parent",
+    "VariableSet",
+    "VariableSetApplyToProjectsOptions",
+    "VariableSetApplyToWorkspacesOptions",
+    "VariableSetCreateOptions",
+    "VariableSetIncludeOpt",
+    "VariableSetListOptions",
+    "VariableSetReadOptions",
+    "VariableSetRemoveFromProjectsOptions",
+    "VariableSetRemoveFromWorkspacesOptions",
+    "VariableSetUpdateOptions",
+    "VariableSetUpdateWorkspacesOptions",
+    "VariableSetVariable",
+    "VariableSetVariableCreateOptions",
+    "VariableSetVariableListOptions",
+    "VariableSetVariableUpdateOptions",
     # Main types from types.py (will be dynamically added below)
     "Capacity",
     "DataRetentionPolicy",
@@ -107,7 +159,6 @@ __all__ = [
     "OrganizationCreateOptions",
     "OrganizationUpdateOptions",
     "Pagination",
-    "Project",
     "ReadRunQueueOptions",
     "Run",
     "RunQueue",

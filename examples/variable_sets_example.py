@@ -16,10 +16,8 @@ Make sure to set the following environment variables:
 import os
 
 from tfe import TFEClient, TFEConfig
-from tfe.types import (
-    CategoryType,
+from tfe.models import (
     Parent,
-    Project,
     VariableSetApplyToProjectsOptions,
     VariableSetApplyToWorkspacesOptions,
     VariableSetCreateOptions,
@@ -31,6 +29,10 @@ from tfe.types import (
     VariableSetVariableCreateOptions,
     VariableSetVariableListOptions,
     VariableSetVariableUpdateOptions,
+)
+from tfe.models.project import Project
+from tfe.types import (
+    CategoryType,
     Workspace,
 )
 
@@ -271,7 +273,7 @@ def variable_set_example():
 
         # 9. Read the variable set with includes
         print("9. Reading variable set with includes...")
-        from tfe.types import VariableSetReadOptions
+        from tfe.models import VariableSetReadOptions
 
         read_options = VariableSetReadOptions(
             include=[VariableSetIncludeOpt.VARS, VariableSetIncludeOpt.WORKSPACES]

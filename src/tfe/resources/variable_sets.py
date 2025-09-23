@@ -4,8 +4,7 @@ import builtins
 from typing import Any
 
 from tfe._http import HTTPTransport
-from tfe.resources._base import _Service
-from tfe.types import (
+from tfe.models.variable_set import (
     VariableSet,
     VariableSetApplyToProjectsOptions,
     VariableSetApplyToWorkspacesOptions,
@@ -22,6 +21,7 @@ from tfe.types import (
     VariableSetVariableListOptions,
     VariableSetVariableUpdateOptions,
 )
+from tfe.resources._base import _Service
 
 
 class VariableSets(_Service):
