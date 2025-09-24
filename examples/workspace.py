@@ -23,11 +23,6 @@ from datetime import datetime
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from tfe import TFEClient, TFEConfig
-from tfe.errors import (
-    InvalidOrgError,
-    InvalidWorkspaceIDError,
-    TFEError,
-)
 from tfe.types import (
     DataRetentionPolicyDeleteOlderSetOptions,
     DataRetentionPolicyDontDeleteSetOptions,
@@ -63,7 +58,7 @@ class WorkspaceManager:
 
     def demonstrate_all_operations(self, organization: str):
         """Demonstrate all workspace operations."""
-        print("🚀 Starting Comprehensive Workspace Operations Demo")
+        print("Starting Comprehensive Workspace Operations Demo")
         print("=" * 60)
 
         try:
@@ -109,15 +104,15 @@ class WorkspaceManager:
             print(f"Error during demo: {e}")
             raise
 
-        print("\n🎉 Comprehensive workspace demo completed successfully!")
+        print("\n Comprehensive workspace demo completed successfully!")
 
     def demo_list_operations(self, organization: str):
         """Demonstrate workspace listing operations."""
-        print("\n📋 1. WORKSPACE LISTING OPERATIONS")
+        print("\n 1. WORKSPACE LISTING OPERATIONS")
         print("-" * 40)
 
         # Basic listing
-        print("🔍 Listing all workspaces...")
+        print(" Listing all workspaces...")
         options = WorkspaceListOptions()
         workspaces = list(self.workspaces.list(organization, options=options))
         print(f"   Found {len(workspaces)} workspaces")
@@ -129,7 +124,7 @@ class WorkspaceManager:
             print(f"     - Locked: {ws.locked}")
 
         # Advanced listing with filters
-        print("\n🔍 Listing with search filters...")
+        print("\n Listing with search filters...")
         filtered_options = WorkspaceListOptions(
             search="prod",  # Search for workspaces containing "prod"
             tags="production,frontend",  # Filter by tags
@@ -147,7 +142,7 @@ class WorkspaceManager:
 
     def demo_create_operations(self, organization: str):
         """Demonstrate workspace creation operations."""
-        print("\n🏗️  2. WORKSPACE CREATION OPERATIONS")
+        print("\n 2. WORKSPACE CREATION OPERATIONS")
         print("-" * 40)
 
         # Basic workspace creation
@@ -169,17 +164,17 @@ class WorkspaceManager:
         )
 
         workspace = self.workspaces.create(organization, options=basic_options)
-        print(f"   ✅ Created workspace: {workspace.name}")
-        print(f"   📋 ID: {workspace.id}")
-        print(f"   📝 Description: {workspace.description}")
-        print(f"   ⚙️  Execution Mode: {workspace.execution_mode}")
-        print(f"   🔄 Auto Apply: {workspace.auto_apply}")
+        print(f"    Created workspace: {workspace.name}")
+        print(f"    ID: {workspace.id}")
+        print(f"    Description: {workspace.description}")
+        print(f"    Execution Mode: {workspace.execution_mode}")
+        print(f"    Auto Apply: {workspace.auto_apply}")
 
         return workspace
 
     def demo_create_with_vcs(self, organization: str):
         """Demonstrate workspace creation with VCS integration."""
-        print("\n🔗 Creating workspace with VCS integration...")
+        print("\n Creating workspace with VCS integration...")
 
         # VCS repository configuration
         vcs_repo = VCSRepo(
@@ -201,11 +196,11 @@ class WorkspaceManager:
 
         try:
             vcs_workspace = self.workspaces.create(organization, options=vcs_options)
-            print(f"   ✅ Created VCS workspace: {vcs_workspace.name}")
+            print(f"    Created VCS workspace: {vcs_workspace.name}")
             return vcs_workspace
         except Exception as e:
             print(
-                f"   ⚠️  VCS workspace creation failed (expected without valid OAuth token): {e}"
+                f"     VCS workspace creation failed (expected without valid OAuth token): {e}"
             )
             return None
 
@@ -213,26 +208,26 @@ class WorkspaceManager:
         self, organization: str, workspace_name: str, workspace_id: str
     ):
         """Demonstrate workspace reading operations."""
-        print("\n📖 3. WORKSPACE READ OPERATIONS")
+        print("\n 3. WORKSPACE READ OPERATIONS")
         print("-" * 40)
 
         # Read by name
         print("📄 Reading workspace by name...")
         workspace_by_name = self.workspaces.read(organization, workspace_name)
-        print(f"   📋 Name: {workspace_by_name.name}")
-        print(f"   🆔 ID: {workspace_by_name.id}")
-        print(f"   📅 Created: {workspace_by_name.created_at}")
-        print(f"   📅 Updated: {workspace_by_name.updated_at}")
+        print(f"   Name: {workspace_by_name.name}")
+        print(f"   ID: {workspace_by_name.id}")
+        print(f"   Created: {workspace_by_name.created_at}")
+        print(f"   Updated: {workspace_by_name.updated_at}")
 
         # Read by ID
-        print("\n📄 Reading workspace by ID...")
+        print("\n Reading workspace by ID...")
         workspace_by_id = self.workspaces.read_by_id(workspace_id)
-        print(f"   📋 Name: {workspace_by_id.name}")
-        print(f"   🔧 Terraform Version: {workspace_by_id.terraform_version}")
-        print(f"   📁 Working Directory: {workspace_by_id.working_directory}")
+        print(f"    Name: {workspace_by_id.name}")
+        print(f"    Terraform Version: {workspace_by_id.terraform_version}")
+        print(f"    Working Directory: {workspace_by_id.working_directory}")
 
         # Read with additional include options
-        print("\n📄 Reading workspace with include options...")
+        print("\n Reading workspace with include options...")
         read_options = WorkspaceReadOptions(
             include=[WorkspaceIncludeOpt.CURRENT_RUN, WorkspaceIncludeOpt.OUTPUTS]
         )
@@ -240,19 +235,19 @@ class WorkspaceManager:
         detailed_workspace = self.workspaces.read_with_options(
             workspace_name, organization, options=read_options
         )
-        print(f"   🏃 Current Run ID: {detailed_workspace.locked_by}")
-        print(f"   📊 Resource Count: {detailed_workspace.resource_count}")
-        print(f"   🏷️  Tag Names: {detailed_workspace.tag_names}")
+        print(f"    Current Run ID: {detailed_workspace.locked_by}")
+        print(f"    Resource Count: {detailed_workspace.resource_count}")
+        print(f"    Tag Names: {detailed_workspace.tag_names}")
 
     def demo_update_operations(
         self, organization: str, workspace_name: str, workspace_id: str
     ):
         """Demonstrate workspace update operations."""
-        print("\n✏️  4. WORKSPACE UPDATE OPERATIONS")
+        print("\n 4. WORKSPACE UPDATE OPERATIONS")
         print("-" * 40)
 
         # Update by name
-        print("🔧 Updating workspace by name...")
+        print(" Updating workspace by name...")
         update_options = WorkspaceUpdateOptions(
             name=workspace_name,  # Required field
             description=f"Updated description at {datetime.now()}",
@@ -265,13 +260,13 @@ class WorkspaceManager:
         updated_workspace = self.workspaces.update(
             organization, workspace_name, options=update_options
         )
-        print(f"   ✅ Updated workspace: {updated_workspace.name}")
-        print(f"   📝 New description: {updated_workspace.description}")
-        print(f"   🔄 Auto Apply: {updated_workspace.auto_apply}")
-        print(f"   🔧 Terraform Version: {updated_workspace.terraform_version}")
+        print(f"    Updated workspace: {updated_workspace.name}")
+        print(f"    New description: {updated_workspace.description}")
+        print(f"    Auto Apply: {updated_workspace.auto_apply}")
+        print(f"    Terraform Version: {updated_workspace.terraform_version}")
 
         # Update by ID
-        print("\n🔧 Updating workspace by ID...")
+        print("\n Updating workspace by ID...")
         id_update_options = WorkspaceUpdateOptions(
             name=workspace_name,  # Required field
             speculative_enabled=False,  # Disable speculative plans
@@ -281,22 +276,22 @@ class WorkspaceManager:
         updated_by_id = self.workspaces.update_by_id(
             workspace_id, options=id_update_options
         )
-        print(f"   ✅ Updated workspace operations: {updated_by_id.operations}")
-        print(f"   🔍 Speculative enabled: {updated_by_id.speculative_enabled}")
+        print(f"    Updated workspace operations: {updated_by_id.operations}")
+        print(f"    Speculative enabled: {updated_by_id.speculative_enabled}")
 
     def demo_vcs_operations(
         self, organization: str, workspace_name: str, workspace_id: str
     ):
         """Demonstrate VCS connection operations."""
-        print("\n🔗 5. VCS CONNECTION OPERATIONS")
+        print("\n 5. VCS CONNECTION OPERATIONS")
         print("-" * 40)
 
         # Note: These operations require existing VCS connections
-        print("🔌 VCS connection management...")
+        print(" VCS connection management...")
 
         try:
             # Remove VCS connection by name
-            print("🗑️  Removing VCS connection by name...")
+            print("  Removing VCS connection by name...")
             remove_options = WorkspaceRemoveVCSConnectionOptions(
                 id=workspace_id,
                 vcs_repo=None,  # Set to None to remove
@@ -305,48 +300,48 @@ class WorkspaceManager:
             updated_workspace = self.workspaces.remove_vcs_connection(
                 organization, workspace_name, options=remove_options
             )
-            print(f"   ✅ VCS connection removed for: {updated_workspace.name}")
+            print(f"    VCS connection removed for: {updated_workspace.name}")
 
         except Exception as e:
-            print(f"   ⚠️  VCS operation note: {e}")
+            print(f"     VCS operation note: {e}")
             print("   (VCS operations require existing VCS configurations)")
 
     def demo_locking_operations(self, workspace_id: str):
         """Demonstrate workspace locking operations."""
-        print("\n🔒 6. WORKSPACE LOCKING OPERATIONS")
+        print("\n 6. WORKSPACE LOCKING OPERATIONS")
         print("-" * 40)
 
         # Lock workspace
-        print("🔐 Locking workspace...")
+        print(" Locking workspace...")
         lock_options = WorkspaceLockOptions(
             reason="Demo: Maintenance in progress - testing locking functionality"
         )
 
         try:
             locked_workspace = self.workspaces.lock(workspace_id, options=lock_options)
-            print(f"   🔒 Workspace locked: {locked_workspace.name}")
-            print("   📝 Lock reason: Demo maintenance")
-            print(f"   🔓 Locked status: {locked_workspace.locked}")
+            print(f"    Workspace locked: {locked_workspace.name}")
+            print("     Lock reason: Demo maintenance")
+            print(f"    Locked status: {locked_workspace.locked}")
 
             # Unlock workspace
-            print("\n🔓 Unlocking workspace...")
+            print("\n Unlocking workspace...")
             unlocked_workspace = self.workspaces.unlock(workspace_id)
-            print(f"   🔓 Workspace unlocked: {unlocked_workspace.name}")
-            print(f"   🔓 Locked status: {unlocked_workspace.locked}")
+            print(f"    Workspace unlocked: {unlocked_workspace.name}")
+            print(f"    Locked status: {unlocked_workspace.locked}")
 
         except Exception as e:
-            print(f"   ⚠️  Locking operation failed: {e}")
+            print(f"     Locking operation failed: {e}")
             print("   (This may be expected if workspace has active runs)")
 
     def demo_ssh_key_operations(self, workspace_id: str):
         """Demonstrate SSH key management operations."""
-        print("\n🔑 7. SSH KEY MANAGEMENT OPERATIONS")
+        print("\n 7. SSH KEY MANAGEMENT OPERATIONS")
         print("-" * 40)
 
         # Note: This requires existing SSH keys in the organization
-        print("🔐 SSH key management...")
-        print("   ⚠️  SSH key operations require existing SSH keys")
-        print("   📝 Skipping SSH key demo (requires SSH key setup)")
+        print(" SSH key management...")
+        print("     SSH key operations require existing SSH keys")
+        print("     Skipping SSH key demo (requires SSH key setup)")
 
         # Uncomment and modify when you have SSH keys configured:
         """
@@ -357,38 +352,38 @@ class WorkspaceManager:
             )
 
             workspace_with_ssh = self.workspaces.assign_ssh_key(workspace_id, options=ssh_options)
-            print(f"   🔑 SSH key assigned to: {workspace_with_ssh.name}")
+            print(f"    SSH key assigned to: {workspace_with_ssh.name}")
 
             # Unassign SSH key
             workspace_without_ssh = self.workspaces.unassign_ssh_key(workspace_id)
-            print(f"   🔓 SSH key unassigned from: {workspace_without_ssh.name}")
+            print(f"    SSH key unassigned from: {workspace_without_ssh.name}")
 
         except Exception as e:
-            print(f"   ⚠️  SSH key operation failed: {e}")
+            print(f"     SSH key operation failed: {e}")
         """
 
     def demo_remote_state_consumer_operations(
         self, organization: str, workspace_id: str
     ):
         """Demonstrate remote state consumer management operations."""
-        print("\n🔗 7. REMOTE STATE CONSUMER OPERATIONS")
+        print("\n 7. REMOTE STATE CONSUMER OPERATIONS")
         print("-" * 40)
 
         try:
             # 1. List current remote state consumers
-            print("📋 Listing current remote state consumers...")
+            print(" Listing current remote state consumers...")
             list_options = WorkspaceListRemoteStateConsumersOptions(page_size=10)
 
             current_consumers = list(
                 self.workspaces.list_remote_state_consumers(workspace_id, list_options)
             )
-            print(f"   📊 Found {len(current_consumers)} current consumer(s)")
+            print(f"    Found {len(current_consumers)} current consumer(s)")
 
             for consumer in current_consumers:
-                print(f"   🔗 Consumer: {consumer.name} (ID: {consumer.id})")
+                print(f"    Consumer: {consumer.name} (ID: {consumer.id})")
 
             # 2. Get real workspaces from organization for demonstration
-            print("\n🏗️  Getting real workspaces for consumer demonstration...")
+            print("\n  Getting real workspaces for consumer demonstration...")
 
             # Get existing workspaces from the organization to use as examples
             from tfe.types import WorkspaceListOptions
@@ -410,34 +405,32 @@ class WorkspaceManager:
                     demo_consumer_1 = available_workspaces[0]
                     demo_consumer_2 = available_workspaces[1]
 
-                    print("   📝 Using real workspaces for demonstration:")
+                    print("    Using real workspaces for demonstration:")
                     print(
-                        f"   🏢 Consumer 1: {demo_consumer_1.name} (ID: {demo_consumer_1.id})"
+                        f"    Consumer 1: {demo_consumer_1.name} (ID: {demo_consumer_1.id})"
                     )
                     print(
-                        f"   🏢 Consumer 2: {demo_consumer_2.name} (ID: {demo_consumer_2.id})"
+                        f"    Consumer 2: {demo_consumer_2.name} (ID: {demo_consumer_2.id})"
                     )
 
                     use_real_workspaces = True
                 else:
                     print(
-                        f"   ⚠️  Only {len(available_workspaces)} other workspaces available"
+                        f"     Only {len(available_workspaces)} other workspaces available"
                     )
-                    print(
-                        "   📝 Need at least 2 other workspaces for full demonstration"
-                    )
-                    print("   🏗️  Creating minimal demo with available workspaces...")
+                    print("    Need at least 2 other workspaces for full demonstration")
+                    print("     Creating minimal demo with available workspaces...")
                     use_real_workspaces = False
 
             except Exception as ws_error:
-                print(f"   ❌ Could not fetch organization workspaces: {ws_error}")
+                print(f"    Could not fetch organization workspaces: {ws_error}")
                 use_real_workspaces = False
 
             if not use_real_workspaces:
                 # Fallback to showing the concept with mock data
-                print("   📝 Using mock workspace references for concept demonstration")
+                print("    Using mock workspace references for concept demonstration")
                 print(
-                    "   🏢 In practice, use actual workspace IDs from your organization"
+                    "    In practice, use actual workspace IDs from your organization"
                 )
 
                 # Create mock workspaces for demonstration only
@@ -455,7 +448,7 @@ class WorkspaceManager:
                 )
 
             # 3. Add remote state consumers
-            print("\n➕ Adding remote state consumers...")
+            print("\n Adding remote state consumers...")
             add_options = WorkspaceAddRemoteStateConsumersOptions(
                 workspaces=[demo_consumer_1, demo_consumer_2]
             )
@@ -463,28 +456,26 @@ class WorkspaceManager:
             # Note: This will fail in demo since we're using mock workspaces
             try:
                 self.workspaces.add_remote_state_consumers(workspace_id, add_options)
-                print("   ✅ Successfully added remote state consumers")
-                print(f"   🔗 Added consumer: {demo_consumer_1.name}")
-                print(f"   🔗 Added consumer: {demo_consumer_2.name}")
+                print("    Successfully added remote state consumers")
+                print(f"    Added consumer: {demo_consumer_1.name}")
+                print(f"    Added consumer: {demo_consumer_2.name}")
             except Exception as add_error:
                 expected_msg = (
                     "(expected with mock data)" if not use_real_workspaces else ""
                 )
-                print(f"   ⚠️  Add operation failed {expected_msg}: {add_error}")
+                print(f"     Add operation failed {expected_msg}: {add_error}")
                 if not use_real_workspaces:
-                    print(
-                        "   📝 This is expected when using non-existent workspace IDs"
-                    )
+                    print("    This is expected when using non-existent workspace IDs")
 
             # 4. List consumers after adding (would show updated list in real scenario)
-            print("\n📋 Listing consumers after adding...")
+            print("\n Listing consumers after adding...")
             updated_consumers = list(
                 self.workspaces.list_remote_state_consumers(workspace_id, list_options)
             )
-            print(f"   📊 Current consumer count: {len(updated_consumers)}")
+            print(f"    Current consumer count: {len(updated_consumers)}")
 
             # 5. Remove a remote state consumer
-            print("\n➖ Removing a remote state consumer...")
+            print("\n Removing a remote state consumer...")
             remove_options = WorkspaceRemoveRemoteStateConsumersOptions(
                 workspaces=[demo_consumer_1]
             )
@@ -493,21 +484,21 @@ class WorkspaceManager:
                 self.workspaces.remove_remote_state_consumers(
                     workspace_id, remove_options
                 )
-                print(f"   ✅ Successfully removed consumer: {demo_consumer_1.name}")
+                print(f"    Successfully removed consumer: {demo_consumer_1.name}")
             except Exception as remove_error:
                 expected_msg = (
                     "(expected with mock data)" if not use_real_workspaces else ""
                 )
-                print(f"   ⚠️  Remove operation failed {expected_msg}: {remove_error}")
+                print(f"     Remove operation failed {expected_msg}: {remove_error}")
 
             # 6. Update remote state consumers (replace all)
-            print("\n🔄 Updating remote state consumers (replacing all)...")
+            print("\n Updating remote state consumers (replacing all)...")
 
             if use_real_workspaces and len(available_workspaces) >= 3:
                 # Use a third real workspace if available
                 demo_consumer_3 = available_workspaces[2]
                 print(
-                    f"   🏢 Consumer 3: {demo_consumer_3.name} (ID: {demo_consumer_3.id})"
+                    f"    Consumer 3: {demo_consumer_3.name} (ID: {demo_consumer_3.id})"
                 )
             else:
                 # Create mock workspace for demonstration
@@ -528,69 +519,57 @@ class WorkspaceManager:
                 self.workspaces.update_remote_state_consumers(
                     workspace_id, update_options
                 )
-                print("   ✅ Successfully updated remote state consumers")
+                print("    Successfully updated remote state consumers")
                 print(
-                    f"   🔗 New consumer set: {demo_consumer_2.name}, {demo_consumer_3.name}"
+                    f"    New consumer set: {demo_consumer_2.name}, {demo_consumer_3.name}"
                 )
             except Exception as update_error:
                 expected_msg = (
                     "(expected with mock data)" if not use_real_workspaces else ""
                 )
-                print(f"   ⚠️  Update operation failed {expected_msg}: {update_error}")
+                print(f"     Update operation failed {expected_msg}: {update_error}")
 
             # 7. Final listing to show results
-            print("\n📋 Final remote state consumer listing...")
+            print("\n Final remote state consumer listing...")
             final_consumers = list(
                 self.workspaces.list_remote_state_consumers(workspace_id, list_options)
             )
-            print(f"   📊 Final consumer count: {len(final_consumers)}")
+            print(f"    Final consumer count: {len(final_consumers)}")
 
             for consumer in final_consumers:
-                print(f"   🔗 Final consumer: {consumer.name} (ID: {consumer.id})")
-
-            # Best practices and tips
-            print("\n💡 REMOTE STATE CONSUMER BEST PRACTICES:")
-            print("   🔒 Use remote state sharing carefully - it creates dependencies")
-            print("   📋 Regularly audit consumer lists to maintain security")
-            print("   🏗️  Consider workspace organization structure when sharing state")
-            print("   ⚡ Use specific workspace IDs rather than names for reliability")
-            print("   🔄 Test state consumer changes in development environments first")
+                print(f"    Final consumer: {consumer.name} (ID: {consumer.id})")
 
         except Exception as e:
-            print(f"   ❌ Remote state consumer operations failed: {e}")
-            print("   💡 This may be due to:")
-            print("      • Insufficient permissions for workspace relationships")
-            print("      • Network connectivity issues")
-            print("      • Invalid workspace references")
+            print(f"    Remote state consumer operations failed: {e}")
 
     def demo_tag_operations(self, workspace_id: str):
         """Demonstrate comprehensive workspace tag management operations."""
-        print("\n🏷️  8. WORKSPACE TAG OPERATIONS")
+        print("\n 8. WORKSPACE TAG OPERATIONS")
         print("-" * 40)
 
         try:
             # 8.1 List existing tags
-            print("📋 Listing current workspace tags...")
+            print(" Listing current workspace tags...")
             list_options = WorkspaceTagListOptions(page_size=20)
             current_tags = list(self.workspaces.list_tags(workspace_id, list_options))
 
-            print(f"   📊 Found {len(current_tags)} existing tags:")
+            print(f"    Found {len(current_tags)} existing tags:")
             for tag in current_tags:
-                print(f"   🏷️  Tag: {tag.name} (ID: {tag.id})")
+                print(f"     Tag: {tag.name} (ID: {tag.id})")
 
             # 8.2 List tags with search query
-            print("\n🔍 Searching for tags with 'env' in name...")
+            print("\n Searching for tags with 'env' in name...")
             search_options = WorkspaceTagListOptions(query="env", page_size=10)
             search_results = list(
                 self.workspaces.list_tags(workspace_id, search_options)
             )
 
-            print(f"   🔍 Found {len(search_results)} tags matching 'env':")
+            print(f"    Found {len(search_results)} tags matching 'env':")
             for tag in search_results:
-                print(f"   🏷️  Matching tag: {tag.name}")
+                print(f"     Matching tag: {tag.name}")
 
             # 8.3 Add new tags
-            print("\n➕ Adding new tags to workspace...")
+            print("\n Adding new tags to workspace...")
             new_tags = [
                 Tag(name="environment-production"),  # Add by name
                 Tag(name="team-backend"),
@@ -602,33 +581,33 @@ class WorkspaceManager:
 
             add_options = WorkspaceAddTagsOptions(tags=new_tags)
             self.workspaces.add_tags(workspace_id, add_options)
-            print(f"   ✅ Successfully added {len(new_tags)} tags")
+            print(f"    Successfully added {len(new_tags)} tags")
 
             for tag in new_tags:
                 if tag.id:
-                    print(f"   🏷️  Added tag by ID: {tag.id}")
+                    print(f"     Added tag by ID: {tag.id}")
                 else:
-                    print(f"   🏷️  Added tag by name: {tag.name}")
+                    print(f"     Added tag by name: {tag.name}")
 
             # 8.4 List updated tags
-            print("\n📋 Listing updated workspace tags...")
+            print("\n Listing updated workspace tags...")
             updated_tags = list(self.workspaces.list_tags(workspace_id, list_options))
-            print(f"   📊 Total tags after addition: {len(updated_tags)}")
+            print(f"    Total tags after addition: {len(updated_tags)}")
 
             for tag in updated_tags:
-                print(f"   🏷️  Tag: {tag.name} (ID: {tag.id})")
+                print(f"     Tag: {tag.name} (ID: {tag.id})")
 
             # 8.5 List tags with pagination
-            print("\n📄 Demonstrating tag pagination...")
+            print("\n Demonstrating tag pagination...")
             paginated_options = WorkspaceTagListOptions(page_number=1)
             page_tags = list(self.workspaces.list_tags(workspace_id, paginated_options))
 
-            print(f"   📄 Page 1 results: {len(page_tags)} tags")
+            print(f"    Page 1 results: {len(page_tags)} tags")
             for i, tag in enumerate(page_tags, 1):
                 print(f"   {i}. {tag.name}")
 
             # 8.6 Remove specific tags
-            print("\n➖ Removing specific tags...")
+            print("\n Removing specific tags...")
             tags_to_remove = [
                 Tag(
                     name="version-v2-1-0"
@@ -640,70 +619,56 @@ class WorkspaceManager:
 
             remove_options = WorkspaceRemoveTagsOptions(tags=tags_to_remove)
             self.workspaces.remove_tags(workspace_id, remove_options)
-            print(f"   ✅ Successfully removed {len(tags_to_remove)} tags")
+            print(f"    Successfully removed {len(tags_to_remove)} tags")
 
             for tag in tags_to_remove:
                 if tag.id:
-                    print(f"   🗑️  Removed tag by ID: {tag.id}")
+                    print(f"     Removed tag by ID: {tag.id}")
                 else:
-                    print(f"   🗑️  Removed tag by name: {tag.name}")
+                    print(f"     Removed tag by name: {tag.name}")
 
             # 8.7 Final tag list
-            print("\n📋 Final workspace tags...")
+            print("\n Final workspace tags...")
             final_tags = list(self.workspaces.list_tags(workspace_id, list_options))
-            print(f"   📊 Final tag count: {len(final_tags)}")
+            print(f"    Final tag count: {len(final_tags)}")
 
             for tag in final_tags:
-                print(f"   🏷️  Final tag: {tag.name} (ID: {tag.id})")
-
-            # Best practices and tips
-            print("\n💡 TAG MANAGEMENT BEST PRACTICES:")
-            print(
-                "   🏗️  Use consistent naming conventions (e.g., 'environment-production')"
-            )
-            print("   📊 Use tags for filtering and organizing workspaces")
-            print("   🔍 Leverage tag search for quick workspace discovery")
-            print("   🏷️  Prefer adding by name for new tags, by ID for existing ones")
+                print(f"     Final tag: {tag.name} (ID: {tag.id})")
 
         except Exception as e:
-            print(f"   ❌ Tag operations failed: {e}")
-            print("   💡 This may be due to:")
-            print("      • Insufficient permissions for workspace tag management")
-            print("      • Invalid tag names or IDs")
-            print("      • Network connectivity issues")
-            print("      • Workspace not found or inaccessible")
+            print(f"    Tag operations failed: {e}")
 
     def demo_tag_binding_operations(self, workspace_id: str):
         """Demonstrate comprehensive workspace tag binding management operations."""
-        print("\n🔗 8B. WORKSPACE TAG BINDING OPERATIONS")
+        print("\n 8B. WORKSPACE TAG BINDING OPERATIONS")
         print("-" * 45)
 
         try:
             # 8B.1 List existing tag bindings
-            print("📋 Listing current workspace tag bindings...")
+            print(" Listing current workspace tag bindings...")
             current_bindings = list(self.workspaces.list_tag_bindings(workspace_id))
 
-            print(f"   📊 Found {len(current_bindings)} existing tag bindings:")
+            print(f"    Found {len(current_bindings)} existing tag bindings:")
             for binding in current_bindings:
                 print(
-                    f"   🔗 Binding: {binding.key} = {binding.value} (ID: {binding.id})"
+                    f"    Binding: {binding.key} = {binding.value} (ID: {binding.id})"
                 )
 
             # 8B.2 List effective tag bindings (including inherited)
-            print("\n🌐 Listing effective tag bindings (including inherited)...")
+            print("\n Listing effective tag bindings (including inherited)...")
             effective_bindings = list(
                 self.workspaces.list_effective_tag_bindings(workspace_id)
             )
 
-            print(f"   📊 Found {len(effective_bindings)} effective tag bindings:")
+            print(f"    Found {len(effective_bindings)} effective tag bindings:")
             for binding in effective_bindings:
                 links_info = (
                     f" (Links: {len(binding.links)} entries)" if binding.links else ""
                 )
-                print(f"   🌐 Effective: {binding.key} = {binding.value}{links_info}")
+                print(f"    Effective: {binding.key} = {binding.value}{links_info}")
 
             # 8B.3 Add new tag bindings
-            print("\n➕ Adding new tag bindings to workspace...")
+            print("\n Adding new tag bindings to workspace...")
             new_bindings = [
                 TagBinding(key="environment", value="production"),
                 TagBinding(key="team", value="infrastructure"),
@@ -716,15 +681,13 @@ class WorkspaceManager:
             result_bindings = list(
                 self.workspaces.add_tag_bindings(workspace_id, add_options)
             )
-            print(f"   ✅ Successfully added {len(result_bindings)} tag bindings")
+            print(f"    Successfully added {len(result_bindings)} tag bindings")
 
             for binding in result_bindings:
-                print(
-                    f"   🔗 Added: {binding.key} = {binding.value} (ID: {binding.id})"
-                )
+                print(f"    Added: {binding.key} = {binding.value} (ID: {binding.id})")
 
             # 8B.4 Update existing tag bindings (same key, new value)
-            print("\n✏️  Updating existing tag bindings...")
+            print("\n  Updating existing tag bindings...")
             update_bindings = [
                 TagBinding(key="environment", value="staging"),  # Update existing
                 TagBinding(key="version", value="v2.1.0"),  # Add new
@@ -736,57 +699,34 @@ class WorkspaceManager:
             updated_result = list(
                 self.workspaces.add_tag_bindings(workspace_id, update_options)
             )
-            print(
-                f"   ✅ Successfully updated/added {len(updated_result)} tag bindings"
-            )
+            print(f"    Successfully updated/added {len(updated_result)} tag bindings")
 
             for binding in updated_result:
-                print(f"   ✏️  Updated: {binding.key} = {binding.value}")
+                print(f"     Updated: {binding.key} = {binding.value}")
 
             # 8B.5 Delete all tag bindings
-            print("\n🗑️  Removing all tag bindings...")
+            print("\n  Removing all tag bindings...")
             self.workspaces.delete_all_tag_bindings(workspace_id)
-            print("   ✅ Successfully removed all tag bindings")
+            print("    Successfully removed all tag bindings")
 
             # 8B.6 Verify deletion
-            print("\n✅ Verifying tag binding deletion...")
+            print("\n Verifying tag binding deletion...")
             final_bindings = list(self.workspaces.list_tag_bindings(workspace_id))
-            print(f"   📊 Remaining tag bindings: {len(final_bindings)}")
+            print(f"    Remaining tag bindings: {len(final_bindings)}")
 
             if final_bindings:
-                print("   ⚠️  Some bindings remain:")
+                print("     Some bindings remain:")
                 for binding in final_bindings:
-                    print(f"      🔗 {binding.key} = {binding.value}")
+                    print(f"       {binding.key} = {binding.value}")
             else:
-                print("   ✅ All tag bindings successfully removed")
-
-            # Best practices and tips
-            print("\n💡 TAG BINDING MANAGEMENT BEST PRACTICES:")
-            print(
-                "   🏗️  Use consistent key naming conventions (e.g., 'environment', 'team')"
-            )
-            print("   📊 Tag bindings enable fine-grained resource categorization")
-            print(
-                "   🔍 Use effective bindings to see the complete inheritance hierarchy"
-            )
-            print("   ✏️  Update bindings by adding with same key and new value")
-            print("   🌐 Leverage inherited bindings for organization-wide standards")
-            print("   🗑️  Use delete_all_tag_bindings to reset workspace bindings")
+                print("    All tag bindings successfully removed")
 
         except Exception as e:
-            print(f"   ❌ Tag binding operations failed: {e}")
-            print("   💡 This may be due to:")
-            print(
-                "      • Insufficient permissions for workspace tag binding management"
-            )
-            print("      • Invalid tag binding keys or values")
-            print("      • Network connectivity issues")
-            print("      • Workspace not found or inaccessible")
-            print("      • Organization-level tag binding restrictions")
+            print(f"    Tag binding operations failed: {e}")
 
     def demo_data_retention_policy_operations(self, workspace_id: str):
         """Demonstrate workspace data retention policy management operations."""
-        print("\n📊 Data Retention Policy Operations")
+        print("\n Data Retention Policy Operations")
         print("-" * 50)
 
         try:
@@ -796,9 +736,9 @@ class WorkspaceManager:
                 workspace_id
             )
             if current_policy is None or not current_policy.is_populated():
-                print("   ✅ No data retention policy currently set")
+                print("    No data retention policy currently set")
             else:
-                print(f"   📋 Current policy: {current_policy}")
+                print(f"    Current policy: {current_policy}")
 
             # Set a "delete older" data retention policy
             print("\n2. Setting 'delete older' data retention policy (30 days)...")
@@ -810,9 +750,9 @@ class WorkspaceManager:
                     workspace_id, options=delete_older_options
                 )
             )
-            print(f"   ✅ Set delete older policy: ID={delete_older_policy.id}")
+            print(f"    Set delete older policy: ID={delete_older_policy.id}")
             print(
-                f"   📅 Delete after: {delete_older_policy.delete_older_than_n_days} days"
+                f"   Delete after: {delete_older_policy.delete_older_than_n_days} days"
             )
 
             # Read the updated data retention policy choice
@@ -821,18 +761,18 @@ class WorkspaceManager:
                 workspace_id
             )
             if updated_policy and updated_policy.is_populated():
-                print("   ✅ Data retention policy choice retrieved successfully")
+                print("    Data retention policy choice retrieved successfully")
                 if updated_policy.data_retention_policy_delete_older:
                     drp = updated_policy.data_retention_policy_delete_older
-                    print("   🗃️  Policy Type: Delete Older")
-                    print(f"   🆔 Policy ID: {drp.id}")
-                    print(f"   📅 Delete after: {drp.delete_older_than_n_days} days")
+                    print("     Policy Type: Delete Older")
+                    print(f"    Policy ID: {drp.id}")
+                    print(f"    Delete after: {drp.delete_older_than_n_days} days")
 
                 # Test legacy conversion
                 legacy_policy = updated_policy.convert_to_legacy_struct()
                 if legacy_policy:
                     print(
-                        f"   🔄 Legacy conversion: ID={legacy_policy.id}, Days={legacy_policy.delete_older_than_n_days}"
+                        f"    Legacy conversion: ID={legacy_policy.id}, Days={legacy_policy.delete_older_than_n_days}"
                     )
 
             # Update to a different retention period
@@ -845,9 +785,9 @@ class WorkspaceManager:
                     workspace_id, options=updated_delete_older_options
                 )
             )
-            print(f"   ✅ Updated policy: ID={updated_delete_older_policy.id}")
+            print(f"    Updated policy: ID={updated_delete_older_policy.id}")
             print(
-                f"   📅 New retention period: {updated_delete_older_policy.delete_older_than_n_days} days"
+                f"    New retention period: {updated_delete_older_policy.delete_older_than_n_days} days"
             )
 
             # Switch to "don't delete" policy
@@ -856,8 +796,8 @@ class WorkspaceManager:
             dont_delete_policy = self.workspaces.set_data_retention_policy_dont_delete(
                 workspace_id, options=dont_delete_options
             )
-            print(f"   ✅ Set don't delete policy: ID={dont_delete_policy.id}")
-            print("   ♾️  Data will never be automatically deleted")
+            print(f"    Set don't delete policy: ID={dont_delete_policy.id}")
+            print("     Data will never be automatically deleted")
 
             # Read the don't delete policy
             print("\n6. Reading 'don't delete' policy...")
@@ -869,20 +809,20 @@ class WorkspaceManager:
                 and dont_delete_choice.data_retention_policy_dont_delete
             ):
                 dnd = dont_delete_choice.data_retention_policy_dont_delete
-                print(f"   ✅ Don't delete policy confirmed: ID={dnd.id}")
-                print("   ♾️  Data retention: Indefinite (never delete)")
+                print(f"    Don't delete policy confirmed: ID={dnd.id}")
+                print("     Data retention: Indefinite (never delete)")
 
                 # Test legacy conversion (should return None for don't delete policies)
                 legacy_policy = dont_delete_choice.convert_to_legacy_struct()
                 if legacy_policy is None:
                     print(
-                        "   🔄 Legacy conversion: None (don't delete policies can't be represented as legacy)"
+                        "   Legacy conversion: None (don't delete policies can't be represented as legacy)"
                     )
 
             # Clean up - delete the data retention policy
             print("\n7. Cleaning up - deleting data retention policy...")
             self.workspaces.delete_data_retention_policy(workspace_id)
-            print("   ✅ Data retention policy deleted successfully")
+            print("    Data retention policy deleted successfully")
 
             # Verify deletion
             print("\n8. Verifying policy deletion...")
@@ -890,96 +830,40 @@ class WorkspaceManager:
                 workspace_id
             )
             if final_policy is None or not final_policy.is_populated():
-                print("   ✅ Confirmed: No data retention policy set")
+                print("    Confirmed: No data retention policy set")
             else:
-                print(f"   ⚠️  Unexpected: Policy still exists: {final_policy}")
-
-            print("\n✅ Data Retention Policy Operations Summary:")
-            print("   🗃️  Created 'delete older' policy with 30-day retention")
-            print("   📅 Updated retention period to 60 days")
-            print("   ♾️  Switched to 'don't delete' policy")
-            print("   🔄 Tested legacy policy conversion methods")
-            print("   🗑️  Successfully deleted policy")
+                print(f"     Unexpected: Policy still exists: {final_policy}")
 
         except Exception as e:
             error_msg = str(e).lower()
             if "not found" in error_msg:
-                print(f"   ⚠️  Data retention policy feature not available: {e}")
-                print(
-                    "\n   💡 IMPORTANT: Data retention policies are a Terraform Enterprise feature"
-                )
-                print(
-                    "   📋 This feature is NOT available in Terraform Cloud (app.terraform.io)"
-                )
-                print("   🏢 To use data retention policies, you need:")
-                print("      • Terraform Enterprise (self-hosted)")
-                print("      • Terraform Business tier or higher")
-                print("      • Admin permissions on the organization")
-                print(
-                    "\n   ✅ This is expected behavior when running against Terraform Cloud"
-                )
-                print(
-                    "   📝 The implementation is correct and will work with Terraform Enterprise"
-                )
+                print(f"     Data retention policy feature not available: {e}")
             else:
-                print(f"   ❌ Data retention policy operations failed: {e}")
-                print("   💡 This may be due to:")
-                print(
-                    "      • Insufficient permissions for data retention policy management"
-                )
-                print("      • Terraform Enterprise license requirements")
-                print("      • Network connectivity issues")
-                print("      • Workspace not found or inaccessible")
-                print("      • Organization-level policy restrictions")
+                print(f"    Data retention policy operations failed: {e}")
 
     def demo_delete_operations(
         self, organization: str, workspace_name: str, workspace_id: str
     ):
         """Demonstrate workspace deletion operations."""
-        print("\n🗑️  9. WORKSPACE DELETE OPERATIONS")
+        print("\n  9. WORKSPACE DELETE OPERATIONS")
         print("-" * 40)
 
-        print("🛡️  Performing safe delete...")
+        print("  Performing safe delete...")
         try:
             # Safe delete (recommended)
             self.workspaces.safe_delete(organization, workspace_name)
-            print(f"   ✅ Safe delete initiated for: {workspace_name}")
-            print("   📝 Safe delete queues deletion after checking for dependencies")
+            print(f"    Safe delete initiated for: {workspace_name}")
+            print("    Safe delete queues deletion after checking for dependencies")
 
         except Exception as e:
-            print(f"   ⚠️  Safe delete failed, trying regular delete: {e}")
+            print(f"     Safe delete failed, trying regular delete: {e}")
 
             # Regular delete (immediate)
             try:
                 self.workspaces.delete(organization, workspace_name)
-                print(f"   ✅ Workspace deleted: {workspace_name}")
+                print(f"   Workspace deleted: {workspace_name}")
             except Exception as delete_error:
-                print(f"   ❌ Delete failed: {delete_error}")
-                print("   🧹 Manual cleanup may be required")
-
-    def demo_error_handling(self, organization: str):
-        """Demonstrate error handling patterns."""
-        print("\n⚠️  ERROR HANDLING DEMONSTRATIONS")
-        print("-" * 40)
-
-        # Invalid organization
-        try:
-            options = WorkspaceListOptions()
-            list(self.workspaces.list("", options=options))
-        except InvalidOrgError:
-            print("   ✅ Caught InvalidOrgError for empty organization")
-
-        # Invalid workspace ID
-        try:
-            self.workspaces.read_by_id("")
-        except InvalidWorkspaceIDError:
-            print("   ✅ Caught InvalidWorkspaceIDError for empty ID")
-
-        # Nonexistent workspace
-        try:
-            self.workspaces.read(organization, "nonexistent-workspace-12345")
-        except TFEError as e:
-            print(f"   ✅ Caught TFEError for nonexistent workspace: {e}")
+                print(f"   Delete failed: {delete_error}")
 
 
 def main():
@@ -989,27 +873,10 @@ def main():
     address = os.getenv("TFE_ADDRESS", "https://app.terraform.io")
     organization = os.getenv("TFE_ORG", "your-org-name")  # Replace with your org
 
-    if not token:
-        print("Error: TFE_TOKEN environment variable is required")
-        print("Set it with: export TFE_TOKEN=your-token-here")
-        sys.exit(1)
-
-    if organization == "your-org-name":
-        print("Warning: Using default organization name")
-        print("Set TFE_ORG environment variable or update the script")
-
-        # Allow user to input organization name
-        org_input = input("Enter your organization name: ").strip()
-        if org_input:
-            organization = org_input
-        else:
-            print("Organization name is required")
-            sys.exit(1)
-
-    print(f"🌐 Terraform Address: {address}")
-    print(f"🏢 Organization: {organization}")
+    print(f" Terraform Address: {address}")
+    print(f" Organization: {organization}")
     print(
-        f"🔑 Token: {'*' * (len(token) - 8) + token[-8:] if len(token) > 8 else '****'}"
+        f" Token: {'*' * (len(token) - 8) + token[-8:] if len(token) > 8 else '****'}"
     )
 
     try:
@@ -1019,15 +886,8 @@ def main():
         # Run comprehensive demo
         manager.demonstrate_all_operations(organization)
 
-        # Demonstrate error handling
-        manager.demo_error_handling(organization)
-
     except Exception as e:
         print(f"\nDemo failed with error: {e}")
-        print("💡 Common issues:")
-        print("   • Invalid token or organization")
-        print("   • Network connectivity problems")
-        print("   • Insufficient permissions")
         raise
 
 
