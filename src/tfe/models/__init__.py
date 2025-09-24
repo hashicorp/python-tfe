@@ -4,6 +4,20 @@
 import importlib.util
 import os
 
+# Re-export all configuration version types
+from .configuration_version_types import (
+    ConfigurationSource,
+    ConfigurationStatus,
+    ConfigurationVersion,
+    ConfigurationVersionCreateOptions,
+    ConfigurationVersionList,
+    ConfigurationVersionListOptions,
+    ConfigurationVersionReadOptions,
+    ConfigurationVersionUpload,
+    ConfigVerIncludeOpt,
+    IngressAttributes,
+)
+
 # Re-export all registry module types
 from .registry_module_types import (
     AgentExecutionMode,
@@ -51,6 +65,17 @@ from .registry_provider_types import (
 
 # Define what should be available when importing with *
 __all__ = [
+    # Configuration version types
+    "ConfigurationSource",
+    "ConfigurationStatus",
+    "ConfigurationVersion",
+    "ConfigurationVersionCreateOptions",
+    "ConfigurationVersionList",
+    "ConfigurationVersionListOptions",
+    "ConfigurationVersionReadOptions",
+    "ConfigurationVersionUpload",
+    "ConfigVerIncludeOpt",
+    "IngressAttributes",
     # Registry module types
     "AgentExecutionMode",
     "Commit",

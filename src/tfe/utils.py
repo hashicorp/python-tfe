@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import io
 import re
 import time
 from collections.abc import Callable, Mapping
 from typing import Any
+
+try:
+    import slug  # type: ignore[import-not-found]
+except ImportError:
+    slug = None
 
 from .errors import (
     InvalidNameError,
@@ -197,3 +203,38 @@ def validate_workspace_update_options(options: WorkspaceUpdateOptions) -> None:
 
         if options.file_triggers_enabled is not None and options.file_triggers_enabled:
             raise UnsupportedBothTagsRegexAndFileTriggersEnabledError()
+
+
+def pack_contents(path: str) -> io.BytesIO:
+    """
+    Pack directory contents into a tar.gz archive suitable for upload.
+
+    Args:
+        path: Path to the directory to pack
+
+    Returns:
+        BytesIO buffer containing the tar.gz archive
+
+    Raises:
+        ImportError: If go-slug is not available
+        ValueError: If path is invalid
+    """
+    if slug is None:
+        raise ImportError(
+            "go-slug package is required for packing configuration files. "
+            "Install it with: pip install go-slug"
+        )
+
+    body = io.BytesIO()
+
+    # Use go-slug to pack the configuration directory
+    # This handles .terraformignore and other Terraform-specific behaviors
+    packer = slug.Packer()
+    _, err = packer.pack(path, body)
+
+    if err:
+        raise ValueError(f"Failed to pack directory {path}: {err}")
+
+    # Reset buffer position to beginning for reading
+    body.seek(0)
+    return body

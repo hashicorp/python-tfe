@@ -9,7 +9,7 @@ class TFEError(Exception):
         message: str,
         *,
         status: int | None = None,
-        errors: list[dict] | None = None,
+        errors: list[dict | str] | None = None,
     ):
         super().__init__(message)
         self.status = status
@@ -84,6 +84,8 @@ ERR_INVALID_MODULE_ID = "invalid module ID"
 # Workspaces
 ERR_INVALID_WORKSPACE_ID = "invalid workspace ID"
 ERR_INVALID_VARIABLE_ID = "invalid variable ID"
+# Configuration Versions
+ERR_INVALID_CONFIG_VERSION_ID = "invalid configuration version ID"
 ERR_REQUIRED_KEY = "key is required"
 ERR_REQUIRED_CATEGORY = "category is required"
 
