@@ -4,6 +4,25 @@
 import importlib.util
 import os
 
+# Re-export all agent and agent pool types
+from .agent import (
+    Agent,
+    AgentListOptions,
+    AgentPool,
+    AgentPoolAllowedWorkspacePolicy,
+    AgentPoolAssignToWorkspacesOptions,
+    AgentPoolCreateOptions,
+    AgentPoolListOptions,
+    AgentPoolReadOptions,
+    AgentPoolRemoveFromWorkspacesOptions,
+    AgentPoolUpdateOptions,
+    AgentReadOptions,
+    AgentStatus,
+    AgentToken,
+    AgentTokenCreateOptions,
+    AgentTokenListOptions,
+)
+
 # Re-export all registry module types
 from .registry_module_types import (
     AgentExecutionMode,
@@ -51,6 +70,22 @@ from .registry_provider_types import (
 
 # Define what should be available when importing with *
 __all__ = [
+    # Agent and agent pool types
+    "Agent",
+    "AgentPool",
+    "AgentPoolAllowedWorkspacePolicy",
+    "AgentPoolAssignToWorkspacesOptions",
+    "AgentPoolCreateOptions",
+    "AgentPoolListOptions",
+    "AgentPoolReadOptions",
+    "AgentPoolRemoveFromWorkspacesOptions",
+    "AgentPoolUpdateOptions",
+    "AgentStatus",
+    "AgentListOptions",
+    "AgentReadOptions",
+    "AgentToken",
+    "AgentTokenCreateOptions",
+    "AgentTokenListOptions",
     # Registry module types
     "AgentExecutionMode",
     "Commit",

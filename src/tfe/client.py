@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from ._http import HTTPTransport
 from .config import TFEConfig
+from .resources.agent_pools import AgentPools
+from .resources.agents import Agents, AgentTokens
 from .resources.organizations import Organizations
 from .resources.projects import Projects
 from .resources.registry_module import RegistryModules
@@ -32,6 +34,12 @@ class TFEClient:
             proxies=cfg.proxies,
             ca_bundle=cfg.ca_bundle,
         )
+        # Agent resources
+        self.agent_pools = AgentPools(self._transport)
+        self.agents = Agents(self._transport)
+        self.agent_tokens = AgentTokens(self._transport)
+
+        # Core resources
         self.organizations = Organizations(self._transport)
         self.projects = Projects(self._transport)
         self.variables = Variables(self._transport)
@@ -41,6 +49,7 @@ class TFEClient:
         self.registry_modules = RegistryModules(self._transport)
         self.registry_providers = RegistryProviders(self._transport)
 
+        # State and execution resources
         self.state_versions = StateVersions(self._transport)
         self.state_version_outputs = StateVersionOutputs(self._transport)
         self.run_tasks = RunTasks(self._transport)
