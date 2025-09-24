@@ -314,3 +314,19 @@ class InvalidRunTriggerIDError(InvalidValues):
 
     def __init__(self, message: str = "invalid value for run trigger ID"):
         super().__init__(message)
+
+
+# Plan errors
+class InvalidPlanIDError(InvalidValues):
+    """Raised when an invalid plan ID is provided."""
+
+    def __init__(self, message: str = "invalid value for plan ID"):
+        super().__init__(message)
+
+
+# Apply errors
+class InvalidApplyIDError(InvalidValues):
+    """Raised when an invalid apply ID is provided."""
+
+    def __init__(self, message: str = "invalid value for apply ID"):
+        super().__init__(message)

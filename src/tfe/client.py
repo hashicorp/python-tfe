@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from ._http import HTTPTransport
 from .config import TFEConfig
+from .resources.apply import Applies
 from .resources.organizations import Organizations
+from .resources.plan import Plans
 from .resources.projects import Projects
 from .resources.registry_module import RegistryModules
 from .resources.registry_provider import RegistryProviders
@@ -32,6 +34,8 @@ class TFEClient:
             proxies=cfg.proxies,
             ca_bundle=cfg.ca_bundle,
         )
+        self.applies = Applies(self._transport)
+        self.plans = Plans(self._transport)
         self.organizations = Organizations(self._transport)
         self.projects = Projects(self._transport)
         self.variables = Variables(self._transport)
