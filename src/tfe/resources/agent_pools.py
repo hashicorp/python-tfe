@@ -91,7 +91,7 @@ def _safe_bool(value: Any) -> bool | None:
     if isinstance(value, bool):
         return value
     if isinstance(value, str):
-        return value.lower() in ('true', '1', 'yes', 'on')
+        return value.lower() in ("true", "1", "yes", "on")
     return bool(value)
 
 
@@ -173,7 +173,9 @@ class AgentPools(_Service):
                 name=_safe_str(agent_pool_data["name"]),
                 created_at=cast(Any, agent_pool_data["created_at"]),
                 organization_scoped=_safe_bool(agent_pool_data["organization_scoped"]),
-                allowed_workspace_policy=_safe_workspace_policy(agent_pool_data["allowed_workspace_policy"]),
+                allowed_workspace_policy=_safe_workspace_policy(
+                    agent_pool_data["allowed_workspace_policy"]
+                ),
                 agent_count=_safe_int(agent_pool_data["agent_count"]),
             )
 
@@ -225,7 +227,9 @@ class AgentPools(_Service):
             name=_safe_str(agent_pool_data["name"]),
             created_at=cast(Any, agent_pool_data["created_at"]),
             organization_scoped=_safe_bool(agent_pool_data["organization_scoped"]),
-            allowed_workspace_policy=_safe_workspace_policy(agent_pool_data["allowed_workspace_policy"]),
+            allowed_workspace_policy=_safe_workspace_policy(
+                agent_pool_data["allowed_workspace_policy"]
+            ),
             agent_count=_safe_int(agent_pool_data["agent_count"]),
         )
 
@@ -283,7 +287,9 @@ class AgentPools(_Service):
             name=_safe_str(agent_pool_data["name"]),
             created_at=cast(Any, agent_pool_data["created_at"]),
             organization_scoped=_safe_bool(agent_pool_data["organization_scoped"]),
-            allowed_workspace_policy=_safe_workspace_policy(agent_pool_data["allowed_workspace_policy"]),
+            allowed_workspace_policy=_safe_workspace_policy(
+                agent_pool_data["allowed_workspace_policy"]
+            ),
             agent_count=_safe_int(agent_pool_data["agent_count"]),
         )
 
@@ -344,7 +350,9 @@ class AgentPools(_Service):
             name=_safe_str(agent_pool_data["name"]),
             created_at=cast(Any, agent_pool_data["created_at"]),
             organization_scoped=_safe_bool(agent_pool_data["organization_scoped"]),
-            allowed_workspace_policy=_safe_workspace_policy(agent_pool_data["allowed_workspace_policy"]),
+            allowed_workspace_policy=_safe_workspace_policy(
+                agent_pool_data["allowed_workspace_policy"]
+            ),
             agent_count=_safe_int(agent_pool_data["agent_count"]),
         )
 
