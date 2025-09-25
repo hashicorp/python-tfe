@@ -363,19 +363,15 @@ class TestConfigurationVersionsUpload:
         upload_url = "https://example.com/upload"
         directory_path = "/tmp/test"
 
-        # Mock httpx client and response
-        with patch("httpx.Client") as mock_client_class:
-            mock_client = Mock()
-            mock_client_class.return_value.__enter__.return_value = mock_client
+        # Mock transport's underlying httpx client instead of direct httpx
+        mock_response = Mock()
+        mock_response.status_code = 200
+        configuration_versions_service.t._sync.put.return_value = mock_response
 
-            mock_response = Mock()
-            mock_response.status_code = 200
-            mock_client.put.return_value = mock_response
+        configuration_versions_service.upload(upload_url, directory_path)
 
-            configuration_versions_service.upload(upload_url, directory_path)
-
-            # Verify slug.pack was called
-            mock_packer.pack.assert_called_once()
+        # Verify slug.pack was called
+        mock_packer.pack.assert_called_once()
 
 
 class TestConfigurationVersionsUploadTarGzip:
@@ -389,26 +385,23 @@ class TestConfigurationVersionsUploadTarGzip:
         archive_data = b"mock-tar-gzip-data"
         mock_archive = io.BytesIO(archive_data)
 
-        with patch("httpx.Client") as mock_client_class:
-            mock_client = Mock()
-            mock_client_class.return_value.__enter__.return_value = mock_client
+        # Mock the transport's underlying httpx client
+        mock_response = Mock()
+        mock_response.status_code = 200
+        configuration_versions_service.t._sync.put.return_value = mock_response
 
-            mock_response = Mock()
-            mock_response.status_code = 200
-            mock_client.put.return_value = mock_response
+        configuration_versions_service.upload_tar_gzip(upload_url, mock_archive)
 
-            configuration_versions_service.upload_tar_gzip(upload_url, mock_archive)
-
-            # Verify HTTP PUT request includes follow_redirects
-            mock_client.put.assert_called_once_with(
-                upload_url,
-                content=archive_data,
-                headers={
-                    "Content-Type": "application/octet-stream",
-                    "Content-Length": str(len(archive_data)),
-                },
-                follow_redirects=True,
-            )
+        # Verify transport's httpx client PUT request
+        configuration_versions_service.t._sync.put.assert_called_once_with(
+            upload_url,
+            content=archive_data,
+            headers={
+                "Content-Type": "application/octet-stream",
+                "Content-Length": str(len(archive_data)),
+            },
+            follow_redirects=True,
+        )
 
 
 class TestConfigurationVersionsUploadErrors:
@@ -419,17 +412,14 @@ class TestConfigurationVersionsUploadErrors:
         upload_url = "https://example.com/upload"
         mock_archive = io.BytesIO(b"data")
 
-        with patch("httpx.Client") as mock_client_class:
-            mock_client = Mock()
-            mock_client_class.return_value.__enter__.return_value = mock_client
+        # Mock the transport's underlying httpx client to return an error
+        mock_response = Mock()
+        mock_response.status_code = 400
+        mock_response.text = "Bad Request"
+        configuration_versions_service.t._sync.put.return_value = mock_response
 
-            mock_response = Mock()
-            mock_response.status_code = 400
-            mock_response.text = "Bad Request"
-            mock_client.put.return_value = mock_response
-
-            with pytest.raises(TFEError, match="Upload failed"):
-                configuration_versions_service.upload_tar_gzip(upload_url, mock_archive)
+        with pytest.raises(TFEError, match="Upload failed"):
+            configuration_versions_service.upload_tar_gzip(upload_url, mock_archive)
 
 
 class TestConfigurationVersionsDownload:

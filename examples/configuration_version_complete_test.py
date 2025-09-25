@@ -298,30 +298,13 @@ def main():
                     archive_bytes = archive_buffer.getvalue()
                     print(f"     → Created archive: {len(archive_bytes)} bytes")
 
-                    # Make direct HTTP PUT request to upload URL
-                    import httpx
-
-                    headers = {
-                        "Content-Type": "application/octet-stream",
-                        "Content-Length": str(len(archive_bytes)),
-                    }
-
-                    print("     → Uploading archive to TFE...")
-                    with httpx.Client() as http_client:
-                        response = http_client.put(
-                            new_cv.upload_url,
-                            content=archive_bytes,
-                            headers=headers,
-                            follow_redirects=True,
-                        )
-
-                        if response.status_code in [200, 201, 204]:
-                            print(
-                                "     ✓ Terraform configuration uploaded successfully!"
-                            )
-                        else:
-                            print(f"     ⚠ Upload failed: HTTP {response.status_code}")
-                            print(f"       Response: {response.text[:200]}")
+                    # Use the SDK's upload_tar_gzip method instead of direct HTTP calls
+                    print("     → Uploading archive using SDK method...")
+                    archive_buffer.seek(0)  # Reset buffer position
+                    client.configuration_versions.upload_tar_gzip(
+                        new_cv.upload_url, archive_buffer
+                    )
+                    print("     ✓ Terraform configuration uploaded successfully!")
 
                     # Wait and check status
                     print("\n     → Checking status after upload...")
@@ -357,7 +340,7 @@ def main():
         standard_cv = client.configuration_versions.create(
             workspace_id, standard_options
         )
-        uploadable_cv_id = standard_cv.id  # Use this for upload test
+        uploadable_cv_id = standard_cv.id  # Save for summary display
         print(f"   ✓ Created standard CV: {standard_cv.id}")
         print(f"     Status: {standard_cv.status}")
         print(f"     Speculative: {standard_cv.speculative}")
@@ -435,67 +418,72 @@ def main():
     # =====================================================
     # TEST 4: UPLOAD CONFIGURATION VERSION
     # =====================================================
-    if uploadable_cv_id:
-        print("\n4. Testing upload() function:")
-        try:
-            # First get the configuration version to get the upload URL
-            uploadable_cv = client.configuration_versions.read(uploadable_cv_id)
-            upload_url = uploadable_cv.upload_url
+    # Test 4: Upload function (requires go-slug)
+    # =====================================================
+    print("\n4. Testing upload() function:")
+    try:
+        # Create a fresh configuration version specifically for upload testing
+        upload_options = ConfigurationVersionCreateOptions(
+            auto_queue_runs=False, speculative=True
+        )
 
-            if not upload_url:
-                print("   ⚠ No upload URL available for this configuration version")
-                print("     Configuration version may not be in uploadable state")
-            else:
-                with tempfile.TemporaryDirectory() as temp_dir:
-                    print(f"   Creating test configuration in: {temp_dir}")
-                    create_test_terraform_configuration(temp_dir)
+        fresh_cv = client.configuration_versions.create(workspace_id, upload_options)
+        print(f"   Created fresh CV for upload: {fresh_cv.id}")
 
-                    # List created files
-                    files = os.listdir(temp_dir)
-                    print(f"   Created {len(files)} files:")
-                    for filename in sorted(files):
-                        filepath = os.path.join(temp_dir, filename)
-                        size = os.path.getsize(filepath)
-                        print(f"     - {filename} ({size} bytes)")
+        upload_url = fresh_cv.upload_url
 
-                    print(f"\n   Uploading configuration to CV: {uploadable_cv_id}")
-                    print(f"   Upload URL: {upload_url[:60]}...")
+        if not upload_url:
+            print("   ⚠ No upload URL available for this configuration version")
+            print("     Configuration version may not be in uploadable state")
+        else:
+            with tempfile.TemporaryDirectory() as temp_dir:
+                print(f"   Creating test configuration in: {temp_dir}")
+                create_test_terraform_configuration(temp_dir)
 
-                    try:
-                        client.configuration_versions.upload(upload_url, temp_dir)
-                        print("   ✓ Configuration uploaded successfully!")
+                # List created files
+                files = os.listdir(temp_dir)
+                print(f"   Created {len(files)} files:")
+                for filename in sorted(files):
+                    filepath = os.path.join(temp_dir, filename)
+                    size = os.path.getsize(filepath)
+                    print(f"     - {filename} ({size} bytes)")
 
-                        # Check status after upload
-                        print("\n   Checking status after upload:")
-                        time.sleep(3)  # Give TFE time to process
-                        updated_cv = client.configuration_versions.read(
-                            uploadable_cv_id
+                print(f"\n   Uploading configuration to CV: {fresh_cv.id}")
+                print(f"   Upload URL: {upload_url[:60]}...")
+
+                try:
+                    client.configuration_versions.upload(upload_url, temp_dir)
+                    print("   ✓ Configuration uploaded successfully!")
+
+                    # Check status after upload
+                    print("\n   Checking status after upload:")
+                    time.sleep(3)  # Give TFE time to process
+                    updated_cv = client.configuration_versions.read(fresh_cv.id)
+                    print(f"     Status after upload: {updated_cv.status}")
+
+                    if updated_cv.status.value != "pending":
+                        print("     ✓ Status changed (upload processed)")
+                    else:
+                        print("     ⚠ Status still pending (may need more time)")
+
+                except ImportError as e:
+                    if "go-slug" in str(e):
+                        print("   ⚠ go-slug package not available")
+                        print("     Install with: pip install go-slug")
+                        print(
+                            "     Upload function exists but requires go-slug for packaging"
                         )
-                        print(f"     Status after upload: {updated_cv.status}")
+                        print(
+                            "   ✓ Function correctly raises ImportError when go-slug unavailable"
+                        )
+                    else:
+                        raise
 
-                        if updated_cv.status.value != "pending":
-                            print("     ✓ Status changed (upload processed)")
-                        else:
-                            print("     ⚠ Status still pending (may need more time)")
+    except Exception as e:
+        print(f"   ✗ Error: {e}")
+        import traceback
 
-                    except ImportError as e:
-                        if "go-slug" in str(e):
-                            print("   ⚠ go-slug package not available")
-                            print("     Install with: pip install go-slug")
-                            print(
-                                "     Upload function exists but requires go-slug for packaging"
-                            )
-                            print(
-                                "   ✓ Function correctly raises ImportError when go-slug unavailable"
-                            )
-                        else:
-                            raise
-
-        except Exception as e:
-            print(f"   ✗ Error: {e}")
-            import traceback
-
-            traceback.print_exc()
+        traceback.print_exc()
 
     # =====================================================
     # TEST 5: DOWNLOAD CONFIGURATION VERSION

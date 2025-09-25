@@ -128,15 +128,6 @@ class ConfigurationVersions(_Service):
 
     def upload_tar_gzip(self, upload_url: str, archive: io.IOBase) -> None:
         """Upload a tar gzip archive to the configuration version upload URL."""
-        # This is a foreign PUT request to the upload URL that requires binary content
-        # We need to use direct httpx since the HTTP transport only supports JSON
-        try:
-            import httpx
-        except ImportError as e:
-            raise ImportError(
-                "httpx is required for binary uploads. Install with: pip install httpx"
-            ) from e
-
         # Get the binary content from the archive
         if hasattr(archive, "getvalue"):
             # BytesIO case
@@ -154,14 +145,15 @@ class ConfigurationVersions(_Service):
                 "Archive must be a file-like object with read() or getvalue() method"
             )
 
-        # Use direct httpx for binary upload
+        # Use the transport layer's underlying httpx client for binary upload
+        # This is a foreign PUT request to the upload URL that requires binary content
         headers = {
             "Content-Type": "application/octet-stream",
             "Content-Length": str(len(archive_bytes)),
         }
 
-        with httpx.Client(timeout=30.0) as client:
-            response = client.put(
+        try:
+            response = self.t._sync.put(
                 upload_url,
                 content=archive_bytes,
                 headers=headers,
@@ -181,6 +173,10 @@ class ConfigurationVersions(_Service):
                     raise TFEError(
                         f"Upload failed with status {response.status_code}: {response.text}"
                     )
+        except Exception as e:
+            if isinstance(e, (NotFound, AuthError, ServerError, TFEError)):
+                raise
+            raise TFEError(f"Upload failed: {str(e)}") from e
 
     def archive(self, cv_id: str) -> None:
         """Archive a configuration version."""
