@@ -4,6 +4,7 @@ import re
 import time
 from collections.abc import Callable, Mapping
 from typing import Any
+from urllib.parse import urlparse
 
 from .errors import (
     InvalidNameError,
@@ -197,3 +198,13 @@ def validate_workspace_update_options(options: WorkspaceUpdateOptions) -> None:
 
         if options.file_triggers_enabled is not None and options.file_triggers_enabled:
             raise UnsupportedBothTagsRegexAndFileTriggersEnabledError()
+
+
+def validate_log_url(log_url: str) -> None:
+    """Validate a log URL for Terraform resources."""
+    try:
+        parsed_url = urlparse(log_url)
+        if not parsed_url.scheme or not parsed_url.netloc:
+            raise ValueError(f"Invalid log URL format: {log_url}")
+    except Exception as e:
+        raise ValueError(f"Invalid log URL: {log_url}") from e
