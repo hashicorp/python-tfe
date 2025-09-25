@@ -22,13 +22,15 @@ class Apply(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     id: str
-    log_read_url: str = Field(..., alias="log-read-url")
-    resource_additions: int = Field(..., alias="resource-additions")
-    resource_changes: int = Field(..., alias="resource-changes")
-    resource_destructions: int = Field(..., alias="resource-destructions")
-    resource_imports: int = Field(..., alias="resource-imports")
-    status: ApplyStatus = Field(..., alias="status")
-    status_timestamps: ApplyStatusTimestamps = Field(..., alias="status-timestamps")
+    log_read_url: str | None = Field(None, alias="log-read-url")
+    resource_additions: int | None = Field(None, alias="resource-additions")
+    resource_changes: int | None = Field(None, alias="resource-changes")
+    resource_destructions: int | None = Field(None, alias="resource-destructions")
+    resource_imports: int | None = Field(None, alias="resource-imports")
+    status: ApplyStatus | None = Field(None, alias="status")
+    status_timestamps: ApplyStatusTimestamps | None = Field(
+        None, alias="status-timestamps"
+    )
 
 
 class ApplyStatusTimestamps(BaseModel):
