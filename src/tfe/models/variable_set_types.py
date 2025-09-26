@@ -160,3 +160,6 @@ class VariableSetVariableUpdateOptions(BaseModel):
     description: str | None = None
     hcl: bool | None = None
     sensitive: bool | None = None
+
+
+# Model rebuild functionality for runtime
