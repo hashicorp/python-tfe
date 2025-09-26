@@ -2,10 +2,6 @@
 
 This module contains Pydantic models for Terraform Enterprise/Cloud agents and agent pools,
 including all necessary option classes for CRUD operations.
-
-Based on the Go TFE implementation:
-https://github.com/hashicorp/go-tfe/blob/main/agent.go
-https://github.com/hashicorp/go-tfe/blob/main/agent_pool.go
 """
 
 from __future__ import annotations

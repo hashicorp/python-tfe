@@ -2,9 +2,6 @@
 
 This module provides the AgentPools service for managing Terraform Enterprise/Cloud
 agent pools, including CRUD operations and workspace assignments.
-
-Based on the Go TFE implementation:
-https://github.com/hashicorp/go-tfe/blob/main/agent_pool.go
 """
 
 from __future__ import annotations

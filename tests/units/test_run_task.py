@@ -12,7 +12,7 @@ from tfe.errors import (
     InvalidRunTaskURLError,
     RequiredNameError,
 )
-from tfe.models.agent_pool import AgentPool
+from tfe.models.agent import AgentPool
 from tfe.models.run_task import (
     GlobalRunTaskOptions,
     RunTaskCreateOptions,

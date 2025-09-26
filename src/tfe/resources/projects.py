@@ -78,7 +78,7 @@ def validate_project_update_options(
 def validate_project_list_options(
     organization: str, query: str | None = None, name: str | None = None
 ) -> None:
-    """Validate project list options following Go TFE patterns."""
+    """Validate project list options."""
     if not valid_organization_name(organization):
         raise ValueError("Organization name is required and must be valid")
 

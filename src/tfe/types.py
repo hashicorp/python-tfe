@@ -465,10 +465,7 @@ class LockedByChoice(BaseModel):
 
 
 class WorkspaceListOptions(BaseModel):
-    """Options for listing workspaces.
-
-    Matches the Go-TFE WorkspaceListOptions struct.
-    """
+    """Options for listing workspaces."""
 
     # Pagination options (from ListOptions)
     page_number: int | None = None

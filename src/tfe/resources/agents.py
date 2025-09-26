@@ -2,9 +2,6 @@
 
 This module provides the Agents service for managing individual Terraform Enterprise/Cloud
 agents within agent pools.
-
-Based on the Go TFE implementation:
-https://github.com/hashicorp/go-tfe/blob/main/agent.go
 """
 
 from __future__ import annotations

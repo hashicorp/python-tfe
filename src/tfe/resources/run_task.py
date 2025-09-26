@@ -10,7 +10,7 @@ from ..errors import (
     InvalidRunTaskURLError,
     RequiredNameError,
 )
-from ..models.agent_pool import AgentPool
+from ..models.agent import AgentPool
 from ..models.organization import Organization
 from ..models.run_task import (
     GlobalRunTask,
