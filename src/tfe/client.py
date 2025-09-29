@@ -9,6 +9,7 @@ from .resources.configuration_version import ConfigurationVersions
 from .resources.organizations import Organizations
 from .resources.plan import Plans
 from .resources.projects import Projects
+from .resources.query_run import QueryRuns
 from .resources.registry_module import RegistryModules
 from .resources.registry_provider import RegistryProviders
 from .resources.run import Runs
@@ -62,6 +63,7 @@ class TFEClient:
         self.run_tasks = RunTasks(self._transport)
         self.run_triggers = RunTriggers(self._transport)
         self.runs = Runs(self._transport)
+        self.query_runs = QueryRuns(self._transport)
 
     def close(self) -> None:
         pass

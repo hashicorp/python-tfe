@@ -333,6 +333,13 @@ class InvalidRunIDError(InvalidValues):
         super().__init__(message)
 
 
+class InvalidQueryRunIDError(InvalidValues):
+    """Raised when an invalid query run ID is provided."""
+
+    def __init__(self, message: str = "invalid value for query run ID"):
+        super().__init__(message)
+
+
 class TerraformVersionValidForPlanOnlyError(ValidationError):
     """Raised when terraform_version is set without plan_only being true."""
 

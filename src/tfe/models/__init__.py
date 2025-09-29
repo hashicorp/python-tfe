@@ -37,6 +37,21 @@ from .configuration_version_types import (
     IngressAttributes,
 )
 
+# Re-export all query run types
+from .query_run import (
+    QueryRun,
+    QueryRunCancelOptions,
+    QueryRunCreateOptions,
+    QueryRunForceCancelOptions,
+    QueryRunList,
+    QueryRunListOptions,
+    QueryRunLogs,
+    QueryRunReadOptions,
+    QueryRunResults,
+    QueryRunStatus,
+    QueryRunType,
+)
+
 # Re-export all registry module types
 from .registry_module_types import (
     AgentExecutionMode,
@@ -150,6 +165,18 @@ __all__ = [
     "RegistryProviderListOptions",
     "RegistryProviderPermissions",
     "RegistryProviderReadOptions",
+    # Query run types
+    "QueryRun",
+    "QueryRunCancelOptions",
+    "QueryRunCreateOptions",
+    "QueryRunForceCancelOptions",
+    "QueryRunList",
+    "QueryRunListOptions",
+    "QueryRunLogs",
+    "QueryRunReadOptions",
+    "QueryRunResults",
+    "QueryRunStatus",
+    "QueryRunType",
     # Main types from types.py (will be dynamically added below)
     "Capacity",
     "DataRetentionPolicy",
