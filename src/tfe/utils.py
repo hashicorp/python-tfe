@@ -5,6 +5,7 @@ import re
 import time
 from collections.abc import Callable, Mapping
 from typing import Any
+from urllib.parse import urlparse
 
 try:
     import slug  # type: ignore[import-not-found]
@@ -238,3 +239,13 @@ def pack_contents(path: str) -> io.BytesIO:
     # Reset buffer position to beginning for reading
     body.seek(0)
     return body
+
+def validate_log_url(log_url: str) -> None:
+    """Validate a log URL for Terraform resources."""
+    try:
+        parsed_url = urlparse(log_url)
+        if not parsed_url.scheme or not parsed_url.netloc:
+            raise ValueError(f"Invalid log URL format: {log_url}")
+    except Exception as e:
+        raise ValueError(f"Invalid log URL: {log_url}") from e
+

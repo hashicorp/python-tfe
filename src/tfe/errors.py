@@ -248,6 +248,13 @@ class RequiredNameError(RequiredFieldMissing):
         super().__init__(message)
 
 
+class RequiredWorkspaceError(RequiredFieldMissing):
+    """Raised when a required workspace field is missing."""
+
+    def __init__(self, message: str = "workspace is required"):
+        super().__init__(message)
+
+
 # Run Task errors
 class InvalidRunTaskIDError(InvalidValues):
     """Raised when an invalid run task ID is provided."""
@@ -315,4 +322,38 @@ class InvalidRunTriggerIDError(InvalidValues):
     """Raised when an invalid run trigger ID is provided."""
 
     def __init__(self, message: str = "invalid value for run trigger ID"):
+        super().__init__(message)
+
+
+# Run errors
+class InvalidRunIDError(InvalidValues):
+    """Raised when an invalid run ID is provided."""
+
+    def __init__(self, message: str = "invalid value for run ID"):
+        super().__init__(message)
+
+
+class TerraformVersionValidForPlanOnlyError(ValidationError):
+    """Raised when terraform_version is set without plan_only being true."""
+
+    def __init__(
+        self,
+        message: str = "setting terraform-version is only valid when plan-only is set to true",
+    ):
+        super().__init__(message)
+
+
+# Plan errors
+class InvalidPlanIDError(InvalidValues):
+    """Raised when an invalid plan ID is provided."""
+
+    def __init__(self, message: str = "invalid value for plan ID"):
+        super().__init__(message)
+
+
+# Apply errors
+class InvalidApplyIDError(InvalidValues):
+    """Raised when an invalid apply ID is provided."""
+
+    def __init__(self, message: str = "invalid value for apply ID"):
         super().__init__(message)
