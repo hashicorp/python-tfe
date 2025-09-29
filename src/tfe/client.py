@@ -4,10 +4,14 @@ from ._http import HTTPTransport
 from .config import TFEConfig
 from .resources.agent_pools import AgentPools
 from .resources.agents import Agents, AgentTokens
+from .resources.apply import Applies
+from .resources.configuration_version import ConfigurationVersions
 from .resources.organizations import Organizations
+from .resources.plan import Plans
 from .resources.projects import Projects
 from .resources.registry_module import RegistryModules
 from .resources.registry_provider import RegistryProviders
+from .resources.run import Runs
 from .resources.run_task import RunTasks
 from .resources.run_trigger import RunTriggers
 from .resources.state_version_outputs import StateVersionOutputs
@@ -40,6 +44,9 @@ class TFEClient:
         self.agent_tokens = AgentTokens(self._transport)
 
         # Core resources
+        self.configuration_versions = ConfigurationVersions(self._transport)
+        self.applies = Applies(self._transport)
+        self.plans = Plans(self._transport)
         self.organizations = Organizations(self._transport)
         self.projects = Projects(self._transport)
         self.variables = Variables(self._transport)
@@ -54,6 +61,7 @@ class TFEClient:
         self.state_version_outputs = StateVersionOutputs(self._transport)
         self.run_tasks = RunTasks(self._transport)
         self.run_triggers = RunTriggers(self._transport)
+        self.runs = Runs(self._transport)
 
     def close(self) -> None:
         pass

@@ -14,7 +14,7 @@ def build_headers(user_agent_suffix: str | None = None) -> dict[str, str]:
     }
 
 
-def parse_error_payload(payload: dict[str, Any]) -> list[dict]:
+def parse_error_payload(payload: dict[str, Any]) -> list[dict | str]:
     errs = payload.get("errors")
     if isinstance(errs, list):
         return errs

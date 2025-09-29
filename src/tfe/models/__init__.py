@@ -23,6 +23,20 @@ from .agent import (
     AgentTokenListOptions,
 )
 
+# Re-export all configuration version types
+from .configuration_version_types import (
+    ConfigurationSource,
+    ConfigurationStatus,
+    ConfigurationVersion,
+    ConfigurationVersionCreateOptions,
+    ConfigurationVersionList,
+    ConfigurationVersionListOptions,
+    ConfigurationVersionReadOptions,
+    ConfigurationVersionUpload,
+    ConfigVerIncludeOpt,
+    IngressAttributes,
+)
+
 # Re-export all registry module types
 from .registry_module_types import (
     AgentExecutionMode,
@@ -86,6 +100,17 @@ __all__ = [
     "AgentToken",
     "AgentTokenCreateOptions",
     "AgentTokenListOptions",
+    # Configuration version types
+    "ConfigurationSource",
+    "ConfigurationStatus",
+    "ConfigurationVersion",
+    "ConfigurationVersionCreateOptions",
+    "ConfigurationVersionList",
+    "ConfigurationVersionListOptions",
+    "ConfigurationVersionReadOptions",
+    "ConfigurationVersionUpload",
+    "ConfigVerIncludeOpt",
+    "IngressAttributes",
     # Registry module types
     "AgentExecutionMode",
     "Commit",
