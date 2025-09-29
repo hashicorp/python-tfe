@@ -4,6 +4,20 @@
 import importlib.util
 import os
 
+# Re-export all configuration version types
+from .configuration_version_types import (
+    ConfigurationSource,
+    ConfigurationStatus,
+    ConfigurationVersion,
+    ConfigurationVersionCreateOptions,
+    ConfigurationVersionList,
+    ConfigurationVersionListOptions,
+    ConfigurationVersionReadOptions,
+    ConfigurationVersionUpload,
+    ConfigVerIncludeOpt,
+    IngressAttributes,
+)
+
 # Re-export all project types
 from .project import (
     Project,
@@ -80,6 +94,23 @@ from .variable_set import (
 
 # Define what should be available when importing with *
 __all__ = [
+    # Configuration version types
+    "ConfigurationSource",
+    "ConfigurationStatus",
+    "ConfigurationVersion",
+    "ConfigurationVersionCreateOptions",
+    "ConfigurationVersionList",
+    "ConfigurationVersionListOptions",
+    "ConfigurationVersionReadOptions",
+    "ConfigurationVersionUpload",
+    "ConfigVerIncludeOpt",
+    "IngressAttributes",
+    # Project types
+    "Project",
+    "ProjectAddTagBindingsOptions",
+    "ProjectCreateOptions",
+    "ProjectListOptions",
+    "ProjectUpdateOptions",
     # Registry module types
     "AgentExecutionMode",
     "Commit",

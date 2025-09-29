@@ -171,12 +171,17 @@ class HTTPTransport:
         errors = parse_error_payload(payload)
         msg: str = f"HTTP {status}"
         if errors:
-            maybe_detail = errors[0].get("detail")
-            maybe_title = errors[0].get("title")
-            if isinstance(maybe_detail, str) and maybe_detail:
-                msg = maybe_detail
-            elif isinstance(maybe_title, str) and maybe_title:
-                msg = maybe_title
+            # Handle case where errors might contain strings instead of dicts
+            first_error = errors[0]
+            if isinstance(first_error, dict):
+                maybe_detail = first_error.get("detail")
+                maybe_title = first_error.get("title")
+                if isinstance(maybe_detail, str) and maybe_detail:
+                    msg = maybe_detail
+                elif isinstance(maybe_title, str) and maybe_title:
+                    msg = maybe_title
+            elif isinstance(first_error, str):
+                msg = first_error
 
         if status in (401, 403):
             raise AuthError(msg, status=status, errors=errors)
