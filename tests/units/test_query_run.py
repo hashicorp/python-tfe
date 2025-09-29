@@ -446,15 +446,22 @@ class TestQueryRunIntegration:
 
     @pytest.fixture
     def client(self):
-        """Create a test client."""
-        config = TFEConfig(address="https://test.terraform.io", token="test-token")
-        return TFEClient(config)
+        """Create a test client with mocked transport."""
+        from unittest.mock import MagicMock, patch
+
+        # Mock the HTTPTransport to prevent any network calls during initialization
+        with patch("tfe.client.HTTPTransport") as mock_transport_class:
+            mock_transport_instance = MagicMock()
+            mock_transport_class.return_value = mock_transport_instance
+
+            config = TFEConfig(address="https://test.terraform.io", token="test-token")
+            client = TFEClient(config)
+            return client
 
     def test_full_query_run_workflow(self, client):
         """Test a complete query run workflow simulation."""
-        # Mock the transport for all operations
-        mock_transport = MagicMock()
-        client._transport = mock_transport
+        # Use the already mocked transport from the fixture
+        mock_transport = client._transport
 
         # 1. Create query run
         create_response = Mock()
