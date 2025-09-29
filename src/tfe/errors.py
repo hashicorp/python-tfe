@@ -364,3 +364,11 @@ class InvalidApplyIDError(InvalidValues):
 
     def __init__(self, message: str = "invalid value for apply ID"):
         super().__init__(message)
+
+
+# Run Event errors
+class InvalidRunEventIDError(InvalidValues):
+    """Raised when an invalid run event ID is provided."""
+
+    def __init__(self, message: str = "invalid value for run event ID"):
+        super().__init__(message)

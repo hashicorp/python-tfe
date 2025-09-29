@@ -174,7 +174,7 @@ class ConfigurationVersions(_Service):
                         f"Upload failed with status {response.status_code}: {response.text}"
                     )
         except Exception as e:
-            if isinstance(e, (NotFound, AuthError, ServerError, TFEError)):
+            if isinstance(e, NotFound | AuthError | ServerError | TFEError):
                 raise
             raise TFEError(f"Upload failed: {str(e)}") from e
 
