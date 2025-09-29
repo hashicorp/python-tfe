@@ -240,6 +240,7 @@ def pack_contents(path: str) -> io.BytesIO:
     body.seek(0)
     return body
 
+
 def validate_log_url(log_url: str) -> None:
     """Validate a log URL for Terraform resources."""
     try:
@@ -248,4 +249,3 @@ def validate_log_url(log_url: str) -> None:
             raise ValueError(f"Invalid log URL format: {log_url}")
     except Exception as e:
         raise ValueError(f"Invalid log URL: {log_url}") from e
-

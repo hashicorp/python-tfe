@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from ._http import HTTPTransport
 from .config import TFEConfig
-from .resources.configuration_version import ConfigurationVersions
 from .resources.apply import Applies
+from .resources.configuration_version import ConfigurationVersions
 from .resources.organizations import Organizations
 from .resources.plan import Plans
 from .resources.projects import Projects
