@@ -111,6 +111,15 @@ from .registry_provider_types import (
     RegistryProviderReadOptions,
 )
 
+# Re-export all SSH key types
+from .ssh_key import (
+    SSHKey,
+    SSHKeyCreateOptions,
+    SSHKeyList,
+    SSHKeyListOptions,
+    SSHKeyUpdateOptions,
+)
+
 # Define what should be available when importing with *
 __all__ = [
     # OAuth client types
@@ -124,6 +133,12 @@ __all__ = [
     "OAuthClientRemoveProjectsOptions",
     "OAuthClientUpdateOptions",
     "ServiceProviderType",
+    # SSH key types
+    "SSHKey",
+    "SSHKeyCreateOptions",
+    "SSHKeyList",
+    "SSHKeyListOptions",
+    "SSHKeyUpdateOptions",
     # Agent and agent pool types
     "Agent",
     "AgentPool",

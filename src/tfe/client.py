@@ -17,6 +17,7 @@ from .resources.run import Runs
 from .resources.run_event import RunEvents
 from .resources.run_task import RunTasks
 from .resources.run_trigger import RunTriggers
+from .resources.ssh_keys import SSHKeys
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
 from .resources.variable import Variables
@@ -68,6 +69,9 @@ class TFEClient:
         self.runs = Runs(self._transport)
         self.query_runs = QueryRuns(self._transport)
         self.run_events = RunEvents(self._transport)
+
+        # SSH Keys
+        self.ssh_keys = SSHKeys(self._transport)
 
     def close(self) -> None:
         pass
