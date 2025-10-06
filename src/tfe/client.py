@@ -10,6 +10,7 @@ from .resources.oauth_client import OAuthClients
 from .resources.oauth_token import OAuthTokens
 from .resources.organizations import Organizations
 from .resources.plan import Plans
+from .resources.policy import Policies
 from .resources.projects import Projects
 from .resources.query_run import QueryRuns
 from .resources.registry_module import RegistryModules
@@ -72,6 +73,7 @@ class TFEClient:
         self.runs = Runs(self._transport)
         self.query_runs = QueryRuns(self._transport)
         self.run_events = RunEvents(self._transport)
+        self.policies = Policies(self._transport)
 
         # SSH Keys
         self.ssh_keys = SSHKeys(self._transport)

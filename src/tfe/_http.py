@@ -73,6 +73,7 @@ class HTTPTransport:
         *,
         params: Mapping[str, Any] | None = None,
         json_body: Mapping[str, Any] | None = None,
+        data: bytes | None = None,
         headers: dict[str, str] | None = None,
         allow_redirects: bool = True,
     ) -> httpx.Response:
@@ -89,6 +90,7 @@ class HTTPTransport:
                     url,
                     params=params,
                     json=json_body,
+                    content=data,
                     headers=hdrs,
                     follow_redirects=allow_redirects,
                 )
@@ -114,6 +116,7 @@ class HTTPTransport:
         *,
         params: Mapping[str, Any] | None = None,
         json_body: Mapping[str, Any] | None = None,
+        data: bytes | None = None,
         headers: dict[str, str] | None = None,
         allow_redirects: bool = True,
     ) -> httpx.Response:
@@ -128,6 +131,7 @@ class HTTPTransport:
                     url,
                     params=params,
                     json=json_body,
+                    content=data,
                     headers=hdrs,
                     follow_redirects=allow_redirects,
                 )

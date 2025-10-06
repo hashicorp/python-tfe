@@ -393,3 +393,25 @@ class InvalidRunEventIDError(InvalidValues):
 
     def __init__(self, message: str = "invalid value for run event ID"):
         super().__init__(message)
+
+
+# Policy errors
+class InvalidPolicyIDError(InvalidValues):
+    """Raised when an invalid policy ID is provided."""
+
+    def __init__(self, message: str = "invalid value for policy ID"):
+        super().__init__(message)
+
+
+class RequiredQueryError(RequiredFieldMissing):
+    """Raised when a required query field is missing."""
+
+    def __init__(self, message: str = "query is required"):
+        super().__init__(message)
+
+
+class RequiredEnforceError(RequiredFieldMissing):
+    """Raised when a required enforce field is missing."""
+
+    def __init__(self, message: str = "enforce or enforcement-level is required"):
+        super().__init__(message)
