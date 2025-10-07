@@ -80,33 +80,37 @@ def main():
 
     # 1) List all policies in the organization
     _print_header(f"Listing policies in organization: {args.org}")
-    
+
     list_options = PolicyListOptions(
         page_number=args.page,
         page_size=args.page_size,
     )
-    
+
     if args.search:
         list_options.search = args.search
     if args.kind:
-        list_options.kind = PolicyKind.SENTINEL if args.kind == "sentinel" else PolicyKind.OPA
+        list_options.kind = (
+            PolicyKind.SENTINEL if args.kind == "sentinel" else PolicyKind.OPA
+        )
 
     policy_list = client.policies.list(args.org, list_options)
-    
+
     print(f"Total policies: {policy_list.total_count}")
     print(f"Page {policy_list.current_page} of {policy_list.total_pages}")
     print()
 
     existing_policy = None
     for policy in policy_list.items:
-        print(f"- {policy.id} | {policy.name} | kind={policy.kind} | enforcement={policy.enforcement_level}")
+        print(
+            f"- {policy.id} | {policy.name} | kind={policy.kind} | enforcement={policy.enforcement_level}"
+        )
         if policy.name == args.policy_name:
             existing_policy = policy
 
     # 2) Create a new policy if it doesn't exist
     if not existing_policy:
         _print_header(f"Creating new policy: {args.policy_name}")
-        
+
         # Map string enforcement level to enum
         enforcement_map = {
             "advisory": EnforcementLevel.ENFORCEMENT_ADVISORY,
@@ -114,14 +118,15 @@ def main():
             "hard-mandatory": EnforcementLevel.ENFORCEMENT_HARD,
             "mandatory": EnforcementLevel.ENFORCEMENT_MANDATORY,
         }
-        
+
         create_options = PolicyCreateOptions(
             name=args.policy_name,
             kind=PolicyKind.SENTINEL if args.kind == "sentinel" else PolicyKind.OPA,
             enforcement_level=enforcement_map[args.enforcement_level],
-            description=args.description or f"Example {args.kind} policy created via python-tfe SDK",
+            description=args.description
+            or f"Example {args.kind} policy created via python-tfe SDK",
         )
-        
+
         # OPA policies require a query
         if args.kind == "opa":
             if not args.query:
@@ -161,7 +166,9 @@ def main():
         try:
             policy_content = Path(args.upload).read_bytes()
             client.policies.upload(existing_policy.id, policy_content)
-            print(f"Successfully uploaded {len(policy_content)} bytes to policy {existing_policy.id}")
+            print(
+                f"Successfully uploaded {len(policy_content)} bytes to policy {existing_policy.id}"
+            )
         except Exception as e:
             print(f"Error uploading policy content: {e}")
             return 1
@@ -185,7 +192,7 @@ main {
 }
 """
         try:
-            client.policies.upload(existing_policy.id, default_content.encode('utf-8'))
+            client.policies.upload(existing_policy.id, default_content.encode("utf-8"))
             print(f"Uploaded default {args.kind} policy content")
         except Exception as e:
             print(f"Error uploading default content: {e}")
@@ -197,18 +204,18 @@ main {
             policy_content = client.policies.download(existing_policy.id)
             Path(args.download).write_bytes(policy_content)
             print(f"Downloaded {len(policy_content)} bytes to {args.download}")
-            
+
             # Also print the content to console
             print("\nPolicy content preview:")
             print("-" * 40)
-            content_str = policy_content.decode('utf-8')
-            lines = content_str.split('\n')
+            content_str = policy_content.decode("utf-8")
+            lines = content_str.split("\n")
             for i, line in enumerate(lines[:10], 1):  # Show first 10 lines
                 print(f"{i:2d}: {line}")
             if len(lines) > 10:
                 print(f"... ({len(lines) - 10} more lines)")
             print("-" * 40)
-            
+
         except Exception as e:
             print(f"Error downloading policy content: {e}")
 
@@ -222,15 +229,15 @@ main {
                 "hard-mandatory": EnforcementLevel.ENFORCEMENT_HARD,
                 "mandatory": EnforcementLevel.ENFORCEMENT_MANDATORY,
             }
-            
+
             update_options = PolicyUpdateOptions(
                 description=args.description,
                 enforcement_level=enforcement_map[args.enforcement_level],
             )
-            
+
             if args.kind == "opa" and args.query:
                 update_options.query = args.query
-            
+
             updated_policy = client.policies.update(existing_policy.id, update_options)
             print(f"Updated policy: {updated_policy.id}")
             print(f"  New description: {updated_policy.description}")
