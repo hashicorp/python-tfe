@@ -415,3 +415,11 @@ class RequiredEnforceError(RequiredFieldMissing):
 
     def __init__(self, message: str = "enforce or enforcement-level is required"):
         super().__init__(message)
+
+
+# Policy Check errors
+class InvalidPolicyCheckIDError(InvalidValues):
+    """Raised when an invalid policy check ID is provided."""
+
+    def __init__(self, message: str = "invalid value for policy check ID"):
+        super().__init__(message)
