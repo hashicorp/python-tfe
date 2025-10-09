@@ -423,3 +423,25 @@ class InvalidPolicyCheckIDError(InvalidValues):
 
     def __init__(self, message: str = "invalid value for policy check ID"):
         super().__init__(message)
+
+
+# Policy Set errors
+class InvalidPolicySetIDError(InvalidValues):
+    """Raised when an invalid policy set ID is provided."""
+
+    def __init__(self, message: str = "invalid value for policy set ID"):
+        super().__init__(message)
+
+
+class RequiredPoliciesError(RequiredFieldMissing):
+    """Raised when a required policies field is missing."""
+
+    def __init__(self, message: str = "policies are required"):
+        super().__init__(message)
+
+
+class InvalidPoliciesError(InvalidValues):
+    """Raised when an invalid policies field is provided."""
+
+    def __init__(self, message: str = "must provide at least one policy"):
+        super().__init__(message)

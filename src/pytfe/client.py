@@ -12,6 +12,7 @@ from .resources.organizations import Organizations
 from .resources.plan import Plans
 from .resources.policy import Policies
 from .resources.policy_check import PolicyChecks
+from .resources.policy_set import PolicySets
 from .resources.projects import Projects
 from .resources.query_run import QueryRuns
 from .resources.registry_module import RegistryModules
@@ -76,6 +77,7 @@ class TFEClient:
         self.run_events = RunEvents(self._transport)
         self.policies = Policies(self._transport)
         self.policy_checks = PolicyChecks(self._transport)
+        self.policy_sets = PolicySets(self._transport)
 
         # SSH Keys
         self.ssh_keys = SSHKeys(self._transport)

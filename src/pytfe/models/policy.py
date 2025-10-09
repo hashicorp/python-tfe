@@ -1,19 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime
-from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
 from .organization import Organization
-from .policy_set import PolicyKind
-
-
-class EnforcementLevel(str, Enum):
-    ENFORCEMENT_ADVISORY = "advisory"
-    ENFORCEMENT_MANDATORY = "mandatory"
-    ENFORCEMENT_HARD = "hard-mandatory"
-    ENFORCEMENT_SOFT = "soft-mandatory"
+from .policy_types import EnforcementLevel, PolicyKind
 
 
 class Policy(BaseModel):

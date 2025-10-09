@@ -19,6 +19,58 @@ from .agent import (
     AgentTokenListOptions,
 )
 
+# ──Apply / Plans ──────────────────────────────────────────────────────────────
+from .apply import (
+    Apply,
+)
+from .plan import (
+    Plan,
+)
+
+# ── Policy ─────────────────────────────────────────────────────────────
+from .policy_check import (
+    PolicyCheck,
+    PolicyCheckIncludeOpt,
+    PolicyScope,
+    PolicyStatus,
+    PolicyActions,
+    PolicyPermissions,
+    PolicyResult,
+    PolicyStatusTimestamps,
+    PolicyCheckListOptions,
+    PolicyCheckList,
+)
+
+from .policy import (
+    Policy,
+    PolicyCreateOptions,
+    PolicyList,
+    PolicyListOptions,
+    PolicyUpdateOptions,
+)
+from .policy_set import (
+    PolicySet,
+    PolicySetIncludeOpt,
+    PolicySetList,
+    PolicySetAddPoliciesOptions,
+    PolicySetAddProjectsOptions,
+    PolicySetAddWorkspacesOptions,
+    PolicySetAddWorkspaceExclusionsOptions,
+    PolicySetCreateOptions,
+    PolicySetListOptions,
+    PolicySetReadOptions,
+    PolicySetRemovePoliciesOptions,
+    PolicySetRemoveWorkspacesOptions,
+    PolicySetRemoveWorkspaceExclusionsOptions,
+    PolicySetRemoveProjectsOptions,
+    PolicySetUpdateOptions,
+)
+
+from .policy_types import (
+    PolicyKind,
+    EnforcementLevel,
+)
+
 # ── Core models split out of old types.py ─────────────────────────────────────
 # Adjust these imports to match where you placed them during the split.
 # Common / pagination / enums
@@ -160,6 +212,56 @@ from .reserved_tag_key import (
 from .run import (
     Run,
     RunStatus,
+    RunSource,
+    RunIncludeOpt,
+    RunOperation,
+    RunActions,
+    RunPermissions,
+    RunStatusTimestamps,
+    RunVariable,
+    RunVariableAttr,
+    RunList,
+    RunListOptions,
+    OrganizationRunList,
+    RunListForOrganizationOptions,
+    RunCreateOptions,
+    RunReadOptions,
+    RunApplyOptions,
+    RunCancelOptions,
+    RunForceCancelOptions,
+    RunDiscardOptions,
+)
+
+from .run_event import (
+    RunEvent,
+    RunEventIncludeOpt,
+    RunEventList,
+    RunEventListOptions,
+    RunEventReadOptions,
+)
+
+from .run_task import (
+    RunTask,
+    RunTaskIncludeOptions,
+    GlobalRunTask,
+    GlobalRunTaskOptions,
+    Stage,
+    TaskEnforcementLevel,
+    RunTaskList,
+    RunTaskListOptions,
+    RunTaskCreateOptions,
+    RunTaskUpdateOptions,
+    RunTaskReadOptions,
+)
+
+from .run_trigger import (
+    RunTrigger,
+    RunTriggerCreateOptions,
+    RunTriggerList,
+    RunTriggerListOptions,
+    SourceableChoice,
+    RunTriggerFilterOp,
+    RunTriggerIncludeOp,
 )
 
 # ── SSH Keys ──────────────────────────────────────────────────────────────────
@@ -364,8 +466,91 @@ __all__ = [
     "WorkspaceTagListOptions",
     "WorkspaceUpdateOptions",
     "WorkspaceUpdateRemoteStateConsumersOptions",
-    "Run",
     "RunQueue",
-    "RunStatus",
     "ReadRunQueueOptions",
+    # Apply & Plans
+    "Apply",
+    "Plan",
+    # Runs
+    "Run",
+    "RunStatus",
+    "RunSource",
+    "RunIncludeOpt",
+    "RunOperation",
+    "RunActions",
+    "RunPermissions",
+    "RunStatusTimestamps",
+    "RunVariable",
+    "RunVariableAttr",
+    "RunList",
+    "RunListOptions",
+    "OrganizationRunList",
+    "RunListForOrganizationOptions",
+    "RunCreateOptions",
+    "RunReadOptions",
+    "RunApplyOptions",
+    "RunCancelOptions",
+    "RunForceCancelOptions",
+    "RunDiscardOptions",
+    # Run events
+    "RunEvent",
+    "RunEventIncludeOpt",
+    "RunEventList",
+    "RunEventListOptions",
+    "RunEventReadOptions",
+    # Run tasks
+    "RunTask",
+    "RunTaskIncludeOptions",
+    "GlobalRunTask",
+    "GlobalRunTaskOptions",
+    "Stage",
+    "TaskEnforcementLevel",
+    "RunTaskList",
+    "RunTaskListOptions",
+    "RunTaskCreateOptions",
+    "RunTaskUpdateOptions",
+    "RunTaskReadOptions",
+    # Run triggers
+    "RunTrigger",
+    "RunTriggerCreateOptions",
+    "RunTriggerList",
+    "RunTriggerListOptions",
+    "SourceableChoice",
+    "RunTriggerFilterOp",
+    "RunTriggerIncludeOp",
+    # Policy Checks
+    "PolicyCheck",
+    "PolicyCheckIncludeOpt",
+    "PolicyScope",
+    "PolicyStatus",
+    "PolicyActions",
+    "PolicyPermissions",
+    "PolicyResult",
+    "PolicyStatusTimestamps",
+    "PolicyCheckListOptions",
+    "PolicyCheckList",
+    # Policy
+    "Policy",
+    "PolicyCreateOptions",
+    "PolicyList",
+    "PolicyListOptions",
+    "PolicyUpdateOptions",
+    # Policy Sets
+    "PolicySet",
+    "PolicySetIncludeOpt",
+    "PolicySetList",
+    "PolicySetAddPoliciesOptions",
+    "PolicySetAddProjectsOptions",
+    "PolicySetAddWorkspacesOptions",
+    "PolicySetAddWorkspaceExclusionsOptions",
+    "PolicySetCreateOptions",
+    "PolicySetListOptions",
+    "PolicySetReadOptions",
+    "PolicySetRemovePoliciesOptions",
+    "PolicySetRemoveWorkspacesOptions",
+    "PolicySetRemoveWorkspaceExclusionsOptions",
+    "PolicySetRemoveProjectsOptions",
+    "PolicySetUpdateOptions",
+    "PolicyKind",
+    "EnforcementLevel",
 ]
