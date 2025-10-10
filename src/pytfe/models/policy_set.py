@@ -5,11 +5,11 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .project import Project
 from .organization import Organization
 from .policy import Policy
 from .policy_set_version import PolicySetVersion
 from .policy_types import PolicyKind
+from .project import Project
 from .workspace import VCSRepo, VCSRepoOptions, Workspace
 
 

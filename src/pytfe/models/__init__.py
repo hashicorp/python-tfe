@@ -23,53 +23,6 @@ from .agent import (
 from .apply import (
     Apply,
 )
-from .plan import (
-    Plan,
-)
-
-# ── Policy ─────────────────────────────────────────────────────────────
-from .policy_check import (
-    PolicyCheck,
-    PolicyCheckIncludeOpt,
-    PolicyScope,
-    PolicyStatus,
-    PolicyActions,
-    PolicyPermissions,
-    PolicyResult,
-    PolicyStatusTimestamps,
-    PolicyCheckListOptions,
-    PolicyCheckList,
-)
-
-from .policy import (
-    Policy,
-    PolicyCreateOptions,
-    PolicyList,
-    PolicyListOptions,
-    PolicyUpdateOptions,
-)
-from .policy_set import (
-    PolicySet,
-    PolicySetIncludeOpt,
-    PolicySetList,
-    PolicySetAddPoliciesOptions,
-    PolicySetAddProjectsOptions,
-    PolicySetAddWorkspacesOptions,
-    PolicySetAddWorkspaceExclusionsOptions,
-    PolicySetCreateOptions,
-    PolicySetListOptions,
-    PolicySetReadOptions,
-    PolicySetRemovePoliciesOptions,
-    PolicySetRemoveWorkspacesOptions,
-    PolicySetRemoveWorkspaceExclusionsOptions,
-    PolicySetRemoveProjectsOptions,
-    PolicySetUpdateOptions,
-)
-
-from .policy_types import (
-    PolicyKind,
-    EnforcementLevel,
-)
 
 # ── Core models split out of old types.py ─────────────────────────────────────
 # Adjust these imports to match where you placed them during the split.
@@ -137,6 +90,51 @@ from .organization import (
     OrganizationUpdateOptions,
     ReadRunQueueOptions,
     RunQueue,
+)
+from .plan import (
+    Plan,
+)
+from .policy import (
+    Policy,
+    PolicyCreateOptions,
+    PolicyList,
+    PolicyListOptions,
+    PolicyUpdateOptions,
+)
+
+# ── Policy ─────────────────────────────────────────────────────────────
+from .policy_check import (
+    PolicyActions,
+    PolicyCheck,
+    PolicyCheckIncludeOpt,
+    PolicyCheckList,
+    PolicyCheckListOptions,
+    PolicyPermissions,
+    PolicyResult,
+    PolicyScope,
+    PolicyStatus,
+    PolicyStatusTimestamps,
+)
+from .policy_set import (
+    PolicySet,
+    PolicySetAddPoliciesOptions,
+    PolicySetAddProjectsOptions,
+    PolicySetAddWorkspaceExclusionsOptions,
+    PolicySetAddWorkspacesOptions,
+    PolicySetCreateOptions,
+    PolicySetIncludeOpt,
+    PolicySetList,
+    PolicySetListOptions,
+    PolicySetReadOptions,
+    PolicySetRemovePoliciesOptions,
+    PolicySetRemoveProjectsOptions,
+    PolicySetRemoveWorkspaceExclusionsOptions,
+    PolicySetRemoveWorkspacesOptions,
+    PolicySetUpdateOptions,
+)
+from .policy_types import (
+    EnforcementLevel,
+    PolicyKind,
 )
 from .project import Project
 
@@ -210,28 +208,27 @@ from .reserved_tag_key import (
 
 # Runs
 from .run import (
+    OrganizationRunList,
     Run,
-    RunStatus,
-    RunSource,
-    RunIncludeOpt,
-    RunOperation,
     RunActions,
+    RunApplyOptions,
+    RunCancelOptions,
+    RunCreateOptions,
+    RunDiscardOptions,
+    RunForceCancelOptions,
+    RunIncludeOpt,
+    RunList,
+    RunListForOrganizationOptions,
+    RunListOptions,
+    RunOperation,
     RunPermissions,
+    RunReadOptions,
+    RunSource,
+    RunStatus,
     RunStatusTimestamps,
     RunVariable,
     RunVariableAttr,
-    RunList,
-    RunListOptions,
-    OrganizationRunList,
-    RunListForOrganizationOptions,
-    RunCreateOptions,
-    RunReadOptions,
-    RunApplyOptions,
-    RunCancelOptions,
-    RunForceCancelOptions,
-    RunDiscardOptions,
 )
-
 from .run_event import (
     RunEvent,
     RunEventIncludeOpt,
@@ -239,29 +236,27 @@ from .run_event import (
     RunEventListOptions,
     RunEventReadOptions,
 )
-
 from .run_task import (
-    RunTask,
-    RunTaskIncludeOptions,
     GlobalRunTask,
     GlobalRunTaskOptions,
-    Stage,
-    TaskEnforcementLevel,
+    RunTask,
+    RunTaskCreateOptions,
+    RunTaskIncludeOptions,
     RunTaskList,
     RunTaskListOptions,
-    RunTaskCreateOptions,
-    RunTaskUpdateOptions,
     RunTaskReadOptions,
+    RunTaskUpdateOptions,
+    Stage,
+    TaskEnforcementLevel,
 )
-
 from .run_trigger import (
     RunTrigger,
     RunTriggerCreateOptions,
+    RunTriggerFilterOp,
+    RunTriggerIncludeOp,
     RunTriggerList,
     RunTriggerListOptions,
     SourceableChoice,
-    RunTriggerFilterOp,
-    RunTriggerIncludeOp,
 )
 
 # ── SSH Keys ──────────────────────────────────────────────────────────────────
@@ -285,6 +280,7 @@ from .variable import (
 from .workspace import (
     LockedByChoice,
     VCSRepo,
+    VCSRepoOptions,
     Workspace,
     WorkspaceActions,
     WorkspaceAddRemoteStateConsumersOptions,
@@ -443,6 +439,7 @@ __all__ = [
     "VariableUpdateOptions",
     "LockedByChoice",
     "VCSRepo",
+    "VCSRepoOptions",
     "Workspace",
     "WorkspaceActions",
     "WorkspaceAddRemoteStateConsumersOptions",

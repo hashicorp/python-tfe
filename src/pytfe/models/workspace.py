@@ -338,3 +338,12 @@ class VCSRepo(BaseModel):
     oauth_token_id: str | None = None
     tags_regex: str | None = None
     gha_installation_id: str | None = None
+
+
+class VCSRepoOptions(BaseModel):
+    branch: str | None = None
+    identifier: str | None = None
+    ingress_submodules: bool | None = None
+    oauth_token_id: str | None = None
+    tags_regex: str | None = None
+    gha_installation_id: str | None = None

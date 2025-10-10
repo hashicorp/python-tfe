@@ -4,9 +4,9 @@ import argparse
 import os
 
 from pytfe import TFEClient, TFEConfig
-from pytfe.models import Policy
-from pytfe.models import PolicyKind
 from pytfe.models import (
+    Policy,
+    PolicyKind,
     PolicySetAddPoliciesOptions,
     PolicySetAddProjectsOptions,
     PolicySetAddWorkspacesOptions,
@@ -16,9 +16,9 @@ from pytfe.models import (
     PolicySetRemoveProjectsOptions,
     PolicySetRemoveWorkspacesOptions,
     PolicySetUpdateOptions,
+    Project,
+    Workspace,
 )
-from pytfe.models import Workspace
-from pytfe.models import Project
 
 
 def _print_header(title: str):
