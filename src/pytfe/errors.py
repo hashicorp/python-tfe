@@ -445,3 +445,18 @@ class InvalidPoliciesError(InvalidValues):
 
     def __init__(self, message: str = "must provide at least one policy"):
         super().__init__(message)
+
+
+# Policy Evaluation errors
+class InvalidTaskStageIDError(InvalidValues):
+    """Raised when an invalid task stage ID is provided."""
+
+    def __init__(self, message: str = "invalid value for task stage ID"):
+        super().__init__(message)
+
+
+class InvalidPolicyEvaluationIDError(InvalidValues):
+    """Raised when an invalid policy evaluation ID is provided."""
+
+    def __init__(self, message: str = "invalid value for policy evaluation ID"):
+        super().__init__(message)

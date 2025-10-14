@@ -115,6 +115,15 @@ from .policy_check import (
     PolicyStatus,
     PolicyStatusTimestamps,
 )
+from .policy_evaluation import (
+    PolicyAttachable,
+    PolicyEvaluation,
+    PolicyEvaluationList,
+    PolicyEvaluationListOptions,
+    PolicyEvaluationStatus,
+    PolicyEvaluationStatusTimestamps,
+    PolicyResultCount,
+)
 from .policy_set import (
     PolicySet,
     PolicySetAddPoliciesOptions,
@@ -526,6 +535,14 @@ __all__ = [
     "PolicyStatusTimestamps",
     "PolicyCheckListOptions",
     "PolicyCheckList",
+    # Policy Evaluation
+    "PolicyAttachable",
+    "PolicyEvaluation",
+    "PolicyEvaluationList",
+    "PolicyEvaluationListOptions",
+    "PolicyEvaluationStatus",
+    "PolicyEvaluationStatusTimestamps",
+    "PolicyResultCount",
     # Policy
     "Policy",
     "PolicyCreateOptions",
