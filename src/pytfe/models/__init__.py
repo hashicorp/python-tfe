@@ -137,7 +137,13 @@ from .policy_types import (
     EnforcementLevel,
     PolicyKind,
 )
-from .project import Project
+from .project import (
+    Project,
+    ProjectAddTagBindingsOptions,
+    ProjectCreateOptions,
+    ProjectListOptions,
+    ProjectUpdateOptions,
+)
 
 # ── Query Runs ────────────────────────────────────────────────────────────────
 from .query_run import (
@@ -423,6 +429,10 @@ __all__ = [
     "OrganizationCreateOptions",
     "OrganizationUpdateOptions",
     "Project",
+    "ProjectAddTagBindingsOptions",
+    "ProjectCreateOptions",
+    "ProjectListOptions",
+    "ProjectUpdateOptions",
     "DataRetentionPolicy",
     "DataRetentionPolicyChoice",
     "DataRetentionPolicyDeleteOlder",

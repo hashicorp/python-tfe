@@ -15,10 +15,11 @@ Make sure to set the following environment variables:
 
 import os
 
-from pytfe.types import (
-    CategoryType,
+from pytfe import TFEClient, TFEConfig
+from pytfe.models.project import Project
+from pytfe.models.variable import CategoryType
+from pytfe.models.variable_set import (
     Parent,
-    Project,
     VariableSetApplyToProjectsOptions,
     VariableSetApplyToWorkspacesOptions,
     VariableSetCreateOptions,
@@ -30,10 +31,8 @@ from pytfe.types import (
     VariableSetVariableCreateOptions,
     VariableSetVariableListOptions,
     VariableSetVariableUpdateOptions,
-    Workspace,
 )
-
-from pytfe import TFEClient, TFEConfig
+from pytfe.models.workspace import Workspace
 
 
 def variable_set_example():
@@ -193,7 +192,7 @@ def variable_set_example():
         print("7. Workspace operations example...")
         try:
             # List some workspaces first
-            from pytfe.types import WorkspaceListOptions
+            from pytfe.models.workspace import WorkspaceListOptions
 
             workspace_options = WorkspaceListOptions(page_size=5)
             workspaces = list(
@@ -272,7 +271,7 @@ def variable_set_example():
 
         # 9. Read the variable set with includes
         print("9. Reading variable set with includes...")
-        from pytfe.types import VariableSetReadOptions
+        from pytfe.models.variable_set import VariableSetReadOptions
 
         read_options = VariableSetReadOptions(
             include=[VariableSetIncludeOpt.VARS, VariableSetIncludeOpt.WORKSPACES]

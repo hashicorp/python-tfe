@@ -576,7 +576,7 @@ class Workspaces(_Service):
 
     def delete(self, workspace: str, *, organization: str) -> None:
         """Delete workspace by organization and workspace name."""
-        # Validate parameters (similar to Go implementation)
+        # Validate parameters for proper API usage
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(workspace):
@@ -588,7 +588,7 @@ class Workspaces(_Service):
 
     def delete_by_id(self, workspace_id: str) -> None:
         """Delete workspace by workspace ID."""
-        # Validate parameters (similar to Go implementation)
+        # Validate parameters for proper API usage
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -596,7 +596,7 @@ class Workspaces(_Service):
 
     def safe_delete(self, workspace: str, *, organization: str) -> None:
         """Safely delete workspace by organization and name."""
-        # Validate parameters (similar to Go implementation)
+        # Validate parameters for proper API usage
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(workspace):
@@ -609,7 +609,7 @@ class Workspaces(_Service):
 
     def safe_delete_by_id(self, workspace_id: str) -> None:
         """Safely delete workspace by workspace ID."""
-        # Validate parameters (similar to Go implementation)
+        # Validate parameters for proper API usage
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 

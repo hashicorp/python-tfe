@@ -4,17 +4,17 @@ from unittest.mock import Mock
 
 import pytest
 
-from src.pytfe._http import HTTPTransport
-from src.pytfe.errors import (
+from pytfe._http import HTTPTransport
+from pytfe.errors import (
     InvalidOrgError,
     ValidationError,
 )
-from src.pytfe.models.reserved_tag_key import (
+from pytfe.models.reserved_tag_key import (
     ReservedTagKeyCreateOptions,
     ReservedTagKeyListOptions,
     ReservedTagKeyUpdateOptions,
 )
-from src.pytfe.resources.reserved_tag_key import ReservedTagKey
+from pytfe.resources.reserved_tag_key import ReservedTagKey
 
 
 class TestReservedTagKeyParsing:

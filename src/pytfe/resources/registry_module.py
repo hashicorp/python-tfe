@@ -147,7 +147,7 @@ class RegistryModules(_Service):
             }
         }
 
-        # Determine the URL based on options - exactly like Go implementation
+        # Determine the URL based on options
         if options.vcs_repo.oauth_token_id and not options.vcs_repo.branch:
             path = "/api/v2/registry-modules"
         else:
@@ -157,7 +157,7 @@ class RegistryModules(_Service):
                 )
             path = f"/api/v2/organizations/{options.vcs_repo.organization_name}/registry-modules/vcs"
 
-        # Validate agent execution mode like Go implementation
+        # Validate agent execution mode for API requirements
         if (
             options.test_config
             and options.test_config.agent_execution_mode == AgentExecutionMode.REMOTE

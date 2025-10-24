@@ -133,7 +133,7 @@ def has_tags_regex_defined(vcs_repo: VCSRepo | None) -> bool:
 
 def validate_workspace_create_options(options: WorkspaceCreateOptions) -> None:
     """
-    Validate workspace create options similar to Go implementation.
+    Validate workspace create options for proper API usage.
     Raises specific validation errors if validation fails.
     """
     # Check required name
@@ -179,7 +179,7 @@ def validate_workspace_create_options(options: WorkspaceCreateOptions) -> None:
 
 def validate_workspace_update_options(options: WorkspaceUpdateOptions) -> None:
     """
-    Validate workspace update options similar to Go implementation.
+    Validate workspace update options for proper API usage.
     Raises specific validation errors if validation fails.
     """
     # Check name format if provided
@@ -216,7 +216,7 @@ def validate_workspace_update_options(options: WorkspaceUpdateOptions) -> None:
 
 def validate_oauth_client_create_options(options: OAuthClientCreateOptions) -> None:
     """
-    Validate OAuth client create options similar to Go implementation.
+    Validate OAuth client create options for proper API usage.
     Raises specific validation errors if validation fails.
     """
     from .errors import (
