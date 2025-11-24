@@ -26,13 +26,19 @@ def main():
     )
     parser.add_argument("--token", default=os.getenv("TFE_TOKEN", ""))
     parser.add_argument("--policy-set-id", required=True, help="Policy Set ID")
-    parser.add_argument("--page", type=int, default=1)
-    parser.add_argument("--page-size", type=int, default=10)
+    parser.add_argument(
+        "--page-size",
+        type=int,
+        default=100,
+        help="Page size for fetching parameters (iterator fetches all pages)",
+    )
     parser.add_argument("--create", action="store_true", help="Create a test parameter")
     parser.add_argument("--read", action="store_true", help="Read a specific parameter")
     parser.add_argument("--update", action="store_true", help="Update a parameter")
     parser.add_argument("--delete", action="store_true", help="Delete a parameter")
-    parser.add_argument("--parameter-id", help="Parameter ID for read/update/delete operation")
+    parser.add_argument(
+        "--parameter-id", help="Parameter ID for read/update/delete operation"
+    )
     parser.add_argument("--key", help="Parameter key for creation/update")
     parser.add_argument("--value", help="Parameter value for creation/update")
     parser.add_argument(
@@ -47,28 +53,25 @@ def main():
     _print_header(f"Listing parameters for policy set: {args.policy_set_id}")
 
     options = PolicySetParameterListOptions(
-        page_number=args.page,
         page_size=args.page_size,
     )
 
-    param_list = client.policy_set_parameters.list(args.policy_set_id, options)
+    param_count = 0
+    for param in client.policy_set_parameters.list(args.policy_set_id, options):
+        param_count += 1
+        # Sensitive parameters will have masked values
+        value_display = "***SENSITIVE***" if param.sensitive else param.value
+        print(f"- {param.id}")
+        print(f"  Key: {param.key}")
+        print(f"  Value: {value_display}")
+        print(f"  Category: {param.category.value}")
+        print(f"  Sensitive: {param.sensitive}")
+        print()
 
-    print(f"Total parameters: {param_list.total_count}")
-    print(f"Page {param_list.current_page} of {param_list.total_pages}")
-    print()
-
-    if not param_list.items:
+    if param_count == 0:
         print("No parameters found.")
     else:
-        for param in param_list.items:
-            # Sensitive parameters will have masked values
-            value_display = "***SENSITIVE***" if param.sensitive else param.value
-            print(f"- {param.id}")
-            print(f"  Key: {param.key}")
-            print(f"  Value: {value_display}")
-            print(f"  Category: {param.category.value}")
-            print(f"  Sensitive: {param.sensitive}")
-            print()
+        print(f"Total: {param_count} parameters")
 
     # 2) Read a specific parameter (if --read flag is provided)
     if args.read:
@@ -143,7 +146,9 @@ def main():
             print(f"  ID: {param_to_delete.id}")
             print(f"  Key: {param_to_delete.key}")
             value_display = (
-                "***SENSITIVE***" if param_to_delete.sensitive else param_to_delete.value
+                "***SENSITIVE***"
+                if param_to_delete.sensitive
+                else param_to_delete.value
             )
             print(f"  Value: {value_display}")
             print(f"  Sensitive: {param_to_delete.sensitive}")
@@ -157,14 +162,17 @@ def main():
 
         # List remaining parameters
         _print_header("Listing parameters after deletion")
-        remaining_list = client.policy_set_parameters.list(args.policy_set_id)
-        print(f"Total parameters: {remaining_list.total_count}")
-        if remaining_list.items:
-            for param in remaining_list.items:
-                value_display = "***SENSITIVE***" if param.sensitive else param.value
-                print(f"- {param.key}: {value_display} (sensitive={param.sensitive})")
-        else:
+        print("Remaining parameters:")
+        remaining_count = 0
+        for param in client.policy_set_parameters.list(args.policy_set_id):
+            remaining_count += 1
+            value_display = "***SENSITIVE***" if param.sensitive else param.value
+            print(f"- {param.key}: {value_display} (sensitive={param.sensitive})")
+
+        if remaining_count == 0:
             print("No parameters remaining.")
+        else:
+            print(f"\nTotal: {remaining_count} parameters")
 
     # 5) Create a new parameter (if --create flag is provided)
     if args.create:
@@ -193,11 +201,12 @@ def main():
 
         # List again to show the new parameter
         _print_header("Listing parameters after creation")
-        updated_list = client.policy_set_parameters.list(args.policy_set_id)
-        print(f"Total parameters: {updated_list.total_count}")
-        for param in updated_list.items:
+        param_count = 0
+        for param in client.policy_set_parameters.list(args.policy_set_id):
+            param_count += 1
             value_display = "***SENSITIVE***" if param.sensitive else param.value
             print(f"- {param.key}: {value_display} (sensitive={param.sensitive})")
+        print(f"\nTotal: {param_count} parameters")
 
 
 if __name__ == "__main__":

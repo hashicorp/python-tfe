@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+from typing import Any
+
 from ..errors import (
     InvalidCategoryError,
     InvalidParamIDError,
@@ -10,13 +13,22 @@ from ..errors import (
 from ..models.policy_set_parameter import (
     PolicySetParameter,
     PolicySetParameterCreateOptions,
-    PolicySetParameterList,
     PolicySetParameterListOptions,
     PolicySetParameterUpdateOptions,
 )
 from ..models.variable import CategoryType
 from ..utils import valid_string, valid_string_id
 from ._base import _Service
+
+
+def _policy_set_parameter_from(d: dict[str, Any]) -> PolicySetParameter:
+    """Convert API response dict to PolicySetParameter model."""
+    attrs = d.get("attributes", {})
+    attrs["id"] = d.get("id")
+    attrs["policy_set"] = (
+        d.get("relationships", {}).get("configurable", {}).get("data", {})
+    )
+    return PolicySetParameter.model_validate(attrs)
 
 
 class PolicySetParameters(_Service):
@@ -27,35 +39,14 @@ class PolicySetParameters(_Service):
 
     def list(
         self, policy_set_id: str, options: PolicySetParameterListOptions | None = None
-    ) -> PolicySetParameterList:
+    ) -> Iterator[PolicySetParameter]:
         """List all the parameters associated with the given policy-set."""
         if not valid_string_id(policy_set_id):
             raise InvalidPolicySetIDError()
         params = options.model_dump(by_alias=True, exclude_none=True) if options else {}
-        r = self.t.request(
-            "GET",
-            path=f"api/v2/policy-sets/{policy_set_id}/parameters",
-            params=params,
-        )
-        jd = r.json()
-        items = []
-        meta = jd.get("meta", {})
-        pagination = meta.get("pagination", {})
-        for d in jd.get("data", []):
-            attrs = d.get("attributes", {})
-            attrs["id"] = d.get("id")
-            attrs["policy_set"] = (
-                d.get("relationships", {}).get("configurable", {}).get("data", {})
-            )
-            items.append(PolicySetParameter.model_validate(attrs))
-        return PolicySetParameterList(
-            items=items,
-            current_page=pagination.get("current-page"),
-            total_pages=pagination.get("total-pages"),
-            prev_page=pagination.get("prev-page"),
-            next_page=pagination.get("next-page"),
-            total_count=pagination.get("total-count"),
-        )
+        path = f"/api/v2/policy-sets/{policy_set_id}/parameters"
+        for item in self._list(path, params=params):
+            yield _policy_set_parameter_from(item)
 
     def create(
         self, policy_set_id: str, options: PolicySetParameterCreateOptions
@@ -120,6 +111,7 @@ class PolicySetParameters(_Service):
         parameter_id: str,
         options: PolicySetParameterUpdateOptions,
     ) -> PolicySetParameter:
+        """Update values of an existing parameter."""
         if not valid_string_id(policy_set_id):
             raise InvalidPolicySetIDError()
 
@@ -148,6 +140,7 @@ class PolicySetParameters(_Service):
         return PolicySetParameter.model_validate(attrs)
 
     def delete(self, policy_set_id: str, parameter_id: str) -> None:
+        """Delete a parameter by its ID."""
         if not valid_string_id(policy_set_id):
             raise InvalidPolicySetIDError()
 
