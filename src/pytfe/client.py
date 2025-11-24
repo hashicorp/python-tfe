@@ -16,6 +16,7 @@ from .resources.policy_check import PolicyChecks
 from .resources.policy_evaluation import PolicyEvaluations
 from .resources.policy_set import PolicySets
 from .resources.policy_set_outcome import PolicySets as PolicySetOutcomes
+from .resources.policy_set_parameter import PolicySetParameters
 from .resources.policy_set_version import PolicySetVersions
 from .resources.projects import Projects
 from .resources.query_run import QueryRuns
@@ -84,6 +85,7 @@ class TFEClient:
         self.policy_evaluations = PolicyEvaluations(self._transport)
         self.policy_checks = PolicyChecks(self._transport)
         self.policy_sets = PolicySets(self._transport)
+        self.policy_set_parameters = PolicySetParameters(self._transport)
         self.policy_set_outcomes = PolicySetOutcomes(self._transport)
         self.policy_set_versions = PolicySetVersions(self._transport)
 

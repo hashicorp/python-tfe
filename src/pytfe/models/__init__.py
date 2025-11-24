@@ -133,6 +133,13 @@ from .policy_set import (
     PolicySetRemoveWorkspacesOptions,
     PolicySetUpdateOptions,
 )
+from .policy_set_parameter import (
+    PolicySetParameter,
+    PolicySetParameterCreateOptions,
+    PolicySetParameterList,
+    PolicySetParameterListOptions,
+    PolicySetParameterUpdateOptions,
+)
 from .policy_types import (
     EnforcementLevel,
     PolicyKind,
@@ -586,6 +593,12 @@ __all__ = [
     "PolicySetRemoveWorkspaceExclusionsOptions",
     "PolicySetRemoveProjectsOptions",
     "PolicySetUpdateOptions",
+    # Policy Set Parameters
+    "PolicySetParameter",
+    "PolicySetParameterCreateOptions",
+    "PolicySetParameterList",
+    "PolicySetParameterListOptions",
+    "PolicySetParameterUpdateOptions",
     "PolicyKind",
     "EnforcementLevel",
     # Variable Sets
