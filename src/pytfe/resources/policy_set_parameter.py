@@ -12,6 +12,7 @@ from ..models.policy_set_parameter import (
     PolicySetParameterCreateOptions,
     PolicySetParameterList,
     PolicySetParameterListOptions,
+    PolicySetParameterUpdateOptions,
 )
 from ..models.variable import CategoryType
 from ..utils import valid_string, valid_string_id
@@ -113,8 +114,6 @@ class PolicySetParameters(_Service):
         )
         return PolicySetParameter.model_validate(attrs)
 
-
-"""
     def update(
         self,
         policy_set_id: str,
@@ -126,7 +125,27 @@ class PolicySetParameters(_Service):
 
         if not valid_string_id(parameter_id):
             raise InvalidParamIDError()
-        return PolicySetParameter()
+        attributes = options.model_dump(by_alias=True, exclude_none=True)
+        payload = {
+            "data": {
+                "type": "vars",
+                "id": parameter_id,
+                "attributes": attributes,
+            }
+        }
+        r = self.t.request(
+            "PATCH",
+            path=f"api/v2/policy-sets/{policy_set_id}/parameters/{parameter_id}",
+            json_body=payload,
+        )
+        jd = r.json()
+        data = jd.get("data", {})
+        attrs = data.get("attributes", {})
+        attrs["id"] = data.get("id")
+        attrs["policy_set"] = (
+            data.get("relationships", {}).get("configurable", {}).get("data", {})
+        )
+        return PolicySetParameter.model_validate(attrs)
 
     def delete(self, policy_set_id: str, parameter_id: str) -> None:
         if not valid_string_id(policy_set_id):
@@ -134,5 +153,8 @@ class PolicySetParameters(_Service):
 
         if not valid_string_id(parameter_id):
             raise InvalidParamIDError()
+        self.t.request(
+            "DELETE",
+            path=f"api/v2/policy-sets/{policy_set_id}/parameters/{parameter_id}",
+        )
         return None
-"""

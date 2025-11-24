@@ -7,6 +7,7 @@ from pytfe import TFEClient, TFEConfig
 from pytfe.models import (
     PolicySetParameterCreateOptions,
     PolicySetParameterListOptions,
+    PolicySetParameterUpdateOptions,
 )
 
 
@@ -29,13 +30,11 @@ def main():
     parser.add_argument("--page-size", type=int, default=10)
     parser.add_argument("--create", action="store_true", help="Create a test parameter")
     parser.add_argument("--read", action="store_true", help="Read a specific parameter")
-    parser.add_argument("--parameter-id", help="Parameter ID for read operation")
-    parser.add_argument(
-        "--key", default="test_param", help="Parameter key for creation"
-    )
-    parser.add_argument(
-        "--value", default="test_value", help="Parameter value for creation"
-    )
+    parser.add_argument("--update", action="store_true", help="Update a parameter")
+    parser.add_argument("--delete", action="store_true", help="Delete a parameter")
+    parser.add_argument("--parameter-id", help="Parameter ID for read/update/delete operation")
+    parser.add_argument("--key", help="Parameter key for creation/update")
+    parser.add_argument("--value", help="Parameter value for creation/update")
     parser.add_argument(
         "--sensitive", action="store_true", help="Mark parameter as sensitive"
     )
@@ -88,13 +87,96 @@ def main():
         print(f"  Category: {param.category.value}")
         print(f"  Sensitive: {param.sensitive}")
 
-    # 3) Create a new parameter (if --create flag is provided)
+    # 3) Update a parameter (if --update flag is provided)
+    if args.update:
+        if not args.parameter_id:
+            print("Error: --parameter-id is required for update operation")
+            return
+
+        _print_header(f"Updating parameter: {args.parameter_id}")
+
+        # First read the current parameter to show before state
+        current_param = client.policy_set_parameters.read(
+            args.policy_set_id, args.parameter_id
+        )
+        print("Before update:")
+        print(f"  Key: {current_param.key}")
+        value_display = (
+            "***SENSITIVE***" if current_param.sensitive else current_param.value
+        )
+        print(f"  Value: {value_display}")
+        print(f"  Sensitive: {current_param.sensitive}")
+
+        # Update the parameter
+        update_options = PolicySetParameterUpdateOptions(
+            key=args.key if args.key else None,
+            value=args.value if args.value else None,
+            sensitive=args.sensitive if args.sensitive else None,
+        )
+
+        updated_param = client.policy_set_parameters.update(
+            args.policy_set_id, args.parameter_id, update_options
+        )
+
+        print("\nAfter update:")
+        print(f"  Key: {updated_param.key}")
+        value_display = (
+            "***SENSITIVE***" if updated_param.sensitive else updated_param.value
+        )
+        print(f"  Value: {value_display}")
+        print(f"  Sensitive: {updated_param.sensitive}")
+
+    # 4) Delete a parameter (if --delete flag is provided)
+    if args.delete:
+        if not args.parameter_id:
+            print("Error: --parameter-id is required for delete operation")
+            return
+
+        _print_header(f"Deleting parameter: {args.parameter_id}")
+
+        # First read the parameter to show what's being deleted
+        try:
+            param_to_delete = client.policy_set_parameters.read(
+                args.policy_set_id, args.parameter_id
+            )
+            print("Parameter to delete:")
+            print(f"  ID: {param_to_delete.id}")
+            print(f"  Key: {param_to_delete.key}")
+            value_display = (
+                "***SENSITIVE***" if param_to_delete.sensitive else param_to_delete.value
+            )
+            print(f"  Value: {value_display}")
+            print(f"  Sensitive: {param_to_delete.sensitive}")
+        except Exception as e:
+            print(f"Error reading parameter: {e}")
+            return
+
+        # Delete the parameter
+        client.policy_set_parameters.delete(args.policy_set_id, args.parameter_id)
+        print(f"\n✓ Successfully deleted parameter: {args.parameter_id}")
+
+        # List remaining parameters
+        _print_header("Listing parameters after deletion")
+        remaining_list = client.policy_set_parameters.list(args.policy_set_id)
+        print(f"Total parameters: {remaining_list.total_count}")
+        if remaining_list.items:
+            for param in remaining_list.items:
+                value_display = "***SENSITIVE***" if param.sensitive else param.value
+                print(f"- {param.key}: {value_display} (sensitive={param.sensitive})")
+        else:
+            print("No parameters remaining.")
+
+    # 5) Create a new parameter (if --create flag is provided)
     if args.create:
+        if not args.key:
+            print("Error: --key is required for create operation")
+            return
+
         _print_header(f"Creating new parameter with key: {args.key}")
 
         create_options = PolicySetParameterCreateOptions(
             key=args.key,
-            value=args.value,
+            value=args.value if args.value else "",
             sensitive=args.sensitive,
         )
 
