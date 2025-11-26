@@ -30,7 +30,7 @@ def main():
         "--page-size",
         type=int,
         default=100,
-        help="Page size for fetching parameters (iterator fetches all pages)",
+        help="Page size for fetching parameters",
     )
     parser.add_argument("--create", action="store_true", help="Create a test parameter")
     parser.add_argument("--read", action="store_true", help="Read a specific parameter")

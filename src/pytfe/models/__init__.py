@@ -136,7 +136,6 @@ from .policy_set import (
 from .policy_set_parameter import (
     PolicySetParameter,
     PolicySetParameterCreateOptions,
-    PolicySetParameterList,
     PolicySetParameterListOptions,
     PolicySetParameterUpdateOptions,
 )
@@ -596,7 +595,6 @@ __all__ = [
     # Policy Set Parameters
     "PolicySetParameter",
     "PolicySetParameterCreateOptions",
-    "PolicySetParameterList",
     "PolicySetParameterListOptions",
     "PolicySetParameterUpdateOptions",
     "PolicyKind",

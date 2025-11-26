@@ -21,16 +21,6 @@ from ..utils import valid_string, valid_string_id
 from ._base import _Service
 
 
-def _policy_set_parameter_from(d: dict[str, Any]) -> PolicySetParameter:
-    """Convert API response dict to PolicySetParameter model."""
-    attrs = d.get("attributes", {})
-    attrs["id"] = d.get("id")
-    attrs["policy_set"] = (
-        d.get("relationships", {}).get("configurable", {}).get("data", {})
-    )
-    return PolicySetParameter.model_validate(attrs)
-
-
 class PolicySetParameters(_Service):
     """
     PolicySetParameters describes all the parameter related methods that the Terraform Enterprise API supports.
@@ -46,7 +36,7 @@ class PolicySetParameters(_Service):
         params = options.model_dump(by_alias=True, exclude_none=True) if options else {}
         path = f"/api/v2/policy-sets/{policy_set_id}/parameters"
         for item in self._list(path, params=params):
-            yield _policy_set_parameter_from(item)
+            yield self._policy_set_parameter_from(item)
 
     def create(
         self, policy_set_id: str, options: PolicySetParameterCreateOptions
@@ -75,14 +65,8 @@ class PolicySetParameters(_Service):
             path=f"api/v2/policy-sets/{policy_set_id}/parameters",
             json_body=payload,
         )
-        jd = r.json()
-        data = jd.get("data", {})
-        attrs = data.get("attributes", {})
-        attrs["id"] = data.get("id")
-        attrs["policy_set"] = (
-            data.get("relationships", {}).get("configurable", {}).get("data", {})
-        )
-        return PolicySetParameter.model_validate(attrs)
+        data = r.json().get("data", {})
+        return self._policy_set_parameter_from(data)
 
     def read(self, policy_set_id: str, parameter_id: str) -> PolicySetParameter:
         """Read a parameter by its ID."""
@@ -96,14 +80,8 @@ class PolicySetParameters(_Service):
             "GET",
             path=f"api/v2/policy-sets/{policy_set_id}/parameters/{parameter_id}",
         )
-        jd = r.json()
-        data = jd.get("data", {})
-        attrs = data.get("attributes", {})
-        attrs["id"] = data.get("id")
-        attrs["policy_set"] = (
-            data.get("relationships", {}).get("configurable", {}).get("data", {})
-        )
-        return PolicySetParameter.model_validate(attrs)
+        data = r.json().get("data", {})
+        return self._policy_set_parameter_from(data)
 
     def update(
         self,
@@ -130,14 +108,8 @@ class PolicySetParameters(_Service):
             path=f"api/v2/policy-sets/{policy_set_id}/parameters/{parameter_id}",
             json_body=payload,
         )
-        jd = r.json()
-        data = jd.get("data", {})
-        attrs = data.get("attributes", {})
-        attrs["id"] = data.get("id")
-        attrs["policy_set"] = (
-            data.get("relationships", {}).get("configurable", {}).get("data", {})
-        )
-        return PolicySetParameter.model_validate(attrs)
+        data = r.json().get("data", {})
+        return self._policy_set_parameter_from(data)
 
     def delete(self, policy_set_id: str, parameter_id: str) -> None:
         """Delete a parameter by its ID."""
@@ -151,3 +123,12 @@ class PolicySetParameters(_Service):
             path=f"api/v2/policy-sets/{policy_set_id}/parameters/{parameter_id}",
         )
         return None
+
+    def _policy_set_parameter_from(self, d: dict[str, Any]) -> PolicySetParameter:
+        """Convert API response dict to PolicySetParameter model."""
+        attrs = d.get("attributes", {})
+        attrs["id"] = d.get("id")
+        attrs["policy_set"] = (
+            d.get("relationships", {}).get("configurable", {}).get("data", {})
+        )
+        return PolicySetParameter.model_validate(attrs)

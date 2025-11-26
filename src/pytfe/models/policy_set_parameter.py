@@ -19,21 +19,9 @@ class PolicySetParameter(BaseModel):
     policy_set: PolicySet = Field(..., alias="configurable")
 
 
-class PolicySetParameterList(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
-
-    items: list[PolicySetParameter] = Field(default_factory=list)
-    current_page: int | None = None
-    total_pages: int | None = None
-    prev_page: int | None = None
-    next_page: int | None = None
-    total_count: int | None = None
-
-
 class PolicySetParameterListOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
-    # page_number: int | None = Field(None, alias="page[number]")
     page_size: int | None = Field(None, alias="page[size]")
 
 
