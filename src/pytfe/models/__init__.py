@@ -86,6 +86,14 @@ from .organization import (
     ReadRunQueueOptions,
     RunQueue,
 )
+from .organization_membership import (
+    OrganizationMembership,
+    OrganizationMembershipCreateOptions,
+    OrganizationMembershipListOptions,
+    OrganizationMembershipReadOptions,
+    OrganizationMembershipStatus,
+    OrgMembershipIncludeOpt,
+)
 from .policy import (
     Policy,
     PolicyCreateOptions,
@@ -274,6 +282,11 @@ from .ssh_key import (
     SSHKeyListOptions,
     SSHKeyUpdateOptions,
 )
+from .team import (
+    OrganizationAccess,
+    Team,
+    TeamPermissions,
+)
 
 # Variables
 from .variable import (
@@ -449,6 +462,15 @@ __all__ = [
     "Organization",
     "OrganizationCreateOptions",
     "OrganizationUpdateOptions",
+    "OrganizationMembership",
+    "OrganizationMembershipCreateOptions",
+    "OrganizationMembershipListOptions",
+    "OrganizationMembershipReadOptions",
+    "OrganizationMembershipStatus",
+    "OrgMembershipIncludeOpt",
+    "OrganizationAccess",
+    "Team",
+    "TeamPermissions",
     "Project",
     "ProjectAddTagBindingsOptions",
     "ProjectCreateOptions",

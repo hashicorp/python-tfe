@@ -36,11 +36,11 @@ def main():
 
     # Validate environment variables
     if not TFE_TOKEN:
-        print("❌ Error: TFE_TOKEN environment variable is required")
+        print(" Error: TFE_TOKEN environment variable is required")
         sys.exit(1)
 
     if not TFE_ORG:
-        print("❌ Error: TFE_ORG environment variable is required")
+        print(" Error: TFE_ORG environment variable is required")
         sys.exit(1)
 
     # Initialize the TFE client
@@ -54,7 +54,7 @@ def main():
         # 1. List existing reserved tag keys
         print("\n1. Listing reserved tag keys...")
         reserved_tag_keys = client.reserved_tag_key.list(TFE_ORG)
-        print(f"✅ Found {len(reserved_tag_keys.items)} reserved tag keys:")
+        print(f"Found {len(reserved_tag_keys.items)} reserved tag keys:")
         for rtk in reserved_tag_keys.items:
             print(
                 f"  - ID: {rtk.id}, Key: {rtk.key}, Disable Overrides: {rtk.disable_overrides}"
@@ -67,7 +67,7 @@ def main():
         )
 
         new_rtk = client.reserved_tag_key.create(TFE_ORG, create_options)
-        print(f"✅ Created reserved tag key: {new_rtk.id} - {new_rtk.key}")
+        print(f"Created reserved tag key: {new_rtk.id} - {new_rtk.key}")
         print(f"   Disable Overrides: {new_rtk.disable_overrides}")
 
         # 3. Update the reserved tag key
@@ -77,48 +77,46 @@ def main():
         )
 
         updated_rtk = client.reserved_tag_key.update(new_rtk.id, update_options)
-        print(f"✅ Updated reserved tag key: {updated_rtk.id} - {updated_rtk.key}")
+        print(f"Updated reserved tag key: {updated_rtk.id} - {updated_rtk.key}")
         print(f"   Disable Overrides: {updated_rtk.disable_overrides}")
 
         # 4. Delete the reserved tag key
         print("\n4. Deleting the reserved tag key...")
         client.reserved_tag_key.delete(new_rtk.id)
-        print(f"✅ Deleted reserved tag key: {new_rtk.id}")
+        print(f"Deleted reserved tag key: {new_rtk.id}")
 
         # 5. Verify deletion by listing again
         print("\n5. Verifying deletion...")
         reserved_tag_keys_after = client.reserved_tag_key.list(TFE_ORG)
-        print(
-            f"✅ Reserved tag keys after deletion: {len(reserved_tag_keys_after.items)}"
-        )
+        print(f"Reserved tag keys after deletion: {len(reserved_tag_keys_after.items)}")
 
         # 6. Demonstrate pagination with options
         print("\n6. Demonstrating pagination options...")
         list_options = ReservedTagKeyListOptions(page_size=5, page_number=1)
         paginated_rtks = client.reserved_tag_key.list(TFE_ORG, list_options)
-        print(f"✅ Page 1 with page size 5: {len(paginated_rtks.items)} keys")
+        print(f"Page 1 with page size 5: {len(paginated_rtks.items)} keys")
         print(f"   Total pages: {paginated_rtks.total_pages}")
         print(f"   Total count: {paginated_rtks.total_count}")
 
-        print("\n🎉 Reserved Tag Keys API example completed successfully!")
+        print("\n Reserved Tag Keys API example completed successfully!")
 
     except NotImplementedError as e:
-        print(f"\n⚠️ Note: {e}")
+        print(f"\n Note: {e}")
         print("This is expected - the read operation is not supported by the API.")
 
     except TFEError as e:
-        print(f"\n❌ TFE API Error: {e}")
+        print(f"\n TFE API Error: {e}")
         if hasattr(e, "status"):
             if e.status == 403:
-                print("💡 Permission denied - check token permissions")
+                print(" Permission denied - check token permissions")
             elif e.status == 401:
-                print("💡 Authentication failed - check token validity")
+                print(" Authentication failed - check token validity")
             elif e.status == 422:
-                print("💡 Validation error - check reserved tag key format")
+                print(" Validation error - check reserved tag key format")
         sys.exit(1)
 
     except Exception as e:
-        print(f"\n❌ Unexpected error: {e}")
+        print(f"\n Unexpected error: {e}")
         sys.exit(1)
 
 

@@ -140,7 +140,7 @@ def main():
                 if count >= args.page_size * 2:  # Safety limit based on page size
                     break
 
-            print(f"✓ Found {len(run_trigger_list)} run triggers")
+            print(f" Found {len(run_trigger_list)} run triggers")
             print()
 
             if not run_trigger_list:
@@ -158,7 +158,7 @@ def main():
                         print(f"    Target Workspace ID: {trigger.workspace.id}")
                     print()
         except Exception as e:
-            print(f"✗ Error listing run triggers: {e}")
+            print(f" Error listing run triggers: {e}")
             return
 
     # 2) Create a new run trigger if requested
@@ -178,7 +178,7 @@ def main():
                 f"Creating run trigger from workspace '{args.source_workspace_id}' to '{args.workspace_id}'..."
             )
             run_trigger = client.run_triggers.create(args.workspace_id, create_options)
-            print("✓ Successfully created run trigger!")
+            print(" Successfully created run trigger!")
             print(f"   ID: {run_trigger.id}")
             print(f"   Source: {run_trigger.sourceable_name}")
             print(f"   Target: {run_trigger.workspace_name}")
@@ -198,12 +198,10 @@ def main():
                 run_trigger.id
             )  # Use the created trigger for other operations
         except Exception as e:
-            print(f"✗ Error creating run trigger: {e}")
+            print(f" Error creating run trigger: {e}")
             return
     elif args.create:
-        print(
-            "✗ Error: --create requires both --workspace-id and --source-workspace-id"
-        )
+        print(" Error: --create requires both --workspace-id and --source-workspace-id")
         return
 
     # 3) Read run trigger details if trigger ID is provided
@@ -213,7 +211,7 @@ def main():
             print("Reading run trigger details...")
             run_trigger = client.run_triggers.read(args.trigger_id)
 
-            print("✓ Successfully read run trigger!")
+            print(" Successfully read run trigger!")
             print(f"   ID: {run_trigger.id}")
             print(f"   Type: {run_trigger.type}")
             print(f"   Source: {run_trigger.sourceable_name}")
@@ -243,7 +241,7 @@ def main():
 
             print()
         except Exception as e:
-            print(f"✗ Error reading run trigger: {e}")
+            print(f" Error reading run trigger: {e}")
             return
 
     # 4) Delete run trigger if requested (should be last operation)
@@ -252,10 +250,10 @@ def main():
         try:
             print(f"Deleting run trigger '{args.trigger_id}'...")
             client.run_triggers.delete(args.trigger_id)
-            print(f"✓ Successfully deleted run trigger: {args.trigger_id}")
+            print(f" Successfully deleted run trigger: {args.trigger_id}")
             print()
         except Exception as e:
-            print(f"✗ Error deleting run trigger: {e}")
+            print(f" Error deleting run trigger: {e}")
             return
 
 
