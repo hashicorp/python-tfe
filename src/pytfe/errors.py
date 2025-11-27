@@ -55,11 +55,19 @@ class RequiredFieldMissing(TFEError): ...
 class ErrStateVersionUploadNotSupported(TFEError): ...
 
 
+# Generic error constants
+ERR_UNAUTHORIZED = "unauthorized"
+ERR_RESOURCE_NOT_FOUND = "resource not found"
+ERR_MISSING_DIRECTORY = "path needs to be an existing directory"
+ERR_NAMESPACE_NOT_AUTHORIZED = "namespace not authorized"
+
 # Error message constants
 ERR_INVALID_NAME = "invalid value for name"
 ERR_REQUIRED_NAME = "name is required"
 ERR_INVALID_ORG = "invalid organization name"
 ERR_REQUIRED_EMAIL = "email is required"
+ERR_INVALID_EMAIL = "invalid email format"
+ERR_INVALID_MEMBERSHIP_ID = "invalid value for organization membership ID"
 
 # Registry Module Error Constants
 ERR_REQUIRED_PROVIDER = "provider is required"

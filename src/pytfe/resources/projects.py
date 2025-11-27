@@ -105,7 +105,7 @@ class Projects(_Service):
         self, organization: str, options: ProjectListOptions | None = None
     ) -> Iterator[Project]:
         """List projects in an organization"""
-        # Validate inputs following Go patterns
+        # Validate inputs
         validate_project_list_options(organization)
 
         path = f"/api/v2/organizations/{organization}/projects"
@@ -129,7 +129,7 @@ class Projects(_Service):
             items_iter = self._list(path)
 
         for item in items_iter:
-            # Extract project data following Go patterns
+            # Extract project data
             attr = item.get("attributes", {}) or {}
             project_data = {
                 "id": _safe_str(item.get("id")),
@@ -147,7 +147,7 @@ class Projects(_Service):
 
     def create(self, organization: str, options: ProjectCreateOptions) -> Project:
         """Create a new project in an organization"""
-        # Validate inputs following Go patterns
+        # Validate inputs
         validate_project_create_options(organization, options.name, options.description)
 
         path = f"/api/v2/organizations/{organization}/projects"
@@ -160,7 +160,7 @@ class Projects(_Service):
         response = self.t.request("POST", path, json_body=payload)
         data = response.json()["data"]
 
-        # Extract project data following Go patterns
+        # Extract project data
         attr = data.get("attributes", {}) or {}
         project_data = {
             "id": _safe_str(data.get("id")),
@@ -180,7 +180,7 @@ class Projects(_Service):
         self, project_id: str, include: builtins.list[str] | None = None
     ) -> Project:
         """Get a specific project by ID"""
-        # Validate inputs following Go patterns
+        # Validate inputs
         if not valid_string_id(project_id):
             raise ValueError("Project ID is required and must be valid")
 
@@ -201,7 +201,7 @@ class Projects(_Service):
         org_data = relationships.get("organization", {}).get("data", {})
         organization = _safe_str(org_data.get("id"))
 
-        # Extract project data following Go patterns
+        # Extract project data
         attr = data.get("attributes", {}) or {}
         project_data = {
             "id": _safe_str(data.get("id")),
@@ -219,7 +219,7 @@ class Projects(_Service):
 
     def update(self, project_id: str, options: ProjectUpdateOptions) -> Project:
         """Update a project's name and/or description"""
-        # Validate inputs following Go patterns
+        # Validate inputs
         validate_project_update_options(project_id, options.name, options.description)
 
         path = f"/api/v2/projects/{project_id}"
@@ -242,7 +242,7 @@ class Projects(_Service):
         org_data = relationships.get("organization", {}).get("data", {})
         organization = _safe_str(org_data.get("id"))
 
-        # Extract project data following Go patterns
+        # Extract project data
         attr = data.get("attributes", {}) or {}
         project_data = {
             "id": _safe_str(data.get("id")),
@@ -260,7 +260,7 @@ class Projects(_Service):
 
     def delete(self, project_id: str) -> None:
         """Delete a project"""
-        # Validate inputs following Go patterns
+        # Validate inputs
         if not valid_string_id(project_id):
             raise ValueError("Project ID is required and must be valid")
 
