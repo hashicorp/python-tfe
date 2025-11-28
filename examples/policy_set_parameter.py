@@ -158,7 +158,7 @@ def main():
 
         # Delete the parameter
         client.policy_set_parameters.delete(args.policy_set_id, args.parameter_id)
-        print(f"\n✓ Successfully deleted parameter: {args.parameter_id}")
+        print(f"\n  Successfully deleted parameter: {args.parameter_id}")
 
         # List remaining parameters
         _print_header("Listing parameters after deletion")
