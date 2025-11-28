@@ -52,7 +52,7 @@ def _run_task_from(d: dict[str, Any], org: str | None = None) -> RunTask:
             stages = []
             if "stages" in raw_global and isinstance(raw_global["stages"], list):
                 stages = [
-                    Stage(stage)
+                    Stage(stage.replace("-", "_"))
                     for stage in raw_global["stages"]
                     if isinstance(stage, str)
                 ]
@@ -93,16 +93,18 @@ def _run_task_from(d: dict[str, Any], org: str | None = None) -> RunTask:
             email=None,  # Not available in relationship data
         )
 
-    # Handle workspace run tasks relationship
-    workspace_run_tasks = []
-    wrt_data = relationships.get("workspace-tasks", {}).get("data", [])
-    if isinstance(wrt_data, list):
-        # Note: Full WorkspaceRunTask objects would need to be fetched separately
-        # Here we just create minimal objects with IDs
+    # Process workspace run tasks if present
+    workspace_run_tasks: list[dict] = []
+    if "workspace-tasks" in relationships:
+        wrt_data = relationships["workspace-tasks"].get("data", [])
+        # Note: These are just dict references, not full WorkspaceRunTask objects
         for item in wrt_data:
             if isinstance(item, dict) and "id" in item:
                 workspace_run_tasks.append(
-                    WorkspaceRunTask(id=_safe_str(item.get("id")))
+                    {
+                        "id": _safe_str(item.get("id")),
+                        "type": _safe_str(item.get("type", "workspace-tasks")),
+                    }
                 )
 
     return RunTask(

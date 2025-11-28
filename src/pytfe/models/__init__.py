@@ -334,6 +334,24 @@ from .workspace import (
     WorkspaceUpdateRemoteStateConsumersOptions,
 )
 
+# ── Workspace Resources ────────────────────────────────────────────────────────
+from .workspace_resource import (
+    WorkspaceResource,
+    WorkspaceResourceListOptions,
+    WorkspaceResourcesList,
+)
+
+# ── Workspace Run Tasks ────────────────────────────────────────────────────────
+from .workspace_run_task import (
+    WorkspaceRunTask,
+    WorkspaceRunTaskCreateOptions,
+    WorkspaceRunTaskIncludeOpt,
+    WorkspaceRunTaskList,
+    WorkspaceRunTaskListOptions,
+    WorkspaceRunTaskReadOptions,
+    WorkspaceRunTaskUpdateOptions,
+)
+
 # ── Public surface ────────────────────────────────────────────────────────────
 __all__ = [
     # OAuth
@@ -496,6 +514,18 @@ __all__ = [
     "WorkspaceTagListOptions",
     "WorkspaceUpdateOptions",
     "WorkspaceUpdateRemoteStateConsumersOptions",
+    # Workspace Resources
+    "WorkspaceResource",
+    "WorkspaceResourceListOptions",
+    "WorkspaceResourcesList",
+    # Workspace Run Tasks
+    "WorkspaceRunTask",
+    "WorkspaceRunTaskCreateOptions",
+    "WorkspaceRunTaskIncludeOpt",
+    "WorkspaceRunTaskList",
+    "WorkspaceRunTaskListOptions",
+    "WorkspaceRunTaskReadOptions",
+    "WorkspaceRunTaskUpdateOptions",
     "RunQueue",
     "ReadRunQueueOptions",
     # Runs

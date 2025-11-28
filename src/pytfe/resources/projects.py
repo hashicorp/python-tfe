@@ -105,7 +105,7 @@ class Projects(_Service):
         self, organization: str, options: ProjectListOptions | None = None
     ) -> Iterator[Project]:
         """List projects in an organization"""
-        # Validate inputs following Go patterns
+        # Validate inputs
         validate_project_list_options(organization)
 
         path = f"/api/v2/organizations/{organization}/projects"
@@ -129,7 +129,7 @@ class Projects(_Service):
             items_iter = self._list(path)
 
         for item in items_iter:
-            # Extract project data following Go patterns
+            # Extract project data
             attr = item.get("attributes", {}) or {}
             project_data = {
                 "id": _safe_str(item.get("id")),
@@ -147,7 +147,7 @@ class Projects(_Service):
 
     def create(self, organization: str, options: ProjectCreateOptions) -> Project:
         """Create a new project in an organization"""
-        # Validate inputs following Go patterns
+        # Validate inputs
         validate_project_create_options(organization, options.name, options.description)
 
         path = f"/api/v2/organizations/{organization}/projects"

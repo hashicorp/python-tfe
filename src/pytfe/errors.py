@@ -460,3 +460,11 @@ class InvalidPolicyEvaluationIDError(InvalidValues):
 
     def __init__(self, message: str = "invalid value for policy evaluation ID"):
         super().__init__(message)
+
+
+# Workspace Run Task errors
+class InvalidWorkspaceRunTaskIDError(InvalidValues):
+    """Raised when an invalid workspace run task ID is provided."""
+
+    def __init__(self, task_id: str):
+        super().__init__(f"invalid value for workspace run task ID: {task_id}")

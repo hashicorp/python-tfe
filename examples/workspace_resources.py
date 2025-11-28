@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""Example script for working with workspace resources in Terraform Enterprise.
+
+This script demonstrates how to list resources within a workspace.
+"""
+
+import argparse
+import sys
+
+from pytfe import TFEClient
+from pytfe.models.workspace_resource import WorkspaceResourceListOptions
+
+
+def list_workspace_resources(
+    client: TFEClient,
+    workspace_id: str,
+    page_number: int | None = None,
+    page_size: int | None = None,
+) -> None:
+    """List all resources in a workspace."""
+    try:
+        print(f"Listing resources for workspace: {workspace_id}")
+
+        # Prepare list options
+        options = None
+        if page_number or page_size:
+            options = WorkspaceResourceListOptions()
+            if page_number:
+                options.page_number = page_number
+            if page_size:
+                options.page_size = page_size
+
+        # List workspace resources
+        resources_list = client.workspace_resources.list(workspace_id, options)
+
+        if not resources_list.data:
+            print("No resources found in this workspace.")
+            return
+
+        print(f"\nFound {len(resources_list.data)} resource(s):")
+        print("-" * 80)
+
+        for resource in resources_list.data:
+            print(f"ID: {resource.id}")
+            print(f"Address: {resource.address}")
+            print(f"Name: {resource.name}")
+            print(f"Module: {resource.module}")
+            print(f"Provider: {resource.provider}")
+            print(f"Provider Type: {resource.provider_type}")
+            print(f"Created At: {resource.created_at}")
+            print(f"Updated At: {resource.updated_at}")
+            print(f"Modified By State Version: {resource.modified_by_state_version_id}")
+            if resource.name_index:
+                print(f"Name Index: {resource.name_index}")
+            print("-" * 80)
+
+        # Show pagination info if available
+        if resources_list.pagination:
+            print("\nPagination Info:")
+            print(f"  Current Page: {resources_list.pagination.current_page}")
+            print(f"  Total Pages: {resources_list.pagination.total_pages}")
+            print(f"  Total Count: {resources_list.pagination.total_count}")
+            if hasattr(resources_list.pagination, 'page_size') and resources_list.pagination.page_size:
+                print(f"  Page Size: {resources_list.pagination.page_size}")
+            if resources_list.pagination.next_page:
+                print(f"  Next Page: {resources_list.pagination.next_page}")
+            if resources_list.pagination.previous_page:
+                print(f"  Previous Page: {resources_list.pagination.previous_page}")
+
+    except Exception as e:
+        print(f"Error listing workspace resources: {e}", file=sys.stderr)
+        sys.exit(1)
+
+
+def main():
+    """Main function to handle command line arguments and execute operations."""
+    parser = argparse.ArgumentParser(
+        description="Manage workspace resources in Terraform Enterprise",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # List all resources in a workspace
+  python workspace_resources.py list ws-abc123
+
+  # List with pagination
+  python workspace_resources.py list ws-abc123 --page-number 2 --page-size 50
+
+Environment variables:
+  TFE_TOKEN: Your Terraform Enterprise API token
+  TFE_URL: Your Terraform Enterprise URL (default: https://app.terraform.io)
+  TFE_ORG: Your Terraform Enterprise organization name
+        """,
+    )
+
+    subparsers = parser.add_subparsers(dest="command", help="Available commands")
+
+    # List command
+    list_parser = subparsers.add_parser("list", help="List workspace resources")
+    list_parser.add_argument("workspace_id", help="ID of the workspace")
+    list_parser.add_argument(
+        "--page-number", type=int, help="Page number for pagination"
+    )
+    list_parser.add_argument("--page-size", type=int, help="Page size for pagination")
+
+    args = parser.parse_args()
+
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+
+    # Initialize TFE client
+    try:
+        client = TFEClient()
+    except Exception as e:
+        print(f"Error initializing TFE client: {e}", file=sys.stderr)
+        print(
+            "Make sure TFE_TOKEN and TFE_URL environment variables are set.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    # Execute the requested command
+    if args.command == "list":
+        list_workspace_resources(
+            client,
+            args.workspace_id,
+            args.page_number,
+            args.page_size,
+        )
+
+
+if __name__ == "__main__":
+    main()

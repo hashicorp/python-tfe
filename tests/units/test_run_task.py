@@ -81,8 +81,8 @@ class TestRunTaskFrom:
         assert result.organization.name == "org-123"
         assert isinstance(result.workspace_run_tasks, list)
         assert len(result.workspace_run_tasks) == 2
-        assert result.workspace_run_tasks[0].id == "wstask-1"
-        assert result.workspace_run_tasks[1].id == "wstask-2"
+        assert result.workspace_run_tasks[0]["id"] == "wstask-1"
+        assert result.workspace_run_tasks[1]["id"] == "wstask-2"
 
 
 class TestRunTasks:

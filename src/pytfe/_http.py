@@ -39,7 +39,11 @@ class HTTPTransport:
         proxies: str | None,
         ca_bundle: str | None,
     ):
-        self.base = address.rstrip("/")
+        # Ensure API v2 path is included in base URL
+        base_address = address.rstrip("/")
+        if not base_address.endswith("/api/v2"):
+            base_address += "/api/v2"
+        self.base = base_address
         self.headers = build_headers(user_agent_suffix)
         if token:
             self.headers["Authorization"] = f"Bearer {token}"
@@ -63,7 +67,10 @@ class HTTPTransport:
         # IMPORTANT: don't prefix absolute URLs (hosted_state, signed blobs, etc.)
         if ABSOLUTE_URL_RE.match(path):
             return path
-        return urljoin(self.base, path.lstrip("/"))
+        # Fix urljoin behavior - ensure base ends with / and path doesn't start with /
+        base = self.base.rstrip("/") + "/"
+        clean_path = path.lstrip("/")
+        return urljoin(base, clean_path)
 
     def request(
         self,
