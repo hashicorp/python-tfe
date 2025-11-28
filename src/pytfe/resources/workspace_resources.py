@@ -83,11 +83,21 @@ class WorkspaceResourcesService(_Service):
         if "meta" in response_data and "pagination" in response_data["meta"]:
             meta_pagination = response_data["meta"]["pagination"]
             pagination = Pagination(
-                current_page=meta_pagination.get("current-page", meta_pagination.get("current_page", 1)),
-                total_count=meta_pagination.get("total-count", meta_pagination.get("total_count", 0)),
-                previous_page=meta_pagination.get("prev-page", meta_pagination.get("previous_page")),
-                next_page=meta_pagination.get("next-page", meta_pagination.get("next_page")),
-                total_pages=meta_pagination.get("total-pages", meta_pagination.get("total_pages", 1)),
+                current_page=meta_pagination.get(
+                    "current-page", meta_pagination.get("current_page", 1)
+                ),
+                total_count=meta_pagination.get(
+                    "total-count", meta_pagination.get("total_count", 0)
+                ),
+                previous_page=meta_pagination.get(
+                    "prev-page", meta_pagination.get("previous_page")
+                ),
+                next_page=meta_pagination.get(
+                    "next-page", meta_pagination.get("next_page")
+                ),
+                total_pages=meta_pagination.get(
+                    "total-pages", meta_pagination.get("total_pages", 1)
+                ),
             )
 
         return WorkspaceResourcesList(data=resources, pagination=pagination)

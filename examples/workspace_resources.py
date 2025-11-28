@@ -60,7 +60,10 @@ def list_workspace_resources(
             print(f"  Current Page: {resources_list.pagination.current_page}")
             print(f"  Total Pages: {resources_list.pagination.total_pages}")
             print(f"  Total Count: {resources_list.pagination.total_count}")
-            if hasattr(resources_list.pagination, 'page_size') and resources_list.pagination.page_size:
+            if (
+                hasattr(resources_list.pagination, "page_size")
+                and resources_list.pagination.page_size
+            ):
                 print(f"  Page Size: {resources_list.pagination.page_size}")
             if resources_list.pagination.next_page:
                 print(f"  Next Page: {resources_list.pagination.next_page}")
