@@ -48,10 +48,10 @@ def main():
         try:
             variable = client.variables.create(workspace_id, terraform_var)
             created_variables.append(variable.id)
-            print(f"✓ Created Terraform variable: {variable.key} = {variable.value}")
+            print(f" Created Terraform variable: {variable.key} = {variable.value}")
             print(f"  ID: {variable.id}, Category: {variable.category}")
         except Exception as e:
-            print(f"✗ Error creating Terraform variable: {e}")
+            print(f" Error creating Terraform variable: {e}")
 
         # Create an environment variable
         env_var = VariableCreateOptions(
@@ -66,10 +66,10 @@ def main():
         try:
             variable = client.variables.create(workspace_id, env_var)
             created_variables.append(variable.id)
-            print(f"✓ Created environment variable: {variable.key} = {variable.value}")
+            print(f" Created environment variable: {variable.key} = {variable.value}")
             print(f"  ID: {variable.id}, Category: {variable.category}")
         except Exception as e:
-            print(f"✗ Error creating environment variable: {e}")
+            print(f" Error creating environment variable: {e}")
 
         # Create a sensitive variable
         secret_var = VariableCreateOptions(
@@ -84,10 +84,10 @@ def main():
         try:
             variable = client.variables.create(workspace_id, secret_var)
             created_variables.append(variable.id)
-            print(f"✓ Created sensitive variable: {variable.key} = ***HIDDEN***")
+            print(f" Created sensitive variable: {variable.key} = ***HIDDEN***")
             print(f"  ID: {variable.id}, Category: {variable.category}")
         except Exception as e:
-            print(f"✗ Error creating sensitive variable: {e}")
+            print(f" Error creating sensitive variable: {e}")
 
         # Small delay to ensure variables are created
         time.sleep(1)
@@ -105,7 +105,7 @@ def main():
                     f"  • {var.key} = {value_display} ({var.category}) [ID: {var.id}]"
                 )
         except Exception as e:
-            print(f"✗ Error listing variables: {e}")
+            print(f" Error listing variables: {e}")
 
         # 3. Test LIST_ALL function (includes inherited variables from variable sets)
         print("\n3. Testing LIST_ALL operation (includes variable sets):")
@@ -120,7 +120,7 @@ def main():
                     f"  • {var.key} = {value_display} ({var.category}) [ID: {var.id}]"
                 )
         except Exception as e:
-            print(f"✗ Error listing all variables: {e}")
+            print(f" Error listing all variables: {e}")
 
         # Test READ function with specific variable ID - COMMENTED OUT
         print("\n4. Testing READ operation with specific variable ID:")
@@ -134,9 +134,9 @@ def main():
             variable = client.variables.read(workspace_id, test_variable_id)
             # For testing, show actual values even for sensitive variables
             if variable.sensitive:
-                print(f"✓ Read variable: {variable.key} = {variable.value} (SENSITIVE)")
+                print(f" Read variable: {variable.key} = {variable.value} (SENSITIVE)")
             else:
-                print(f"✓ Read variable: {variable.key} = {variable.value}")
+                print(f" Read variable: {variable.key} = {variable.value}")
             print(f"  ID: {variable.id}")
             print(f"  Description: {variable.description}")
             print(f"  Category: {variable.category}")
@@ -145,7 +145,7 @@ def main():
             if hasattr(variable, "version_id"):
                 print(f"  Version ID: {variable.version_id}")
         except Exception as e:
-            print(f"✗ Error reading variable {test_variable_id}: {e}")
+            print(f" Error reading variable {test_variable_id}: {e}")
 
         # Test UPDATE function with specific variable ID - COMMENTED OUT
         print("\n5. Testing UPDATE operation with specific variable ID:")
@@ -175,7 +175,7 @@ def main():
                 workspace_id, test_variable_id, update_options
             )
             print(
-                f"✓ Updated variable: {updated_variable.key} = {updated_variable.value}"
+                f" Updated variable: {updated_variable.key} = {updated_variable.value}"
             )
             print(f"  Description: {updated_variable.description}")
             print(f"  Category: {updated_variable.category}")
@@ -183,7 +183,7 @@ def main():
             print(f"  Sensitive: {updated_variable.sensitive}")
             print(f"  ID: {updated_variable.id}")
         except Exception as e:
-            print(f"✗ Error updating variable {test_variable_id}: {e}")
+            print(f" Error updating variable {test_variable_id}: {e}")
 
         # Test DELETE function with specific variable ID
         print("\n6. Testing DELETE operation with specific variable ID:")
@@ -201,21 +201,21 @@ def main():
 
             # Delete the variable
             client.variables.delete(workspace_id, test_variable_id)
-            print(f"✓ Successfully deleted variable with ID: {test_variable_id}")
+            print(f" Successfully deleted variable with ID: {test_variable_id}")
 
             # Try to read it again to verify deletion
             print("Verifying deletion...")
             try:
                 client.variables.read(workspace_id, test_variable_id)
-                print("✗ Warning: Variable still exists after deletion!")
+                print(" Warning: Variable still exists after deletion!")
             except Exception as read_error:
                 if "not found" in str(read_error).lower() or "404" in str(read_error):
-                    print("✓ Confirmed: Variable no longer exists")
+                    print(" Confirmed: Variable no longer exists")
                 else:
-                    print(f"✗ Unexpected error verifying deletion: {read_error}")
+                    print(f" Unexpected error verifying deletion: {read_error}")
 
         except Exception as e:
-            print(f"✗ Error deleting variable {test_variable_id}: {e}")
+            print(f" Error deleting variable {test_variable_id}: {e}")
 
         # 4. Test READ function
         print("\n4. Testing READ operation:")
@@ -228,14 +228,14 @@ def main():
                 value_display = (
                     "***SENSITIVE***" if variable.sensitive else variable.value
                 )
-                print(f"✓ Read variable: {variable.key} = {value_display}")
+                print(f" Read variable: {variable.key} = {value_display}")
                 print(f"  ID: {variable.id}")
                 print(f"  Description: {variable.description}")
                 print(f"  Category: {variable.category}")
                 print(f"  HCL: {variable.hcl}")
                 print(f"  Sensitive: {variable.sensitive}")
             except Exception as e:
-                print(f"✗ Error reading variable {test_var_id}: {e}")
+                print(f" Error reading variable {test_var_id}: {e}")
         else:
             print("No variables available to read")
 
@@ -262,12 +262,12 @@ def main():
                     workspace_id, test_var_id, update_options
                 )
                 print(
-                    f"✓ Updated variable: {updated_variable.key} = {updated_variable.value}"
+                    f" Updated variable: {updated_variable.key} = {updated_variable.value}"
                 )
                 print(f"  New description: {updated_variable.description}")
                 print(f"  ID: {updated_variable.id}")
             except Exception as e:
-                print(f"✗ Error updating variable {test_var_id}: {e}")
+                print(f" Error updating variable {test_var_id}: {e}")
         else:
             print("No variables available to update")
 
@@ -279,9 +279,9 @@ def main():
         for var_id in created_variables:
             try:
                 client.variables.delete(workspace_id, var_id)
-                print(f"✓ Deleted variable with ID: {var_id}")
+                print(f" Deleted variable with ID: {var_id}")
             except Exception as e:
-                print(f"✗ Error deleting variable {var_id}: {e}")
+                print(f" Error deleting variable {var_id}: {e}")
 
         # Verify deletion by listing variables again
         print("\nVerifying deletion - listing variables after cleanup:")
@@ -300,12 +300,12 @@ def main():
                 for var in remaining_test_vars:
                     print(f"  • {var.key} [ID: {var.id}]")
             else:
-                print("✓ All test variables successfully deleted")
+                print(" All test variables successfully deleted")
         except Exception as e:
-            print(f"✗ Error verifying deletion: {e}")
+            print(f" Error verifying deletion: {e}")
 
     except Exception as e:
-        print(f"✗ Unexpected error during testing: {e}")
+        print(f" Unexpected error during testing: {e}")
 
     print("\n" + "=" * 60)
     print("Variable testing complete!")

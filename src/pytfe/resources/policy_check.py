@@ -97,7 +97,7 @@ class PolicyChecks(_Service):
 
             # Continue polling if the policy check is still pending or queued
             if pc.status in (PolicyStatus.POLICY_PENDING, PolicyStatus.POLICY_QUEUED):
-                time.sleep(0.5)  # 500ms wait, equivalent to Go's 500 * time.Millisecond
+                time.sleep(0.5)  # 500ms wait
                 continue
 
             # Policy check is finished, get the logs
