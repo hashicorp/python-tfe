@@ -171,7 +171,7 @@ class OrganizationMemberships(_Service):
     def read_with_options(
         self,
         organization_membership_id: str,
-        options: OrganizationMembershipReadOptions,
+        options: OrganizationMembershipReadOptions | None = None,
     ) -> OrganizationMembership:
         """Read an organization membership by ID with options.
 
