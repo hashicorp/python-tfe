@@ -49,9 +49,8 @@ def _workspace_run_task_from(d: dict[str, Any]) -> WorkspaceRunTask:
     stage = Stage.POST_PLAN  # Default
     if isinstance(stage_str, str):
         try:
-            # Convert kebab-case from API to underscore for enum
-            stage_underscore = stage_str.replace("-", "_")
-            stage = Stage(stage_underscore)
+            # API returns kebab-case (pre-plan, post-plan, etc.)
+            stage = Stage(stage_str)
         except ValueError:
             stage = Stage.POST_PLAN
 
@@ -206,10 +205,9 @@ class WorkspaceRunTasksService(_Service):
             }
         }
 
-        # Add optional stage if provided - convert from underscore to kebab-case for API
+        # Add optional stage if provided
         if options.stage is not None:
-            stage_kebab = options.stage.value.replace("_", "-")
-            data["data"]["attributes"]["stage"] = stage_kebab
+            data["data"]["attributes"]["stage"] = options.stage.value
 
         response = self.t.request("POST", url, json_body=data)
         json_response = response.json() or {}
@@ -254,11 +252,10 @@ class WorkspaceRunTasksService(_Service):
                 options.enforcement_level.value
             )
         if options.stage is not None:
-            stage_kebab = options.stage.value.replace("_", "-")
-            data["data"]["attributes"]["stage"] = stage_kebab
+            data["data"]["attributes"]["stage"] = options.stage.value
         if options.stages is not None:
             data["data"]["attributes"]["stages"] = [
-                stage.value.replace("_", "-") for stage in options.stages
+                stage.value for stage in options.stages
             ]
 
         response = self.t.request("PATCH", url, json_body=data)

@@ -52,7 +52,7 @@ def _run_task_from(d: dict[str, Any], org: str | None = None) -> RunTask:
             stages = []
             if "stages" in raw_global and isinstance(raw_global["stages"], list):
                 stages = [
-                    Stage(stage.replace("-", "_"))
+                    Stage(stage)
                     for stage in raw_global["stages"]
                     if isinstance(stage, str)
                 ]

@@ -6,22 +6,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from ..models.common import Pagination
-
-
-class Stage(str, Enum):
-    """Task stage options."""
-
-    PRE_PLAN = "pre_plan"
-    POST_PLAN = "post_plan"
-    PRE_APPLY = "pre_apply"
-    POST_APPLY = "post_apply"
-
-
-class TaskEnforcementLevel(str, Enum):
-    """Task enforcement level options."""
-
-    ADVISORY = "advisory"
-    MANDATORY = "mandatory"
+from .run_task import Stage, TaskEnforcementLevel
 
 
 class WorkspaceRunTask(BaseModel):

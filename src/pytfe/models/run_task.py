@@ -8,10 +8,25 @@ from pydantic import BaseModel, Field
 from ..models.common import Pagination
 from .agent import AgentPool
 from .organization import Organization
-from .workspace_run_task import Stage, TaskEnforcementLevel
 
 if TYPE_CHECKING:
     pass
+
+
+class Stage(str, Enum):
+    """Task stage options."""
+
+    PRE_PLAN = "pre-plan"
+    POST_PLAN = "post-plan"
+    PRE_APPLY = "pre-apply"
+    POST_APPLY = "post-apply"
+
+
+class TaskEnforcementLevel(str, Enum):
+    """Task enforcement level options."""
+
+    ADVISORY = "advisory"
+    MANDATORY = "mandatory"
 
 
 class RunTask(BaseModel):

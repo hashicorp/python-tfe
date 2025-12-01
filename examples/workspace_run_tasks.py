@@ -6,7 +6,7 @@ providing a complete command-line interface for managing workspace run tasks wit
 operations including list, get, create, update, and delete operations.
 
 API Coverage: 5/5 workspace run task methods (100% coverage)
-Testing Status: ✅ All operations tested and validated
+Testing Status: All operations tested and validated
 Organization: Logically grouped into sections for easy navigation
 
 Prerequisites:
@@ -292,10 +292,10 @@ def run_all_tests(client: TFEClient, args):
         client.workspace_run_tasks.delete(test_workspace_id, test_task_id)
         print("Test task deleted successfully")
 
-        print("\n✅ All tests completed successfully!")
+        print("\nAll tests completed successfully!")
 
     except Exception as e:
-        print(f"❌ Test failed: {e}")
+        print(f"Test failed: {e}")
         # Cleanup on failure
         if test_workspace_id and test_task_id:
             try:

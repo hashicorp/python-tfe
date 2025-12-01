@@ -596,10 +596,10 @@ class TestWorkspaceRunTaskModels:
 
     def test_stage_enum_values(self):
         """Test Stage enum values."""
-        assert Stage.PRE_PLAN.value == "pre_plan"
-        assert Stage.POST_PLAN.value == "post_plan"
-        assert Stage.PRE_APPLY.value == "pre_apply"
-        assert Stage.POST_APPLY.value == "post_apply"
+        assert Stage.PRE_PLAN.value == "pre-plan"
+        assert Stage.POST_PLAN.value == "post-plan"
+        assert Stage.PRE_APPLY.value == "pre-apply"
+        assert Stage.POST_APPLY.value == "post-apply"
 
     def test_task_enforcement_level_enum_values(self):
         """Test TaskEnforcementLevel enum values."""
