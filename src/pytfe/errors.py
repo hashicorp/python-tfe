@@ -460,3 +460,32 @@ class InvalidPolicyEvaluationIDError(InvalidValues):
 
     def __init__(self, message: str = "invalid value for policy evaluation ID"):
         super().__init__(message)
+
+
+# Policy Set Parameter errors
+class InvalidParamIDError(InvalidValues):
+    """Raised when an invalid policy set parameter ID is provided."""
+
+    def __init__(self, message: str = "invalid value for parameter ID"):
+        super().__init__(message)
+
+
+class RequiredCategoryError(RequiredFieldMissing):
+    """Raised when a required category field is missing."""
+
+    def __init__(self, message: str = "category is required"):
+        super().__init__(message)
+
+
+class InvalidCategoryError(InvalidValues):
+    """Raised when an invalid category field is provided."""
+
+    def __init__(self, message: str = "category must be policy-set"):
+        super().__init__(message)
+
+
+class RequiredKeyError(RequiredFieldMissing):
+    """Raised when a required key field is missing."""
+
+    def __init__(self, message: str = "key is required"):
+        super().__init__(message)
