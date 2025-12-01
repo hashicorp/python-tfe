@@ -41,7 +41,7 @@ class TestWorkspaceRunTaskFrom:
             },
             "relationships": {
                 "workspace": {"data": {"id": "ws-abc123", "type": "workspaces"}},
-                "run-task": {"data": {"id": "task-xyz789", "type": "tasks"}},
+                "task": {"data": {"id": "task-xyz789", "type": "tasks"}},
             },
         }
 
@@ -249,7 +249,7 @@ class TestWorkspaceRunTasksService:
                 },
                 "relationships": {
                     "workspace": {"data": {"id": "ws-123", "type": "workspaces"}},
-                    "run-task": {"data": {"id": "task-456", "type": "tasks"}},
+                    "task": {"data": {"id": "task-456", "type": "tasks"}},
                 },
             }
         }
@@ -338,10 +338,9 @@ class TestWorkspaceRunTasksService:
                 "type": "workspace-tasks",
                 "attributes": {
                     "enforcement-level": "mandatory",
-                    "stage": "post-plan",
                 },
                 "relationships": {
-                    "run-task": {"data": {"type": "tasks", "id": "task-123"}}
+                    "task": {"data": {"type": "tasks", "id": "task-123"}}
                 },
             }
         }
@@ -377,7 +376,7 @@ class TestWorkspaceRunTasksService:
                 "type": "workspace-tasks",
                 "attributes": {"enforcement-level": "advisory"},
                 "relationships": {
-                    "run-task": {"data": {"type": "tasks", "id": "task-456"}}
+                    "task": {"data": {"type": "tasks", "id": "task-456"}}
                 },
             }
         }

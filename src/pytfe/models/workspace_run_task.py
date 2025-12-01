@@ -15,7 +15,10 @@ class WorkspaceRunTask(BaseModel):
     id: str
     type: str = "workspace-tasks"
     enforcement_level: TaskEnforcementLevel
-    stage: Stage
+    # Deprecated: Use stages property instead
+    stage: Stage | None = None
+    # List of stages for the task
+    stages: list[Stage] | None = None
     created_at: str | None = None
     updated_at: str | None = None
 
@@ -36,7 +39,10 @@ class WorkspaceRunTaskCreateOptions(BaseModel):
 
     type: str = "workspace-tasks"
     enforcement_level: TaskEnforcementLevel
+    # Deprecated: Use stages property instead
     stage: Stage | None = None
+    # Optional: The stages to run the task in
+    stages: list[Stage] | None = None
     run_task: dict[str, Any]  # {"data": {"type": "tasks", "id": "task-123"}}
 
 

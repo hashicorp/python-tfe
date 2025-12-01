@@ -60,7 +60,7 @@ def _workspace_run_task_from(d: dict[str, Any]) -> WorkspaceRunTask:
 
     # Handle relationships
     workspace_data = relationships.get("workspace", {}).get("data")
-    run_task_data = relationships.get("run-task", {}).get("data")
+    run_task_data = relationships.get("task", {}).get("data")
 
     workspace = None
     if workspace_data and isinstance(workspace_data, dict):
@@ -201,15 +201,31 @@ class WorkspaceRunTasksService(_Service):
                 "attributes": {
                     "enforcement-level": options.enforcement_level.value,
                 },
-                "relationships": {"run-task": options.run_task},
+                "relationships": {"task": options.run_task},
             }
         }
 
-        # Add optional stage if provided
-        if options.stage is not None:
-            data["data"]["attributes"]["stage"] = options.stage.value
+        # Add optional stages if provided (stages is the recommended approach)
+        if options.stages is not None:
+            data["data"]["attributes"]["stages"] = [s.value for s in options.stages]
 
         response = self.t.request("POST", url, json_body=data)
+
+        # API returns 204 No Content on success
+        if response.status_code == 204:
+            # Try to parse response body if present, otherwise list tasks to get the created one
+            try:
+                json_response = response.json()
+                if json_response and "data" in json_response:
+                    return _workspace_run_task_from(json_response["data"])
+            except Exception:
+                pass
+            # If no response body, list tasks to find the newly created one
+            for task in self.list(workspace_id):
+                # Return the most recently created task (should be first after sorting)
+                return task
+            raise ValueError("Could not parse workspace run task creation response")
+
         json_response = response.json() or {}
         return _workspace_run_task_from(json_response["data"])
 

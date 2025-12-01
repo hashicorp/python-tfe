@@ -52,9 +52,9 @@ class WorkspaceResourcesService(_Service):
         if not workspace_id or not workspace_id.strip():
             raise ValueError("workspace_id is required")
 
-        # URL encode the workspace ID and construct URL without leading slash
+        # URL encode the workspace ID and construct URL
         encoded_workspace_id = urllib.parse.quote(workspace_id, safe="")
-        url = f"workspaces/{encoded_workspace_id}/resources"
+        url = f"/api/v2/workspaces/{encoded_workspace_id}/resources"
 
         # Handle parameters - use None if no params to match test expectations
         params: dict[str, int] | None = None
