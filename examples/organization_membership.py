@@ -82,7 +82,6 @@ def main():
                 print(f"    {membership.email}")
 
         print(f"    Processed {count} memberships (fetched in batches of 3)")
-        print("    Success: Pagination working correctly")
     except Exception as e:
         print(f"    Error: {type(e).__name__}: {e}")
 
@@ -105,7 +104,6 @@ def main():
                 print(f"    {membership.email} (User ID: {user_id})")
 
         print(f"    Processed {count} memberships, {users_found} with user data")
-        print("    Success: Include parameter working")
     except Exception as e:
         print(f"    Error: {type(e).__name__}: {e}")
 
@@ -129,7 +127,6 @@ def main():
 
         if len(invited) == 0:
             print("    No invited members found")
-        print("    Success: Status filter working")
     except Exception as e:
         print(f"    Error: {type(e).__name__}: {e}")
 
@@ -263,7 +260,6 @@ def main():
             print(f"    User ID: {user_id}")
             team_count = len(membership.teams) if membership.teams else 0
             print(f"    Teams: {team_count}")
-            print("    Success: Read with options working")
         else:
             print("    Skipped: No memberships available from Test 1")
     except Exception as e:
