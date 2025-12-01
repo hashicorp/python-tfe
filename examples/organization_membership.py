@@ -307,13 +307,13 @@ def main():
         print(f"   Attempting to delete membership: {membership_id}")
 
         client.organization_memberships.delete(membership_id)
-        print(f"   ✓ Successfully deleted membership {membership_id}")
+        print(f"   Successfully deleted membership {membership_id}")
 
     except NotFound as e:
-        print(f"   ✗ Membership not found: {e}")
-        print("   ℹ The membership may have already been deleted or the ID is invalid")
+        print(f"    Membership not found: {e}")
+        print("    The membership may have already been deleted or the ID is invalid")
     except Exception as e:
-        print(f"   ✗ Error deleting membership: {type(e).__name__}: {e}")
+        print(f"    Error deleting membership: {type(e).__name__}: {e}")
 
 
 if __name__ == "__main__":
