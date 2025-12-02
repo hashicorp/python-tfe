@@ -9,6 +9,7 @@ from .resources.configuration_version import ConfigurationVersions
 from .resources.notification_configuration import NotificationConfigurations
 from .resources.oauth_client import OAuthClients
 from .resources.oauth_token import OAuthTokens
+from .resources.organization_membership import OrganizationMemberships
 from .resources.organizations import Organizations
 from .resources.plan import Plans
 from .resources.policy import Policies
@@ -16,6 +17,7 @@ from .resources.policy_check import PolicyChecks
 from .resources.policy_evaluation import PolicyEvaluations
 from .resources.policy_set import PolicySets
 from .resources.policy_set_outcome import PolicySets as PolicySetOutcomes
+from .resources.policy_set_parameter import PolicySetParameters
 from .resources.policy_set_version import PolicySetVersions
 from .resources.projects import Projects
 from .resources.query_run import QueryRuns
@@ -66,6 +68,7 @@ class TFEClient:
         self.applies = Applies(self._transport)
         self.plans = Plans(self._transport)
         self.organizations = Organizations(self._transport)
+        self.organization_memberships = OrganizationMemberships(self._transport)
         self.projects = Projects(self._transport)
         self.variables = Variables(self._transport)
         self.variable_sets = VariableSets(self._transport)
@@ -88,6 +91,7 @@ class TFEClient:
         self.policy_evaluations = PolicyEvaluations(self._transport)
         self.policy_checks = PolicyChecks(self._transport)
         self.policy_sets = PolicySets(self._transport)
+        self.policy_set_parameters = PolicySetParameters(self._transport)
         self.policy_set_outcomes = PolicySetOutcomes(self._transport)
         self.policy_set_versions = PolicySetVersions(self._transport)
 

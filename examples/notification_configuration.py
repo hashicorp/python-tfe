@@ -80,10 +80,10 @@ def main():
         except Exception as e:
             error_msg = str(e).lower()
             if "not found" in error_msg:
-                print(f"  ⚠️  Team not found (expected with fake team ID): {team_id}")
-                print("  💡 Teams are not available in HCP Terraform free plan")
+                print(f"    Team not found (expected with fake team ID): {team_id}")
+                print("   Teams are not available in HCP Terraform free plan")
             else:
-                print(f"  ❌ Error listing team notifications: {e}")
+                print(f"   Error listing team notifications: {e}")
 
         print()
 
@@ -150,13 +150,13 @@ def main():
                     notification_config_id=notification_id
                 )
                 print(
-                    f"  ✅ Verification successful for notification ID: {notification_id}"
+                    f"  Verification successful for notification ID: {notification_id}"
                 )
                 print("  Note: Verification sends a test payload to the configured URL")
             except Exception as e:
-                print(f"  ⚠️  Verification failed (expected with fake URL): {e}")
+                print(f"    Verification failed (expected with fake URL): {e}")
                 print(
-                    "  💡 To test verification, use a real webhook URL from Slack, Teams, or Discord"
+                    "   To test verification, use a real webhook URL from Slack, Teams, or Discord"
                 )
 
             # ===== Delete the notification configuration =====
@@ -178,15 +178,13 @@ def main():
         except Exception as e:
             error_msg = str(e).lower()
             if "verification failed" in error_msg and "404" in error_msg:
-                print("  ⚠️  Webhook verification failed (expected with fake URL)")
-                print(
-                    "  💡 The fake Slack URL returns 404 - this is normal for testing"
-                )
-                print("  🔗 To test real verification, use a webhook from:")
+                print("    Webhook verification failed (expected with fake URL)")
+                print("   The fake Slack URL returns 404 - this is normal for testing")
+                print("  To test real verification, use a webhook from:")
                 print("     • webhook.site (instant test URL)")
                 print("     • Slack, Teams, or Discord webhook")
             else:
-                print(f"  ❌ Error in workspace notification operations: {e}")
+                print(f"   Error in workspace notification operations: {e}")
 
         print()
 
@@ -229,14 +227,14 @@ def main():
                 )
 
         except Exception as e:
-            print(f"  ❌ Error in team notification operations: {e}")
+            print(f"   Error in team notification operations: {e}")
             error_msg = str(e).lower()
             if "not found" in error_msg:
-                print("  💡 Team may not exist or token lacks team permissions")
+                print("   Team may not exist or token lacks team permissions")
             elif "forbidden" in error_msg or "unauthorized" in error_msg:
-                print("  💡 Token may lack team notification permissions")
+                print("   Token may lack team notification permissions")
             elif "team" in error_msg:
-                print("  💡 Team-specific error - check team settings or plan level")
+                print("   Team-specific error - check team settings or plan level")
 
         print()
 

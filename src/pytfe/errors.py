@@ -55,11 +55,19 @@ class RequiredFieldMissing(TFEError): ...
 class ErrStateVersionUploadNotSupported(TFEError): ...
 
 
+# Generic error constants
+ERR_UNAUTHORIZED = "unauthorized"
+ERR_RESOURCE_NOT_FOUND = "resource not found"
+ERR_MISSING_DIRECTORY = "path needs to be an existing directory"
+ERR_NAMESPACE_NOT_AUTHORIZED = "namespace not authorized"
+
 # Error message constants
 ERR_INVALID_NAME = "invalid value for name"
 ERR_REQUIRED_NAME = "name is required"
 ERR_INVALID_ORG = "invalid organization name"
 ERR_REQUIRED_EMAIL = "email is required"
+ERR_INVALID_EMAIL = "invalid email format"
+ERR_INVALID_MEMBERSHIP_ID = "invalid value for organization membership ID"
 
 # Registry Module Error Constants
 ERR_REQUIRED_PROVIDER = "provider is required"
@@ -468,3 +476,30 @@ class InvalidWorkspaceRunTaskIDError(InvalidValues):
 
     def __init__(self, task_id: str):
         super().__init__(f"invalid value for workspace run task ID: {task_id}")
+# Policy Set Parameter errors
+class InvalidParamIDError(InvalidValues):
+    """Raised when an invalid policy set parameter ID is provided."""
+
+    def __init__(self, message: str = "invalid value for parameter ID"):
+        super().__init__(message)
+
+
+class RequiredCategoryError(RequiredFieldMissing):
+    """Raised when a required category field is missing."""
+
+    def __init__(self, message: str = "category is required"):
+        super().__init__(message)
+
+
+class InvalidCategoryError(InvalidValues):
+    """Raised when an invalid category field is provided."""
+
+    def __init__(self, message: str = "category must be policy-set"):
+        super().__init__(message)
+
+
+class RequiredKeyError(RequiredFieldMissing):
+    """Raised when a required key field is missing."""
+
+    def __init__(self, message: str = "key is required"):
+        super().__init__(message)
