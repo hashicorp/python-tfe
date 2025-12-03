@@ -1,6 +1,5 @@
 """Workspace resources service for Terraform Enterprise."""
 
-import urllib.parse
 from collections.abc import Iterator
 from typing import Any
 
@@ -52,9 +51,7 @@ class WorkspaceResourcesService(_Service):
         if not workspace_id or not workspace_id.strip():
             raise ValueError("workspace_id is required")
 
-        # URL encode the workspace ID and construct URL
-        encoded_workspace_id = urllib.parse.quote(workspace_id, safe="")
-        url = f"/api/v2/workspaces/{encoded_workspace_id}/resources"
+        url = f"/api/v2/workspaces/{workspace_id}/resources"
 
         # Handle parameters
         params: dict[str, int] = {}
