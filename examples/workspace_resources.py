@@ -79,26 +79,14 @@ Environment variables:
     )
 
     # Add command flags
-    parser.add_argument(
-        "--list",
-        action="store_true",
-        help="List workspace resources"
-    )
+    parser.add_argument("--list", action="store_true", help="List workspace resources")
     parser.add_argument(
         "--workspace-id",
         required=True,
-        help="ID of the workspace (required, e.g., ws-abc123)"
+        help="ID of the workspace (required, e.g., ws-abc123)",
     )
-    parser.add_argument(
-        "--page-number",
-        type=int,
-        help="Page number for pagination"
-    )
-    parser.add_argument(
-        "--page-size",
-        type=int,
-        help="Page size for pagination"
-    )
+    parser.add_argument("--page-number", type=int, help="Page number for pagination")
+    parser.add_argument("--page-size", type=int, help="Page size for pagination")
 
     args = parser.parse_args()
 
