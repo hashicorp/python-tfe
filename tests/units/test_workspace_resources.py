@@ -99,7 +99,9 @@ class TestWorkspaceResourcesService:
 
         # Verify request was made correctly
         mock_transport.request.assert_called_once_with(
-            "GET", "/api/v2/workspaces/ws-abc123/resources", params={'page[number]': 1, 'page[size]': 100}
+            "GET",
+            "/api/v2/workspaces/ws-abc123/resources",
+            params={"page[number]": 1, "page[size]": 100},
         )
 
         # Verify response parsing
@@ -171,7 +173,9 @@ class TestWorkspaceResourcesService:
 
         # Verify request was made correctly
         mock_transport.request.assert_called_once_with(
-            "GET", "/api/v2/workspaces/ws-abc123/resources", params={'page[number]': 1, 'page[size]': 100}
+            "GET",
+            "/api/v2/workspaces/ws-abc123/resources",
+            params={"page[number]": 1, "page[size]": 100},
         )
 
         # Verify response
@@ -200,7 +204,9 @@ class TestWorkspaceResourcesService:
 
         # Verify the URL was properly encoded
         mock_transport.request.assert_called_once_with(
-            "GET", "/api/v2/workspaces/ws-abc%2F123/resources", params={'page[number]': 1, 'page[size]': 100}
+            "GET",
+            "/api/v2/workspaces/ws-abc%2F123/resources",
+            params={"page[number]": 1, "page[size]": 100},
         )
 
     def test_list_workspace_resources_malformed_response(self, service, mock_transport):

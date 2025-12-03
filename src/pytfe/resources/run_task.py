@@ -12,7 +12,6 @@ from ..errors import (
 )
 from ..models.agent import AgentPool
 from ..models.organization import Organization
-from ..models.workspace_run_task import WorkspaceRunTask
 from ..models.run_task import (
     GlobalRunTask,
     RunTask,

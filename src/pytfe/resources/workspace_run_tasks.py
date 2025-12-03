@@ -3,10 +3,6 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
-from ..errors import (
-    InvalidWorkspaceIDError,
-    InvalidWorkspaceRunTaskIDError,
-)
 from pytfe.models import (
     RunTask,
     Stage,
@@ -17,6 +13,11 @@ from pytfe.models import (
     WorkspaceRunTaskListOptions,
     WorkspaceRunTaskReadOptions,
     WorkspaceRunTaskUpdateOptions,
+)
+
+from ..errors import (
+    InvalidWorkspaceIDError,
+    InvalidWorkspaceRunTaskIDError,
 )
 from ..utils import _safe_str, valid_string_id
 from ._base import _Service

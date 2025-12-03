@@ -518,16 +518,16 @@ class TestWorkspaceRunTaskModels:
 
     def test_workspace_run_task_creation(self):
         """Test WorkspaceRunTask model creation."""
-        from pytfe.models.workspace import Workspace
         from pytfe.models.run_task import RunTask
-        
+        from pytfe.models.workspace import Workspace
+
         workspace = Workspace(id="ws-123")
         run_task = RunTask(
             id="task-456",
             name="Test Task",
             url="https://example.com/webhook",
             category="test",
-            enabled=True
+            enabled=True,
         )
 
         task = WorkspaceRunTask(
