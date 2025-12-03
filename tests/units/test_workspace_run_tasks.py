@@ -9,9 +9,8 @@ from pytfe.errors import (
     InvalidWorkspaceIDError,
     InvalidWorkspaceRunTaskIDError,
 )
+from pytfe.models.run_task import RunTask
 from pytfe.models.workspace_run_task import (
-    RunTaskRelationship,
-    RunTaskRelationshipData,
     Stage,
     TaskEnforcementLevel,
     WorkspaceRunTask,
@@ -324,7 +323,7 @@ class TestWorkspaceRunTasksService:
         options = WorkspaceRunTaskCreateOptions(
             enforcement_level=TaskEnforcementLevel.MANDATORY,
             stage=Stage.POST_PLAN,
-            run_task=RunTaskRelationship(data=RunTaskRelationshipData(id="task-123")),
+            run_task=RunTask(id="task-123"),
         )
 
         result = service.create("ws-123", options)
@@ -363,7 +362,7 @@ class TestWorkspaceRunTasksService:
 
         options = WorkspaceRunTaskCreateOptions(
             enforcement_level=TaskEnforcementLevel.ADVISORY,
-            run_task=RunTaskRelationship(data=RunTaskRelationshipData(id="task-456")),
+            run_task=RunTask(id="task-456"),
         )
 
         result = service.create("ws-456", options)
@@ -388,8 +387,8 @@ class TestWorkspaceRunTasksService:
     def test_create_invalid_workspace_id(self, service):
         """Test create method with invalid workspace ID."""
         options = WorkspaceRunTaskCreateOptions(
-            enforcement_level=TaskEnforcementLevel.ADVISORY,
-            run_task=RunTaskRelationship(data=RunTaskRelationshipData(id="task-123")),
+            enforcement_level=TaskEnforcementLevel.MANDATORY,
+            run_task=RunTask(id="task-123"),
         )
 
         with pytest.raises(InvalidWorkspaceIDError):
@@ -553,7 +552,7 @@ class TestWorkspaceRunTaskModels:
 
     def test_workspace_run_task_create_options(self):
         """Test WorkspaceRunTaskCreateOptions model."""
-        run_task_ref = RunTaskRelationship(data=RunTaskRelationshipData(id="task-123"))
+        run_task_ref = RunTask(id="task-123")
 
         options = WorkspaceRunTaskCreateOptions(
             enforcement_level=TaskEnforcementLevel.ADVISORY,

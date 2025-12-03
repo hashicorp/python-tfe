@@ -201,7 +201,9 @@ class WorkspaceRunTasksService(_Service):
                 "attributes": {
                     "enforcement-level": options.enforcement_level.value,
                 },
-                "relationships": {"task": options.run_task.model_dump()},
+                "relationships": {
+                    "task": {"data": {"type": "tasks", "id": options.run_task.id}}
+                },
             }
         }
 

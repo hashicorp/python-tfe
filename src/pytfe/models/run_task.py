@@ -31,12 +31,12 @@ class TaskEnforcementLevel(str, Enum):
 
 class RunTask(BaseModel):
     id: str
-    name: str
+    name: str | None = None
     description: str | None = None
-    url: str
-    category: str
+    url: str | None = None
+    category: str | None = None
     hmac_key: str | None = None
-    enabled: bool
+    enabled: bool | None = None
     global_configuration: GlobalRunTask | None = None
 
     agent_pool: AgentPool | None = None

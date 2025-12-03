@@ -6,24 +6,10 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field
 
 from ..models.common import Pagination
-from .run_task import Stage, TaskEnforcementLevel
+from .run_task import RunTask, Stage, TaskEnforcementLevel
 
 if TYPE_CHECKING:
-    from .run_task import RunTask
     from .workspace import Workspace
-
-
-class RunTaskRelationshipData(BaseModel):
-    """Data for a run task relationship."""
-
-    type: str = "tasks"
-    id: str
-
-
-class RunTaskRelationship(BaseModel):
-    """Relationship to a run task."""
-
-    data: RunTaskRelationshipData
 
 
 class WorkspaceRunTask(BaseModel):
@@ -60,7 +46,7 @@ class WorkspaceRunTaskCreateOptions(BaseModel):
     stage: Stage | None = None
     # Optional: The stages to run the task in
     stages: list[Stage] | None = None
-    run_task: RunTaskRelationship
+    run_task: RunTask
 
 
 class WorkspaceRunTaskUpdateOptions(BaseModel):
@@ -101,7 +87,6 @@ class WorkspaceRunTaskIncludeOpt(str, Enum):
 
 def _rebuild_models() -> None:
     """Rebuild models to resolve forward references."""
-    from .run_task import RunTask  # noqa: F401
     from .workspace import Workspace  # noqa: F401
 
     WorkspaceRunTask.model_rebuild()
