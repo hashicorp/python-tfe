@@ -10,7 +10,7 @@ from .agent import AgentPool
 from .organization import Organization
 
 if TYPE_CHECKING:
-    pass
+    from .workspace_run_task import WorkspaceRunTask
 
 
 class Stage(str, Enum):
@@ -41,9 +41,7 @@ class RunTask(BaseModel):
 
     agent_pool: AgentPool | None = None
     organization: Organization | None = None
-    workspace_run_tasks: list[dict] = Field(
-        default_factory=list
-    )  # Changed from WorkspaceRunTask to dict
+    workspace_run_tasks: list[WorkspaceRunTask] | None = None
 
 
 class GlobalRunTask(BaseModel):
@@ -100,3 +98,13 @@ class RunTaskUpdateOptions(BaseModel):
     enabled: bool | None = None
     global_configuration: GlobalRunTaskOptions | None = None
     agent_pool: AgentPool | None = None
+
+
+def _rebuild_models() -> None:
+    """Rebuild models to resolve forward references."""
+    from .workspace_run_task import WorkspaceRunTask  # noqa: F401
+
+    RunTask.model_rebuild()
+
+
+_rebuild_models()

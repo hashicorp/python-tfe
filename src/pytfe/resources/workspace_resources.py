@@ -1,13 +1,12 @@
 """Workspace resources service for Terraform Enterprise."""
 
 import urllib.parse
+from collections.abc import Iterator
 from typing import Any
 
-from ..models.common import Pagination
-from ..models.workspace_resource import (
+from pytfe.models import (
     WorkspaceResource,
     WorkspaceResourceListOptions,
-    WorkspaceResourcesList,
 )
 from ._base import _Service
 
@@ -39,15 +38,15 @@ class WorkspaceResourcesService(_Service):
 
     def list(
         self, workspace_id: str, options: WorkspaceResourceListOptions | None = None
-    ) -> WorkspaceResourcesList:
+    ) -> Iterator[WorkspaceResource]:
         """List workspace resources for a given workspace.
 
         Args:
             workspace_id: The ID of the workspace to list resources for
             options: Optional query parameters for filtering and pagination
 
-        Returns:
-            WorkspaceResourcesList containing resources and pagination info
+        Yields:
+            WorkspaceResource objects
         """
         if not workspace_id or not workspace_id.strip():
             raise ValueError("workspace_id is required")
@@ -56,48 +55,14 @@ class WorkspaceResourcesService(_Service):
         encoded_workspace_id = urllib.parse.quote(workspace_id, safe="")
         url = f"/api/v2/workspaces/{encoded_workspace_id}/resources"
 
-        # Handle parameters - use None if no params to match test expectations
-        params: dict[str, int] | None = None
+        # Handle parameters
+        params: dict[str, int] = {}
         if options:
-            temp_params: dict[str, int] = {}
             if options.page_number is not None:
-                temp_params["page_number"] = options.page_number
+                params["page[number]"] = options.page_number
             if options.page_size is not None:
-                temp_params["page_size"] = options.page_size
-            # If we have actual params, use them; otherwise keep None
-            if temp_params:
-                params = temp_params
+                params["page[size]"] = options.page_size
 
-        response = self.t.request("GET", url, params=params)
-        response_data = response.json()
-
-        # Transform workspace resources
-        resources = []
-        if "data" in response_data:
-            for item in response_data["data"]:
-                resource = _workspace_resource_from(item)
-                resources.append(resource)
-
-        # Transform pagination info
-        pagination = None
-        if "meta" in response_data and "pagination" in response_data["meta"]:
-            meta_pagination = response_data["meta"]["pagination"]
-            pagination = Pagination(
-                current_page=meta_pagination.get(
-                    "current-page", meta_pagination.get("current_page", 1)
-                ),
-                total_count=meta_pagination.get(
-                    "total-count", meta_pagination.get("total_count", 0)
-                ),
-                previous_page=meta_pagination.get(
-                    "prev-page", meta_pagination.get("previous_page")
-                ),
-                next_page=meta_pagination.get(
-                    "next-page", meta_pagination.get("next_page")
-                ),
-                total_pages=meta_pagination.get(
-                    "total-pages", meta_pagination.get("total_pages", 1)
-                ),
-            )
-
-        return WorkspaceResourcesList(data=resources, pagination=pagination)
+        # Use the _list method from base service to handle pagination
+        for item in self._list(url, params=params):
+            yield _workspace_resource_from(item)

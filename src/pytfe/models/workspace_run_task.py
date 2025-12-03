@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field
 
 from ..models.common import Pagination
 from .run_task import Stage, TaskEnforcementLevel
+
+if TYPE_CHECKING:
+    from .run_task import RunTask
+    from .workspace import Workspace
 
 
 class WorkspaceRunTask(BaseModel):
@@ -23,8 +27,8 @@ class WorkspaceRunTask(BaseModel):
     updated_at: str | None = None
 
     # Relationships
-    workspace: dict[str, Any] | None = None
-    run_task: dict[str, Any] | None = None
+    workspace: Workspace | None = None
+    run_task: RunTask | None = None
 
 
 class WorkspaceRunTaskList(BaseModel):
@@ -80,3 +84,14 @@ class WorkspaceRunTaskIncludeOpt(str, Enum):
 
     RUN_TASK = "run_task"
     WORKSPACE = "workspace"
+
+
+def _rebuild_models() -> None:
+    """Rebuild models to resolve forward references."""
+    from .run_task import RunTask  # noqa: F401
+    from .workspace import Workspace  # noqa: F401
+
+    WorkspaceRunTask.model_rebuild()
+
+
+_rebuild_models()

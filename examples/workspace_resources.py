@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Example script for working with workspace resources in Terraform Enterprise.
 
 This script demonstrates how to list resources within a workspace.
@@ -8,7 +7,7 @@ import argparse
 import sys
 
 from pytfe import TFEClient
-from pytfe.models.workspace_resource import WorkspaceResourceListOptions
+from pytfe.models import WorkspaceResourceListOptions
 
 
 def list_workspace_resources(
@@ -30,17 +29,17 @@ def list_workspace_resources(
             if page_size:
                 options.page_size = page_size
 
-        # List workspace resources
-        resources_list = client.workspace_resources.list(workspace_id, options)
+        # List workspace resources (returns an iterator)
+        resources = list(client.workspace_resources.list(workspace_id, options))
 
-        if not resources_list.data:
+        if not resources:
             print("No resources found in this workspace.")
             return
 
-        print(f"\nFound {len(resources_list.data)} resource(s):")
+        print(f"\nFound {len(resources)} resource(s):")
         print("-" * 80)
 
-        for resource in resources_list.data:
+        for resource in resources:
             print(f"ID: {resource.id}")
             print(f"Address: {resource.address}")
             print(f"Name: {resource.name}")
@@ -53,22 +52,6 @@ def list_workspace_resources(
             if resource.name_index:
                 print(f"Name Index: {resource.name_index}")
             print("-" * 80)
-
-        # Show pagination info if available
-        if resources_list.pagination:
-            print("\nPagination Info:")
-            print(f"  Current Page: {resources_list.pagination.current_page}")
-            print(f"  Total Pages: {resources_list.pagination.total_pages}")
-            print(f"  Total Count: {resources_list.pagination.total_count}")
-            if (
-                hasattr(resources_list.pagination, "page_size")
-                and resources_list.pagination.page_size
-            ):
-                print(f"  Page Size: {resources_list.pagination.page_size}")
-            if resources_list.pagination.next_page:
-                print(f"  Next Page: {resources_list.pagination.next_page}")
-            if resources_list.pagination.previous_page:
-                print(f"  Previous Page: {resources_list.pagination.previous_page}")
 
     except Exception as e:
         print(f"Error listing workspace resources: {e}", file=sys.stderr)

@@ -357,7 +357,6 @@ from .workspace import (
 from .workspace_resource import (
     WorkspaceResource,
     WorkspaceResourceListOptions,
-    WorkspaceResourcesList,
 )
 
 # ── Workspace Run Tasks ────────────────────────────────────────────────────────
@@ -545,7 +544,6 @@ __all__ = [
     # Workspace Resources
     "WorkspaceResource",
     "WorkspaceResourceListOptions",
-    "WorkspaceResourcesList",
     # Workspace Run Tasks
     "WorkspaceRunTask",
     "WorkspaceRunTaskCreateOptions",

@@ -54,11 +54,9 @@ class TestWorkspaceRunTaskFrom:
         assert result.created_at == "2023-01-01T00:00:00Z"
         assert result.updated_at == "2023-01-02T00:00:00Z"
         assert result.workspace is not None
-        assert result.workspace["data"]["id"] == "ws-abc123"
-        assert result.workspace["data"]["type"] == "workspaces"
+        assert result.workspace.id == "ws-abc123"
         assert result.run_task is not None
-        assert result.run_task["data"]["id"] == "task-xyz789"
-        assert result.run_task["data"]["type"] == "tasks"
+        assert result.run_task.id == "task-xyz789"
 
     def test_workspace_run_task_from_minimal(self):
         """Test _workspace_run_task_from with minimal required fields."""
@@ -261,8 +259,8 @@ class TestWorkspaceRunTasksService:
         assert result.enforcement_level == TaskEnforcementLevel.MANDATORY
         assert result.stage == Stage.POST_APPLY
         assert result.created_at == "2023-01-01T00:00:00Z"
-        assert result.workspace["data"]["id"] == "ws-123"
-        assert result.run_task["data"]["id"] == "task-456"
+        assert result.workspace.id == "ws-123"
+        assert result.run_task.id == "task-456"
 
         mock_transport.request.assert_called_once_with(
             "GET", "/api/v2/workspaces/ws-123/tasks/wsrt-get123", params={}
@@ -520,8 +518,17 @@ class TestWorkspaceRunTaskModels:
 
     def test_workspace_run_task_creation(self):
         """Test WorkspaceRunTask model creation."""
-        workspace = {"data": {"id": "ws-123", "type": "workspaces"}}
-        run_task = {"data": {"id": "task-456", "type": "tasks"}}
+        from pytfe.models.workspace import Workspace
+        from pytfe.models.run_task import RunTask
+        
+        workspace = Workspace(id="ws-123")
+        run_task = RunTask(
+            id="task-456",
+            name="Test Task",
+            url="https://example.com/webhook",
+            category="test",
+            enabled=True
+        )
 
         task = WorkspaceRunTask(
             id="wsrt-model123",

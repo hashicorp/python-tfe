@@ -7,7 +7,6 @@ import pytest
 from pytfe.models.workspace_resource import (
     WorkspaceResource,
     WorkspaceResourceListOptions,
-    WorkspaceResourcesList,
 )
 from pytfe.resources.workspace_resources import WorkspaceResourcesService
 
@@ -96,19 +95,19 @@ class TestWorkspaceResourcesService:
         mock_transport.request.return_value = mock_response
 
         # Call the service
-        result = service.list("ws-abc123")
+        result = list(service.list("ws-abc123"))
 
         # Verify request was made correctly
         mock_transport.request.assert_called_once_with(
-            "GET", "/api/v2/workspaces/ws-abc123/resources", params=None
+            "GET", "/api/v2/workspaces/ws-abc123/resources", params={'page[number]': 1, 'page[size]': 100}
         )
 
         # Verify response parsing
-        assert isinstance(result, WorkspaceResourcesList)
-        assert len(result.data) == 2
+        assert isinstance(result, list)
+        assert len(result) == 2
 
         # Check first resource
-        resource1 = result.data[0]
+        resource1 = result[0]
         assert isinstance(resource1, WorkspaceResource)
         assert resource1.id == "resource-1"
         assert (
@@ -125,17 +124,12 @@ class TestWorkspaceResourcesService:
         assert resource1.updated_at == "2023-01-01T00:00:00Z"
 
         # Check second resource
-        resource2 = result.data[1]
+        resource2 = result[1]
         assert resource2.id == "resource-2"
         assert resource2.address == "aws_instance.example"
         assert resource2.name == "example"
         assert resource2.module == "root"
         assert resource2.name_index is None
-
-        # Check pagination
-        assert result.pagination is not None
-        assert result.pagination.current_page == 1
-        assert result.pagination.total_count == 2
 
     def test_list_workspace_resources_with_options(
         self, service, mock_transport, sample_workspace_resource_response
@@ -150,18 +144,18 @@ class TestWorkspaceResourcesService:
         options = WorkspaceResourceListOptions(page_number=2, page_size=50)
 
         # Call the service
-        result = service.list("ws-abc123", options)
+        result = list(service.list("ws-abc123", options))
 
         # Verify request was made correctly
         mock_transport.request.assert_called_once_with(
             "GET",
             "/api/v2/workspaces/ws-abc123/resources",
-            params={"page_number": 2, "page_size": 50},
+            params={"page[number]": 2, "page[size]": 50},
         )
 
         # Verify response
-        assert isinstance(result, WorkspaceResourcesList)
-        assert len(result.data) == 2
+        assert isinstance(result, list)
+        assert len(result) == 2
 
     def test_list_workspace_resources_empty(
         self, service, mock_transport, sample_empty_response
@@ -173,25 +167,24 @@ class TestWorkspaceResourcesService:
         mock_transport.request.return_value = mock_response
 
         # Call the service
-        result = service.list("ws-abc123")
+        result = list(service.list("ws-abc123"))
 
         # Verify request was made correctly
         mock_transport.request.assert_called_once_with(
-            "GET", "/api/v2/workspaces/ws-abc123/resources", params=None
+            "GET", "/api/v2/workspaces/ws-abc123/resources", params={'page[number]': 1, 'page[size]': 100}
         )
 
         # Verify response
-        assert isinstance(result, WorkspaceResourcesList)
-        assert len(result.data) == 0
-        assert result.pagination.total_count == 0
+        assert isinstance(result, list)
+        assert len(result) == 0
 
     def test_list_workspace_resources_invalid_workspace_id(self, service):
         """Test listing workspace resources with invalid workspace ID."""
         with pytest.raises(ValueError, match="workspace_id is required"):
-            service.list("")
+            list(service.list(""))
 
         with pytest.raises(ValueError, match="workspace_id is required"):
-            service.list(None)
+            list(service.list(None))
 
     def test_list_workspace_resources_url_encoding(
         self, service, mock_transport, sample_workspace_resource_response
@@ -203,11 +196,11 @@ class TestWorkspaceResourcesService:
         mock_transport.request.return_value = mock_response
 
         # Call with workspace ID that needs encoding
-        service.list("ws-abc/123")
+        list(service.list("ws-abc/123"))
 
         # Verify the URL was properly encoded
         mock_transport.request.assert_called_once_with(
-            "GET", "/api/v2/workspaces/ws-abc%2F123/resources", params=None
+            "GET", "/api/v2/workspaces/ws-abc%2F123/resources", params={'page[number]': 1, 'page[size]': 100}
         )
 
     def test_list_workspace_resources_malformed_response(self, service, mock_transport):
@@ -218,12 +211,11 @@ class TestWorkspaceResourcesService:
         mock_transport.request.return_value = mock_response
 
         # Call the service
-        result = service.list("ws-abc123")
+        result = list(service.list("ws-abc123"))
 
         # Should handle gracefully and return empty list
-        assert isinstance(result, WorkspaceResourcesList)
-        assert len(result.data) == 0
-        assert result.pagination is None
+        assert isinstance(result, list)
+        assert len(result) == 0
 
     def test_list_workspace_resources_api_error(self, service, mock_transport):
         """Test handling of API errors."""
@@ -232,7 +224,7 @@ class TestWorkspaceResourcesService:
 
         # Should propagate the exception
         with pytest.raises(Exception, match="API Error"):
-            service.list("ws-abc123")
+            list(service.list("ws-abc123"))
 
 
 class TestWorkspaceResourceModel:

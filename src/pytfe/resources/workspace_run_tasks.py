@@ -7,9 +7,11 @@ from ..errors import (
     InvalidWorkspaceIDError,
     InvalidWorkspaceRunTaskIDError,
 )
-from ..models.workspace_run_task import (
+from pytfe.models import (
+    RunTask,
     Stage,
     TaskEnforcementLevel,
+    Workspace,
     WorkspaceRunTask,
     WorkspaceRunTaskCreateOptions,
     WorkspaceRunTaskListOptions,
@@ -64,22 +66,19 @@ def _workspace_run_task_from(d: dict[str, Any]) -> WorkspaceRunTask:
 
     workspace = None
     if workspace_data and isinstance(workspace_data, dict):
-        workspace = {
-            "data": {
-                "id": _safe_str(workspace_data.get("id")),
-                "type": _safe_str(workspace_data.get("type", "workspaces")),
-            }
-        }
+        workspace = Workspace(id=_safe_str(workspace_data.get("id")))
 
     run_task = None
     if run_task_data and isinstance(run_task_data, dict):
-        # Store run task as dict to avoid circular import
-        run_task = {
-            "data": {
-                "id": _safe_str(run_task_data.get("id")),
-                "type": _safe_str(run_task_data.get("type", "tasks")),
-            }
-        }
+        run_task = RunTask(
+            id=_safe_str(run_task_data.get("id")),
+            name="",  # Will be populated when included in API response
+            description=None,
+            url="",  # Will be populated when included
+            category="",  # Will be populated when included
+            hmac_key=None,
+            enabled=True,
+        )
 
     return WorkspaceRunTask(
         id=id_str,

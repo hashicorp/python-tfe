@@ -79,10 +79,8 @@ class TestRunTaskFrom:
         assert result.organization is not None
         assert result.organization.id == "org-123"
         assert result.organization.name == "org-123"
-        assert isinstance(result.workspace_run_tasks, list)
-        assert len(result.workspace_run_tasks) == 2
-        assert result.workspace_run_tasks[0]["id"] == "wstask-1"
-        assert result.workspace_run_tasks[1]["id"] == "wstask-2"
+        # workspace_run_tasks is None when not included in the API response
+        assert result.workspace_run_tasks is None
 
 
 class TestRunTasks:
@@ -409,7 +407,7 @@ class TestRunTasks:
             assert result.enabled is False
             assert result.hmac_key == "new-secret-key"
             assert result.organization is None
-            assert result.workspace_run_tasks == []
+            assert result.workspace_run_tasks is None
 
     def test_update_task_validation_errors(self, run_tasks_service):
         """Test update method validation errors."""

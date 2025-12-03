@@ -1,8 +1,6 @@
 """Workspace resources models for Terraform Enterprise."""
 
-from pydantic import BaseModel, ConfigDict, Field
-
-from ..models.common import Pagination
+from pydantic import BaseModel
 
 
 class WorkspaceResource(BaseModel):
@@ -29,14 +27,3 @@ class WorkspaceResourceListOptions(BaseModel):
     # Pagination
     page_number: int | None = None
     page_size: int | None = None
-
-
-class WorkspaceResourcesList(BaseModel):
-    """List of workspace resources with pagination information."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    data: list[WorkspaceResource] = Field(
-        default_factory=list, description="List of workspace resources"
-    )
-    pagination: Pagination | None = None

@@ -12,6 +12,7 @@ from ..errors import (
 )
 from ..models.agent import AgentPool
 from ..models.organization import Organization
+from ..models.workspace_run_task import WorkspaceRunTask
 from ..models.run_task import (
     GlobalRunTask,
     RunTask,
@@ -93,19 +94,10 @@ def _run_task_from(d: dict[str, Any], org: str | None = None) -> RunTask:
             email=None,  # Not available in relationship data
         )
 
-    # Process workspace run tasks if present
-    workspace_run_tasks: list[dict] = []
-    if "workspace-tasks" in relationships:
-        wrt_data = relationships["workspace-tasks"].get("data", [])
-        # Note: These are just dict references, not full WorkspaceRunTask objects
-        for item in wrt_data:
-            if isinstance(item, dict) and "id" in item:
-                workspace_run_tasks.append(
-                    {
-                        "id": _safe_str(item.get("id")),
-                        "type": _safe_str(item.get("type", "workspace-tasks")),
-                    }
-                )
+    # Process workspace run tasks if present and included
+    # Note: Only populate if we have full workspace run task objects in included data
+    # Relationship references alone don't contain enough data to create WorkspaceRunTask objects
+    workspace_run_tasks: list[WorkspaceRunTask] | None = None
 
     return RunTask(
         id=id_str,

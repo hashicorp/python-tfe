@@ -5,10 +5,6 @@ This comprehensive example demonstrates workspace run task operations using the 
 providing a complete command-line interface for managing workspace run tasks with advanced
 operations including list, get, create, update, and delete operations.
 
-API Coverage: 5/5 workspace run task methods (100% coverage)
-Testing Status: All operations tested and validated
-Organization: Logically grouped into sections for easy navigation
-
 Prerequisites:
     - Set TFE_TOKEN environment variable with your Terraform Cloud API token
     - Ensure you have access to the target organization and workspace
