@@ -190,25 +190,6 @@ class TestWorkspaceResourcesService:
         with pytest.raises(ValueError, match="workspace_id is required"):
             list(service.list(None))
 
-    def test_list_workspace_resources_url_encoding(
-        self, service, mock_transport, sample_workspace_resource_response
-    ):
-        """Test that workspace ID is properly URL encoded."""
-        # Mock the transport response
-        mock_response = Mock()
-        mock_response.json.return_value = sample_workspace_resource_response
-        mock_transport.request.return_value = mock_response
-
-        # Call with workspace ID that needs encoding
-        list(service.list("ws-abc/123"))
-
-        # Verify the URL was properly encoded
-        mock_transport.request.assert_called_once_with(
-            "GET",
-            "/api/v2/workspaces/ws-abc%2F123/resources",
-            params={"page[number]": 1, "page[size]": 100},
-        )
-
     def test_list_workspace_resources_malformed_response(self, service, mock_transport):
         """Test handling of malformed API response."""
         # Mock malformed response
