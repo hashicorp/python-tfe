@@ -353,6 +353,12 @@ from .workspace import (
     WorkspaceUpdateRemoteStateConsumersOptions,
 )
 
+# ── Workspace Resources ───────────────────────────────────────────────────────
+from .workspace_resource import (
+    WorkspaceResource,
+    WorkspaceResourceListOptions,
+)
+
 # ── Public surface ────────────────────────────────────────────────────────────
 __all__ = [
     # OAuth
@@ -524,6 +530,9 @@ __all__ = [
     "WorkspaceTagListOptions",
     "WorkspaceUpdateOptions",
     "WorkspaceUpdateRemoteStateConsumersOptions",
+    # Workspace Resources
+    "WorkspaceResource",
+    "WorkspaceResourceListOptions",
     "RunQueue",
     "ReadRunQueueOptions",
     # Runs
