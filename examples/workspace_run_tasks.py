@@ -306,26 +306,6 @@ def main():
     parser = argparse.ArgumentParser(
         description="Workspace Run Tasks demo for python-tfe SDK",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-Examples:
-    # List all workspace run tasks
-    python examples/workspace_run_tasks.py --org my-org --workspace my-workspace
-
-    # Get a specific workspace run task
-    python examples/workspace_run_tasks.py --org my-org --workspace my-workspace --task-id wsrt-123
-
-    # Create a workspace run task
-    python examples/workspace_run_tasks.py --org my-org --workspace my-workspace --create --run-task-id task-123
-
-    # Update a workspace run task
-    python examples/workspace_run_tasks.py --org my-org --workspace my-workspace --task-id wsrt-123 --update --enforcement-level mandatory
-
-    # Delete a workspace run task
-    python examples/workspace_run_tasks.py --org my-org --workspace my-workspace --task-id wsrt-123 --delete
-
-    # Run all tests
-    python examples/workspace_run_tasks.py --org my-org --workspace my-workspace --all-tests --run-task-id task-123
-        """,
     )
 
     # Connection settings
