@@ -10,6 +10,8 @@ from pytfe.errors import (
     InvalidWorkspaceRunTaskIDError,
 )
 from pytfe.models.workspace_run_task import (
+    RunTaskRelationship,
+    RunTaskRelationshipData,
     Stage,
     TaskEnforcementLevel,
     WorkspaceRunTask,
@@ -322,7 +324,7 @@ class TestWorkspaceRunTasksService:
         options = WorkspaceRunTaskCreateOptions(
             enforcement_level=TaskEnforcementLevel.MANDATORY,
             stage=Stage.POST_PLAN,
-            run_task={"data": {"type": "tasks", "id": "task-123"}},
+            run_task=RunTaskRelationship(data=RunTaskRelationshipData(id="task-123")),
         )
 
         result = service.create("ws-123", options)
@@ -361,7 +363,7 @@ class TestWorkspaceRunTasksService:
 
         options = WorkspaceRunTaskCreateOptions(
             enforcement_level=TaskEnforcementLevel.ADVISORY,
-            run_task={"data": {"type": "tasks", "id": "task-456"}},
+            run_task=RunTaskRelationship(data=RunTaskRelationshipData(id="task-456")),
         )
 
         result = service.create("ws-456", options)
@@ -387,7 +389,7 @@ class TestWorkspaceRunTasksService:
         """Test create method with invalid workspace ID."""
         options = WorkspaceRunTaskCreateOptions(
             enforcement_level=TaskEnforcementLevel.ADVISORY,
-            run_task={"data": {"type": "tasks", "id": "task-123"}},
+            run_task=RunTaskRelationship(data=RunTaskRelationshipData(id="task-123")),
         )
 
         with pytest.raises(InvalidWorkspaceIDError):
@@ -551,7 +553,7 @@ class TestWorkspaceRunTaskModels:
 
     def test_workspace_run_task_create_options(self):
         """Test WorkspaceRunTaskCreateOptions model."""
-        run_task_ref = {"data": {"type": "tasks", "id": "task-123"}}
+        run_task_ref = RunTaskRelationship(data=RunTaskRelationshipData(id="task-123"))
 
         options = WorkspaceRunTaskCreateOptions(
             enforcement_level=TaskEnforcementLevel.ADVISORY,

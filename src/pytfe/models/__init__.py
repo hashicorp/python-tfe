@@ -361,6 +361,8 @@ from .workspace_resource import (
 
 # ── Workspace Run Tasks ────────────────────────────────────────────────────────
 from .workspace_run_task import (
+    RunTaskRelationship,
+    RunTaskRelationshipData,
     WorkspaceRunTask,
     WorkspaceRunTaskCreateOptions,
     WorkspaceRunTaskIncludeOpt,
@@ -545,6 +547,8 @@ __all__ = [
     "WorkspaceResource",
     "WorkspaceResourceListOptions",
     # Workspace Run Tasks
+    "RunTaskRelationship",
+    "RunTaskRelationshipData",
     "WorkspaceRunTask",
     "WorkspaceRunTaskCreateOptions",
     "WorkspaceRunTaskIncludeOpt",

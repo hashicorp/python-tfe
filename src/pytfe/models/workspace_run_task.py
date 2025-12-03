@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
@@ -11,6 +11,19 @@ from .run_task import Stage, TaskEnforcementLevel
 if TYPE_CHECKING:
     from .run_task import RunTask
     from .workspace import Workspace
+
+
+class RunTaskRelationshipData(BaseModel):
+    """Data for a run task relationship."""
+
+    type: str = "tasks"
+    id: str
+
+
+class RunTaskRelationship(BaseModel):
+    """Relationship to a run task."""
+
+    data: RunTaskRelationshipData
 
 
 class WorkspaceRunTask(BaseModel):
@@ -47,7 +60,7 @@ class WorkspaceRunTaskCreateOptions(BaseModel):
     stage: Stage | None = None
     # Optional: The stages to run the task in
     stages: list[Stage] | None = None
-    run_task: dict[str, Any]  # {"data": {"type": "tasks", "id": "task-123"}}
+    run_task: RunTaskRelationship
 
 
 class WorkspaceRunTaskUpdateOptions(BaseModel):

@@ -79,8 +79,11 @@ class TestRunTaskFrom:
         assert result.organization is not None
         assert result.organization.id == "org-123"
         assert result.organization.name == "org-123"
-        # workspace_run_tasks is None when not included in the API response
-        assert result.workspace_run_tasks is None
+        # workspace_run_tasks are parsed from the relationship data
+        assert result.workspace_run_tasks is not None
+        assert len(result.workspace_run_tasks) == 2
+        assert result.workspace_run_tasks[0].id == "wstask-1"
+        assert result.workspace_run_tasks[1].id == "wstask-2"
 
 
 class TestRunTasks:

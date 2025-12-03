@@ -43,6 +43,8 @@ import os
 
 from pytfe import TFEClient, TFEConfig
 from pytfe.models import (
+    RunTaskRelationship,
+    RunTaskRelationshipData,
     Stage,
     TaskEnforcementLevel,
     WorkspaceRunTaskCreateOptions,
@@ -173,7 +175,9 @@ def create_workspace_run_task(client: TFEClient, args):
         options = WorkspaceRunTaskCreateOptions(
             enforcement_level=enforcement_level,
             stage=stage,
-            run_task={"data": {"type": "tasks", "id": args.run_task_id}},
+            run_task=RunTaskRelationship(
+                data=RunTaskRelationshipData(id=args.run_task_id)
+            ),
         )
 
         task = client.workspace_run_tasks.create(workspace_id, options)
@@ -261,7 +265,9 @@ def run_all_tests(client: TFEClient, args):
 
         print("\n2. Testing CREATE operation...")
         create_options = WorkspaceRunTaskCreateOptions(
-            run_task={"data": {"id": args.run_task_id, "type": "tasks"}},
+            run_task=RunTaskRelationship(
+                data=RunTaskRelationshipData(id=args.run_task_id)
+            ),
             enforcement_level=TaskEnforcementLevel.ADVISORY,
             stage=Stage.POST_PLAN,
         )

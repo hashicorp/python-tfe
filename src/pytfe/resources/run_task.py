@@ -93,10 +93,20 @@ def _run_task_from(d: dict[str, Any], org: str | None = None) -> RunTask:
             email=None,  # Not available in relationship data
         )
 
-    # Process workspace run tasks if present and included
-    # Note: Only populate if we have full workspace run task objects in included data
-    # Relationship references alone don't contain enough data to create WorkspaceRunTask objects
-    workspace_run_tasks: list[WorkspaceRunTask] | None = None
+    # Handle workspace run tasks relationship
+    workspace_run_tasks = []
+    wrt_data = relationships.get("workspace-tasks", {}).get("data", [])
+    if isinstance(wrt_data, list):
+        # Note: Full WorkspaceRunTask objects would need to be fetched separately
+        # Here we just create minimal objects with IDs and default enforcement level
+        for item in wrt_data:
+            if isinstance(item, dict) and "id" in item:
+                workspace_run_tasks.append(
+                    WorkspaceRunTask(
+                        id=_safe_str(item.get("id")),
+                        enforcement_level=TaskEnforcementLevel.ADVISORY,
+                    )
+                )
 
     return RunTask(
         id=id_str,
@@ -109,7 +119,7 @@ def _run_task_from(d: dict[str, Any], org: str | None = None) -> RunTask:
         global_configuration=global_config,
         agent_pool=agent_pool,
         organization=organization,
-        workspace_run_tasks=workspace_run_tasks,
+        workspace_run_tasks=workspace_run_tasks if workspace_run_tasks else None,
     )
 
 
