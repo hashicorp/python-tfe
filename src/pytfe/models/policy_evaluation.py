@@ -37,7 +37,7 @@ class PolicyEvaluation(BaseModel):
     updated_at: datetime | None = Field(None, alias="updated-at")
 
     # The task stage the policy evaluation belongs to
-    task_stage: PolicyAttachable | None = Field(None, alias="policy-attachable")
+    policy_attachable: PolicyAttachable | None = Field(None, alias="policy-attachable")
 
 
 class PolicyEvaluationStatusTimestamps(BaseModel):
@@ -72,23 +72,9 @@ class PolicyResultCount(BaseModel):
     errored: int | None = Field(None, alias="errored")
 
 
-class PolicyEvaluationList(BaseModel):
-    """PolicyEvaluationList represents a list of policy evaluations"""
-
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
-
-    items: list[PolicyEvaluation] | None = Field(default_factory=list)
-    current_page: int | None = None
-    next_page: str | None = None
-    prev_page: str | None = None
-    total_count: int | None = None
-    total_pages: int | None = None
-
-
 class PolicyEvaluationListOptions(BaseModel):
     """PolicyEvaluationListOptions represents the options for listing policy evaluations"""
 
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
-    page_number: int | None = Field(None, alias="page[number]")
     page_size: int | None = Field(None, alias="page[size]")
