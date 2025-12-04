@@ -23,6 +23,7 @@ from .resources.projects import Projects
 from .resources.query_run import QueryRuns
 from .resources.registry_module import RegistryModules
 from .resources.registry_provider import RegistryProviders
+from .resources.registry_provider_version import RegistryProviderVersions
 from .resources.reserved_tag_key import ReservedTagKeys
 from .resources.run import Runs
 from .resources.run_event import RunEvents
@@ -76,6 +77,7 @@ class TFEClient:
         self.workspace_resources = WorkspaceResourcesService(self._transport)
         self.registry_modules = RegistryModules(self._transport)
         self.registry_providers = RegistryProviders(self._transport)
+        self.registry_provider_versions = RegistryProviderVersions(self._transport)
 
         # State and execution resources
         self.state_versions = StateVersions(self._transport)

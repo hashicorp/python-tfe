@@ -215,6 +215,13 @@ from .registry_provider import (
     RegistryProviderPermissions,
     RegistryProviderReadOptions,
 )
+from .registry_provider_version import (
+    RegistryProviderVersion,
+    RegistryProviderVersionCreateOptions,
+    RegistryProviderVersionID,
+    RegistryProviderVersionListOptions,
+    RegistryProviderVersionPermissions,
+)
 
 # ── Reserved Tag Keys ─────────────────────────────────────────────────────────
 from .reserved_tag_key import (
@@ -450,6 +457,12 @@ __all__ = [
     "RegistryProviderListOptions",
     "RegistryProviderPermissions",
     "RegistryProviderReadOptions",
+    # Registry provider versions
+    "RegistryProviderVersion",
+    "RegistryProviderVersionCreateOptions",
+    "RegistryProviderVersionID",
+    "RegistryProviderVersionListOptions",
+    "RegistryProviderVersionPermissions",
     # Query runs
     "QueryRun",
     "QueryRunCancelOptions",

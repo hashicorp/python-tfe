@@ -37,7 +37,7 @@ from .models.workspace import (
     WorkspaceUpdateOptions,
 )
 
-_STRING_ID_PATTERN = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{2,}$")
+_STRING_ID_PATTERN = re.compile(r"^[^/\s]+$")
 _WS_ID_RE = re.compile(r"^ws-[A-Za-z0-9]+$")
 _VERSION_PATTERN = re.compile(
     r"^\d+\.\d+\.\d+(?:-[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)*)?(?:\+[a-zA-Z0-9]+(?:\.[a-zA-Z0-9]+)*)?$"
