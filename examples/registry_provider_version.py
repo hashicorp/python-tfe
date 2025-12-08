@@ -6,6 +6,8 @@ import os
 from pytfe import TFEClient, TFEConfig
 from pytfe.models import (
     RegistryProviderVersionCreateOptions,
+    RegistryProviderVersionListOptions,
+    RegistryProviderID,
 )
 
 
@@ -50,7 +52,47 @@ def main():
     cfg = TFEConfig(address=args.address, token=args.token)
     client = TFEClient(cfg)
 
-    # 1) Create a new version (if --create flag is provided)
+    # 1) List all versions for the registry provider
+    _print_header(
+        f"Listing versions for {args.registry_name}/{args.namespace}/{args.name}"
+    )
+    provider_id = RegistryProviderID(
+        organization_name=args.organization,
+        registry_name=args.registry_name,
+        namespace=args.namespace,
+        name=args.name,
+    )
+
+    options = RegistryProviderVersionListOptions(
+        page_size=args.page_size,
+    )
+
+    version_count = 0
+    for version in client.registry_provider_versions.list(
+        provider_id=provider_id,
+        options=options,
+    ):
+        version_count += 1
+        print(f"- Version {version.version} (ID: {version.id})")
+        print(f"  Created: {version.created_at}")
+        print(f"  Updated: {version.updated_at}")
+        print(f"  Key ID: {version.key_id}")
+        print(f"  Protocols: {', '.join(version.protocols)}")
+        print(f"  Shasums Uploaded: {version.shasums_uploaded}")
+        print(f"  Shasums Signature Uploaded: {version.shasums_sig_uploaded}")
+        if version.permissions:
+            print(f"  Permissions:")
+            print(f"    Can Delete: {version.permissions.can_delete}")
+            print(f"    Can Upload Asset: {version.permissions.can_upload_asset}")
+        print()
+
+    if version_count == 0:
+        print("No versions found.")
+    else:
+        print(f"Total: {version_count} versions")
+
+    
+    # 2) Create a new version (if --create flag is provided)
     if args.create:
         if not args.version:
             print("Error: --version is required for create operation")
@@ -71,10 +113,7 @@ def main():
         )
 
         new_version = client.registry_provider_versions.create(
-            organization=args.organization,
-            registry_name=args.registry_name,
-            namespace=args.namespace,
-            name=args.name,
+            provider_id=provider_id,
             options=create_options,
         )
 

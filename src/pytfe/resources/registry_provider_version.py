@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import Any
+from collections.abc import Iterator
 
 from ..errors import (
     RequiredPrivateRegistryError,
@@ -12,6 +13,7 @@ from ..models.registry_provider import (
 from ..models.registry_provider_version import (
     RegistryProviderVersion,
     RegistryProviderVersionCreateOptions,
+    RegistryProviderVersionListOptions,
 )
 from ..utils import valid_string_id
 from ._base import _Service
@@ -80,3 +82,13 @@ class RegistryProviderVersions(_Service):
             )
 
         return RegistryProviderVersion.model_validate(attrs)
+    
+    def list(self, provider_id: RegistryProviderID, options: RegistryProviderVersionListOptions | None = None) -> Iterator[RegistryProviderVersion]:
+        """List registry provider versions"""
+        if not self._validate_provider_id(provider_id):
+            raise ValueError("Invalid provider ID")
+        
+        path = f"/api/v2/organizations/{provider_id.organization_name}/registry-providers/{provider_id.registry_name.value}/{provider_id.namespace}/{provider_id.name}/versions"
+        params = options.model_dump(by_alias=True) if options else {}
+        for item in self._list(path=path, params=params):
+            yield self._registry_provider_version_from(item)
