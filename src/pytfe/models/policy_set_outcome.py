@@ -34,19 +34,6 @@ class Outcome(BaseModel):
     description: str | None = Field(None, alias="description")
 
 
-class PolicySetOutcomeList(BaseModel):
-    """PolicySetOutcomeList represents a list of policy set outcomes"""
-
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
-
-    items: list[PolicySetOutcome] | None = Field(default_factory=list)
-    current_page: int | None = None
-    next_page: str | None = None
-    prev_page: str | None = None
-    total_count: int | None = None
-    total_pages: int | None = None
-
-
 class PolicySetOutcomeListFilter(BaseModel):
     """PolicySetOutcomeListFilter represents the filters that are supported while listing a policy set outcome"""
 
@@ -62,5 +49,4 @@ class PolicySetOutcomeListOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     filter: dict[str, PolicySetOutcomeListFilter] | None = None
-    page_number: int | None = Field(None, alias="page[number]")
     page_size: int | None = Field(None, alias="page[size]")

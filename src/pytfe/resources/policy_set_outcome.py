@@ -1,18 +1,21 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+from typing import Any
+
 from ..errors import (
     InvalidPolicyEvaluationIDError,
+    InvalidPolicySetOutcomeIDError,
 )
 from ..models.policy_set_outcome import (
     PolicySetOutcome,
-    PolicySetOutcomeList,
     PolicySetOutcomeListOptions,
 )
 from ..utils import valid_string_id
 from ._base import _Service
 
 
-class PolicySets(_Service):
+class PolicySetOutcomes(_Service):
     """
     PolicySetOutcomes describes all the policy set outcome related methods that the Terraform Enterprise API supports.
     TFE API docs: https://developer.hashicorp.com/terraform/cloud-docs/api-docs/policy-checks
@@ -22,7 +25,7 @@ class PolicySets(_Service):
         self,
         policy_evaluation_id: str,
         options: PolicySetOutcomeListOptions | None = None,
-    ) -> PolicySetOutcomeList:
+    ) -> Iterator[PolicySetOutcome]:
         """
         **Note: This method is still in BETA and subject to change.**
             List all policy set outcomes in the policy evaluation. Only available for OPA policies.
@@ -35,28 +38,8 @@ class PolicySets(_Service):
         if additional_query_params:
             params.update(additional_query_params)
         path = f"api/v2/policy-evaluations/{policy_evaluation_id}/policy-set-outcomes"
-        r = self.t.request("GET", path, params=params)
-        jd = r.json()
-        items = []
-        meta = jd.get("meta", {})
-        pagination = meta.get("pagination", {})
-        for item in jd.get("data", []):
-            attrs = item.get("attributes", {})
-            attrs["id"] = item.get("id")
-            attrs["policy-evaluation"] = (
-                item.get("relationships", {})
-                .get("policy-evaluation", {})
-                .get("data", {})
-            )
-            items.append(PolicySetOutcome.model_validate(attrs))
-        return PolicySetOutcomeList(
-            items=items,
-            current_page=pagination.get("current-page"),
-            next_page=pagination.get("next-page"),
-            prev_page=pagination.get("prev-page"),
-            total_count=pagination.get("total-count"),
-            total_pages=pagination.get("total-pages"),
-        )
+        for item in self._list(path, params=params):
+            yield self._policy_set_outcome_from(item)
 
     def build_query_string(
         self, options: PolicySetOutcomeListOptions | None
@@ -77,14 +60,17 @@ class PolicySets(_Service):
         **Note: This method is still in BETA and subject to change.**
         Read a single policy set outcome by ID. Only available for OPA policies."""
         if not valid_string_id(policy_set_outcome_id):
-            raise InvalidPolicyEvaluationIDError()
+            raise InvalidPolicySetOutcomeIDError()
         path = f"api/v2/policy-set-outcomes/{policy_set_outcome_id}"
         r = self.t.request("GET", path)
-        jd = r.json()
-        item = jd.get("data", {})
-        attrs = item.get("attributes", {})
-        attrs["id"] = item.get("id")
+        data = r.json().get("data", {})
+        return PolicySetOutcome.model_validate(data)
+
+    def _policy_set_outcome_from(self, d: dict[str, Any]) -> PolicySetOutcome:
+        """Convert API response dict to PolicySetParameter model."""
+        attrs = d.get("attributes", {})
+        attrs["id"] = d.get("id")
         attrs["policy-evaluation"] = (
-            item.get("relationships", {}).get("policy-evaluation", {}).get("data", {})
+            d.get("relationships", {}).get("policy-evaluation", {}).get("data", {})
         )
         return PolicySetOutcome.model_validate(attrs)

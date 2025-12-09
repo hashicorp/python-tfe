@@ -497,3 +497,11 @@ class RequiredKeyError(RequiredFieldMissing):
 
     def __init__(self, message: str = "key is required"):
         super().__init__(message)
+
+
+# Policy Set Outcome errors
+class InvalidPolicySetOutcomeIDError(InvalidValues):
+    """Raised when an invalid policy set outcome ID is provided."""
+
+    def __init__(self, message: str = "invalid value for policy set outcome ID"):
+        super().__init__(message)
