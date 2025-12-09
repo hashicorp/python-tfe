@@ -315,6 +315,13 @@ class InvalidRunTaskCategoryError(InvalidValues):
         super().__init__(message)
 
 
+class InvalidWorkspaceRunTaskIDError(InvalidValues):
+    """Raised when an invalid workspace run task ID is provided."""
+
+    def __init__(self, message: str = "invalid value for workspace run task ID"):
+        super().__init__(message)
+
+
 # Run Trigger errors
 class RequiredRunTriggerListOpsError(RequiredFieldMissing):
     """Raised when required run trigger list options are missing."""

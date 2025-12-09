@@ -97,6 +97,9 @@ def _run_task_from(d: dict[str, Any], org: str | None = None) -> RunTask:
         )
 
     # Handle workspace run tasks relationship
+    # Added to support the workspace-tasks relationship returned by the API.
+    # This populates the workspace_run_tasks field on RunTask objects when
+    # the API includes this relationship (e.g., when using include query params).
     workspace_run_tasks = []
     wrt_data = relationships.get("workspace-tasks", {}).get("data", [])
     if isinstance(wrt_data, list):
@@ -273,17 +276,35 @@ class RunTasks(_Service):
         Attach a run task to a workspace.
 
         This is a convenience method that creates a workspace run task relationship.
+        Delegates to workspace_run_tasks.create().
+
+        Args:
+            workspace_id: The workspace ID
+            run_task_id: The run task ID to attach
+            enforcement_level: The enforcement level for this task
+
+        Returns:
+            WorkspaceRunTask: The created workspace run task
+
+        Raises:
+            InvalidWorkspaceIDError: If workspace_id is invalid
+            InvalidRunTaskIDError: If run_task_id is invalid
         """
-        # This would typically delegate to workspace_run_tasks.create()
-        # For now, we'll create a placeholder implementation
-        # In a real implementation, this would call:
-        """
+        from ..models.workspace_run_task import WorkspaceRunTaskCreateOptions
+        from .workspace_run_task import WorkspaceRunTasks
+
+        # Create workspace run tasks service
+        workspace_run_tasks = WorkspaceRunTasks(self.t)
+
+        # Create the run task object with minimal required fields
+        run_task = RunTask(
+            id=run_task_id, name="", url="", category="task", enabled=True
+        )
+
+        # Create options for attaching the task
         create_options = WorkspaceRunTaskCreateOptions(
             enforcement_level=enforcement_level,
-            run_task=RunTask(id=run_task_id, name="", url="", category="task", enabled=True)
+            run_task=run_task,
         )
-        return workspace_run_tasks.create(workspace_id, create_options)
-        """
 
-        # TODO: Implement actual workspace run task creation
-        raise NotImplementedError("attach_to_workspace method needs to be implemented")
+        return workspace_run_tasks.create(workspace_id, create_options)
