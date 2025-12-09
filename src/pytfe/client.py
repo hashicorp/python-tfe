@@ -31,6 +31,7 @@ from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
 from .resources.variable import Variables
 from .resources.variable_sets import VariableSets, VariableSetVariables
+from .resources.workspace_run_task import WorkspaceRunTasks
 from .resources.workspaces import Workspaces
 
 
@@ -76,6 +77,7 @@ class TFEClient:
         self.state_versions = StateVersions(self._transport)
         self.state_version_outputs = StateVersionOutputs(self._transport)
         self.run_tasks = RunTasks(self._transport)
+        self.workspace_run_tasks = WorkspaceRunTasks(self._transport)
         self.run_triggers = RunTriggers(self._transport)
         self.runs = Runs(self._transport)
         self.query_runs = QueryRuns(self._transport)

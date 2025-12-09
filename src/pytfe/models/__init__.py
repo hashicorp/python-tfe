@@ -334,6 +334,15 @@ from .workspace import (
     WorkspaceUpdateRemoteStateConsumersOptions,
 )
 
+# ── Workspace Run Tasks ──────────────────────────────────────────────────────
+from .workspace_run_task import (
+    WorkspaceRunTask,
+    WorkspaceRunTaskCreateOptions,
+    WorkspaceRunTaskList,
+    WorkspaceRunTaskListOptions,
+    WorkspaceRunTaskUpdateOptions,
+)
+
 # ── Public surface ────────────────────────────────────────────────────────────
 __all__ = [
     # OAuth
@@ -496,6 +505,12 @@ __all__ = [
     "WorkspaceTagListOptions",
     "WorkspaceUpdateOptions",
     "WorkspaceUpdateRemoteStateConsumersOptions",
+    # Workspace Run Tasks
+    "WorkspaceRunTask",
+    "WorkspaceRunTaskCreateOptions",
+    "WorkspaceRunTaskList",
+    "WorkspaceRunTaskListOptions",
+    "WorkspaceRunTaskUpdateOptions",
     "RunQueue",
     "ReadRunQueueOptions",
     # Runs
@@ -545,6 +560,12 @@ __all__ = [
     "SourceableChoice",
     "RunTriggerFilterOp",
     "RunTriggerIncludeOp",
+    # Workspace Run Tasks
+    "WorkspaceRunTask",
+    "WorkspaceRunTaskCreateOptions",
+    "WorkspaceRunTaskList",
+    "WorkspaceRunTaskListOptions",
+    "WorkspaceRunTaskUpdateOptions",
     # Policy Checks
     "PolicyCheck",
     "PolicyCheckIncludeOpt",
