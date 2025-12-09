@@ -345,7 +345,9 @@ class TestProjectTagBindings:
         with pytest.raises(
             ValueError, match="Project ID is required and must be valid"
         ):
-            self.projects_service.list_tag_bindings("x")  # Too short
+            self.projects_service.list_tag_bindings(
+                "! / nope"
+            )  # Contains spaces and slashes
 
     def test_list_effective_tag_bindings_success(self):
         """Test successful listing of effective tag bindings"""
@@ -541,5 +543,5 @@ class TestProjectTagBindings:
             ValueError, match="Project ID is required and must be valid"
         ):
             self.projects_service.delete_tag_bindings(
-                "ab"
-            )  # Too short (needs at least 3 chars)
+                "bad/id"
+            )  # Contains forward slash

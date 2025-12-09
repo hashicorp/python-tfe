@@ -25,7 +25,7 @@ class TestApplies(unittest.TestCase):
             self.applies.read("")
 
         with self.assertRaises(InvalidApplyIDError):
-            self.applies.read("a")
+            self.applies.read("! / nope")  # Contains spaces and slashes
 
     def test_read_apply_success(self):
         """Test successful apply read."""

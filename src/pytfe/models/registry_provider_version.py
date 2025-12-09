@@ -8,9 +8,13 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from ..errors import (
     InvalidKeyIDError,
     InvalidVersionError,
+    RequiredPrivateRegistryError,
 )
 from ..utils import valid_string_id
-from .registry_provider import RegistryProviderID
+from .registry_provider import (
+    RegistryName,
+    RegistryProviderID,
+)
 
 
 class RegistryProviderVersionPermissions(BaseModel):
@@ -57,6 +61,14 @@ class RegistryProviderVersionID(RegistryProviderID):
     """
 
     version: str
+
+    @model_validator(mode="after")
+    def valid(self) -> RegistryProviderVersionID:
+        if not valid_string_id(self.version):
+            raise InvalidVersionError()
+        if self.registry_name != RegistryName.PRIVATE:
+            raise RequiredPrivateRegistryError()
+        return self
 
 
 class RegistryProviderVersionCreateOptions(BaseModel):

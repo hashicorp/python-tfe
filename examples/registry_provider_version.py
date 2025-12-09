@@ -5,9 +5,10 @@ import os
 
 from pytfe import TFEClient, TFEConfig
 from pytfe.models import (
-    RegistryProviderVersionCreateOptions,
-    RegistryProviderVersionListOptions,
     RegistryProviderID,
+    RegistryProviderVersionCreateOptions,
+    RegistryProviderVersionID,
+    RegistryProviderVersionListOptions,
 )
 
 
@@ -40,6 +41,7 @@ def main():
         help="Page size for fetching versions",
     )
     parser.add_argument("--create", action="store_true", help="Create a test version")
+    parser.add_argument("--read", action="store_true", help="Read a specific version")
     parser.add_argument("--version", help="Version number (e.g., 1.0.0)")
     parser.add_argument("--key-id", help="GPG key ID for version signing")
     parser.add_argument(
@@ -81,7 +83,7 @@ def main():
         print(f"  Shasums Uploaded: {version.shasums_uploaded}")
         print(f"  Shasums Signature Uploaded: {version.shasums_sig_uploaded}")
         if version.permissions:
-            print(f"  Permissions:")
+            print("  Permissions:")
             print(f"    Can Delete: {version.permissions.can_delete}")
             print(f"    Can Upload Asset: {version.permissions.can_upload_asset}")
         print()
@@ -91,7 +93,6 @@ def main():
     else:
         print(f"Total: {version_count} versions")
 
-    
     # 2) Create a new version (if --create flag is provided)
     if args.create:
         if not args.version:
@@ -134,6 +135,44 @@ def main():
                 print(
                     f"    Shasums Signature: {new_version.links['shasums-sig-upload']}"
                 )
+
+    # 3) Read a specific version (if --read flag is provided)
+    if args.read:
+        if not args.version:
+            print("Error: --version is required for read operation")
+            return
+
+        _print_header(f"Reading version: {args.version}")
+
+        version_id = RegistryProviderVersionID(
+            organization_name=args.organization,
+            registry_name=args.registry_name,
+            namespace=args.namespace,
+            name=args.name,
+            version=args.version,
+        )
+
+        version = client.registry_provider_versions.read(version_id)
+
+        print(f"Version ID: {version.id}")
+        print(f"  Version: {version.version}")
+        print(f"  Created: {version.created_at}")
+        print(f"  Updated: {version.updated_at}")
+        print(f"  Key ID: {version.key_id}")
+        print(f"  Protocols: {', '.join(version.protocols)}")
+        print(f"  Shasums Uploaded: {version.shasums_uploaded}")
+        print(f"  Shasums Signature Uploaded: {version.shasums_sig_uploaded}")
+
+        if version.permissions:
+            print("  Permissions:")
+            print(f"    Can Delete: {version.permissions.can_delete}")
+            print(f"    Can Upload Asset: {version.permissions.can_upload_asset}")
+
+        # Show links if available
+        if version.links:
+            print("  Links:")
+            for key, value in version.links.items():
+                print(f"    {key}: {value}")
 
 
 if __name__ == "__main__":
