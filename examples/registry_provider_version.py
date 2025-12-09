@@ -42,6 +42,9 @@ def main():
     )
     parser.add_argument("--create", action="store_true", help="Create a test version")
     parser.add_argument("--read", action="store_true", help="Read a specific version")
+    parser.add_argument(
+        "--delete", action="store_true", help="Delete a specific version"
+    )
     parser.add_argument("--version", help="Version number (e.g., 1.0.0)")
     parser.add_argument("--key-id", help="GPG key ID for version signing")
     parser.add_argument(
@@ -173,6 +176,68 @@ def main():
             print("  Links:")
             for key, value in version.links.items():
                 print(f"    {key}: {value}")
+
+    # 4) Delete a version (if --delete flag is provided)
+    if args.delete:
+        if not args.version:
+            print("Error: --version is required for delete operation")
+            return
+
+        _print_header(f"Deleting version: {args.version}")
+
+        version_id = RegistryProviderVersionID(
+            organization_name=args.organization,
+            registry_name=args.registry_name,
+            namespace=args.namespace,
+            name=args.name,
+            version=args.version,
+        )
+
+        # First read the version to show what's being deleted
+        try:
+            version_to_delete = client.registry_provider_versions.read(version_id)
+            print("Version to delete:")
+            print(f"  ID: {version_to_delete.id}")
+            print(f"  Version: {version_to_delete.version}")
+            print(f"  Protocols: {', '.join(version_to_delete.protocols)}")
+            print(f"  Key ID: {version_to_delete.key_id}")
+        except Exception as e:
+            print(f"Error reading version: {e}")
+            return
+
+        # Delete the version
+        client.registry_provider_versions.delete(version_id)
+        print(f"\n  Successfully deleted version: {args.version}")
+
+        # List remaining versions
+        _print_header("Listing versions after deletion")
+        provider_id = RegistryProviderID(
+            organization_name=args.organization,
+            registry_name=args.registry_name,
+            namespace=args.namespace,
+            name=args.name,
+        )
+
+        options = RegistryProviderVersionListOptions(
+            page_size=args.page_size,
+        )
+        print("Remaining versions:")
+        remaining_count = 0
+        for version in client.registry_provider_versions.list(
+            provider_id=provider_id,
+            options=options,
+        ):
+            remaining_count += 1
+            print(
+                f"- Version {version.version}: "
+                f"  protocols={', '.join(version.protocols)}, "
+                f"  shasums_uploaded={version.shasums_uploaded}"
+            )
+
+        if remaining_count == 0:
+            print("No versions remaining.")
+        else:
+            print(f"\nTotal: {remaining_count} versions")
 
 
 if __name__ == "__main__":

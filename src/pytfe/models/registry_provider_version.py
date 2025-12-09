@@ -52,6 +52,82 @@ class RegistryProviderVersion(BaseModel):
     # Links
     links: dict[str, Any] | None = None
 
+    def shasums_upload_url(self) -> str:
+        """ShasumsUploadURL returns the upload URL to upload shasums if one is available"""
+        if self.links is None:
+            raise ValueError(
+                "The registry provider version does not contain a shasums upload link"
+            )
+        upload_url = str(self.links.get("shasums-upload"))
+        if not upload_url:
+            raise ValueError(
+                "The registry provider version does not contain a shasums upload link"
+            )
+
+        if upload_url == "":
+            raise ValueError(
+                "The registry provider version shasums upload URL is empty"
+            )
+
+        return upload_url
+
+    def shasums_sig_upload_url(self) -> str:
+        """ShasumsSigUploadURL returns the URL to upload a shasums sig"""
+        if self.links is None:
+            raise ValueError(
+                "The registry provider version does not contain a shasums sig upload link"
+            )
+        upload_url = str(self.links.get("shasums-sig-upload"))
+        if not upload_url:
+            raise ValueError(
+                "The registry provider version does not contain a shasums sig upload link"
+            )
+
+        if upload_url == "":
+            raise ValueError(
+                "The registry provider version shasums sig upload URL is empty"
+            )
+
+        return upload_url
+
+    def shasums_download_url(self) -> str:
+        """ShasumsDownloadURL returns the URL to download the shasums for the registry version"""
+        if self.links is None:
+            raise ValueError(
+                "The registry provider version does not contain a shasums download link"
+            )
+        download_url = str(self.links.get("shasums-download"))
+        if not download_url:
+            raise ValueError(
+                "The registry provider version does not contain a shasums download link"
+            )
+
+        if download_url == "":
+            raise ValueError(
+                "The registry provider version shasums download URL is empty"
+            )
+
+        return download_url
+
+    def shasums_sig_download_url(self) -> str:
+        """ShasumsSigDownloadURL returns the URL to download the shasums sig for the registry version"""
+        if self.links is None:
+            raise ValueError(
+                "The registry provider version does not contain a shasums sig download link"
+            )
+        download_url = str(self.links.get("shasums-sig-download"))
+        if not download_url:
+            raise ValueError(
+                "The registry provider version does not contain a shasums sig download link"
+            )
+
+        if download_url == "":
+            raise ValueError(
+                "The registry provider version shasums sig download URL is empty"
+            )
+
+        return download_url
+
 
 class RegistryProviderVersionID(RegistryProviderID):
     """Registry provider version identifier.

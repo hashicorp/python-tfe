@@ -110,3 +110,15 @@ class RegistryProviderVersions(_Service):
         )
         data = r.json().get("data", {})
         return self._registry_provider_version_from(data)
+
+    def delete(self, version_id: RegistryProviderVersionID) -> None:
+        """Delete a specific registry provider version"""
+        if not self._validate_provider_id(version_id):
+            raise ValueError("Invalid provider ID")
+
+        path = f"/api/v2/organizations/{version_id.organization_name}/registry-providers/{version_id.registry_name.value}/{version_id.namespace}/{version_id.name}/versions/{version_id.version}"
+        self.t.request(
+            "DELETE",
+            path=path,
+        )
+        return None
