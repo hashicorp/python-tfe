@@ -1,22 +1,25 @@
 from datetime import datetime
 from unittest.mock import MagicMock, Mock
+import io
 
 import pytest
 
 from pytfe import TFEClient, TFEConfig
-from pytfe.errors import InvalidOrgError, InvalidQueryRunIDError
+from pytfe.errors import InvalidQueryRunIDError, InvalidWorkspaceIDError
 from pytfe.models.query_run import (
     QueryRun,
+    QueryRunActions,
     QueryRunCancelOptions,
     QueryRunCreateOptions,
     QueryRunForceCancelOptions,
+    QueryRunIncludeOpt,
     QueryRunList,
     QueryRunListOptions,
-    QueryRunLogs,
     QueryRunReadOptions,
-    QueryRunResults,
+    QueryRunSource,
     QueryRunStatus,
-    QueryRunType,
+    QueryRunStatusTimestamps,
+    QueryRunVariable,
 )
 
 
@@ -26,61 +29,57 @@ class TestQueryRunModels:
     def test_query_run_model_basic(self):
         """Test basic QueryRun model creation."""
         query_run = QueryRun(
-            id="qr-test123",
-            query="SELECT * FROM runs WHERE status = 'completed'",
-            query_type=QueryRunType.FILTER,
-            status=QueryRunStatus.COMPLETED,
+            id="query-test123",
+            source=QueryRunSource.API,
+            status=QueryRunStatus.PENDING,
             created_at=datetime.now(),
             updated_at=datetime.now(),
         )
-        assert query_run.id == "qr-test123"
-        assert query_run.query == "SELECT * FROM runs WHERE status = 'completed'"
-        assert query_run.query_type == QueryRunType.FILTER
-        assert query_run.status == QueryRunStatus.COMPLETED
+        assert query_run.id == "query-test123"
+        assert query_run.source == QueryRunSource.API
+        assert query_run.status == QueryRunStatus.PENDING
 
     def test_query_run_status_enum(self):
         """Test QueryRunStatus enum values."""
         assert QueryRunStatus.PENDING == "pending"
+        assert QueryRunStatus.QUEUED == "queued"
         assert QueryRunStatus.RUNNING == "running"
-        assert QueryRunStatus.COMPLETED == "completed"
+        assert QueryRunStatus.FINISHED == "finished"
         assert QueryRunStatus.ERRORED == "errored"
         assert QueryRunStatus.CANCELED == "canceled"
 
-    def test_query_run_type_enum(self):
-        """Test QueryRunType enum values."""
-        assert QueryRunType.FILTER == "filter"
-        assert QueryRunType.SEARCH == "search"
-        assert QueryRunType.ANALYTICS == "analytics"
+    def test_query_run_source_enum(self):
+        """Test QueryRunSource enum values."""
+        assert QueryRunSource.API == "tfe-api"
 
     def test_query_run_create_options(self):
         """Test QueryRunCreateOptions model."""
         options = QueryRunCreateOptions(
-            query="SELECT * FROM workspaces",
-            query_type=QueryRunType.SEARCH,
-            organization_name="test-org",
-            timeout_seconds=300,
-            max_results=1000,
+            source=QueryRunSource.API,
+            workspace_id="ws-test123",
         )
-        assert options.query == "SELECT * FROM workspaces"
-        assert options.query_type == QueryRunType.SEARCH
-        assert options.organization_name == "test-org"
-        assert options.timeout_seconds == 300
-        assert options.max_results == 1000
+        assert options.source == QueryRunSource.API
+        assert options.workspace_id == "ws-test123"
 
     def test_query_run_list_options(self):
         """Test QueryRunListOptions model."""
         options = QueryRunListOptions(
             page_number=2,
             page_size=50,
-            query_type=QueryRunType.FILTER,
-            status=QueryRunStatus.COMPLETED,
-            organization_name="test-org",
+            include=[QueryRunIncludeOpt.CREATED_BY],
         )
         assert options.page_number == 2
         assert options.page_size == 50
-        assert options.query_type == QueryRunType.FILTER
-        assert options.status == QueryRunStatus.COMPLETED
-        assert options.organization_name == "test-org"
+        assert QueryRunIncludeOpt.CREATED_BY in options.include
+
+    def test_query_run_actions(self):
+        """Test QueryRunActions model."""
+        actions = QueryRunActions(
+            is_cancelable=True,
+            is_force_cancelable=False,
+        )
+        assert actions.is_cancelable is True
+        assert actions.is_force_cancelable is False
 
 
 class TestQueryRunOperations:
@@ -93,24 +92,20 @@ class TestQueryRunOperations:
         return TFEClient(config)
 
     @pytest.fixture
-    def mock_response(self):
-        """Create a mock response."""
+    def mock_list_response(self):
+        """Create a mock list response."""
         mock = Mock()
         mock.json.return_value = {
             "data": [
                 {
-                    "id": "qr-test123",
-                    "type": "query-runs",
+                    "id": "query-test123",
+                    "type": "queries",
                     "attributes": {
-                        "query": "SELECT * FROM runs",
-                        "query-type": "filter",
-                        "status": "completed",
-                        "results-count": 42,
+                        "source": "tfe-api",
+                        "status": "finished",
                         "created-at": "2023-01-01T00:00:00Z",
                         "updated-at": "2023-01-01T00:05:00Z",
-                        "started-at": "2023-01-01T00:01:00Z",
-                        "finished-at": "2023-01-01T00:05:00Z",
-                        "organization-name": "test-org",
+                        "log-read-url": "https://archivist.terraform.io/v1/object/...",
                     },
                 }
             ],
@@ -126,123 +121,117 @@ class TestQueryRunOperations:
         }
         return mock
 
-    def test_list_query_runs(self, client, mock_response):
+    def test_list_query_runs(self, client, mock_list_response):
         """Test listing query runs."""
-        client._transport.request = MagicMock(return_value=mock_response)
+        client._transport.request = MagicMock(return_value=mock_list_response)
 
-        result = client.query_runs.list("test-org")
+        result = client.query_runs.list("ws-test123")
 
         assert isinstance(result, QueryRunList)
         assert len(result.items) == 1
-        assert result.items[0].id == "qr-test123"
-        assert result.items[0].query == "SELECT * FROM runs"
+        assert result.items[0].id == "query-test123"
+        assert result.items[0].source == QueryRunSource.API
         assert result.current_page == 1
         assert result.total_count == 1
 
         client._transport.request.assert_called_once_with(
-            "GET", "/api/v2/organizations/test-org/query-runs", params=None
+            "GET", "/api/v2/workspaces/ws-test123/queries", params=None
         )
 
-    def test_list_query_runs_with_options(self, client, mock_response):
+    def test_list_query_runs_with_options(self, client, mock_list_response):
         """Test listing query runs with options."""
-        client._transport.request = MagicMock(return_value=mock_response)
+        client._transport.request = MagicMock(return_value=mock_list_response)
 
         options = QueryRunListOptions(
             page_number=2,
             page_size=25,
-            query_type=QueryRunType.FILTER,
-            status=QueryRunStatus.COMPLETED,
+            include=[QueryRunIncludeOpt.CREATED_BY],
         )
-        result = client.query_runs.list("test-org", options)
+        result = client.query_runs.list("ws-test123", options)
 
         assert isinstance(result, QueryRunList)
         client._transport.request.assert_called_once_with(
             "GET",
-            "/api/v2/organizations/test-org/query-runs",
+            "/api/v2/workspaces/ws-test123/queries",
             params={
                 "page[number]": 2,
                 "page[size]": 25,
-                "filter[query-type]": "filter",
-                "filter[status]": "completed",
+                "include": [QueryRunIncludeOpt.CREATED_BY],
             },
         )
+
+    def test_list_invalid_workspace_id(self, client):
+        """Test listing query runs with invalid workspace ID."""
+        with pytest.raises(InvalidWorkspaceIDError):
+            client.query_runs.list("")
 
     def test_create_query_run(self, client):
         """Test creating a query run."""
         mock_response = Mock()
         mock_response.json.return_value = {
             "data": {
-                "id": "qr-new123",
-                "type": "query-runs",
+                "id": "query-new123",
+                "type": "queries",
                 "attributes": {
-                    "query": "SELECT * FROM workspaces",
-                    "query-type": "search",
+                    "source": "tfe-api",
                     "status": "pending",
                     "created-at": "2023-01-01T00:00:00Z",
                     "updated-at": "2023-01-01T00:00:00Z",
-                    "organization-name": "test-org",
                 },
             }
         }
         client._transport.request = MagicMock(return_value=mock_response)
 
         options = QueryRunCreateOptions(
-            query="SELECT * FROM workspaces",
-            query_type=QueryRunType.SEARCH,
-            organization_name="test-org",
-            timeout_seconds=300,
+            source=QueryRunSource.API,
+            workspace_id="ws-test123",
         )
-        result = client.query_runs.create("test-org", options)
+        result = client.query_runs.create(options)
 
         assert isinstance(result, QueryRun)
-        assert result.id == "qr-new123"
-        assert result.query == "SELECT * FROM workspaces"
+        assert result.id == "query-new123"
+        assert result.source == QueryRunSource.API
         assert result.status == QueryRunStatus.PENDING
 
-        client._transport.request.assert_called_once_with(
-            "POST",
-            "/api/v2/organizations/test-org/query-runs",
-            json_body={
-                "data": {
-                    "attributes": {
-                        "query": "SELECT * FROM workspaces",
-                        "query-type": "search",
-                        "organization-name": "test-org",
-                        "timeout-seconds": 300,
-                    },
-                    "type": "query-runs",
-                }
-            },
-        )
+        # Verify the call was made with correct structure
+        call_args = client._transport.request.call_args
+        assert call_args[0][0] == "POST"
+        assert call_args[0][1] == "/api/v2/queries"
+        json_body = call_args[1]["json_body"]
+        assert json_body["data"]["type"] == "queries"
+        assert "relationships" in json_body["data"]
+        assert json_body["data"]["relationships"]["workspace"]["data"]["id"] == "ws-test123"
 
     def test_read_query_run(self, client):
         """Test reading a query run."""
         mock_response = Mock()
         mock_response.json.return_value = {
             "data": {
-                "id": "qr-test123",
-                "type": "query-runs",
+                "id": "query-test123",
+                "type": "queries",
                 "attributes": {
-                    "query": "SELECT * FROM runs",
-                    "query-type": "filter",
-                    "status": "completed",
-                    "results-count": 42,
+                    "source": "tfe-api",
+                    "status": "finished",
                     "created-at": "2023-01-01T00:00:00Z",
                     "updated-at": "2023-01-01T00:05:00Z",
+                    "log-read-url": "https://archivist.terraform.io/v1/object/...",
+                    "actions": {
+                        "is-cancelable": False,
+                        "is-force-cancelable": False,
+                    },
                 },
             }
         }
         client._transport.request = MagicMock(return_value=mock_response)
 
-        result = client.query_runs.read("qr-test123")
+        result = client.query_runs.read("query-test123")
 
         assert isinstance(result, QueryRun)
-        assert result.id == "qr-test123"
-        assert result.status == QueryRunStatus.COMPLETED
-        assert result.results_count == 42
+        assert result.id == "query-test123"
+        assert result.status == QueryRunStatus.FINISHED
 
         client._transport.request.assert_called_once_with(
-            "GET", "/api/v2/query-runs/qr-test123"
+            "GET", "/api/v2/queries/query-test123"
         )
 
     def test_read_query_run_with_options(self, client):
@@ -250,12 +239,11 @@ class TestQueryRunOperations:
         mock_response = Mock()
         mock_response.json.return_value = {
             "data": {
-                "id": "qr-test123",
-                "type": "query-runs",
+                "id": "query-test123",
+                "type": "queries",
                 "attributes": {
-                    "query": "SELECT * FROM runs",
-                    "query-type": "filter",
-                    "status": "completed",
+                    "source": "tfe-api",
+                    "status": "finished",
                     "created-at": "2023-01-01T00:00:00Z",
                     "updated-at": "2023-01-01T00:05:00Z",
                 },
@@ -263,302 +251,127 @@ class TestQueryRunOperations:
         }
         client._transport.request = MagicMock(return_value=mock_response)
 
-        options = QueryRunReadOptions(include_results=True, include_logs=True)
-        result = client.query_runs.read_with_options("qr-test123", options)
+        options = QueryRunReadOptions(
+            include=[QueryRunIncludeOpt.CREATED_BY, QueryRunIncludeOpt.CONFIGURATION_VERSION]
+        )
+        result = client.query_runs.read_with_options("query-test123", options)
 
         assert isinstance(result, QueryRun)
-        assert result.id == "qr-test123"
+        assert result.id == "query-test123"
 
         client._transport.request.assert_called_once_with(
             "GET",
-            "/api/v2/query-runs/qr-test123",
-            params={"include[results]": True, "include[logs]": True},
+            "/api/v2/queries/query-test123",
+            params={"include": [QueryRunIncludeOpt.CREATED_BY, QueryRunIncludeOpt.CONFIGURATION_VERSION]},
         )
+
+    def test_read_invalid_query_run_id(self, client):
+        """Test reading with invalid query run ID."""
+        with pytest.raises(InvalidQueryRunIDError):
+            client.query_runs.read("")
 
     def test_query_run_logs(self, client):
         """Test retrieving query run logs."""
-        mock_response = Mock()
-        mock_response.headers = {"content-type": "text/plain"}
-        mock_response.text = (
-            "Starting query execution...\nQuery completed successfully."
-        )
-        client._transport.request = MagicMock(return_value=mock_response)
-
-        result = client.query_runs.logs("qr-test123")
-
-        assert isinstance(result, QueryRunLogs)
-        assert result.query_run_id == "qr-test123"
-        assert "Starting query execution" in result.logs
-        assert result.log_level == "info"
-
-        client._transport.request.assert_called_once_with(
-            "GET", "/api/v2/query-runs/qr-test123/logs"
-        )
-
-    def test_query_run_results(self, client):
-        """Test retrieving query run results."""
-        mock_response = Mock()
-        mock_response.json.return_value = {
+        # Mock the read call first
+        mock_read_response = Mock()
+        mock_read_response.json.return_value = {
             "data": {
-                "results": [
-                    {"id": "run-1", "status": "completed"},
-                    {"id": "run-2", "status": "pending"},
-                ],
-                "total_count": 2,
-                "truncated": False,
+                "id": "query-test123",
+                "type": "queries",
+                "attributes": {
+                    "source": "tfe-api",
+                    "status": "finished",
+                    "created-at": "2023-01-01T00:00:00Z",
+                    "updated-at": "2023-01-01T00:05:00Z",
+                    "log-read-url": "https://archivist.terraform.io/v1/object/dmF1bHQ6djE6L...",
+                },
             }
         }
-        client._transport.request = MagicMock(return_value=mock_response)
+        
+        # Mock the logs fetch
+        mock_logs_response = Mock()
+        mock_logs_response.content = b"Starting query execution...\nQuery completed successfully."
+        
+        client._transport.request = MagicMock(side_effect=[mock_read_response, mock_logs_response])
 
-        result = client.query_runs.results("qr-test123")
+        result = client.query_runs.logs("query-test123")
 
-        assert isinstance(result, QueryRunResults)
-        assert result.query_run_id == "qr-test123"
-        assert len(result.results) == 2
-        assert result.total_count == 2
-        assert not result.truncated
+        assert isinstance(result, io.IOBase)
+        log_content = result.read()
+        assert b"Starting query execution" in log_content
 
-        client._transport.request.assert_called_once_with(
-            "GET", "/api/v2/query-runs/qr-test123/results"
-        )
+        # Verify calls
+        assert client._transport.request.call_count == 2
+
+    def test_query_run_logs_no_url(self, client):
+        """Test retrieving logs when no log URL is available."""
+        mock_read_response = Mock()
+        mock_read_response.json.return_value = {
+            "data": {
+                "id": "query-test123",
+                "type": "queries",
+                "attributes": {
+                    "source": "tfe-api",
+                    "status": "pending",
+                    "created-at": "2023-01-01T00:00:00Z",
+                    "updated-at": "2023-01-01T00:00:00Z",
+                },
+            }
+        }
+        
+        client._transport.request = MagicMock(return_value=mock_read_response)
+
+        with pytest.raises(ValueError, match="does not have a log URL"):
+            client.query_runs.logs("query-test123")
 
     def test_cancel_query_run(self, client):
         """Test canceling a query run."""
         mock_response = Mock()
-        mock_response.json.return_value = {
-            "data": {
-                "id": "qr-test123",
-                "type": "query-runs",
-                "attributes": {
-                    "query": "SELECT * FROM runs",
-                    "query-type": "filter",
-                    "status": "canceled",
-                    "created-at": "2023-01-01T00:00:00Z",
-                    "updated-at": "2023-01-01T00:02:00Z",
-                },
-            }
-        }
+        mock_response.status_code = 202
         client._transport.request = MagicMock(return_value=mock_response)
 
-        options = QueryRunCancelOptions(reason="User requested cancellation")
-        result = client.query_runs.cancel("qr-test123", options)
-
-        assert isinstance(result, QueryRun)
-        assert result.id == "qr-test123"
-        assert result.status == QueryRunStatus.CANCELED
+        client.query_runs.cancel("query-test123")
 
         client._transport.request.assert_called_once_with(
             "POST",
-            "/api/v2/query-runs/qr-test123/actions/cancel",
-            json_body={
-                "data": {
-                    "attributes": {"reason": "User requested cancellation"},
-                    "type": "query-runs",
-                }
-            },
+            "/api/v2/queries/query-test123/actions/cancel",
+            json_body=None,
         )
+
+    def test_cancel_query_run_with_options(self, client):
+        """Test canceling a query run with options."""
+        mock_response = Mock()
+        mock_response.status_code = 202
+        client._transport.request = MagicMock(return_value=mock_response)
+
+        options = QueryRunCancelOptions(comment="Canceling for testing")
+        client.query_runs.cancel("query-test123", options)
+
+        call_args = client._transport.request.call_args
+        assert call_args[0][1] == "/api/v2/queries/query-test123/actions/cancel"
+        json_body = call_args[1]["json_body"]
+        assert json_body["data"]["attributes"]["comment"] == "Canceling for testing"
 
     def test_force_cancel_query_run(self, client):
         """Test force canceling a query run."""
         mock_response = Mock()
-        mock_response.json.return_value = {
-            "data": {
-                "id": "qr-test123",
-                "type": "query-runs",
-                "attributes": {
-                    "query": "SELECT * FROM runs",
-                    "query-type": "filter",
-                    "status": "canceled",
-                    "created-at": "2023-01-01T00:00:00Z",
-                    "updated-at": "2023-01-01T00:02:00Z",
-                },
-            }
-        }
+        mock_response.status_code = 202
         client._transport.request = MagicMock(return_value=mock_response)
 
-        options = QueryRunForceCancelOptions(reason="Force cancel due to timeout")
-        result = client.query_runs.force_cancel("qr-test123", options)
-
-        assert isinstance(result, QueryRun)
-        assert result.id == "qr-test123"
-        assert result.status == QueryRunStatus.CANCELED
+        client.query_runs.force_cancel("query-test123")
 
         client._transport.request.assert_called_once_with(
             "POST",
-            "/api/v2/query-runs/qr-test123/actions/force-cancel",
-            json_body={
-                "data": {
-                    "attributes": {"reason": "Force cancel due to timeout"},
-                    "type": "query-runs",
-                }
-            },
+            "/api/v2/queries/query-test123/actions/force-cancel",
+            json_body=None,
         )
 
-
-class TestQueryRunErrorHandling:
-    """Test query run error handling."""
-
-    @pytest.fixture
-    def client(self):
-        """Create a test client."""
-        config = TFEConfig(address="https://test.terraform.io", token="test-token")
-        return TFEClient(config)
-
-    def test_invalid_organization_error(self, client):
-        """Test invalid organization error."""
-        with pytest.raises(InvalidOrgError):
-            client.query_runs.list("")
-
-        with pytest.raises(InvalidOrgError):
-            client.query_runs.list(None)
-
-    def test_invalid_query_run_id_error(self, client):
-        """Test invalid query run ID error."""
-        with pytest.raises(InvalidQueryRunIDError):
-            client.query_runs.read("")
-
-        with pytest.raises(InvalidQueryRunIDError):
-            client.query_runs.read(None)
-
-        with pytest.raises(InvalidQueryRunIDError):
-            client.query_runs.logs("")
-
-        with pytest.raises(InvalidQueryRunIDError):
-            client.query_runs.results("")
-
+    def test_cancel_invalid_query_run_id(self, client):
+        """Test canceling with invalid query run ID."""
         with pytest.raises(InvalidQueryRunIDError):
             client.query_runs.cancel("")
 
+    def test_force_cancel_invalid_query_run_id(self, client):
+        """Test force canceling with invalid query run ID."""
         with pytest.raises(InvalidQueryRunIDError):
             client.query_runs.force_cancel("")
-
-    def test_create_query_run_validation_errors(self, client):
-        """Test create query run validation errors."""
-        with pytest.raises(InvalidOrgError):
-            options = QueryRunCreateOptions(
-                query="SELECT * FROM runs", query_type=QueryRunType.FILTER
-            )
-            client.query_runs.create("", options)
-
-
-class TestQueryRunIntegration:
-    """Test query run integration scenarios."""
-
-    @pytest.fixture
-    def client(self):
-        """Create a test client with mocked transport."""
-        from unittest.mock import MagicMock, patch
-
-        # Mock the HTTPTransport to prevent any network calls during initialization
-        with patch("pytfe.client.HTTPTransport") as mock_transport_class:
-            mock_transport_instance = MagicMock()
-            mock_transport_class.return_value = mock_transport_instance
-
-            config = TFEConfig(address="https://test.terraform.io", token="test-token")
-            client = TFEClient(config)
-            return client
-
-    def test_full_query_run_workflow(self, client):
-        """Test a complete query run workflow simulation."""
-        # Use the already mocked transport from the fixture
-        mock_transport = client._transport
-
-        # 1. Create query run
-        create_response = Mock()
-        create_response.json.return_value = {
-            "data": {
-                "id": "qr-workflow123",
-                "type": "query-runs",
-                "attributes": {
-                    "query": "SELECT * FROM runs WHERE status = 'completed'",
-                    "query-type": "filter",
-                    "status": "pending",
-                    "created-at": "2023-01-01T00:00:00Z",
-                    "updated-at": "2023-01-01T00:00:00Z",
-                    "organization-name": "test-org",
-                },
-            }
-        }
-
-        # 2. Read query run (running state)
-        read_response = Mock()
-        read_response.json.return_value = {
-            "data": {
-                "id": "qr-workflow123",
-                "type": "query-runs",
-                "attributes": {
-                    "query": "SELECT * FROM runs WHERE status = 'completed'",
-                    "query-type": "filter",
-                    "status": "running",
-                    "created-at": "2023-01-01T00:00:00Z",
-                    "updated-at": "2023-01-01T00:01:00Z",
-                    "started-at": "2023-01-01T00:01:00Z",
-                },
-            }
-        }
-
-        # 3. Read query run (completed state)
-        completed_response = Mock()
-        completed_response.json.return_value = {
-            "data": {
-                "id": "qr-workflow123",
-                "type": "query-runs",
-                "attributes": {
-                    "query": "SELECT * FROM runs WHERE status = 'completed'",
-                    "query-type": "filter",
-                    "status": "completed",
-                    "results-count": 15,
-                    "created-at": "2023-01-01T00:00:00Z",
-                    "updated-at": "2023-01-01T00:05:00Z",
-                    "started-at": "2023-01-01T00:01:00Z",
-                    "finished-at": "2023-01-01T00:05:00Z",
-                },
-            }
-        }
-
-        # 4. Get results
-        results_response = Mock()
-        results_response.json.return_value = {
-            "data": {
-                "results": [
-                    {"id": f"run-{i}", "status": "completed"} for i in range(15)
-                ],
-                "total_count": 15,
-                "truncated": False,
-            }
-        }
-
-        mock_transport.request.side_effect = [
-            create_response,
-            read_response,
-            completed_response,
-            results_response,
-        ]
-
-        # Execute workflow
-        options = QueryRunCreateOptions(
-            query="SELECT * FROM runs WHERE status = 'completed'",
-            query_type=QueryRunType.FILTER,
-            organization_name="test-org",
-        )
-
-        # 1. Create
-        query_run = client.query_runs.create("test-org", options)
-        assert query_run.status == QueryRunStatus.PENDING
-
-        # 2. Check status (running)
-        query_run = client.query_runs.read(query_run.id)
-        assert query_run.status == QueryRunStatus.RUNNING
-
-        # 3. Check status (completed)
-        query_run = client.query_runs.read(query_run.id)
-        assert query_run.status == QueryRunStatus.COMPLETED
-        assert query_run.results_count == 15
-
-        # 4. Get results
-        results = client.query_runs.results(query_run.id)
-        assert len(results.results) == 15
-        assert not results.truncated
-
-        # Verify all calls were made
-        assert mock_transport.request.call_count == 4

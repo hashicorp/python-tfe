@@ -160,16 +160,18 @@ from .project import (
 # ── Query Runs ────────────────────────────────────────────────────────────────
 from .query_run import (
     QueryRun,
+    QueryRunActions,
     QueryRunCancelOptions,
     QueryRunCreateOptions,
     QueryRunForceCancelOptions,
+    QueryRunIncludeOpt,
     QueryRunList,
     QueryRunListOptions,
-    QueryRunLogs,
     QueryRunReadOptions,
-    QueryRunResults,
+    QueryRunSource,
     QueryRunStatus,
-    QueryRunType,
+    QueryRunStatusTimestamps,
+    QueryRunVariable,
 )
 
 # ── Registry Modules / Providers ──────────────────────────────────────────────
@@ -465,16 +467,18 @@ __all__ = [
     "RegistryProviderVersionPermissions",
     # Query runs
     "QueryRun",
+    "QueryRunActions",
     "QueryRunCancelOptions",
     "QueryRunCreateOptions",
     "QueryRunForceCancelOptions",
+    "QueryRunIncludeOpt",
     "QueryRunList",
     "QueryRunListOptions",
-    "QueryRunLogs",
     "QueryRunReadOptions",
-    "QueryRunResults",
+    "QueryRunSource",
     "QueryRunStatus",
-    "QueryRunType",
+    "QueryRunStatusTimestamps",
+    "QueryRunVariable",
     # Core (from old types.py, now split)
     "Entitlements",
     "ExecutionMode",

@@ -11,18 +11,64 @@ class QueryRunStatus(str, Enum):
     """QueryRunStatus represents the status of a query run operation."""
 
     PENDING = "pending"
+    QUEUED = "queued"
     RUNNING = "running"
-    COMPLETED = "completed"
+    FINISHED = "finished"
     ERRORED = "errored"
     CANCELED = "canceled"
 
 
-class QueryRunType(str, Enum):
-    """QueryRunType represents different types of query runs."""
+class QueryRunSource(str, Enum):
+    """QueryRunSource represents the source of a query run."""
 
-    FILTER = "filter"
-    SEARCH = "search"
-    ANALYTICS = "analytics"
+    API = "tfe-api"
+
+
+class QueryRunActions(BaseModel):
+    """Actions available on a query run."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    is_cancelable: bool = Field(
+        ..., alias="is-cancelable", description="Whether the query run can be canceled"
+    )
+    is_force_cancelable: bool = Field(
+        ...,
+        alias="is-force-cancelable",
+        description="Whether the query run can be force canceled",
+    )
+
+
+class QueryRunStatusTimestamps(BaseModel):
+    """Timestamps for each status of a query run."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    pending_at: datetime | None = Field(
+        None, alias="pending-at", description="When the query run was created"
+    )
+    queued_at: datetime | None = Field(
+        None, alias="queued-at", description="When the query run was queued"
+    )
+    running_at: datetime | None = Field(
+        None, alias="running-at", description="When the query run started running"
+    )
+    finished_at: datetime | None = Field(
+        None, alias="finished-at", description="When the query run finished successfully"
+    )
+    errored_at: datetime | None = Field(
+        None, alias="errored-at", description="When the query run encountered an error"
+    )
+    canceled_at: datetime | None = Field(
+        None, alias="canceled-at", description="When the query run was canceled"
+    )
+
+
+class QueryRunVariable(BaseModel):
+    """A variable for a query run."""
+
+    key: str = Field(..., description="Variable key")
+    value: str = Field(..., description="Variable value")
 
 
 class QueryRun(BaseModel):
@@ -31,16 +77,12 @@ class QueryRun(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     id: str = Field(..., description="The unique identifier for this query run")
-    type: str = Field(default="query-runs", description="The type of this resource")
-    query: str = Field(..., description="The query string used for this run")
-    query_type: QueryRunType = Field(
-        ..., alias="query-type", description="The type of query being executed"
+    type: str = Field(default="queries", description="The type of this resource")
+    actions: QueryRunActions | None = Field(
+        None, description="Actions available on this query run"
     )
-    status: QueryRunStatus = Field(
-        ..., description="The current status of the query run"
-    )
-    results_count: int | None = Field(
-        None, alias="results-count", description="The number of results returned"
+    canceled_at: datetime | None = Field(
+        None, alias="canceled-at", description="When the query run was canceled"
     )
     created_at: datetime = Field(
         ..., alias="created-at", description="The time this query run was created"
@@ -48,34 +90,35 @@ class QueryRun(BaseModel):
     updated_at: datetime = Field(
         ..., alias="updated-at", description="The time this query run was last updated"
     )
-    started_at: datetime | None = Field(
-        None, alias="started-at", description="The time this query run was started"
+    source: QueryRunSource | str = Field(
+        ..., description="The source of the query run"
     )
-    finished_at: datetime | None = Field(
-        None, alias="finished-at", description="The time this query run was finished"
+    status: QueryRunStatus = Field(
+        ..., description="The current status of the query run"
     )
-    error_message: str | None = Field(
-        None, alias="error-message", description="Error message if the query run failed"
-    )
-    logs_url: str | None = Field(
-        None, alias="logs-url", description="URL to retrieve the query run logs"
-    )
-    results_url: str | None = Field(
-        None, alias="results-url", description="URL to retrieve the query run results"
-    )
-    workspace_id: str | None = Field(
+    status_timestamps: QueryRunStatusTimestamps | None = Field(
         None,
-        alias="workspace-id",
-        description="The workspace ID if query is workspace-scoped",
+        alias="status-timestamps",
+        description="Timestamps for each status of the query run",
     )
-    organization_name: str | None = Field(
-        None, alias="organization-name", description="The organization name"
+    variables: list[QueryRunVariable] | None = Field(
+        None, description="Run-specific variable values"
     )
-    timeout_seconds: int | None = Field(
-        None, alias="timeout-seconds", description="Query timeout in seconds"
+    log_read_url: str | None = Field(
+        None, alias="log-read-url", description="URL to retrieve the query run logs"
     )
-    max_results: int | None = Field(
-        None, alias="max-results", description="Maximum number of results to return"
+    # Relationships
+    workspace_id: str | None = Field(
+        None, description="The workspace ID associated with this query run"
+    )
+    configuration_version_id: str | None = Field(
+        None, description="The configuration version ID used for this query run"
+    )
+    created_by_id: str | None = Field(
+        None, description="The user ID who created this query run"
+    )
+    canceled_by_id: str | None = Field(
+        None, description="The user ID who canceled this query run"
     )
 
 
@@ -84,34 +127,29 @@ class QueryRunCreateOptions(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    query: str = Field(..., description="The query string to execute")
-    query_type: QueryRunType = Field(
-        ..., alias="query-type", description="The type of query being executed"
+    source: QueryRunSource | str = Field(
+        ..., description="The source of the query run"
     )
-    workspace_id: str | None = Field(
+    variables: list[QueryRunVariable] | None = Field(
+        None, description="Run-specific variable values"
+    )
+    workspace_id: str = Field(
+        ..., alias="workspace-id", description="The workspace ID to run the query against"
+    )
+    configuration_version_id: str | None = Field(
         None,
-        alias="workspace-id",
-        description="The workspace ID if query is workspace-scoped",
+        alias="configuration-version-id",
+        description="The configuration version ID to use for the query",
     )
-    organization_name: str | None = Field(
-        None, alias="organization-name", description="The organization name"
-    )
-    timeout_seconds: int | None = Field(
-        None,
-        alias="timeout-seconds",
-        description="Query timeout in seconds",
-        gt=0,
-        le=3600,
-    )
-    max_results: int | None = Field(
-        None,
-        alias="max-results",
-        description="Maximum number of results to return",
-        gt=0,
-        le=10000,
-    )
-    filters: dict[str, Any] | None = Field(
-        None, description="Additional filters to apply to the query"
+
+
+class QueryRunIncludeOpt(str, Enum):
+    """Options for including related resources in query run requests."""
+
+    CREATED_BY = "created-by"
+    CONFIGURATION_VERSION = "configuration-version"
+    CONFIGURATION_VERSION_INGRESS_ATTRIBUTES = (
+        "configuration_version.ingress_attributes"
     )
 
 
@@ -126,19 +164,8 @@ class QueryRunListOptions(BaseModel):
     page_size: int | None = Field(
         None, alias="page[size]", description="Number of items per page", ge=1, le=100
     )
-    query_type: QueryRunType | None = Field(
-        None, alias="filter[query-type]", description="Filter by query type"
-    )
-    status: QueryRunStatus | None = Field(
-        None, alias="filter[status]", description="Filter by status"
-    )
-    workspace_id: str | None = Field(
-        None, alias="filter[workspace-id]", description="Filter by workspace ID"
-    )
-    organization_name: str | None = Field(
-        None,
-        alias="filter[organization-name]",
-        description="Filter by organization name",
+    include: list[QueryRunIncludeOpt] | None = Field(
+        None, description="List of related resources to include"
     )
 
 
@@ -147,11 +174,8 @@ class QueryRunReadOptions(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    include_results: bool | None = Field(
-        None, alias="include[results]", description="Include query results in response"
-    )
-    include_logs: bool | None = Field(
-        None, alias="include[logs]", description="Include query logs in response"
+    include: list[QueryRunIncludeOpt] | None = Field(
+        None, description="List of related resources to include"
     )
 
 
@@ -160,7 +184,9 @@ class QueryRunCancelOptions(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    reason: str | None = Field(None, description="Reason for canceling the query run")
+    comment: str | None = Field(
+        None, description="Optional comment about why the query run was canceled"
+    )
 
 
 class QueryRunForceCancelOptions(BaseModel):
@@ -168,8 +194,8 @@ class QueryRunForceCancelOptions(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    reason: str | None = Field(
-        None, description="Reason for force canceling the query run"
+    comment: str | None = Field(
+        None, description="Optional comment about why the query run was force canceled"
     )
 
 
@@ -186,29 +212,3 @@ class QueryRunList(BaseModel):
     prev_page: str | None = Field(None, description="URL of the previous page")
     next_page: str | None = Field(None, description="URL of the next page")
     total_count: int | None = Field(None, description="Total number of items")
-
-
-class QueryRunResults(BaseModel):
-    """Represents the results of a query run."""
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    query_run_id: str = Field(..., description="The ID of the query run")
-    results: list[dict[str, Any]] = Field(
-        default_factory=list, description="The query results"
-    )
-    total_count: int = Field(..., description="Total number of results")
-    truncated: bool = Field(
-        False, description="Whether the results were truncated due to limits"
-    )
-
-
-class QueryRunLogs(BaseModel):
-    """Represents the logs of a query run."""
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    query_run_id: str = Field(..., description="The ID of the query run")
-    logs: str = Field(..., description="The query run logs")
-    log_level: str | None = Field(None, description="The log level")
-    timestamp: datetime | None = Field(None, description="When the logs were generated")

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import io
 from typing import Any
 
 from ..errors import (
-    InvalidOrgError,
     InvalidQueryRunIDError,
+    InvalidWorkspaceIDError,
 )
 from ..models.query_run import (
     QueryRun,
@@ -13,9 +14,7 @@ from ..models.query_run import (
     QueryRunForceCancelOptions,
     QueryRunList,
     QueryRunListOptions,
-    QueryRunLogs,
     QueryRunReadOptions,
-    QueryRunResults,
 )
 from ..utils import valid_string_id
 from ._base import _Service
@@ -25,11 +24,11 @@ class QueryRuns(_Service):
     """Query Runs API for Terraform Enterprise."""
 
     def list(
-        self, organization: str, options: QueryRunListOptions | None = None
+        self, workspace_id: str, options: QueryRunListOptions | None = None
     ) -> QueryRunList:
-        """List query runs for the given organization."""
-        if not valid_string_id(organization):
-            raise InvalidOrgError()
+        """List query runs for the given workspace."""
+        if not valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
 
         params = (
             options.model_dump(by_alias=True, exclude_none=True) if options else None
@@ -37,7 +36,7 @@ class QueryRuns(_Service):
 
         r = self.t.request(
             "GET",
-            f"/api/v2/organizations/{organization}/query-runs",
+            f"/api/v2/workspaces/{workspace_id}/queries",
             params=params,
         )
 
@@ -60,22 +59,36 @@ class QueryRuns(_Service):
             total_count=pagination.get("total-count"),
         )
 
-    def create(self, organization: str, options: QueryRunCreateOptions) -> QueryRun:
-        """Create a new query run for the given organization."""
-        if not valid_string_id(organization):
-            raise InvalidOrgError()
-
+    def create(self, options: QueryRunCreateOptions) -> QueryRun:
+        """Create a new query run."""
         attrs = options.model_dump(by_alias=True, exclude_none=True)
+        
+        # Build relationships
+        relationships: dict[str, Any] = {}
+        
+        if workspace_id := attrs.pop("workspace-id", None):
+            relationships["workspace"] = {
+                "data": {"type": "workspaces", "id": workspace_id}
+            }
+        
+        if config_version_id := attrs.pop("configuration-version-id", None):
+            relationships["configuration-version"] = {
+                "data": {"type": "configuration-versions", "id": config_version_id}
+            }
+        
         body: dict[str, Any] = {
             "data": {
+                "type": "queries",
                 "attributes": attrs,
-                "type": "query-runs",
             }
         }
+        
+        if relationships:
+            body["data"]["relationships"] = relationships
 
         r = self.t.request(
             "POST",
-            f"/api/v2/organizations/{organization}/query-runs",
+            "/api/v2/queries",
             json_body=body,
         )
 
@@ -91,7 +104,7 @@ class QueryRuns(_Service):
         if not valid_string_id(query_run_id):
             raise InvalidQueryRunIDError()
 
-        r = self.t.request("GET", f"/api/v2/query-runs/{query_run_id}")
+        r = self.t.request("GET", f"/api/v2/queries/{query_run_id}")
 
         jd = r.json()
         data = jd.get("data", {})
@@ -109,7 +122,7 @@ class QueryRuns(_Service):
 
         params = options.model_dump(by_alias=True, exclude_none=True)
 
-        r = self.t.request("GET", f"/api/v2/query-runs/{query_run_id}", params=params)
+        r = self.t.request("GET", f"/api/v2/queries/{query_run_id}", params=params)
 
         jd = r.json()
         data = jd.get("data", {})
@@ -118,99 +131,66 @@ class QueryRuns(_Service):
 
         return QueryRun.model_validate(attrs)
 
-    def logs(self, query_run_id: str) -> QueryRunLogs:
-        """Retrieve the logs for a query run."""
+    def logs(self, query_run_id: str) -> io.IOBase:
+        """Retrieve the logs for a query run.
+        
+        Returns an IO stream that can be read to get the log content.
+        """
         if not valid_string_id(query_run_id):
             raise InvalidQueryRunIDError()
 
-        r = self.t.request("GET", f"/api/v2/query-runs/{query_run_id}/logs")
+        # First get the query run to retrieve the log read URL
+        query_run = self.read(query_run_id)
+        
+        if not query_run.log_read_url:
+            raise ValueError(f"Query run {query_run_id} does not have a log URL")
 
-        # Handle both JSON and plain text responses
-        content_type = r.headers.get("content-type", "").lower()
-
-        if "application/json" in content_type:
-            jd = r.json()
-            return QueryRunLogs.model_validate(jd.get("data", {}))
-        else:
-            # Plain text logs
-            return QueryRunLogs(
-                query_run_id=query_run_id,
-                logs=r.text,
-                log_level="info",
-                timestamp=None,
-            )
-
-    def results(self, query_run_id: str) -> QueryRunResults:
-        """Retrieve the results for a query run."""
-        if not valid_string_id(query_run_id):
-            raise InvalidQueryRunIDError()
-
-        r = self.t.request("GET", f"/api/v2/query-runs/{query_run_id}/results")
-
-        jd = r.json()
-        data = jd.get("data", {})
-
-        return QueryRunResults(
-            query_run_id=query_run_id,
-            results=data.get("results", []),
-            total_count=data.get("total_count", 0),
-            truncated=data.get("truncated", False),
-        )
+        # Fetch the logs from the URL (absolute URLs are handled by _build_url)
+        r = self.t.request("GET", query_run.log_read_url)
+        
+        # Return the content as a BytesIO stream
+        return io.BytesIO(r.content)
 
     def cancel(
         self, query_run_id: str, options: QueryRunCancelOptions | None = None
-    ) -> QueryRun:
-        """Cancel a query run."""
+    ) -> None:
+        """Cancel a query run.
+        
+        Returns 202 on success with empty body.
+        """
         if not valid_string_id(query_run_id):
             raise InvalidQueryRunIDError()
 
-        attrs = options.model_dump(by_alias=True, exclude_none=True) if options else {}
+        body: dict[str, Any] | None = None
+        if options:
+            attrs = options.model_dump(by_alias=True, exclude_none=True)
+            if attrs:
+                body = {"data": {"attributes": attrs}}
 
-        body: dict[str, Any] = {
-            "data": {
-                "attributes": attrs,
-                "type": "query-runs",
-            }
-        }
-
-        r = self.t.request(
+        self.t.request(
             "POST",
-            f"/api/v2/query-runs/{query_run_id}/actions/cancel",
+            f"/api/v2/queries/{query_run_id}/actions/cancel",
             json_body=body,
         )
-
-        jd = r.json()
-        data = jd.get("data", {})
-        attrs = data.get("attributes", {})
-        attrs["id"] = data.get("id")
-
-        return QueryRun.model_validate(attrs)
 
     def force_cancel(
         self, query_run_id: str, options: QueryRunForceCancelOptions | None = None
-    ) -> QueryRun:
-        """Force cancel a query run."""
+    ) -> None:
+        """Force cancel a query run.
+        
+        Returns 202 on success with empty body.
+        """
         if not valid_string_id(query_run_id):
             raise InvalidQueryRunIDError()
 
-        attrs = options.model_dump(by_alias=True, exclude_none=True) if options else {}
+        body: dict[str, Any] | None = None
+        if options:
+            attrs = options.model_dump(by_alias=True, exclude_none=True)
+            if attrs:
+                body = {"data": {"attributes": attrs}}
 
-        body: dict[str, Any] = {
-            "data": {
-                "attributes": attrs,
-                "type": "query-runs",
-            }
-        }
-
-        r = self.t.request(
+        self.t.request(
             "POST",
-            f"/api/v2/query-runs/{query_run_id}/actions/force-cancel",
+            f"/api/v2/queries/{query_run_id}/actions/force-cancel",
             json_body=body,
         )
-
-        jd = r.json()
-        data = jd.get("data", {})
-        attrs = data.get("attributes", {})
-        attrs["id"] = data.get("id")
-
-        return QueryRun.model_validate(attrs)
