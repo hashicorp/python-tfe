@@ -23,7 +23,7 @@ from .resources.projects import Projects
 from .resources.query_run import QueryRuns
 from .resources.registry_module import RegistryModules
 from .resources.registry_provider import RegistryProviders
-from .resources.reserved_tag_key import ReservedTagKey
+from .resources.reserved_tag_key import ReservedTagKeys
 from .resources.run import Runs
 from .resources.run_event import RunEvents
 from .resources.run_task import RunTasks
@@ -97,7 +97,7 @@ class TFEClient:
         self.ssh_keys = SSHKeys(self._transport)
 
         # Reserved Tag Key
-        self.reserved_tag_key = ReservedTagKey(self._transport)
+        self.reserved_tag_key = ReservedTagKeys(self._transport)
 
     def close(self) -> None:
         try:

@@ -220,7 +220,6 @@ from .registry_provider import (
 from .reserved_tag_key import (
     ReservedTagKey,
     ReservedTagKeyCreateOptions,
-    ReservedTagKeyList,
     ReservedTagKeyListOptions,
     ReservedTagKeyUpdateOptions,
 )
@@ -383,7 +382,6 @@ __all__ = [
     # Reserved tag keys
     "ReservedTagKey",
     "ReservedTagKeyCreateOptions",
-    "ReservedTagKeyList",
     "ReservedTagKeyListOptions",
     "ReservedTagKeyUpdateOptions",
     # Agent & pools

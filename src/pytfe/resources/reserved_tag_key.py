@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Any
 
 from ..errors import (
@@ -7,11 +8,8 @@ from ..errors import (
     ValidationError,
 )
 from ..models.reserved_tag_key import (
-    ReservedTagKey as ReservedTagKeyModel,
-)
-from ..models.reserved_tag_key import (
+    ReservedTagKey,
     ReservedTagKeyCreateOptions,
-    ReservedTagKeyList,
     ReservedTagKeyListOptions,
     ReservedTagKeyUpdateOptions,
 )
@@ -19,12 +17,12 @@ from ..utils import valid_string_id
 from ._base import _Service
 
 
-class ReservedTagKey(_Service):
+class ReservedTagKeys(_Service):
     """Reserved Tag Key API for Terraform Enterprise."""
 
     def list(
         self, organization: str, options: ReservedTagKeyListOptions | None = None
-    ) -> ReservedTagKeyList:
+    ) -> Iterator[ReservedTagKey]:
         """List reserved tag keys for the given organization."""
         if not valid_string_id(organization):
             raise InvalidOrgError()
@@ -32,33 +30,13 @@ class ReservedTagKey(_Service):
         params = (
             options.model_dump(by_alias=True, exclude_none=True) if options else None
         )
-
-        r = self.t.request(
-            "GET",
-            f"/api/v2/organizations/{organization}/reserved-tag-keys",
-            params=params,
-        )
-
-        jd = r.json()
-        items = []
-        meta = jd.get("meta", {})
-        pagination = meta.get("pagination", {})
-
-        for d in jd.get("data", []):
-            items.append(self._parse_reserved_tag_key(d))
-
-        return ReservedTagKeyList(
-            items=items,
-            current_page=pagination.get("current-page"),
-            total_pages=pagination.get("total-pages"),
-            prev_page=pagination.get("prev-page"),
-            next_page=pagination.get("next-page"),
-            total_count=pagination.get("total-count"),
-        )
+        path = f"/api/v2/organizations/{organization}/reserved-tag-keys"
+        for item in self._list(path, params=params):
+            yield self._parse_reserved_tag_key(item)
 
     def create(
         self, organization: str, options: ReservedTagKeyCreateOptions
-    ) -> ReservedTagKeyModel:
+    ) -> ReservedTagKey:
         """Create a new reserved tag key for the given organization."""
         if not valid_string_id(organization):
             raise InvalidOrgError()
@@ -82,20 +60,9 @@ class ReservedTagKey(_Service):
 
         return self._parse_reserved_tag_key(data)
 
-    def read(self, reserved_tag_key_id: str) -> ReservedTagKeyModel:
-        """Read a reserved tag key by its ID."""
-        if not valid_string_id(reserved_tag_key_id):
-            raise ValidationError("Invalid reserved tag key ID")
-
-        # Note: Based on the API docs, there's no explicit GET endpoint for individual reserved tag keys
-        # This method would need to be implemented if such an endpoint exists
-        raise NotImplementedError(
-            "Individual reserved tag key read is not supported by the API"
-        )
-
     def update(
         self, reserved_tag_key_id: str, options: ReservedTagKeyUpdateOptions
-    ) -> ReservedTagKeyModel:
+    ) -> ReservedTagKey:
         """Update a reserved tag key."""
         if not valid_string_id(reserved_tag_key_id):
             raise ValidationError("Invalid reserved tag key ID")
@@ -125,10 +92,10 @@ class ReservedTagKey(_Service):
             raise ValidationError("Invalid reserved tag key ID")
 
         self.t.request("DELETE", f"/api/v2/reserved-tag-keys/{reserved_tag_key_id}")
-        # DELETE returns 204 No Content on success
+        return None
 
-    def _parse_reserved_tag_key(self, data: dict[str, Any]) -> ReservedTagKeyModel:
+    def _parse_reserved_tag_key(self, data: dict[str, Any]) -> ReservedTagKey:
         """Parse reserved tag key data from API response."""
         attrs = data.get("attributes", {})
         attrs["id"] = data.get("id")
-        return ReservedTagKeyModel.model_validate(attrs)
+        return ReservedTagKey.model_validate(attrs)

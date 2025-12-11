@@ -53,9 +53,7 @@ def main():
     try:
         # 1. List existing reserved tag keys
         print("\n1. Listing reserved tag keys...")
-        reserved_tag_keys = client.reserved_tag_key.list(TFE_ORG)
-        print(f"Found {len(reserved_tag_keys.items)} reserved tag keys:")
-        for rtk in reserved_tag_keys.items:
+        for rtk in client.reserved_tag_key.list(TFE_ORG):
             print(
                 f"  - ID: {rtk.id}, Key: {rtk.key}, Disable Overrides: {rtk.disable_overrides}"
             )
@@ -87,16 +85,16 @@ def main():
 
         # 5. Verify deletion by listing again
         print("\n5. Verifying deletion...")
-        reserved_tag_keys_after = client.reserved_tag_key.list(TFE_ORG)
-        print(f"Reserved tag keys after deletion: {len(reserved_tag_keys_after.items)}")
+        reserved_tag_keys_after = list(client.reserved_tag_key.list(TFE_ORG))
+        print(f"Reserved tag keys after deletion: {len(reserved_tag_keys_after)}")
 
         # 6. Demonstrate pagination with options
         print("\n6. Demonstrating pagination options...")
-        list_options = ReservedTagKeyListOptions(page_size=5, page_number=1)
-        paginated_rtks = client.reserved_tag_key.list(TFE_ORG, list_options)
-        print(f"Page 1 with page size 5: {len(paginated_rtks.items)} keys")
-        print(f"Total pages: {paginated_rtks.total_pages}")
-        print(f"Total count: {paginated_rtks.total_count}")
+        list_options = ReservedTagKeyListOptions(page_size=5)
+        for rtk in client.reserved_tag_key.list(TFE_ORG, list_options):
+            print(
+                f"  - ID: {rtk.id}, Key: {rtk.key}, Disable Overrides: {rtk.disable_overrides}"
+            )
 
         print("\n Reserved Tag Keys API example completed successfully!")
 

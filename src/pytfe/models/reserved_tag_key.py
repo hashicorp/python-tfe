@@ -65,24 +65,6 @@ class ReservedTagKeyListOptions(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    page_number: int | None = Field(
-        None, alias="page[number]", description="Page number to retrieve", ge=1
-    )
     page_size: int | None = Field(
         None, alias="page[size]", description="Number of items per page", ge=1, le=100
     )
-
-
-class ReservedTagKeyList(BaseModel):
-    """Represents a paginated list of reserved tag keys."""
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    items: list[ReservedTagKey] = Field(
-        default_factory=list, description="List of reserved tag keys"
-    )
-    current_page: int | None = Field(None, description="Current page number")
-    total_pages: int | None = Field(None, description="Total number of pages")
-    prev_page: str | None = Field(None, description="URL of the previous page")
-    next_page: str | None = Field(None, description="URL of the next page")
-    total_count: int | None = Field(None, description="Total number of items")
