@@ -71,7 +71,6 @@ from .oauth_client import (
 )
 from .oauth_token import (
     OAuthToken,
-    OAuthTokenList,
     OAuthTokenListOptions,
     OAuthTokenUpdateOptions,
 )
@@ -373,7 +372,6 @@ __all__ = [
     "ServiceProviderType",
     # OAuth token
     "OAuthToken",
-    "OAuthTokenList",
     "OAuthTokenListOptions",
     "OAuthTokenUpdateOptions",
     # SSH keys

@@ -15,7 +15,6 @@ class OAuthToken(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     id: str = Field(..., description="OAuth token ID")
-    uid: str = Field(..., description="OAuth token UID")
     created_at: datetime = Field(..., description="Creation timestamp")
     has_ssh_key: bool = Field(..., description="Whether the token has an SSH key")
     service_provider_user: str = Field(..., description="Service provider user")
@@ -26,26 +25,12 @@ class OAuthToken(BaseModel):
     )
 
 
-class OAuthTokenList(BaseModel):
-    """List of OAuth tokens with pagination information."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    items: list[OAuthToken] = Field(default_factory=list, description="OAuth tokens")
-    current_page: int | None = Field(None, description="Current page number")
-    prev_page: int | None = Field(None, description="Previous page number")
-    next_page: int | None = Field(None, description="Next page number")
-    total_pages: int | None = Field(None, description="Total number of pages")
-    total_count: int | None = Field(None, description="Total count of items")
-
-
 class OAuthTokenListOptions(BaseModel):
     """Options for listing OAuth tokens."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
-    page_number: int | None = Field(None, description="Page number")
-    page_size: int | None = Field(None, description="Page size")
+    page_size: int | None = Field(None, alias="page[size]", description="Page size")
 
 
 class OAuthTokenUpdateOptions(BaseModel):
@@ -63,7 +48,6 @@ try:
     from .oauth_client import OAuthClient  # noqa: F401
 
     OAuthToken.model_rebuild()
-    OAuthTokenList.model_rebuild()
 except ImportError:
     # If OAuthClient is not available, create a dummy class
     pass

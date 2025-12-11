@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import datetime
 from typing import Any
 from urllib.parse import quote
@@ -7,11 +8,10 @@ from urllib.parse import quote
 from ..errors import ERR_INVALID_OAUTH_TOKEN_ID, ERR_INVALID_ORG
 from ..models.oauth_token import (
     OAuthToken,
-    OAuthTokenList,
     OAuthTokenListOptions,
     OAuthTokenUpdateOptions,
 )
-from ..utils import encode_query, valid_string_id
+from ..utils import valid_string_id
 from ._base import _Service
 
 
@@ -20,7 +20,7 @@ class OAuthTokens(_Service):
 
     def list(
         self, organization: str, options: OAuthTokenListOptions | None = None
-    ) -> OAuthTokenList:
+    ) -> Iterator[OAuthToken]:
         """List all the OAuth tokens for a given organization."""
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
@@ -29,37 +29,11 @@ class OAuthTokens(_Service):
         params = {}
 
         if options:
-            if options.page_number:
-                params["page[number]"] = str(options.page_number)
             if options.page_size:
                 params["page[size]"] = str(options.page_size)
 
-        query_string = encode_query(params)
-        full_path = f"{path}{query_string}"
-
-        response = self.t.request("GET", full_path)
-        data = response.json()
-
-        tokens = []
-        if "data" in data:
-            for item in data["data"]:
-                tokens.append(self._parse_oauth_token(item))
-
-        # Parse pagination metadata
-        pagination = {}
-        if "meta" in data:
-            meta = data["meta"]
-            if "pagination" in meta:
-                page_info = meta["pagination"]
-                pagination = {
-                    "current_page": page_info.get("current-page"),
-                    "prev_page": page_info.get("prev-page"),
-                    "next_page": page_info.get("next-page"),
-                    "total_pages": page_info.get("total-pages"),
-                    "total_count": page_info.get("total-count"),
-                }
-
-        return OAuthTokenList(items=tokens, **pagination)
+        for item in self._list(path, params=params):
+            yield self._parse_oauth_token(item)
 
     def read(self, oauth_token_id: str) -> OAuthToken:
         """Read an OAuth token by its ID."""
@@ -128,7 +102,6 @@ class OAuthTokens(_Service):
 
         return OAuthToken(
             id=data.get("id", ""),
-            uid=attributes.get("uid", ""),
             created_at=created_at,
             has_ssh_key=attributes.get("has-ssh-key", False),
             service_provider_user=attributes.get("service-provider-user", ""),

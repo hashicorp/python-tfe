@@ -5,7 +5,7 @@ This test suite covers all OAuth token methods including list, read, update, and
 """
 
 from datetime import datetime
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -35,7 +35,6 @@ class TestOAuthTokenParsing:
         data = {
             "id": "ot-test123",
             "attributes": {
-                "uid": "uid-test123",
                 "created-at": "2023-01-01T00:00:00Z",
                 "has-ssh-key": False,
                 "service-provider-user": "testuser",
@@ -46,7 +45,6 @@ class TestOAuthTokenParsing:
         result = oauth_tokens_service._parse_oauth_token(data)
 
         assert result.id == "ot-test123"
-        assert result.uid == "uid-test123"
         assert isinstance(result.created_at, datetime)
         assert result.has_ssh_key is False
         assert result.service_provider_user == "testuser"
@@ -57,7 +55,6 @@ class TestOAuthTokenParsing:
         data = {
             "id": "ot-test123",
             "attributes": {
-                "uid": "uid-test123",
                 "created-at": "2023-01-01T00:00:00Z",
                 "has-ssh-key": True,
                 "service-provider-user": "testuser",
@@ -84,7 +81,6 @@ class TestOAuthTokenParsing:
         data = {
             "id": "ot-test123",
             "attributes": {
-                "uid": "uid-test123",
                 "created-at": "2023-01-01T00:00:00Z",
                 "has-ssh-key": False,
                 "service-provider-user": "testuser",
@@ -119,7 +115,6 @@ class TestOAuthTokens:
                 {
                     "id": "ot-test1",
                     "attributes": {
-                        "uid": "uid-test1",
                         "created-at": "2023-01-01T00:00:00Z",
                         "has-ssh-key": False,
                         "service-provider-user": "testuser1",
@@ -129,7 +124,6 @@ class TestOAuthTokens:
                 {
                     "id": "ot-test2",
                     "attributes": {
-                        "uid": "uid-test2",
                         "created-at": "2023-01-02T00:00:00Z",
                         "has-ssh-key": True,
                         "service-provider-user": "testuser2",
@@ -149,38 +143,33 @@ class TestOAuthTokens:
         }
         mock_transport.request.return_value = mock_response
 
-        result = oauth_tokens_service.list("test-org")
+        result = list(oauth_tokens_service.list("test-org"))
 
-        mock_transport.request.assert_called_once_with(
-            "GET", "/api/v2/organizations/test-org/oauth-tokens"
-        )
-        assert len(result.items) == 2
-        assert result.items[0].id == "ot-test1"
-        assert result.items[1].id == "ot-test2"
-        assert result.current_page == 1
-        assert result.total_count == 2
+        assert mock_transport.request.call_count == 1
+        assert len(result) == 2
+        assert result[0].id == "ot-test1"
+        assert result[1].id == "ot-test2"
 
     def test_list_oauth_tokens_with_options(self, oauth_tokens_service, mock_transport):
         """Test listing OAuth tokens with pagination options."""
-        mock_response = Mock()
-        mock_response.json.return_value = {
-            "data": [],
-            "meta": {"pagination": {"current-page": 2}},
-        }
-        mock_transport.request.return_value = mock_response
+        options = OAuthTokenListOptions(page_size=50)
 
-        options = OAuthTokenListOptions(page_number=2, page_size=50)
-        oauth_tokens_service.list("test-org", options)
+        with patch.object(oauth_tokens_service, "_list") as mock_list:
+            mock_list.return_value = []
 
-        mock_transport.request.assert_called_once_with(
-            "GET",
-            "/api/v2/organizations/test-org/oauth-tokens?page[number]=2&page[size]=50",
-        )
+            list(oauth_tokens_service.list("test-org", options))
+
+            expected_params = {
+                "page[size]": "50",
+            }
+            mock_list.assert_called_once_with(
+                "/api/v2/organizations/test-org/oauth-tokens", params=expected_params
+            )
 
     def test_list_oauth_tokens_invalid_org(self, oauth_tokens_service):
         """Test listing OAuth tokens with invalid organization ID."""
         with pytest.raises(ValueError, match=ERR_INVALID_ORG):
-            oauth_tokens_service.list("")
+            list(oauth_tokens_service.list(""))
 
     def test_read_oauth_token_success(self, oauth_tokens_service, mock_transport):
         """Test reading an OAuth token successfully."""
@@ -189,7 +178,6 @@ class TestOAuthTokens:
             "data": {
                 "id": "ot-test123",
                 "attributes": {
-                    "uid": "uid-test123",
                     "created-at": "2023-01-01T00:00:00Z",
                     "has-ssh-key": False,
                     "service-provider-user": "testuser",
@@ -205,7 +193,6 @@ class TestOAuthTokens:
             "GET", "/api/v2/oauth-tokens/ot-test123"
         )
         assert result.id == "ot-test123"
-        assert result.uid == "uid-test123"
 
     def test_read_oauth_token_invalid_id(self, oauth_tokens_service):
         """Test reading an OAuth token with invalid ID."""
@@ -219,7 +206,6 @@ class TestOAuthTokens:
             "data": {
                 "id": "ot-test123",
                 "attributes": {
-                    "uid": "uid-test123",
                     "created-at": "2023-01-01T00:00:00Z",
                     "has-ssh-key": True,
                     "service-provider-user": "testuser",
@@ -253,7 +239,6 @@ class TestOAuthTokens:
             "data": {
                 "id": "ot-test123",
                 "attributes": {
-                    "uid": "uid-test123",
                     "created-at": "2023-01-01T00:00:00Z",
                     "has-ssh-key": False,
                     "service-provider-user": "testuser",
@@ -308,9 +293,8 @@ class TestOAuthTokenValidation:
 
     def test_oauth_token_list_options(self, oauth_tokens_service):
         """Test OAuth token list options creation."""
-        options = OAuthTokenListOptions(page_number=1, page_size=25)
+        options = OAuthTokenListOptions(page_size=25)
 
-        assert options.page_number == 1
         assert options.page_size == 25
 
     def test_oauth_token_update_options(self, oauth_tokens_service):

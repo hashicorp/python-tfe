@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from pytfe import TFEClient, TFEConfig
 from pytfe.errors import NotFound
-from pytfe.models import OAuthTokenListOptions, OAuthTokenUpdateOptions
+from pytfe.models import OAuthTokenUpdateOptions
 
 
 def main():
@@ -55,34 +55,18 @@ def main():
     # =====================================================
     print("\n1. Testing list() function:")
     try:
-        # Test basic list without options
-        token_list = client.oauth_tokens.list(organization_name)
-        print(f"Found {len(token_list.items)} OAuth tokens")
-
-        # Show token details
-        for i, token in enumerate(token_list.items[:3], 1):  # Show first 3
-            print(f"{i}. Token ID: {token.id}")
-            print(f"UID: {token.uid}")
+        for token in client.oauth_tokens.list(organization_name):
+            print(f"Token ID: {token.id}")
             print(f"Service Provider User: {token.service_provider_user}")
             print(f"Has SSH Key: {token.has_ssh_key}")
             print(f"Created: {token.created_at}")
             if token.oauth_client:
                 print(f"OAuth Client: {token.oauth_client.id}")
 
-        # Store first token for subsequent tests
-        if token_list.items:
-            test_token_id = token_list.items[0].id
-            print(f"\n   Using token {test_token_id} for subsequent tests")
-
-        # Test list with options
-        print("\nTesting list() with pagination options:")
-        options = OAuthTokenListOptions(page_size=10, page_number=1)
-        token_list_with_options = client.oauth_tokens.list(organization_name, options)
-        print(f"Found {len(token_list_with_options.items)} tokens with options")
-        if token_list_with_options.current_page:
-            print(f"Current page: {token_list_with_options.current_page}")
-        if token_list_with_options.total_count:
-            print(f"Total count: {token_list_with_options.total_count}")
+            # Store first token for subsequent tests
+            if token and not test_token_id:
+                test_token_id = token.id
+                print(f"\n   Using token {test_token_id} for subsequent tests \n")
 
     except NotFound:
         print(
@@ -99,7 +83,6 @@ def main():
         try:
             token = client.oauth_tokens.read(test_token_id)
             print(f"Read OAuth token: {token.id}")
-            print(f"UID: {token.uid}")
             print(f"Service Provider User: {token.service_provider_user}")
             print(f"Has SSH Key: {token.has_ssh_key}")
             print(f"Created: {token.created_at}")
