@@ -57,44 +57,40 @@ def main():
         else:
             for pe in pe_list.items:
                 print(f"- ID: {pe.id}")
-                print(f"  Status: {pe.status}")
-                print(f"  Policy Kind: {pe.policy_kind}")
+                print(f"Status: {pe.status}")
+                print(f"Policy Kind: {pe.policy_kind}")
 
                 if pe.result_count:
                     print("  Result Count:")
                     if pe.result_count.passed is not None:
-                        print(f"    - Passed: {pe.result_count.passed}")
+                        print(f"- Passed: {pe.result_count.passed}")
                     if pe.result_count.advisory_failed is not None:
-                        print(
-                            f"    - Advisory Failed: {pe.result_count.advisory_failed}"
-                        )
+                        print(f"- Advisory Failed: {pe.result_count.advisory_failed}")
                     if pe.result_count.mandatory_failed is not None:
-                        print(
-                            f"    - Mandatory Failed: {pe.result_count.mandatory_failed}"
-                        )
+                        print(f"- Mandatory Failed: {pe.result_count.mandatory_failed}")
                     if pe.result_count.errored is not None:
-                        print(f"    - Errored: {pe.result_count.errored}")
+                        print(f"- Errored: {pe.result_count.errored}")
 
                 if pe.status_timestamp:
                     print("  Status Timestamps:")
                     if pe.status_timestamp.passed_at:
-                        print(f"    - Passed At: {pe.status_timestamp.passed_at}")
+                        print(f"- Passed At: {pe.status_timestamp.passed_at}")
                     if pe.status_timestamp.failed_at:
-                        print(f"    - Failed At: {pe.status_timestamp.failed_at}")
+                        print(f"- Failed At: {pe.status_timestamp.failed_at}")
                     if pe.status_timestamp.running_at:
-                        print(f"    - Running At: {pe.status_timestamp.running_at}")
+                        print(f"- Running At: {pe.status_timestamp.running_at}")
                     if pe.status_timestamp.canceled_at:
-                        print(f"    - Canceled At: {pe.status_timestamp.canceled_at}")
+                        print(f"- Canceled At: {pe.status_timestamp.canceled_at}")
                     if pe.status_timestamp.errored_at:
-                        print(f"    - Errored At: {pe.status_timestamp.errored_at}")
+                        print(f"- Errored At: {pe.status_timestamp.errored_at}")
 
                 if pe.task_stage:
-                    print(f"  Task Stage: {pe.task_stage.id} ({pe.task_stage.type})")
+                    print(f"Task Stage: {pe.task_stage.id} ({pe.task_stage.type})")
 
                 if pe.created_at:
-                    print(f"  Created At: {pe.created_at}")
+                    print(f"Created At: {pe.created_at}")
                 if pe.updated_at:
-                    print(f"  Updated At: {pe.updated_at}")
+                    print(f"Updated At: {pe.updated_at}")
 
                 print()
 

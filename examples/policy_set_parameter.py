@@ -62,10 +62,10 @@ def main():
         # Sensitive parameters will have masked values
         value_display = "***SENSITIVE***" if param.sensitive else param.value
         print(f"- {param.id}")
-        print(f"  Key: {param.key}")
-        print(f"  Value: {value_display}")
-        print(f"  Category: {param.category.value}")
-        print(f"  Sensitive: {param.sensitive}")
+        print(f"Key: {param.key}")
+        print(f"Value: {value_display}")
+        print(f"Category: {param.category.value}")
+        print(f"Sensitive: {param.sensitive}")
         print()
 
     if param_count == 0:
@@ -84,11 +84,11 @@ def main():
         param = client.policy_set_parameters.read(args.policy_set_id, args.parameter_id)
 
         print(f"Parameter ID: {param.id}")
-        print(f"  Key: {param.key}")
+        print(f"Key: {param.key}")
         value_display = "***SENSITIVE***" if param.sensitive else param.value
-        print(f"  Value: {value_display}")
-        print(f"  Category: {param.category.value}")
-        print(f"  Sensitive: {param.sensitive}")
+        print(f"Value: {value_display}")
+        print(f"Category: {param.category.value}")
+        print(f"Sensitive: {param.sensitive}")
 
     # 3) Update a parameter (if --update flag is provided)
     if args.update:
@@ -103,12 +103,12 @@ def main():
             args.policy_set_id, args.parameter_id
         )
         print("Before update:")
-        print(f"  Key: {current_param.key}")
+        print(f"Key: {current_param.key}")
         value_display = (
             "***SENSITIVE***" if current_param.sensitive else current_param.value
         )
-        print(f"  Value: {value_display}")
-        print(f"  Sensitive: {current_param.sensitive}")
+        print(f"Value: {value_display}")
+        print(f"Sensitive: {current_param.sensitive}")
 
         # Update the parameter
         update_options = PolicySetParameterUpdateOptions(
@@ -122,12 +122,12 @@ def main():
         )
 
         print("\nAfter update:")
-        print(f"  Key: {updated_param.key}")
+        print(f"Key: {updated_param.key}")
         value_display = (
             "***SENSITIVE***" if updated_param.sensitive else updated_param.value
         )
-        print(f"  Value: {value_display}")
-        print(f"  Sensitive: {updated_param.sensitive}")
+        print(f"Value: {value_display}")
+        print(f"Sensitive: {updated_param.sensitive}")
 
     # 4) Delete a parameter (if --delete flag is provided)
     if args.delete:
@@ -143,15 +143,15 @@ def main():
                 args.policy_set_id, args.parameter_id
             )
             print("Parameter to delete:")
-            print(f"  ID: {param_to_delete.id}")
-            print(f"  Key: {param_to_delete.key}")
+            print(f"ID: {param_to_delete.id}")
+            print(f"Key: {param_to_delete.key}")
             value_display = (
                 "***SENSITIVE***"
                 if param_to_delete.sensitive
                 else param_to_delete.value
             )
-            print(f"  Value: {value_display}")
-            print(f"  Sensitive: {param_to_delete.sensitive}")
+            print(f"Value: {value_display}")
+            print(f"Sensitive: {param_to_delete.sensitive}")
         except Exception as e:
             print(f"Error reading parameter: {e}")
             return
@@ -193,11 +193,11 @@ def main():
         )
 
         print(f"Created parameter: {new_param.id}")
-        print(f"  Key: {new_param.key}")
+        print(f"Key: {new_param.key}")
         value_display = "***SENSITIVE***" if new_param.sensitive else new_param.value
-        print(f"  Value: {value_display}")
-        print(f"  Category: {new_param.category.value}")
-        print(f"  Sensitive: {new_param.sensitive}")
+        print(f"Value: {value_display}")
+        print(f"Category: {new_param.category.value}")
+        print(f"Sensitive: {new_param.sensitive}")
 
         # List again to show the new parameter
         _print_header("Listing parameters after creation")

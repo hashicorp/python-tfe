@@ -89,13 +89,13 @@ def main():
 
         # Test basic list without options
         oauth_clients = list(client.oauth_clients.list(organization_name))
-        print(f"    Found {len(oauth_clients)} OAuth clients")
+        print(f"Found {len(oauth_clients)} OAuth clients")
 
         for i, oauth_client in enumerate(oauth_clients[:3], 1):
-            print(f"   {i}. {oauth_client.id} - {oauth_client.service_provider}")
+            print(f"{i}. {oauth_client.id} - {oauth_client.service_provider}")
             if oauth_client.name:
-                print(f"      Name: {oauth_client.name}")
-            print(f"      Service Provider: {oauth_client.service_provider_name}")
+                print(f"Name: {oauth_client.name}")
+            print(f"Service Provider: {oauth_client.service_provider_name}")
 
         # Test list with options
         if len(oauth_clients) > 0:
@@ -110,21 +110,19 @@ def main():
             oauth_clients_with_options = list(
                 client.oauth_clients.list(organization_name, options)
             )
-            print(
-                f"    Found {len(oauth_clients_with_options)} OAuth clients with options"
-            )
+            print(f"Found {len(oauth_clients_with_options)} OAuth clients with options")
 
             if oauth_clients_with_options:
                 first_client = oauth_clients_with_options[0]
                 print(
-                    f"   First client includes - OAuth Tokens: {len(first_client.oauth_tokens or [])}"
+                    f"First client includes - OAuth Tokens: {len(first_client.oauth_tokens or [])}"
                 )
                 print(
                     f"                         - Projects: {len(first_client.projects or [])}"
                 )
 
     except Exception as e:
-        print(f"    Error listing OAuth clients: {e}")
+        print(f"Error listing OAuth clients: {e}")
 
     # =====================================================
     # TEST 2: CREATE OAUTH CLIENT
@@ -152,19 +150,17 @@ def main():
             created_oauth_client = client.oauth_clients.create(
                 organization_name, create_options
             )
-            print(f"    Created OAuth client: {created_oauth_client.id}")
-            print(f"     Name: {created_oauth_client.name}")
-            print(f"     Service Provider: {created_oauth_client.service_provider}")
-            print(f"     API URL: {created_oauth_client.api_url}")
-            print(f"     HTTP URL: {created_oauth_client.http_url}")
-            print(
-                f"     Organization Scoped: {created_oauth_client.organization_scoped}"
-            )
+            print(f"Created OAuth client: {created_oauth_client.id}")
+            print(f"Name: {created_oauth_client.name}")
+            print(f"Service Provider: {created_oauth_client.service_provider}")
+            print(f"API URL: {created_oauth_client.api_url}")
+            print(f"HTTP URL: {created_oauth_client.http_url}")
+            print(f"Organization Scoped: {created_oauth_client.organization_scoped}")
 
         except Exception as e:
-            print(f"    Error creating OAuth client: {e}")
+            print(f"Error creating OAuth client: {e}")
     else:
-        print("    Skipped - OAUTH_CLIENT_GITHUB_TOKEN not set")
+        print("Skipped - OAUTH_CLIENT_GITHUB_TOKEN not set")
 
     # =====================================================
     # TEST 3: READ OAUTH CLIENT
@@ -178,15 +174,15 @@ def main():
             print(f"Reading OAuth client: {created_oauth_client.id}")
 
             read_oauth_client = client.oauth_clients.read(created_oauth_client.id)
-            print(f"    Read OAuth client: {read_oauth_client.id}")
-            print(f"     Name: {read_oauth_client.name}")
-            print(f"     Service Provider: {read_oauth_client.service_provider}")
-            print(f"     Created At: {read_oauth_client.created_at}")
-            print(f"     Callback URL: {read_oauth_client.callback_url}")
-            print(f"     Connect Path: {read_oauth_client.connect_path}")
+            print(f"Read OAuth client: {read_oauth_client.id}")
+            print(f"Name: {read_oauth_client.name}")
+            print(f"Service Provider: {read_oauth_client.service_provider}")
+            print(f"Created At: {read_oauth_client.created_at}")
+            print(f"Callback URL: {read_oauth_client.callback_url}")
+            print(f"Connect Path: {read_oauth_client.connect_path}")
 
         except Exception as e:
-            print(f"    Error reading OAuth client: {e}")
+            print(f"Error reading OAuth client: {e}")
     else:
         # Try to read an existing OAuth client if no client was created
         try:
@@ -196,12 +192,12 @@ def main():
                 print(f"Reading existing OAuth client: {test_client.id}")
 
                 read_oauth_client = client.oauth_clients.read(test_client.id)
-                print(f"    Read existing OAuth client: {read_oauth_client.id}")
-                print(f"     Service Provider: {read_oauth_client.service_provider}")
+                print(f"Read existing OAuth client: {read_oauth_client.id}")
+                print(f"Service Provider: {read_oauth_client.service_provider}")
             else:
-                print("    No existing OAuth clients found to test read()")
+                print("No existing OAuth clients found to test read()")
         except Exception as e:
-            print(f"    Error reading existing OAuth client: {e}")
+            print(f"Error reading existing OAuth client: {e}")
 
     # =====================================================
     # TEST 4: READ OAUTH CLIENT WITH OPTIONS
@@ -234,20 +230,20 @@ def main():
             read_oauth_client = client.oauth_clients.read_with_options(
                 target_client.id, read_options
             )
-            print(f"    Read OAuth client with options: {read_oauth_client.id}")
-            print(f"     OAuth Tokens: {len(read_oauth_client.oauth_tokens or [])}")
-            print(f"     Projects: {len(read_oauth_client.projects or [])}")
+            print(f"Read OAuth client with options: {read_oauth_client.id}")
+            print(f"OAuth Tokens: {len(read_oauth_client.oauth_tokens or [])}")
+            print(f"Projects: {len(read_oauth_client.projects or [])}")
 
             if read_oauth_client.oauth_tokens:
-                print("     OAuth Token details:")
+                print(" OAuth Token details:")
                 for i, token in enumerate(read_oauth_client.oauth_tokens[:2], 1):
                     if isinstance(token, dict):
-                        print(f"       {i}. Token ID: {token.get('id', 'N/A')}")
+                        print(f"{i}. Token ID: {token.get('id', 'N/A')}")
 
         except Exception as e:
-            print(f"    Error reading OAuth client with options: {e}")
+            print(f"Error reading OAuth client with options: {e}")
     else:
-        print("    No OAuth client available to test read_with_options()")
+        print("No OAuth client available to test read_with_options()")
 
     # =====================================================
     # TEST 5: UPDATE OAUTH CLIENT
@@ -268,8 +264,8 @@ def main():
             updated_oauth_client = client.oauth_clients.update(
                 created_oauth_client.id, update_options
             )
-            print(f"    Updated OAuth client: {updated_oauth_client.id}")
-            print(f"     Updated Name: {updated_oauth_client.name}")
+            print(f"Updated OAuth client: {updated_oauth_client.id}")
+            print(f"Updated Name: {updated_oauth_client.name}")
             print(
                 f"     Updated Organization Scoped: {updated_oauth_client.organization_scoped}"
             )
@@ -278,9 +274,9 @@ def main():
             created_oauth_client = updated_oauth_client
 
         except Exception as e:
-            print(f"    Error updating OAuth client: {e}")
+            print(f"Error updating OAuth client: {e}")
     else:
-        print("    No OAuth client created to test update()")
+        print("No OAuth client created to test update()")
 
     # =====================================================
     # TEST 6: PREPARE TEST PROJECTS (for project operations)
@@ -306,10 +302,10 @@ def main():
                     f"     {i}. {corresponding_project.name} (ID: {project_ref['id']})"
                 )
         else:
-            print("    No projects found - project operations tests will be skipped")
+            print("No projects found - project operations tests will be skipped")
 
     except Exception as e:
-        print(f"    Error getting projects: {e}")
+        print(f"Error getting projects: {e}")
 
     # =====================================================
     # TEST 7: ADD PROJECTS TO OAUTH CLIENT
@@ -342,12 +338,12 @@ def main():
             )
 
         except Exception as e:
-            print(f"    Error adding projects to OAuth client: {e}")
+            print(f"Error adding projects to OAuth client: {e}")
     else:
         if not created_oauth_client:
-            print("    No OAuth client created to test add_projects()")
+            print("No OAuth client created to test add_projects()")
         if not test_projects:
-            print("    No projects available to test add_projects()")
+            print("No projects available to test add_projects()")
 
     # =====================================================
     # TEST 8: REMOVE PROJECTS FROM OAUTH CLIENT
@@ -382,12 +378,12 @@ def main():
             )
 
         except Exception as e:
-            print(f"    Error removing projects from OAuth client: {e}")
+            print(f"Error removing projects from OAuth client: {e}")
     else:
         if not created_oauth_client:
-            print("    No OAuth client created to test remove_projects()")
+            print("No OAuth client created to test remove_projects()")
         if not test_projects:
-            print("    No projects available to test remove_projects()")
+            print("No projects available to test remove_projects()")
 
     # =====================================================
     # TEST 9: DELETE OAUTH CLIENT
@@ -403,27 +399,27 @@ def main():
             # First, let's confirm it exists
             try:
                 client.oauth_clients.read(created_oauth_client.id)
-                print("    Confirmed OAuth client exists before deletion")
+                print("Confirmed OAuth client exists before deletion")
             except NotFound:
-                print("    OAuth client not found before deletion attempt")
+                print("OAuth client not found before deletion attempt")
 
             # Delete the OAuth client
             client.oauth_clients.delete(created_oauth_client.id)
-            print(f"    Successfully deleted OAuth client: {created_oauth_client.id}")
+            print(f"Successfully deleted OAuth client: {created_oauth_client.id}")
 
             # Verify deletion by trying to read it
             try:
                 client.oauth_clients.read(created_oauth_client.id)
-                print("    Warning: OAuth client still exists after deletion")
+                print("Warning: OAuth client still exists after deletion")
             except NotFound:
-                print("    Verification: OAuth client successfully deleted (not found)")
+                print("Verification: OAuth client successfully deleted (not found)")
             except Exception as e:
-                print(f"   ? Verification error: {e}")
+                print(f"? Verification error: {e}")
 
         except Exception as e:
-            print(f"    Error deleting OAuth client: {e}")
+            print(f"Error deleting OAuth client: {e}")
     else:
-        print("    No OAuth client created to test delete()")
+        print("No OAuth client created to test delete()")
 
     # =====================================================
     # SUMMARY

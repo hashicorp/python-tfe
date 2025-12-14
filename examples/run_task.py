@@ -112,7 +112,7 @@ def main():
             if count >= args.page_size * 2:  # Safety limit based on page size
                 break
 
-        print(f" Found {len(run_task_list)} run tasks")
+        print(f"Found {len(run_task_list)} run tasks")
         print()
 
         if not run_task_list:
@@ -120,15 +120,15 @@ def main():
         else:
             for i, task in enumerate(run_task_list, 1):
                 print(f"{i:2d}. {task.name}")
-                print(f"    ID: {task.id}")
-                print(f"    URL: {task.url}")
-                print(f"    Category: {task.category}")
-                print(f"    Enabled: {task.enabled}")
+                print(f"ID: {task.id}")
+                print(f"URL: {task.url}")
+                print(f"Category: {task.category}")
+                print(f"Enabled: {task.enabled}")
                 if task.description:
-                    print(f"    Description: {task.description}")
+                    print(f"Description: {task.description}")
                 print()
     except Exception as e:
-        print(f" Error listing run tasks: {e}")
+        print(f"Error listing run tasks: {e}")
         return
 
     # 2) Create a new run task if requested
@@ -149,19 +149,19 @@ def main():
 
             print(f"Creating run task '{task_name}' in organization '{args.org}'...")
             run_task = client.run_tasks.create(args.org, create_options)
-            print(" Successfully created run task!")
-            print(f"   Name: {run_task.name}")
-            print(f"   ID: {run_task.id}")
-            print(f"   URL: {run_task.url}")
-            print(f"   Category: {run_task.category}")
-            print(f"   Enabled: {run_task.enabled}")
-            print(f"   Description: {run_task.description}")
-            print(f"   HMAC Key: {'[CONFIGURED]' if run_task.hmac_key else 'None'}")
+            print("Successfully created run task!")
+            print(f"Name: {run_task.name}")
+            print(f"ID: {run_task.id}")
+            print(f"URL: {run_task.url}")
+            print(f"Category: {run_task.category}")
+            print(f"Enabled: {run_task.enabled}")
+            print(f"Description: {run_task.description}")
+            print(f"HMAC Key: {'[CONFIGURED]' if run_task.hmac_key else 'None'}")
             print()
 
             args.task_id = run_task.id  # Use the created task for other operations
         except Exception as e:
-            print(f" Error creating run task: {e}")
+            print(f"Error creating run task: {e}")
             return
 
     # 3) Read run task details if task ID is provided
@@ -180,26 +180,24 @@ def main():
                 run_task = client.run_tasks.read(args.task_id)
                 print("Reading run task details...")
 
-            print(" Successfully read run task!")
-            print(f"   Name: {run_task.name}")
-            print(f"   ID: {run_task.id}")
-            print(f"   URL: {run_task.url}")
-            print(f"   Category: {run_task.category}")
-            print(f"   Enabled: {run_task.enabled}")
-            print(f"   Description: {run_task.description or 'None'}")
-            print(f"   HMAC Key: {'[SET]' if run_task.hmac_key else 'None'}")
+            print("Successfully read run task!")
+            print(f"Name: {run_task.name}")
+            print(f"ID: {run_task.id}")
+            print(f"URL: {run_task.url}")
+            print(f"Category: {run_task.category}")
+            print(f"Enabled: {run_task.enabled}")
+            print(f"Description: {run_task.description or 'None'}")
+            print(f"HMAC Key: {'[SET]' if run_task.hmac_key else 'None'}")
 
             if run_task.organization:
-                print(f"   Organization: {run_task.organization.id}")
+                print(f"Organization: {run_task.organization.id}")
 
             if run_task.workspace_run_tasks:
-                print(
-                    f"   Workspace Run Tasks: {len(run_task.workspace_run_tasks)} items"
-                )
+                print(f"Workspace Run Tasks: {len(run_task.workspace_run_tasks)} items")
 
             print()
         except Exception as e:
-            print(f" Error reading run task: {e}")
+            print(f"Error reading run task: {e}")
             return
 
     # 4) Update run task if requested
@@ -214,14 +212,14 @@ def main():
             )
             print(f"Updating run task '{args.task_id}'...")
             updated_task = client.run_tasks.update(args.task_id, update_options)
-            print(" Successfully updated run task!")
-            print(f"   Name: {updated_task.name}")
-            print(f"   Description: {updated_task.description}")
-            print(f"   URL: {updated_task.url}")
-            print(f"   Enabled: {updated_task.enabled}")
+            print("Successfully updated run task!")
+            print(f"Name: {updated_task.name}")
+            print(f"Description: {updated_task.description}")
+            print(f"URL: {updated_task.url}")
+            print(f"Enabled: {updated_task.enabled}")
             print()
         except Exception as e:
-            print(f" Error updating run task: {e}")
+            print(f"Error updating run task: {e}")
             return
 
     # 5) Delete run task if requested (should be last operation)
@@ -230,10 +228,10 @@ def main():
         try:
             print(f"Deleting run task '{args.task_id}'...")
             client.run_tasks.delete(args.task_id)
-            print(f" Successfully deleted run task: {args.task_id}")
+            print(f"Successfully deleted run task: {args.task_id}")
             print()
         except Exception as e:
-            print(f" Error deleting run task: {e}")
+            print(f"Error deleting run task: {e}")
             return
 
 

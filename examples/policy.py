@@ -137,11 +137,11 @@ def main():
         try:
             policy = client.policies.create(args.org, create_options)
             print(f"Created policy: {policy.id}")
-            print(f"  Name: {policy.name}")
-            print(f"  Kind: {policy.kind}")
-            print(f"  Enforcement: {policy.enforcement_level}")
+            print(f"Name: {policy.name}")
+            print(f"Kind: {policy.kind}")
+            print(f"Enforcement: {policy.enforcement_level}")
             if policy.query:
-                print(f"  Query: {policy.query}")
+                print(f"Query: {policy.query}")
             existing_policy = policy
         except Exception as e:
             print(f"Error creating policy: {e}")
@@ -240,8 +240,8 @@ main {
 
             updated_policy = client.policies.update(existing_policy.id, update_options)
             print(f"Updated policy: {updated_policy.id}")
-            print(f"  New description: {updated_policy.description}")
-            print(f"  Enforcement level: {updated_policy.enforcement_level}")
+            print(f"New description: {updated_policy.description}")
+            print(f"Enforcement level: {updated_policy.enforcement_level}")
         except Exception as e:
             print(f"Error updating policy: {e}")
 

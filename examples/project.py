@@ -61,7 +61,7 @@ def integration_client():
         )
 
     print(f"\n Testing against organization: {org}")
-    print(f" Using token: {token[:10]}...")
+    print(f"Using token: {token[:10]}...")
 
     config = TFEConfig()
 
@@ -96,7 +96,7 @@ def test_list_projects_integration(integration_client):
 
     try:
         # Test basic list without options
-        print(" Testing LIST operation: basic list")
+        print("Testing LIST operation: basic list")
         project_list = list(projects.list(org))
         print(f"Found {len(project_list)} projects in organization '{org}'")
 
@@ -112,13 +112,13 @@ def test_list_projects_integration(integration_client):
             assert hasattr(project, "description"), "Project should have a description"
             assert hasattr(project, "created_at"), "Project should have created_at"
             assert hasattr(project, "updated_at"), "Project should have updated_at"
-            print(f" Example project: {project.name} (ID: {project.id})")
-            print(f" Created: {project.created_at}, Updated: {project.updated_at}")
+            print(f"Example project: {project.name} (ID: {project.id})")
+            print(f"Created: {project.created_at}, Updated: {project.updated_at}")
         else:
-            print(" No projects found - this is normal for a new organization")
+            print("No projects found - this is normal for a new organization")
 
         # Test list with options
-        print(" Testing LIST operation: with options")
+        print("Testing LIST operation: with options")
         list_options = ProjectListOptions(page_size=5)
         project_list_with_options = list(projects.list(org, list_options))
         print(f"List with options returned {len(project_list_with_options)} projects")
@@ -144,7 +144,7 @@ def test_create_project_integration(integration_client):
 
     try:
         # Test CREATE operation
-        print(f" Testing CREATE operation: {test_name}")
+        print(f"Testing CREATE operation: {test_name}")
         create_options = ProjectCreateOptions(
             name=test_name, description=test_description
         )
@@ -184,7 +184,7 @@ def test_create_project_integration(integration_client):
                 projects.delete(project_id)
                 print("Cleanup successful")
             except Exception as e:
-                print(f" Warning: Failed to clean up project {project_id}: {e}")
+                print(f"Warning: Failed to clean up project {project_id}: {e}")
 
 
 def test_read_project_integration(integration_client):
@@ -209,7 +209,7 @@ def test_read_project_integration(integration_client):
         project_id = created_project.id
 
         # Test READ operation
-        print(f" Testing READ operation: {project_id}")
+        print(f"Testing READ operation: {project_id}")
         read_project = projects.read(project_id)
 
         # Validate read project
@@ -242,7 +242,7 @@ def test_read_project_integration(integration_client):
                 projects.delete(project_id)
                 print("Cleanup successful")
             except Exception as e:
-                print(f" Warning: Failed to clean up project {project_id}: {e}")
+                print(f"Warning: Failed to clean up project {project_id}: {e}")
 
 
 def test_update_project_integration(integration_client):
@@ -262,7 +262,7 @@ def test_update_project_integration(integration_client):
 
     try:
         # Create a project to update
-        print(f" Creating project for UPDATE test: {original_name}")
+        print(f"Creating project for UPDATE test: {original_name}")
         create_options = ProjectCreateOptions(
             name=original_name, description=original_description
         )
@@ -270,7 +270,7 @@ def test_update_project_integration(integration_client):
         project_id = created_project.id
 
         # Test UPDATE operation - name only
-        print(" Testing UPDATE operation: name only")
+        print("Testing UPDATE operation: name only")
         update_options = ProjectUpdateOptions(name=updated_name)
         updated_project = projects.update(project_id, update_options)
 
@@ -286,7 +286,7 @@ def test_update_project_integration(integration_client):
         print(f"UPDATE name successful: {updated_project.name}")
 
         # Test UPDATE operation - description only
-        print(" Testing UPDATE operation: description only")
+        print("Testing UPDATE operation: description only")
         update_options = ProjectUpdateOptions(description=updated_description)
         updated_project = projects.update(project_id, update_options)
 
@@ -299,7 +299,7 @@ def test_update_project_integration(integration_client):
         # Test UPDATE operation - both name and description
         final_name = f"final-{unique_id}"
         final_description = "Final description for update test"
-        print(" Testing UPDATE operation: both name and description")
+        print("Testing UPDATE operation: both name and description")
         update_options = ProjectUpdateOptions(
             name=final_name, description=final_description
         )
@@ -324,7 +324,7 @@ def test_update_project_integration(integration_client):
                 projects.delete(project_id)
                 print("Cleanup successful")
             except Exception as e:
-                print(f" Warning: Failed to clean up project {project_id}: {e}")
+                print(f"Warning: Failed to clean up project {project_id}: {e}")
 
 
 def test_delete_project_integration(integration_client):
@@ -341,7 +341,7 @@ def test_delete_project_integration(integration_client):
 
     try:
         # Create a project to delete
-        print(f" Creating project for DELETE test: {test_name}")
+        print(f"Creating project for DELETE test: {test_name}")
         create_options = ProjectCreateOptions(
             name=test_name, description="Project for delete test"
         )
@@ -350,7 +350,7 @@ def test_delete_project_integration(integration_client):
         print(f"Project created for deletion: {project_id}")
 
         # Verify project exists
-        print(" Verifying project exists before deletion")
+        print("Verifying project exists before deletion")
         read_project = projects.read(project_id)
         assert read_project.id == project_id
         print(f"Project confirmed to exist: {read_project.name}")
@@ -361,7 +361,7 @@ def test_delete_project_integration(integration_client):
         print("DELETE operation completed")
 
         # Verify project is deleted
-        print(" Verifying project is deleted")
+        print("Verifying project is deleted")
         try:
             projects.read(project_id)
             pytest.fail("Project should not exist after deletion")
@@ -403,7 +403,7 @@ def test_comprehensive_crud_integration(integration_client):
     project_id = None
 
     try:
-        print(f" Starting comprehensive CRUD test: {test_name}")
+        print(f"Starting comprehensive CRUD test: {test_name}")
 
         # 1. CREATE
         print("1 CREATE: Creating project")
@@ -470,7 +470,7 @@ def test_comprehensive_crud_integration(integration_client):
                 raise e
 
         project_id = None  # Clear since deleted
-        print(" Comprehensive CRUD test completed successfully!")
+        print("Comprehensive CRUD test completed successfully!")
 
     except Exception as e:
         pytest.fail(f"Comprehensive CRUD test failed: {e}")
@@ -491,7 +491,7 @@ def test_validation_integration(integration_client):
     """
     projects, org = integration_client
 
-    print(" Testing validation with real API calls")
+    print("Testing validation with real API calls")
 
     try:
         # Test valid project creation
@@ -532,10 +532,10 @@ def test_error_handling_integration(integration_client):
     """
     projects, org = integration_client
 
-    print(" Testing error handling scenarios")
+    print("Testing error handling scenarios")
 
     # Test reading a non-existent project
-    print(" Testing read non-existent project")
+    print("Testing read non-existent project")
     fake_project_id = "prj-nonexistent123456789"
     try:
         projects.read(fake_project_id)
@@ -545,7 +545,7 @@ def test_error_handling_integration(integration_client):
         assert "404" in str(e) or "not found" in str(e).lower()
 
     # Test updating a non-existent project
-    print(" Testing update non-existent project")
+    print("Testing update non-existent project")
     try:
         update_options = ProjectUpdateOptions(name="should-fail")
         projects.update(fake_project_id, update_options)
@@ -557,7 +557,7 @@ def test_error_handling_integration(integration_client):
         assert "404" in str(e) or "not found" in str(e).lower()
 
     # Test deleting a non-existent project
-    print(" Testing delete non-existent project")
+    print("Testing delete non-existent project")
     try:
         projects.delete(fake_project_id)
         pytest.fail("Should have raised an exception for non-existent project")
@@ -586,7 +586,7 @@ def test_project_tag_bindings_integration(integration_client):
 
     try:
         # Create a test project for tagging operations
-        print(f"  Setting up test project for tagging: {test_name}")
+        print(f"Setting up test project for tagging: {test_name}")
         create_options = ProjectCreateOptions(
             name=test_name, description=test_description
         )
@@ -595,18 +595,18 @@ def test_project_tag_bindings_integration(integration_client):
         print(f"Created test project: {project_id}")
 
         # Test 1: List tag bindings (this should work)
-        print("  Testing LIST_TAG_BINDINGS")
+        print("Testing LIST_TAG_BINDINGS")
         try:
             initial_tag_bindings = projects.list_tag_bindings(project_id)
             assert isinstance(initial_tag_bindings, list), "Should return a list"
             print(f"list_tag_bindings works: {len(initial_tag_bindings)} bindings")
             list_tag_bindings_available = True
         except Exception as e:
-            print(f" list_tag_bindings not available: {e}")
+            print(f"list_tag_bindings not available: {e}")
             list_tag_bindings_available = False
 
         # Test 2: List effective tag bindings
-        print("  Testing LIST_EFFECTIVE_TAG_BINDINGS")
+        print("Testing LIST_EFFECTIVE_TAG_BINDINGS")
         try:
             effective_bindings = projects.list_effective_tag_bindings(project_id)
             assert isinstance(effective_bindings, list), "Should return a list"
@@ -615,13 +615,13 @@ def test_project_tag_bindings_integration(integration_client):
             )
             effective_tag_bindings_available = True
         except Exception as e:
-            print(f" list_effective_tag_bindings not available: {e}")
-            print("   This feature may require a higher HCP Terraform plan")
+            print(f"list_effective_tag_bindings not available: {e}")
+            print("This feature may require a higher HCP Terraform plan")
             effective_tag_bindings_available = False
 
         # Test 3: Add tag bindings (if basic listing works)
         if list_tag_bindings_available:
-            print("  Testing ADD_TAG_BINDINGS")
+            print("Testing ADD_TAG_BINDINGS")
             try:
                 test_tags = [
                     TagBinding(key="environment", value="testing"),
@@ -648,7 +648,7 @@ def test_project_tag_bindings_integration(integration_client):
                 add_tag_bindings_available = True
 
                 # Test 4: Delete tag bindings
-                print("  Testing DELETE_TAG_BINDINGS")
+                print("Testing DELETE_TAG_BINDINGS")
                 try:
                     result = projects.delete_tag_bindings(project_id)
                     assert result is None, "Delete should return None"
@@ -660,12 +660,12 @@ def test_project_tag_bindings_integration(integration_client):
                     )
                     delete_tag_bindings_available = True
                 except Exception as e:
-                    print(f" delete_tag_bindings not available: {e}")
+                    print(f"delete_tag_bindings not available: {e}")
                     delete_tag_bindings_available = False
 
             except Exception as e:
-                print(f" add_tag_bindings not available: {e}")
-                print("   This feature may require a higher HCP Terraform plan")
+                print(f"add_tag_bindings not available: {e}")
+                print("This feature may require a higher HCP Terraform plan")
                 add_tag_bindings_available = False
                 delete_tag_bindings_available = False
         else:
@@ -683,7 +683,7 @@ def test_project_tag_bindings_integration(integration_client):
 
         for feature_name, available in features:
             status = "Available" if available else " Not Available"
-            print(f"   {feature_name}: {status}")
+            print(f"{feature_name}: {status}")
 
         available_count = sum(available for _, available in features)
         print(
@@ -691,11 +691,11 @@ def test_project_tag_bindings_integration(integration_client):
         )
 
         if available_count == 4:
-            print(" All project tag binding operations work perfectly!")
+            print("All project tag binding operations work perfectly!")
         elif available_count > 0:
             print("Partial functionality available - basic operations work!")
         else:
-            print("  Tag binding features may require a higher HCP Terraform plan")
+            print("Tag binding features may require a higher HCP Terraform plan")
 
     except Exception as e:
         pytest.fail(
@@ -727,10 +727,10 @@ def test_project_tag_bindings_error_scenarios(integration_client):
     """
     projects, org = integration_client
 
-    print("  Testing tag binding error scenarios")
+    print("Testing tag binding error scenarios")
 
     # Test invalid project ID validation
-    print(" Testing invalid project ID scenarios")
+    print("Testing invalid project ID scenarios")
 
     invalid_project_ids = ["", "x", "invalid-id", None]
 
@@ -765,7 +765,7 @@ def test_project_tag_bindings_error_scenarios(integration_client):
             print(f"Correctly rejected invalid project ID '{invalid_id}': {e}")
 
     # Test empty tag binding list
-    print(" Testing empty tag binding list")
+    print("Testing empty tag binding list")
     try:
         fake_project_id = "prj-fakefakefake123"
         empty_options = ProjectAddTagBindingsOptions(tag_bindings=[])
@@ -776,7 +776,7 @@ def test_project_tag_bindings_error_scenarios(integration_client):
         assert "At least one tag binding is required" in str(e)
 
     # Test non-existent project operations
-    print(" Testing operations on non-existent project")
+    print("Testing operations on non-existent project")
     fake_project_id = "prj-doesnotexist123"
 
     # These should raise HTTP errors (404) from the API
@@ -835,12 +835,12 @@ if __name__ == "__main__":
     org = os.environ.get("TFE_ORG")
 
     if not token or not org:
-        print(" Please set TFE_TOKEN and TFE_ORG environment variables")
-        print("   export TFE_TOKEN='your-hcp-terraform-token'")
-        print("   export TFE_ORG='your-organization-name'")
+        print("Please set TFE_TOKEN and TFE_ORG environment variables")
+        print("export TFE_TOKEN='your-hcp-terraform-token'")
+        print("export TFE_ORG='your-organization-name'")
         sys.exit(1)
 
-    print(" Running integration tests directly...")
+    print("Running integration tests directly...")
     print(
         "   For full pytest features, use: pytest examples/integration_test_example.py -v -s"
     )

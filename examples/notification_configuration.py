@@ -54,9 +54,9 @@ def main():
                 f"Found {len(workspace_notifications.items)} notification configurations"
             )
             for nc in workspace_notifications.items:
-                print(f"  - {nc.name} (ID: {nc.id}, Enabled: {nc.enabled})")
+                print(f"- {nc.name} (ID: {nc.id}, Enabled: {nc.enabled})")
         except Exception as e:
-            print(f"  Error listing workspace notifications: {e}")
+            print(f"Error listing workspace notifications: {e}")
 
         print()
 
@@ -76,14 +76,14 @@ def main():
                 f"Found {len(team_notifications.items)} team notification configurations"
             )
             for nc in team_notifications.items:
-                print(f"  - {nc.name} (ID: {nc.id}, Enabled: {nc.enabled})")
+                print(f"- {nc.name} (ID: {nc.id}, Enabled: {nc.enabled})")
         except Exception as e:
             error_msg = str(e).lower()
             if "not found" in error_msg:
-                print(f"    Team not found (expected with fake team ID): {team_id}")
-                print("   Teams are not available in HCP Terraform free plan")
+                print(f"Team not found (expected with fake team ID): {team_id}")
+                print("Teams are not available in HCP Terraform free plan")
             else:
-                print(f"   Error listing team notifications: {e}")
+                print(f"Error listing team notifications: {e}")
 
         print()
 
@@ -113,7 +113,7 @@ def main():
                 workspace_id, create_options
             )
             print(
-                f"  Created notification: {new_notification.name} (ID: {new_notification.id})"
+                f"Created notification: {new_notification.name} (ID: {new_notification.id})"
             )
 
             notification_id = new_notification.id
@@ -123,10 +123,10 @@ def main():
             read_notification = client.notification_configurations.read(
                 notification_config_id=notification_id
             )
-            print(f"  Read notification: {read_notification.name}")
-            print(f"  Destination type: {read_notification.destination_type}")
-            print(f"  Enabled: {read_notification.enabled}")
-            print(f"  Triggers: {read_notification.triggers}")
+            print(f"Read notification: {read_notification.name}")
+            print(f"Destination type: {read_notification.destination_type}")
+            print(f"Enabled: {read_notification.enabled}")
+            print(f"Triggers: {read_notification.triggers}")
 
             # ===== Update the notification configuration =====
             print("\n5. Updating the notification configuration...")
@@ -139,24 +139,22 @@ def main():
             updated_notification = client.notification_configurations.update(
                 notification_config_id=notification_id, options=update_options
             )
-            print(f"  Updated notification: {updated_notification.name}")
-            print(f"  Enabled: {updated_notification.enabled}")
+            print(f"Updated notification: {updated_notification.name}")
+            print(f"Enabled: {updated_notification.enabled}")
 
             # ===== Verify the notification configuration =====
             print("\n6. Verifying the notification configuration...")
-            print("  Note: This will fail with fake URLs - that's expected!")
+            print("Note: This will fail with fake URLs - that's expected!")
             try:
                 client.notification_configurations.verify(
                     notification_config_id=notification_id
                 )
-                print(
-                    f"  Verification successful for notification ID: {notification_id}"
-                )
-                print("  Note: Verification sends a test payload to the configured URL")
+                print(f"Verification successful for notification ID: {notification_id}")
+                print("Note: Verification sends a test payload to the configured URL")
             except Exception as e:
-                print(f"    Verification failed (expected with fake URL): {e}")
+                print(f"Verification failed (expected with fake URL): {e}")
                 print(
-                    "   To test verification, use a real webhook URL from Slack, Teams, or Discord"
+                    "To test verification, use a real webhook URL from Slack, Teams, or Discord"
                 )
 
             # ===== Delete the notification configuration =====
@@ -164,27 +162,27 @@ def main():
             client.notification_configurations.delete(
                 notification_config_id=notification_id
             )
-            print(f"  Deleted notification configuration: {notification_id}")
+            print(f"Deleted notification configuration: {notification_id}")
 
             # Verify deletion
             try:
                 client.notification_configurations.read(
                     notification_config_id=notification_id
                 )
-                print("  ERROR: Notification still exists after deletion!")
+                print("ERROR: Notification still exists after deletion!")
             except Exception:
-                print("  Confirmed: Notification configuration has been deleted")
+                print("Confirmed: Notification configuration has been deleted")
 
         except Exception as e:
             error_msg = str(e).lower()
             if "verification failed" in error_msg and "404" in error_msg:
-                print("    Webhook verification failed (expected with fake URL)")
-                print("   The fake Slack URL returns 404 - this is normal for testing")
-                print("  To test real verification, use a webhook from:")
-                print("     • webhook.site (instant test URL)")
-                print("     • Slack, Teams, or Discord webhook")
+                print(" Webhook verification failed (expected with fake URL)")
+                print("The fake Slack URL returns 404 - this is normal for testing")
+                print("To test real verification, use a webhook from:")
+                print("webhook.site (instant test URL)")
+                print("Slack, Teams, or Discord webhook")
             else:
-                print(f"   Error in workspace notification operations: {e}")
+                print(f" Error in workspace notification operations: {e}")
 
         print()
 
@@ -213,28 +211,28 @@ def main():
                     team_id, team_create_options
                 )
                 print(
-                    f"  Created team notification: {team_notification.name} (ID: {team_notification.id})"
+                    f"Created team notification: {team_notification.name} (ID: {team_notification.id})"
                 )
 
                 # Clean up team notification
                 client.notification_configurations.delete(
                     notification_config_id=team_notification.id
                 )
-                print(f"  Cleaned up team notification: {team_notification.id}")
+                print(f"Cleaned up team notification: {team_notification.id}")
             else:
                 print(
-                    f"  Skipping team notifications - no real team ID available (using: {team_id})"
+                    f"Skipping team notifications - no real team ID available (using: {team_id})"
                 )
 
         except Exception as e:
-            print(f"   Error in team notification operations: {e}")
+            print(f" Error in team notification operations: {e}")
             error_msg = str(e).lower()
             if "not found" in error_msg:
-                print("   Team may not exist or token lacks team permissions")
+                print("Team may not exist or token lacks team permissions")
             elif "forbidden" in error_msg or "unauthorized" in error_msg:
-                print("   Token may lack team notification permissions")
+                print("Token may lack team notification permissions")
             elif "team" in error_msg:
-                print("   Team-specific error - check team settings or plan level")
+                print("Team-specific error - check team settings or plan level")
 
         print()
 
@@ -263,17 +261,17 @@ def main():
                 workspace_id, teams_create_options
             )
             print(
-                f"  Created Teams notification: {teams_notification.name} (ID: {teams_notification.id})"
+                f"Created Teams notification: {teams_notification.name} (ID: {teams_notification.id})"
             )
 
             # Clean up Teams notification
             client.notification_configurations.delete(
                 notification_config_id=teams_notification.id
             )
-            print(f"  Cleaned up Teams notification: {teams_notification.id}")
+            print(f"Cleaned up Teams notification: {teams_notification.id}")
 
         except Exception as e:
-            print(f"  Error in Teams notification operations: {e}")
+            print(f"Error in Teams notification operations: {e}")
 
     except Exception as e:
         print(f"Error: {e}")

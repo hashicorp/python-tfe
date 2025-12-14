@@ -83,17 +83,17 @@ def main():
             organization_name=organization_name, registry_name=RegistryName.PRIVATE
         )
         modules = list(client.registry_modules.list(organization_name, options))
-        print(f"    Found {len(modules)} registry modules")
+        print(f"Found {len(modules)} registry modules")
 
         for i, module in enumerate(modules[:3], 1):
-            print(f"   {i}. {module.name}/{module.provider} (ID: {module.id})")
+            print(f"{i}. {module.name}/{module.provider} (ID: {module.id})")
 
     except NotFound:
         print(
             "    No modules found (organization may not exist or no private modules available)"
         )
     except Exception as e:
-        print(f"    Error: {e}")
+        print(f"Error: {e}")
 
     # =====================================================
     # TEST 2: CREATE REGISTRY MODULE WITH VCS CONNECTION [TESTED - COMMENTED]
@@ -133,11 +133,11 @@ def main():
         print(
             f"    Created VCS module: {created_module.name}/{created_module.provider}"
         )
-        print(f"     ID: {created_module.id}")
-        print(f"     Status: {created_module.status}")
+        print(f"ID: {created_module.id}")
+        print(f"Status: {created_module.status}")
 
     except Exception as e:
-        print(f"    Error: {e}")
+        print(f"Error: {e}")
 
     # =====================================================
     # TEST 3: READ REGISTRY MODULE [TESTED - COMMENTED]
@@ -153,12 +153,12 @@ def main():
             )
 
             read_module = client.registry_modules.read(module_id)
-            print(f"    Read module: {read_module.name}")
-            print(f"     Status: {read_module.status}")
-            print(f"     Created: {read_module.created_at}")
+            print(f"Read module: {read_module.name}")
+            print(f"Status: {read_module.status}")
+            print(f"Created: {read_module.created_at}")
 
         except Exception as e:
-            print(f"    Error: {e}")
+            print(f"Error: {e}")
 
     # =====================================================
     # TEST 4: LIST COMMITS [TESTED - COMMENTED]
@@ -175,10 +175,10 @@ def main():
 
             commits = client.registry_modules.list_commits(module_id)
             commit_list = list(commits.items) if hasattr(commits, "items") else []
-            print(f"    Found {len(commit_list)} commits")
+            print(f"Found {len(commit_list)} commits")
 
         except Exception as e:
-            print(f"    Error: {e}")
+            print(f"Error: {e}")
 
     # =====================================================
     # TEST 5: CREATE VERSION [TESTED - COMMENTED]
@@ -200,11 +200,11 @@ def main():
 
             version = client.registry_modules.create_version(module_id, version_options)
             created_version = version.version
-            print(f"    Created version: {version.version}")
-            print(f"     Status: {version.status}")
+            print(f"Created version: {version.version}")
+            print(f"Status: {version.status}")
 
         except Exception as e:
-            print(f"    Error: {e}")
+            print(f"Error: {e}")
 
     # =====================================================
     # TEST 6: READ VERSION [TESTED - COMMENTED]
@@ -222,12 +222,12 @@ def main():
             read_version = client.registry_modules.read_version(
                 module_id, created_version
             )
-            print(f"    Read version: {read_version.version}")
-            print(f"     Status: {read_version.status}")
-            print(f"     ID: {read_version.id}")
+            print(f"Read version: {read_version.version}")
+            print(f"Status: {read_version.status}")
+            print(f"ID: {read_version.id}")
 
         except Exception as e:
-            print(f"    Error: {e}")
+            print(f"Error: {e}")
 
     # =====================================================
     # TEST 7: READ PUBLIC TERRAFORM REGISTRY MODULE
@@ -247,20 +247,20 @@ def main():
         public_module = client.registry_modules.read_terraform_registry_module(
             public_module_id, version
         )
-        print(f"    Read public module: {public_module.name}")
-        print(f"     Version: {version}")
-        print(f"     Downloads: {getattr(public_module, 'downloads', 'N/A')}")
-        print(f"     Verified: {getattr(public_module, 'verified', 'N/A')}")
-        print(f"     Source: {getattr(public_module, 'source', 'N/A')}")
+        print(f"Read public module: {public_module.name}")
+        print(f"Version: {version}")
+        print(f"Downloads: {getattr(public_module, 'downloads', 'N/A')}")
+        print(f"Verified: {getattr(public_module, 'verified', 'N/A')}")
+        print(f"Source: {getattr(public_module, 'source', 'N/A')}")
 
     except Exception as e:
-        print(f"    Error: {e}")
+        print(f"Error: {e}")
 
     # =====================================================
     # TEST 8: CREATE SIMPLE REGISTRY MODULE (Non-VCS)
     # =====================================================
     print("\n8. Testing create() function (non-VCS module):")
-    print("   NOTE: Non-VCS modules start in PENDING status until content is uploaded")
+    print("NOTE: Non-VCS modules start in PENDING status until content is uploaded")
     try:
         unique_suffix = f"{int(time.time())}-{random.randint(1000, 9999)}"
 
@@ -274,19 +274,19 @@ def main():
             organization_name, create_options
         )
         print(
-            f"    Created simple module: {created_simple_module.name}/{created_simple_module.provider}"
+            f"Created simple module: {created_simple_module.name}/{created_simple_module.provider}"
         )
-        print(f"     ID: {created_simple_module.id}")
+        print(f"ID: {created_simple_module.id}")
         print(
-            f"     Status: {created_simple_module.status} (PENDING until content uploaded)"
+            f"Status: {created_simple_module.status} (PENDING until content uploaded)"
         )
-        print(f"     No Code: {created_simple_module.no_code}")
+        print(f"No Code: {created_simple_module.no_code}")
 
         # Store for later tests (will be overridden by upload test module)
         created_module = created_simple_module
 
     except Exception as e:
-        print(f"    Error: {e}")
+        print(f"Error: {e}")
 
     # =====================================================
     # TEST 8A: LIST VERSIONS
@@ -303,20 +303,20 @@ def main():
 
             versions = client.registry_modules.list_versions(module_id)
             versions_list = list(versions) if hasattr(versions, "__iter__") else []
-            print(f"    Found {len(versions_list)} versions")
+            print(f"Found {len(versions_list)} versions")
 
             for i, version in enumerate(versions_list[:3], 1):
-                print(f"   {i}. Version {version.version} (Status: {version.status})")
+                print(f"{i}. Version {version.version} (Status: {version.status})")
 
         except Exception as e:
-            print(f"    Error: {e}")
+            print(f"Error: {e}")
 
     # =====================================================
     # TEST 8B: UPDATE MODULE
     # =====================================================
     if created_module:
         print("\n8B. Testing update() function:")
-        print("   NOTE: Update functionality may vary by TFE version")
+        print("NOTE: Update functionality may vary by TFE version")
         try:
             module_id = RegistryModuleID(
                 organization=organization_name,
@@ -327,7 +327,7 @@ def main():
 
             # First check current module status
             current_module = client.registry_modules.read(module_id)
-            print(f"   Current module no_code setting: {current_module.no_code}")
+            print(f"Current module no_code setting: {current_module.no_code}")
 
             # Try to update no_code setting
             update_options = RegistryModuleUpdateOptions(
@@ -335,12 +335,12 @@ def main():
             )
 
             updated_module = client.registry_modules.update(module_id, update_options)
-            print(f"    Updated module: {updated_module.name}")
-            print(f"     No Code: {updated_module.no_code}")
-            print(f"     Status: {updated_module.status}")
+            print(f"Updated module: {updated_module.name}")
+            print(f"No Code: {updated_module.no_code}")
+            print(f"Status: {updated_module.status}")
 
         except Exception as e:
-            print(f"    Update may not be supported: {e}")
+            print(f"Update may not be supported: {e}")
 
     # =====================================================
     # TEST 9: CREATE MODULE FOR UPLOAD TESTING
@@ -358,12 +358,12 @@ def main():
         created_module = client.registry_modules.create(
             organization_name, create_options
         )
-        print(f"    Created test module: {created_module.name}")
-        print(f"     Provider: {created_module.provider}")
-        print(f"     Status: {created_module.status}")
+        print(f"Created test module: {created_module.name}")
+        print(f"Provider: {created_module.provider}")
+        print(f"Status: {created_module.status}")
 
     except Exception as e:
-        print(f"    Error creating module: {e}")
+        print(f"Error creating module: {e}")
         return
 
     # =====================================================
@@ -387,24 +387,24 @@ def main():
             version = client.registry_modules.create_version(module_id, version_options)
             created_version = version.version
             version_object = version
-            print(f"    Created version: {created_version}")
-            print(f"     Status: {version.status}")
+            print(f"Created version: {created_version}")
+            print(f"Status: {version.status}")
 
             # Check if upload URL is available
             upload_url = (
                 version.links.get("upload") if hasattr(version, "links") else None
             )
-            print(f"     Upload URL available: {'Yes' if upload_url else 'No'}")
+            print(f"Upload URL available: {'Yes' if upload_url else 'No'}")
 
         except Exception as e:
-            print(f"    Error creating version: {e}")
+            print(f"Error creating version: {e}")
 
     # =====================================================
     # TEST 11: UPLOAD_TAR_GZIP FUNCTION TESTING
     # =====================================================
     if created_module and created_version and version_object:
         print("\n11. Testing upload_tar_gzip() function:")
-        print("     This will change module status from PENDING to SETUP_COMPLETE")
+        print("This will change module status from PENDING to SETUP_COMPLETE")
         try:
             # Create a simple module structure in memory
             tar_buffer = io.BytesIO()
@@ -475,12 +475,10 @@ module "example" {{
 
             if upload_url:
                 client.registry_modules.upload_tar_gzip(upload_url, tar_buffer)
-                print(
-                    "    Successfully uploaded tar.gz content using upload_tar_gzip()"
-                )
+                print("Successfully uploaded tar.gz content using upload_tar_gzip()")
 
                 # Wait for processing
-                print("   Waiting 5 seconds for processing...")
+                print("Waiting 5 seconds for processing...")
                 time.sleep(5)
 
                 # Check module status after upload
@@ -492,27 +490,27 @@ module "example" {{
                 )
 
                 updated_module = client.registry_modules.read(module_id)
-                print(f"   Updated Module Status: {updated_module.status}")
+                print(f"Updated Module Status: {updated_module.status}")
 
                 if updated_module.status.value != "pending":
                     print(
-                        f"   SUCCESS: Module status changed from PENDING to {updated_module.status}"
+                        f"SUCCESS: Module status changed from PENDING to {updated_module.status}"
                     )
                 else:
-                    print("   ⏳ Module still processing - may take longer")
+                    print("Module still processing - may take longer")
 
             else:
-                print("    No upload URL available in version links")
+                print(" No upload URL available in version links")
 
         except Exception as e:
-            print(f"    Error in upload_tar_gzip test: {e}")
+            print(f"Error in upload_tar_gzip test: {e}")
 
     # =====================================================
     # TEST 12: UPLOAD FUNCTION TESTING
     # =====================================================
     if created_module and created_version and version_object:
         print("\n12. Testing upload() function:")
-        print("     NOTE: This function uploads from a local file path")
+        print("NOTE: This function uploads from a local file path")
         try:
             # Create a temporary directory with module structure
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -582,8 +580,8 @@ output "module_info" {
 """.strip()
                     )
 
-                print(f"   Created temporary module files in: {temp_dir}")
-                print(f"   Files: {os.listdir(temp_dir)}")
+                print(f"Created temporary module files in: {temp_dir}")
+                print(f"Files: {os.listdir(temp_dir)}")
 
                 # Check if upload URL is available
                 upload_url = (
@@ -592,15 +590,15 @@ output "module_info" {
                     else None
                 )
                 if upload_url:
-                    print("   Upload URL available: Yes")
+                    print("Upload URL available: Yes")
 
                     # Try the upload function
                     try:
                         client.registry_modules.upload(version_object, temp_dir)
-                        print("    Successfully uploaded using upload() function")
+                        print("Successfully uploaded using upload() function")
 
                         # Wait and check status
-                        print("   Waiting 5 seconds for processing...")
+                        print("Waiting 5 seconds for processing...")
                         time.sleep(5)
 
                         module_id = RegistryModuleID(
@@ -611,14 +609,14 @@ output "module_info" {
                         )
 
                         updated_module = client.registry_modules.read(module_id)
-                        print(f"   Updated Module Status: {updated_module.status}")
+                        print(f"Updated Module Status: {updated_module.status}")
 
                     except NotImplementedError as nie:
-                        print(f"    upload() function not fully implemented: {nie}")
-                        print("     This is expected - the function is a placeholder")
+                        print(f"upload() function not fully implemented: {nie}")
+                        print("This is expected - the function is a placeholder")
 
                         # Fallback to upload_tar_gzip
-                        print("   Trying fallback: upload_tar_gzip()...")
+                        print("Trying fallback: upload_tar_gzip()...")
 
                         tar_buffer = io.BytesIO()
                         with tarfile.open(fileobj=tar_buffer, mode="w:gz") as tar:
@@ -637,24 +635,24 @@ output "module_info" {
                         tar_buffer.seek(0)
                         client.registry_modules.upload_tar_gzip(upload_url, tar_buffer)
                         print(
-                            "    Successfully uploaded using upload_tar_gzip() as fallback"
+                            "Successfully uploaded using upload_tar_gzip() as fallback"
                         )
 
                     except Exception as upload_error:
-                        print(f"    upload() function error: {upload_error}")
+                        print(f"upload() function error: {upload_error}")
 
                 else:
-                    print("    No upload URL available - cannot test upload function")
+                    print(" No upload URL available - cannot test upload function")
 
         except Exception as e:
-            print(f"    Error in upload() test: {e}")
+            print(f"Error in upload() test: {e}")
 
     # =====================================================
     # TEST 13: DELETE VERSION
     # =====================================================
     # Create a test module and version for delete testing
     print("\n13. Testing delete_version() function:")
-    print("   Creating test module and version for deletion...")
+    print("Creating test module and version for deletion...")
 
     test_module_for_deletion = None
     test_version_for_deletion = None
@@ -670,7 +668,7 @@ output "module_info" {
         test_module_for_deletion = client.registry_modules.create(
             organization_name, delete_create_options
         )
-        print(f"    Created test module: {test_module_for_deletion.name}")
+        print(f"Created test module: {test_module_for_deletion.name}")
 
         # Create a version for deletion testing
         module_id = RegistryModuleID(
@@ -684,15 +682,15 @@ output "module_info" {
 
         version = client.registry_modules.create_version(module_id, version_options)
         test_version_for_deletion = version.version
-        print(f"    Created test version: {test_version_for_deletion}")
+        print(f"Created test version: {test_version_for_deletion}")
 
         # Now test version deletion
-        print(f"   Testing deletion of version {test_version_for_deletion}...")
+        print(f"Testing deletion of version {test_version_for_deletion}...")
 
         # Delete the version
         client.registry_modules.delete_version(module_id, test_version_for_deletion)
         print(
-            f"    Successfully called delete_version() for version: {test_version_for_deletion}"
+            f"Successfully called delete_version() for version: {test_version_for_deletion}"
         )
 
         # Verify deletion by trying to read it
@@ -706,13 +704,13 @@ output "module_info" {
                 version=test_version_for_deletion,
             )
             print(
-                "    Warning: Version still exists after deletion (may take time to process)"
+                "Warning: Version still exists after deletion (may take time to process)"
             )
         except Exception:
-            print("    Confirmed: Version no longer exists")
+            print(" Confirmed: Version no longer exists")
 
     except Exception as e:
-        print(f"    Error in delete_version test: {e}")
+        print(f"Error in delete_version test: {e}")
 
     # =====================================================
     # TEST 14: DELETE BY NAME
@@ -731,54 +729,54 @@ output "module_info" {
             try:
                 client.registry_modules.read(module_id)
                 print(
-                    f"   Module {test_module_for_deletion.name}/{test_module_for_deletion.provider} exists"
+                    f"Module {test_module_for_deletion.name}/{test_module_for_deletion.provider} exists"
                 )
 
                 # Delete the module
                 client.registry_modules.delete_by_name(module_id)
                 print(
-                    f"    Successfully called delete_by_name() for module: {test_module_for_deletion.name}"
+                    f"Successfully called delete_by_name() for module: {test_module_for_deletion.name}"
                 )
 
                 # Verify deletion
                 try:
                     client.registry_modules.read(module_id)
                     print(
-                        "    Warning: Module still exists after deletion (may take time to process)"
+                        "Warning: Module still exists after deletion (may take time to process)"
                     )
                 except Exception:
-                    print("    Confirmed: Module no longer exists")
+                    print("Confirmed: Module no longer exists")
 
             except Exception as read_error:
-                print(f"   Module not found: {read_error}")
+                print(f"Module not found: {read_error}")
 
         except Exception as e:
-            print(f"    Error in delete_by_name test: {e}")
+            print(f"Error in delete_by_name test: {e}")
 
     # =====================================================
     # TEST 15: DELETE (Alternative delete method)
     # =====================================================
     print("\n15. Testing delete() function:")
-    print("   NOTE: Testing with non-existent module to avoid conflicts")
+    print("NOTE: Testing with non-existent module to avoid conflicts")
     try:
         # This function takes organization and name directly
         # We'll test with a non-existent module to avoid conflicts
         test_name = "non-existent-module-for-testing"
 
-        print(f"   Testing delete with non-existent module: {test_name}")
+        print(f"Testing delete with non-existent module: {test_name}")
         client.registry_modules.delete(organization_name, test_name)
         print(
-            "    Delete function executed successfully (may return 404 for non-existent module)"
+            "Delete function executed successfully (may return 404 for non-existent module)"
         )
 
     except Exception as e:
-        print(f"   Expected error for non-existent module: {e}")
+        print(f"Expected error for non-existent module: {e}")
 
     # =====================================================
     # TEST 16: DELETE PROVIDER (SAFE VERSION - CREATES TEST PROVIDER)
     # =====================================================
     print("\n16. Testing delete_provider() function:")
-    print("   Creating a test provider specifically for deletion testing...")
+    print("Creating a test provider specifically for deletion testing...")
 
     try:
         # Create a test module with a valid provider for deletion testing
@@ -794,7 +792,7 @@ output "module_info" {
         test_provider_module = client.registry_modules.create(
             organization_name, delete_provider_options
         )
-        print(f"    Created test module with provider: {test_provider_name}")
+        print(f"Created test module with provider: {test_provider_name}")
 
         # Now test delete_provider function
         test_provider_module_id = RegistryModuleID(
@@ -804,23 +802,23 @@ output "module_info" {
             registry_name=RegistryName.PRIVATE,
         )
 
-        print(f"   Testing delete_provider() for provider: {test_provider_name}")
+        print(f"Testing delete_provider() for provider: {test_provider_name}")
         client.registry_modules.delete_provider(test_provider_module_id)
         print(
-            f"    Successfully called delete_provider() for provider: {test_provider_name}"
+            f"Successfully called delete_provider() for provider: {test_provider_name}"
         )
 
         # Verify deletion by trying to read the module
         try:
             client.registry_modules.read(test_provider_module_id)
             print(
-                "    Warning: Module still exists after provider deletion (may take time to process)"
+                "Warning: Module still exists after provider deletion (may take time to process)"
             )
         except Exception:
-            print("    Confirmed: All modules for provider have been deleted")
+            print("Confirmed: All modules for provider have been deleted")
 
     except Exception as e:
-        print(f"    Error in delete_provider test: {e}")
+        print(f"Error in delete_provider test: {e}")
 
     # =====================================================
     # TESTING SUMMARY
@@ -846,7 +844,7 @@ output "module_info" {
     print(" delete() - Delete module by organization and name")
     print(" delete_provider() - Delete all modules for a provider")
     if created_module:
-        print(f" Created test module: {created_module.name}")
+        print(f"Created test module: {created_module.name}")
     print("=" * 80)
     print(" ALL 15 REGISTRY MODULE FUNCTIONS HAVE BEEN TESTED!")
     print("=" * 80)

@@ -39,11 +39,11 @@ def main():
     address = os.environ.get("TFE_ADDRESS", "https://app.terraform.io")
 
     if not token:
-        print(" TFE_TOKEN environment variable is required")
+        print("TFE_TOKEN environment variable is required")
         return 1
 
     if not org:
-        print(" TFE_ORG environment variable is required")
+        print("TFE_ORG environment variable is required")
         return 1
 
     # Create TFE client
@@ -81,10 +81,10 @@ def main():
         # Example 3: Read the agent pool
         print("\n Reading agent pool details...")
         pool_details = client.agent_pools.read(new_pool.id)
-        print(f"  Name: {pool_details.name}")
-        print(f"  Organization Scoped: {pool_details.organization_scoped}")
-        print(f"  Policy: {pool_details.allowed_workspace_policy}")
-        print(f"  Agent Count: {pool_details.agent_count}")
+        print(f"Name: {pool_details.name}")
+        print(f"Organization Scoped: {pool_details.organization_scoped}")
+        print(f"Policy: {pool_details.allowed_workspace_policy}")
+        print(f"Agent Count: {pool_details.agent_count}")
 
         # Example 4: Update the agent pool
         print("\n Updating agent pool...")
@@ -118,7 +118,7 @@ def main():
             print(f"  - {token.description or 'No description'} (ID: {token.id})")
 
         # Example 7: Clean up - delete the token and pool
-        print("\n🧹 Cleaning up...")
+        print("\n Cleaning up...")
         client.agent_tokens.delete(agent_token.id)
         print("Deleted agent token")
 

@@ -177,9 +177,9 @@ def main():
                     f"- ID: {ps.id} | Name: {ps.name} | Kind: {ps.kind} | Global: {ps.Global}"
                 )
                 print(
-                    f"  Policy Count: {ps.policy_count} | Workspace Count: {ps.workspace_count}"
+                    f"Policy Count: {ps.policy_count} | Workspace Count: {ps.workspace_count}"
                 )
-                print(f"  Created: {ps.created_at}")
+                print(f"Created: {ps.created_at}")
                 print()
 
     except Exception as e:

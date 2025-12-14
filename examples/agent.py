@@ -36,11 +36,11 @@ def main():
     address = os.environ.get("TFE_ADDRESS", "https://app.terraform.io")
 
     if not token:
-        print(" TFE_TOKEN environment variable is required")
+        print("TFE_TOKEN environment variable is required")
         return 1
 
     if not org:
-        print(" TFE_ORG environment variable is required")
+        print("TFE_ORG environment variable is required")
         return 1
 
     # Create TFE client
@@ -58,7 +58,7 @@ def main():
         # Convert to list to check if empty and get count
         pool_list = list(agent_pools)
         if not pool_list:
-            print(" No agent pools found. Create an agent pool first.")
+            print("No agent pools found. Create an agent pool first.")
             return 1
 
         print(f"Found {len(pool_list)} agent pools:")
@@ -81,27 +81,27 @@ def main():
             if agent_list:
                 total_agents += len(agent_list)
                 for agent in agent_list:
-                    print(f"  - Agent {agent.id}")
-                    print(f"    Name: {agent.name or 'Unnamed'}")
-                    print(f"    Status: {agent.status}")
-                    print(f"    Version: {agent.version or 'Unknown'}")
-                    print(f"    IP: {agent.ip_address or 'Unknown'}")
-                    print(f"    Last Ping: {agent.last_ping_at or 'Never'}")
+                    print(f"Agent {agent.id}")
+                    print(f"Name: {agent.name or 'Unnamed'}")
+                    print(f"Status: {agent.status}")
+                    print(f"Version: {agent.version or 'Unknown'}")
+                    print(f"IP: {agent.ip_address or 'Unknown'}")
+                    print(f"Last Ping: {agent.last_ping_at or 'Never'}")
 
                     # Example 3: Read detailed agent information
                     try:
                         agent_details = client.agents.read(agent.id)
-                        print("    Agent details retrieved successfully")
-                        print(f"      Full name: {agent_details.name or 'Unnamed'}")
-                        print(f"      Current status: {agent_details.status}")
+                        print("Agent details retrieved successfully")
+                        print(f"Full name: {agent_details.name or 'Unnamed'}")
+                        print(f"Current status: {agent_details.status}")
                     except NotFound:
-                        print("     Agent details not accessible")
+                        print("Agent details not accessible")
                     except Exception as e:
-                        print(f"     Error reading agent details: {e}")
+                        print(f"Error reading agent details: {e}")
 
                     print("")
             else:
-                print("  No agents found in this pool")
+                print("No agents found in this pool")
 
         if total_agents == 0:
             print("\n No agents found in any pools.")

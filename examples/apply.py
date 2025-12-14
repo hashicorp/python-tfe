@@ -39,9 +39,9 @@ def main():
 
         # Display timestamp details if available
         if apply.status_timestamps:
-            print(f"  Queued At: {apply.status_timestamps.queued_at}")
-            print(f"  Started At: {apply.status_timestamps.started_at}")
-            print(f"  Finished At: {apply.status_timestamps.finished_at}")
+            print(f"Queued At: {apply.status_timestamps.queued_at}")
+            print(f"Started At: {apply.status_timestamps.started_at}")
+            print(f"Finished At: {apply.status_timestamps.finished_at}")
     except Exception as e:
         print(f"Error reading apply: {e}")
         return 1

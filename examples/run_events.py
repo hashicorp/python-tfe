@@ -106,9 +106,9 @@ def main():
         else:
             for event in event_list.items:
                 print(f"Event ID: {event.id}")
-                print(f"  Action: {event.action or 'N/A'}")
-                print(f"  Description: {event.description or 'N/A'}")
-                print(f"  Created At: {event.created_at or 'N/A'}")
+                print(f"Action: {event.action or 'N/A'}")
+                print(f"Description: {event.description or 'N/A'}")
+                print(f"Created At: {event.created_at or 'N/A'}")
 
                 print()
 

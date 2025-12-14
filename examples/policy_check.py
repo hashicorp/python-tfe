@@ -66,17 +66,17 @@ def main():
         else:
             for pc in pc_list.items:
                 print(f"- ID: {pc.id}")
-                print(f"  Status: {pc.status}")
-                print(f"  Scope: {pc.scope}")
+                print(f"Status: {pc.status}")
+                print(f"Scope: {pc.scope}")
                 if pc.result:
                     print(
-                        f"  Result: passed={pc.result.passed}, failed={pc.result.total_failed}"
+                        f"Result: passed={pc.result.passed}, failed={pc.result.total_failed}"
                     )
-                    print(f"  Duration: {pc.result.duration}ms")
+                    print(f"Duration: {pc.result.duration}ms")
                 if pc.actions:
-                    print(f"  Can Override: {pc.actions.is_overridable}")
+                    print(f"Can Override: {pc.actions.is_overridable}")
                 if pc.permissions:
-                    print(f"  Has Override Permission: {pc.permissions.can_override}")
+                    print(f"Has Override Permission: {pc.permissions.can_override}")
                 print()
 
     except Exception as e:
@@ -96,34 +96,34 @@ def main():
 
             if pc.result:
                 print("Result Summary:")
-                print(f"  - Passed: {pc.result.passed}")
-                print(f"  - Hard Failed: {pc.result.hard_failed}")
-                print(f"  - Soft Failed: {pc.result.soft_failed}")
-                print(f"  - Advisory Failed: {pc.result.advisory_failed}")
-                print(f"  - Total Failed: {pc.result.total_failed}")
-                print(f"  - Duration: {pc.result.duration}ms")
-                print(f"  - Overall Result: {pc.result.result}")
+                print(f"- Passed: {pc.result.passed}")
+                print(f"- Hard Failed: {pc.result.hard_failed}")
+                print(f"- Soft Failed: {pc.result.soft_failed}")
+                print(f"- Advisory Failed: {pc.result.advisory_failed}")
+                print(f"- Total Failed: {pc.result.total_failed}")
+                print(f"- Duration: {pc.result.duration}ms")
+                print(f"- Overall Result: {pc.result.result}")
 
             if pc.actions:
                 print("Actions:")
-                print(f"  - Is Overridable: {pc.actions.is_overridable}")
+                print(f"- Is Overridable: {pc.actions.is_overridable}")
 
             if pc.permissions:
                 print("Permissions:")
-                print(f"  - Can Override: {pc.permissions.can_override}")
+                print(f"- Can Override: {pc.permissions.can_override}")
 
             if pc.status_timestamps:
                 print("Status Timestamps:")
                 if pc.status_timestamps.queued_at:
-                    print(f"  - Queued At: {pc.status_timestamps.queued_at}")
+                    print(f"- Queued At: {pc.status_timestamps.queued_at}")
                 if pc.status_timestamps.passed_at:
-                    print(f"  - Passed At: {pc.status_timestamps.passed_at}")
+                    print(f"- Passed At: {pc.status_timestamps.passed_at}")
                 if pc.status_timestamps.soft_failed_at:
-                    print(f"  - Soft Failed At: {pc.status_timestamps.soft_failed_at}")
+                    print(f"- Soft Failed At: {pc.status_timestamps.soft_failed_at}")
                 if pc.status_timestamps.hard_failed_at:
-                    print(f"  - Hard Failed At: {pc.status_timestamps.hard_failed_at}")
+                    print(f"- Hard Failed At: {pc.status_timestamps.hard_failed_at}")
                 if pc.status_timestamps.errored_at:
-                    print(f"  - Errored At: {pc.status_timestamps.errored_at}")
+                    print(f"- Errored At: {pc.status_timestamps.errored_at}")
 
         except Exception as e:
             print(f"Error reading policy check: {e}")

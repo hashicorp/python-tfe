@@ -57,17 +57,17 @@ def main():
     try:
         # Test basic list without options
         token_list = client.oauth_tokens.list(organization_name)
-        print(f"    Found {len(token_list.items)} OAuth tokens")
+        print(f"Found {len(token_list.items)} OAuth tokens")
 
         # Show token details
         for i, token in enumerate(token_list.items[:3], 1):  # Show first 3
-            print(f"   {i}. Token ID: {token.id}")
-            print(f"      UID: {token.uid}")
-            print(f"      Service Provider User: {token.service_provider_user}")
-            print(f"      Has SSH Key: {token.has_ssh_key}")
-            print(f"      Created: {token.created_at}")
+            print(f"{i}. Token ID: {token.id}")
+            print(f"UID: {token.uid}")
+            print(f"Service Provider User: {token.service_provider_user}")
+            print(f"Has SSH Key: {token.has_ssh_key}")
+            print(f"Created: {token.created_at}")
             if token.oauth_client:
-                print(f"      OAuth Client: {token.oauth_client.id}")
+                print(f"OAuth Client: {token.oauth_client.id}")
 
         # Store first token for subsequent tests
         if token_list.items:
@@ -75,21 +75,21 @@ def main():
             print(f"\n   Using token {test_token_id} for subsequent tests")
 
         # Test list with options
-        print("\n   Testing list() with pagination options:")
+        print("\nTesting list() with pagination options:")
         options = OAuthTokenListOptions(page_size=10, page_number=1)
         token_list_with_options = client.oauth_tokens.list(organization_name, options)
-        print(f"    Found {len(token_list_with_options.items)} tokens with options")
+        print(f"Found {len(token_list_with_options.items)} tokens with options")
         if token_list_with_options.current_page:
-            print(f"     Current page: {token_list_with_options.current_page}")
+            print(f"Current page: {token_list_with_options.current_page}")
         if token_list_with_options.total_count:
-            print(f"     Total count: {token_list_with_options.total_count}")
+            print(f"Total count: {token_list_with_options.total_count}")
 
     except NotFound:
         print(
-            "    No OAuth tokens found (organization may not exist or no tokens available)"
+            "No OAuth tokens found (organization may not exist or no tokens available)"
         )
     except Exception as e:
-        print(f"    Error: {e}")
+        print(f"Error: {e}")
 
     # =====================================================
     # TEST 2: READ OAUTH TOKEN
@@ -98,19 +98,19 @@ def main():
         print("\n2. Testing read() function:")
         try:
             token = client.oauth_tokens.read(test_token_id)
-            print(f"    Read OAuth token: {token.id}")
-            print(f"     UID: {token.uid}")
-            print(f"     Service Provider User: {token.service_provider_user}")
-            print(f"     Has SSH Key: {token.has_ssh_key}")
-            print(f"     Created: {token.created_at}")
+            print(f"Read OAuth token: {token.id}")
+            print(f"UID: {token.uid}")
+            print(f"Service Provider User: {token.service_provider_user}")
+            print(f"Has SSH Key: {token.has_ssh_key}")
+            print(f"Created: {token.created_at}")
             if token.oauth_client:
-                print(f"     OAuth Client: {token.oauth_client.id}")
+                print(f"OAuth Client: {token.oauth_client.id}")
 
         except Exception as e:
-            print(f"    Error: {e}")
+            print(f"Error: {e}")
     else:
         print("\n2. Testing read() function:")
-        print("    Skipped - No OAuth token available to read")
+        print("Skipped - No OAuth token available to read")
 
     # =====================================================
     # TEST 3: UPDATE OAUTH TOKEN
@@ -119,29 +119,29 @@ def main():
         print("\n3. Testing update() function:")
         try:
             # Test updating with SSH key
-            print("   Testing update with SSH key...")
+            print("Testing update with SSH key...")
             ssh_key = """-----BEGIN RSA PRIVATE KEY-----
 -----END RSA PRIVATE KEY-----"""
 
             options = OAuthTokenUpdateOptions(private_ssh_key=ssh_key)
             updated_token = client.oauth_tokens.update(test_token_id, options)
-            print(f"    Updated OAuth token: {updated_token.id}")
-            print(f"     Has SSH Key after update: {updated_token.has_ssh_key}")
+            print(f"Updated OAuth token: {updated_token.id}")
+            print(f"Has SSH Key after update: {updated_token.has_ssh_key}")
 
             # Test updating without SSH key (no changes)
             print("\n   Testing update without changes...")
             options_empty = OAuthTokenUpdateOptions()
             updated_token_2 = client.oauth_tokens.update(test_token_id, options_empty)
-            print(f"    Updated OAuth token (no changes): {updated_token_2.id}")
+            print(f"Updated OAuth token (no changes): {updated_token_2.id}")
 
         except Exception as e:
-            print(f"    Error: {e}")
+            print(f"Error: {e}")
             print(
-                "   Note: This may fail if the SSH key format is invalid or constraints apply"
+                "Note: This may fail if the SSH key format is invalid or constraints apply"
             )
     else:
         print("\n3. Testing update() function:")
-        print("    Skipped - No OAuth token available to update")
+        print("Skipped - No OAuth token available to update")
 
     # =====================================================
     # TEST 4: DELETE OAUTH TOKEN
@@ -152,44 +152,44 @@ def main():
     delete_token_id = "ot-WQf5ARHA1Qxzo9d4"
 
     try:
-        print(f"   Attempting to delete OAuth token: {delete_token_id}")
+        print(f"Attempting to delete OAuth token: {delete_token_id}")
         client.oauth_tokens.delete(delete_token_id)
-        print(f"    Successfully deleted OAuth token: {delete_token_id}")
+        print(f"Successfully deleted OAuth token: {delete_token_id}")
 
         # Verify deletion by trying to read the token
         try:
             client.oauth_tokens.read(delete_token_id)
-            print("    Token still exists after deletion!")
+            print("Token still exists after deletion!")
         except NotFound:
-            print("    Confirmed token was deleted - no longer accessible")
+            print("Confirmed token was deleted - no longer accessible")
         except Exception as e:
-            print(f"   ? Verification failed: {e}")
+            print(f"? Verification failed: {e}")
 
     except Exception as e:
-        print(f"    Error deleting token: {e}")
+        print(f"Error deleting token: {e}")
 
     # Uncomment the following section ONLY if you have a disposable OAuth token
     # WARNING: This will permanently delete the OAuth token!
     """
     if test_token_id:
         try:
-            print(f"   Attempting to delete OAuth token: {test_token_id}")
+            print(f"Attempting to delete OAuth token: {test_token_id}")
             client.oauth_tokens.delete(test_token_id)
-            print(f"    Successfully deleted OAuth token: {test_token_id}")
+            print(f"Successfully deleted OAuth token: {test_token_id}")
 
             # Verify deletion by trying to read the token
             try:
                 client.oauth_tokens.read(test_token_id)
-                print(f"    Token still exists after deletion!")
+                print(f"Token still exists after deletion!")
             except NotFound:
-                print(f"    Confirmed token was deleted - no longer accessible")
+                print(f"Confirmed token was deleted - no longer accessible")
             except Exception as e:
-                print(f"   ? Verification failed: {e}")
+                print(f"? Verification failed: {e}")
 
         except Exception as e:
-            print(f"    Error deleting token: {e}")
+            print(f"Error deleting token: {e}")
     else:
-        print("    Skipped - No OAuth token available to delete")
+        print("Skipped - No OAuth token available to delete")
     """
 
     # =====================================================
@@ -199,10 +199,10 @@ def main():
     print("OAUTH TOKEN TESTING COMPLETE")
     print("=" * 80)
     print("Functions tested:")
-    print(" 1. list() - List OAuth tokens for organization")
-    print(" 2. read() - Read OAuth token by ID")
-    print(" 3. update() - Update existing OAuth token")
-    print(" 4. delete() - Delete OAuth token (testing with ot-WQf5ARHA1Qxzo9d4)")
+    print("1. list() - List OAuth tokens for organization")
+    print("2. read() - Read OAuth token by ID")
+    print("3. update() - Update existing OAuth token")
+    print("4. delete() - Delete OAuth token (testing with ot-WQf5ARHA1Qxzo9d4)")
     print("")
     print("All OAuth token functions have been tested!")
     print("Check the output above for any errors or warnings.")

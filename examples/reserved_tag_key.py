@@ -36,11 +36,11 @@ def main():
 
     # Validate environment variables
     if not TFE_TOKEN:
-        print(" Error: TFE_TOKEN environment variable is required")
+        print("Error: TFE_TOKEN environment variable is required")
         sys.exit(1)
 
     if not TFE_ORG:
-        print(" Error: TFE_ORG environment variable is required")
+        print("Error: TFE_ORG environment variable is required")
         sys.exit(1)
 
     # Initialize the TFE client
@@ -68,7 +68,7 @@ def main():
 
         new_rtk = client.reserved_tag_key.create(TFE_ORG, create_options)
         print(f"Created reserved tag key: {new_rtk.id} - {new_rtk.key}")
-        print(f"   Disable Overrides: {new_rtk.disable_overrides}")
+        print(f"Disable Overrides: {new_rtk.disable_overrides}")
 
         # 3. Update the reserved tag key
         print("\n3. Updating the reserved tag key...")
@@ -78,7 +78,7 @@ def main():
 
         updated_rtk = client.reserved_tag_key.update(new_rtk.id, update_options)
         print(f"Updated reserved tag key: {updated_rtk.id} - {updated_rtk.key}")
-        print(f"   Disable Overrides: {updated_rtk.disable_overrides}")
+        print(f"Disable Overrides: {updated_rtk.disable_overrides}")
 
         # 4. Delete the reserved tag key
         print("\n4. Deleting the reserved tag key...")
@@ -95,8 +95,8 @@ def main():
         list_options = ReservedTagKeyListOptions(page_size=5, page_number=1)
         paginated_rtks = client.reserved_tag_key.list(TFE_ORG, list_options)
         print(f"Page 1 with page size 5: {len(paginated_rtks.items)} keys")
-        print(f"   Total pages: {paginated_rtks.total_pages}")
-        print(f"   Total count: {paginated_rtks.total_count}")
+        print(f"Total pages: {paginated_rtks.total_pages}")
+        print(f"Total count: {paginated_rtks.total_count}")
 
         print("\n Reserved Tag Keys API example completed successfully!")
 
@@ -108,11 +108,11 @@ def main():
         print(f"\n TFE API Error: {e}")
         if hasattr(e, "status"):
             if e.status == 403:
-                print(" Permission denied - check token permissions")
+                print("Permission denied - check token permissions")
             elif e.status == 401:
-                print(" Authentication failed - check token validity")
+                print("Authentication failed - check token validity")
             elif e.status == 422:
-                print(" Validation error - check reserved tag key format")
+                print("Validation error - check reserved tag key format")
         sys.exit(1)
 
     except Exception as e:

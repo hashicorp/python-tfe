@@ -191,33 +191,31 @@ def main():
     try:
         # Basic list without options
         cv_list = list(client.configuration_versions.list(workspace_id))
-        print(f"    Found {len(cv_list)} configuration versions")
+        print(f"Found {len(cv_list)} configuration versions")
 
         if cv_list:
-            print("   Recent configuration versions:")
+            print("Recent configuration versions:")
             for i, cv in enumerate(cv_list[:5], 1):
-                print(f"   {i}. {cv.id}")
-                print(f"      Status: {cv.status}")
-                print(f"      Source: {cv.source}")
+                print(f"{i}. {cv.id}")
+                print(f"Status: {cv.status}")
+                print(f"Source: {cv.source}")
                 if cv.status_timestamps and "queued-at" in cv.status_timestamps:
-                    print(f"      Queued at: {cv.status_timestamps['queued-at']}")
+                    print(f"Queued at: {cv.status_timestamps['queued-at']}")
                 elif cv.status_timestamps:
                     first_timestamp = list(cv.status_timestamps.keys())[0]
-                    print(
-                        f"      {first_timestamp}: {cv.status_timestamps[first_timestamp]}"
-                    )
+                    print(f"{first_timestamp}: {cv.status_timestamps[first_timestamp]}")
                 else:
-                    print("      No timestamps available")
+                    print("No timestamps available")
 
         # Test with options
-        print("\n   Testing list with options:")
+        print("\nTesting list with options:")
         try:
             list_options = ConfigurationVersionListOptions(
                 include=[ConfigVerIncludeOpt.INGRESS_ATTRIBUTES],
                 page_size=5,  # Reduced page size
                 page_number=1,
             )
-            print(f"     Making request with include: {list_options.include[0].value}")
+            print(f"Making request with include: {list_options.include[0].value}")
 
             # Add timeout protection by limiting the iterator
             cv_list_opts = []
@@ -228,18 +226,16 @@ def main():
                 if count >= 10:  # Limit to prevent infinite loop
                     break
 
-            print(f"    Found {len(cv_list_opts)} configuration versions with options")
-            print(
-                f"     Include options: {[opt.value for opt in list_options.include]}"
-            )
+            print(f"Found {len(cv_list_opts)} configuration versions with options")
+            print(f"Include options: {[opt.value for opt in list_options.include]}")
 
         except Exception as opts_error:
-            print(f"    Error with options: {opts_error}")
-            print("     This may be expected if the API doesn't support these options")
-            print("     Basic list functionality still works")
+            print(f"Error with options: {opts_error}")
+            print("This may be expected if the API doesn't support these options")
+            print("Basic list functionality still works")
 
     except Exception as e:
-        print(f"    Error: {e}")
+        print(f"Error: {e}")
         import traceback
 
         traceback.print_exc()
@@ -250,7 +246,7 @@ def main():
     print("\n2. Testing create() function:")
     try:
         # Test 2a: Create and upload a REAL configuration version that will show in runs
-        print("   2a. Creating REAL NON-SPECULATIVE configuration version:")
+        print("2a. Creating REAL NON-SPECULATIVE configuration version:")
         create_options = ConfigurationVersionCreateOptions(
             auto_queue_runs=True,  # This will create a run automatically
             speculative=False,  # This will make it appear in workspace runs
@@ -258,23 +254,23 @@ def main():
 
         new_cv = client.configuration_versions.create(workspace_id, create_options)
         created_cv_id = new_cv.id
-        print(f"    Created NON-SPECULATIVE CV: {created_cv_id}")
-        print(f"     Status: {new_cv.status}")
-        print(f"     Speculative: {new_cv.speculative} (will show in runs)")
-        print(f"     Auto-queue runs: {new_cv.auto_queue_runs} (will create run)")
-        print(f"     Upload URL available: {bool(new_cv.upload_url)}")
+        print(f"Created NON-SPECULATIVE CV: {created_cv_id}")
+        print(f"Status: {new_cv.status}")
+        print(f"Speculative: {new_cv.speculative} (will show in runs)")
+        print(f"Auto-queue runs: {new_cv.auto_queue_runs} (will create run)")
+        print(f"Upload URL available: {bool(new_cv.upload_url)}")
 
         # UPLOAD REAL TERRAFORM CODE IMMEDIATELY
         if new_cv.upload_url:
-            print("\n    Uploading real Terraform configuration...")
+            print("\nUploading real Terraform configuration...")
 
             with tempfile.TemporaryDirectory() as temp_dir:
-                print(f"     Creating Terraform files in: {temp_dir}")
+                print(f"Creating Terraform files in: {temp_dir}")
                 create_test_terraform_configuration(temp_dir)
 
                 # List created files
                 files = os.listdir(temp_dir)
-                print(f"     Created {len(files)} Terraform files:")
+                print(f"Created {len(files)} Terraform files:")
                 for filename in sorted(files):
                     filepath = os.path.join(temp_dir, filename)
                     size = os.path.getsize(filepath)
@@ -282,7 +278,7 @@ def main():
 
                 try:
                     # Create tar.gz archive manually since go-slug isn't available
-                    print("      Creating tar.gz archive manually...")
+                    print("Creating tar.gz archive manually...")
 
                     import tarfile
 
@@ -296,41 +292,41 @@ def main():
 
                     archive_buffer.seek(0)
                     archive_bytes = archive_buffer.getvalue()
-                    print(f"      Created archive: {len(archive_bytes)} bytes")
+                    print(f"Created archive: {len(archive_bytes)} bytes")
 
                     # Use the SDK's upload_tar_gzip method instead of direct HTTP calls
-                    print("      Uploading archive using SDK method...")
+                    print("Uploading archive using SDK method...")
                     archive_buffer.seek(0)  # Reset buffer position
                     client.configuration_versions.upload_tar_gzip(
                         new_cv.upload_url, archive_buffer
                     )
-                    print("      Terraform configuration uploaded successfully!")
+                    print("Terraform configuration uploaded successfully!")
 
                     # Wait and check status
-                    print("\n      Checking status after upload...")
+                    print("\nChecking status after upload...")
                     time.sleep(5)  # Give TFE time to process
 
                     updated_cv = client.configuration_versions.read(created_cv_id)
-                    print(f"     Status after upload: {updated_cv.status}")
+                    print(f"Status after upload: {updated_cv.status}")
 
                     if updated_cv.status.value in ["uploaded", "fetching"]:
-                        print("     REAL configuration version created successfully!")
-                        print("      This CV now contains actual Terraform code")
+                        print("REAL configuration version created successfully!")
+                        print("This CV now contains actual Terraform code")
                         print(
-                            "      You can now see this CV in your Terraform Cloud workspace!"
+                            "You can now see this CV in your Terraform Cloud workspace!"
                         )
                     else:
-                        print(f"      Status is still: {updated_cv.status.value}")
-                        print("       (Upload may still be processing)")
+                        print(f"Status is still: {updated_cv.status.value}")
+                        print("(Upload may still be processing)")
 
                 except Exception as e:
-                    print(f"      Upload failed: {type(e).__name__}: {e}")
-                    print("      CV created but no configuration uploaded")
+                    print(f"Upload failed: {type(e).__name__}: {e}")
+                    print("CV created but no configuration uploaded")
         else:
-            print("      No upload URL - cannot upload Terraform code")
+            print("No upload URL - cannot upload Terraform code")
 
         # Test 2b: Create standard configuration version for upload testing
-        print("\n   2b. Creating standard configuration version for upload tests:")
+        print("\n 2b. Creating standard configuration version for upload tests:")
         standard_options = ConfigurationVersionCreateOptions(
             auto_queue_runs=False, speculative=False
         )
@@ -339,24 +335,24 @@ def main():
             workspace_id, standard_options
         )
         uploadable_cv_id = standard_cv.id  # Save for summary display
-        print(f"    Created standard CV: {standard_cv.id}")
-        print(f"     Status: {standard_cv.status}")
-        print(f"     Speculative: {standard_cv.speculative}")
-        print(f"     Auto-queue runs: {standard_cv.auto_queue_runs}")
+        print(f"Created standard CV: {standard_cv.id}")
+        print(f"Status: {standard_cv.status}")
+        print(f"Speculative: {standard_cv.speculative}")
+        print(f"Auto-queue runs: {standard_cv.auto_queue_runs}")
 
         # Test 2c: Create with auto-queue runs (will trigger run when uploaded)
-        print("\n   2c. Creating configuration version with auto-queue:")
+        print("\n 2c. Creating configuration version with auto-queue:")
         auto_options = ConfigurationVersionCreateOptions(
             auto_queue_runs=True, speculative=False
         )
 
         auto_cv = client.configuration_versions.create(workspace_id, auto_options)
-        print(f"    Created auto-queue CV: {auto_cv.id}")
-        print(f"     Auto-queue runs: {auto_cv.auto_queue_runs}")
-        print("      This will trigger a Terraform run when code is uploaded")
+        print(f"Created auto-queue CV: {auto_cv.id}")
+        print(f"Auto-queue runs: {auto_cv.auto_queue_runs}")
+        print("This will trigger a Terraform run when code is uploaded")
 
     except Exception as e:
-        print(f"    Error: {e}")
+        print(f"Error: {e}")
         import traceback
 
         traceback.print_exc()
@@ -369,29 +365,25 @@ def main():
         try:
             cv_details = client.configuration_versions.read(created_cv_id)
 
-            print(f"    Read configuration version: {cv_details.id}")
-            print(f"     Status: {cv_details.status}")
-            print(f"     Source: {cv_details.source}")
+            print(f"Read configuration version: {cv_details.id}")
+            print(f"Status: {cv_details.status}")
+            print(f"Source: {cv_details.source}")
             if cv_details.status_timestamps:
-                print(
-                    f"     Status timestamps: {list(cv_details.status_timestamps.keys())}"
-                )
+                print(f"Status timestamps: {list(cv_details.status_timestamps.keys())}")
                 if "queued-at" in cv_details.status_timestamps:
-                    print(
-                        f"     Queued at: {cv_details.status_timestamps['queued-at']}"
-                    )
+                    print(f"Queued at: {cv_details.status_timestamps['queued-at']}")
             else:
-                print("     No status timestamps available")
-            print(f"     Auto-queue runs: {cv_details.auto_queue_runs}")
-            print(f"     Speculative: {cv_details.speculative}")
+                print("No status timestamps available")
+            print(f"Auto-queue runs: {cv_details.auto_queue_runs}")
+            print(f"Speculative: {cv_details.speculative}")
 
             if cv_details.upload_url:
-                print(f"     Upload URL: {cv_details.upload_url[:60]}...")
+                print(f"Upload URL: {cv_details.upload_url[:60]}...")
             else:
-                print("     Upload URL: None")
+                print("Upload URL: None")
 
             # Test field validation
-            print("\n   Field validation:")
+            print("\n Field validation:")
             required_fields = [
                 "id",
                 "status",
@@ -403,12 +395,12 @@ def main():
             for field in required_fields:
                 if hasattr(cv_details, field):
                     value = getattr(cv_details, field)
-                    print(f"      {field}: {type(value).__name__}")
+                    print(f"{field}: {type(value).__name__}")
                 else:
-                    print(f"      {field}: Missing")
+                    print(f"{field}: Missing")
 
         except Exception as e:
-            print(f"    Error: {e}")
+            print(f"Error: {e}")
             import traceback
 
             traceback.print_exc()
@@ -426,59 +418,59 @@ def main():
         )
 
         fresh_cv = client.configuration_versions.create(workspace_id, upload_options)
-        print(f"   Created fresh CV for upload: {fresh_cv.id}")
+        print(f"Created fresh CV for upload: {fresh_cv.id}")
 
         upload_url = fresh_cv.upload_url
 
         if not upload_url:
-            print("    No upload URL available for this configuration version")
-            print("     Configuration version may not be in uploadable state")
+            print("No upload URL available for this configuration version")
+            print("Configuration version may not be in uploadable state")
         else:
             with tempfile.TemporaryDirectory() as temp_dir:
-                print(f"   Creating test configuration in: {temp_dir}")
+                print(f"Creating test configuration in: {temp_dir}")
                 create_test_terraform_configuration(temp_dir)
 
                 # List created files
                 files = os.listdir(temp_dir)
-                print(f"   Created {len(files)} files:")
+                print(f"Created {len(files)} files:")
                 for filename in sorted(files):
                     filepath = os.path.join(temp_dir, filename)
                     size = os.path.getsize(filepath)
                     print(f"     - {filename} ({size} bytes)")
 
-                print(f"\n   Uploading configuration to CV: {fresh_cv.id}")
-                print(f"   Upload URL: {upload_url[:60]}...")
+                print(f"\n Uploading configuration to CV: {fresh_cv.id}")
+                print(f"Upload URL: {upload_url[:60]}...")
 
                 try:
                     client.configuration_versions.upload(upload_url, temp_dir)
-                    print("    Configuration uploaded successfully!")
+                    print("Configuration uploaded successfully!")
 
                     # Check status after upload
-                    print("\n   Checking status after upload:")
+                    print("\n Checking status after upload:")
                     time.sleep(3)  # Give TFE time to process
                     updated_cv = client.configuration_versions.read(fresh_cv.id)
-                    print(f"     Status after upload: {updated_cv.status}")
+                    print(f"Status after upload: {updated_cv.status}")
 
                     if updated_cv.status.value != "pending":
-                        print("      Status changed (upload processed)")
+                        print("Status changed (upload processed)")
                     else:
-                        print("      Status still pending (may need more time)")
+                        print("Status still pending (may need more time)")
 
                 except ImportError as e:
                     if "go-slug" in str(e):
-                        print("    go-slug package not available")
-                        print("     Install with: pip install go-slug")
+                        print("go-slug package not available")
+                        print("Install with: pip install go-slug")
                         print(
-                            "     Upload function exists but requires go-slug for packaging"
+                            "Upload function exists but requires go-slug for packaging"
                         )
                         print(
-                            "    Function correctly raises ImportError when go-slug unavailable"
+                            "Function correctly raises ImportError when go-slug unavailable"
                         )
                     else:
                         raise
 
     except Exception as e:
-        print(f"    Error: {e}")
+        print(f"Error: {e}")
         import traceback
 
         traceback.print_exc()
@@ -492,7 +484,7 @@ def main():
         cv_generator = client.configuration_versions.list(workspace_id)
 
         downloadable_cvs = []
-        print("   Scanning for downloadable configuration versions:")
+        print("Scanning for downloadable configuration versions:")
         # Convert generator to list and limit to avoid infinite loop
         cv_list = []
         count = 0
@@ -503,46 +495,46 @@ def main():
                 break
 
         for cv in cv_list:
-            print(f"     CV {cv.id}: Status = {cv.status}")
+            print(f"CV {cv.id}: Status = {cv.status}")
             if cv.status.value in ["uploaded", "archived"]:
                 downloadable_cvs.append(cv)
 
         if not downloadable_cvs:
-            print("    No uploaded configuration versions found to download")
-            print("     This is not a test failure - upload a configuration first")
+            print("No uploaded configuration versions found to download")
+            print("This is not a test failure - upload a configuration first")
         else:
             downloadable_cv = downloadable_cvs[0]
-            print(f"\n   Downloading CV: {downloadable_cv.id}")
-            print(f"   Status: {downloadable_cv.status}")
+            print(f"\n Downloading CV: {downloadable_cv.id}")
+            print(f"Status: {downloadable_cv.status}")
 
             archive_data = client.configuration_versions.download(downloadable_cv.id)
-            print(f"    Downloaded {len(archive_data)} bytes")
+            print(f"Downloaded {len(archive_data)} bytes")
 
             # Validate downloaded data
-            print("\n   Validating downloaded data:")
+            print("\n Validating downloaded data:")
             if len(archive_data) > 0:
-                print("      Archive data is non-empty")
+                print("Archive data is non-empty")
 
                 # Basic format check
                 if archive_data[:2] == b"\x1f\x8b":
-                    print("      Data appears to be gzip format")
+                    print("Data appears to be gzip format")
                 else:
-                    print("      Data may not be gzip format (could still be valid)")
+                    print("Data may not be gzip format (could still be valid)")
             else:
-                print("      Archive data is empty")
+                print("Archive data is empty")
 
             # Test multiple downloads if available
             if len(downloadable_cvs) > 1:
-                print("\n   Testing multiple downloads:")
+                print("\n Testing multiple downloads:")
                 for i, cv in enumerate(downloadable_cvs[1:3], 2):
                     try:
                         data = client.configuration_versions.download(cv.id)
-                        print(f"      CV {i}: {cv.id} - {len(data)} bytes")
+                        print(f"CV {i}: {cv.id} - {len(data)} bytes")
                     except Exception as e:
-                        print(f"      CV {i}: {cv.id} - Failed: {type(e).__name__}")
+                        print(f"CV {i}: {cv.id} - Failed: {type(e).__name__}")
 
     except Exception as e:
-        print(f"    Error: {e}")
+        print(f"Error: {e}")
         import traceback
 
         traceback.print_exc()
@@ -566,19 +558,19 @@ def main():
 
         if len(cv_list) < 2:
             print(
-                "    Need at least 2 configuration versions to test archive functionality"
+                "Need at least 2 configuration versions to test archive functionality"
             )
             print(
-                "     This is not a test failure - create more configuration versions first"
+                "This is not a test failure - create more configuration versions first"
             )
         else:
             # Find suitable candidates for archiving
             archivable_cvs = []
             already_archived = []
 
-            print("   Scanning configuration versions for archiving:")
+            print("Scanning configuration versions for archiving:")
             for cv in cv_list:
-                print(f"     CV {cv.id}: Status = {cv.status}")
+                print(f"CV {cv.id}: Status = {cv.status}")
                 if cv.status.value == "archived":
                     already_archived.append(cv)
                 elif cv.status.value in ["uploaded", "errored", "pending"]:
@@ -596,59 +588,53 @@ def main():
 
             if candidates:
                 cv_to_archive = candidates[0]  # Pick an older uploaded CV
-                print(f"\n   Attempting to archive CV: {cv_to_archive.id}")
-                print(f"   Current status: {cv_to_archive.status}")
-                print("   (Skipping most recent uploaded CV to avoid 'current' error)")
+                print(f"\n Attempting to archive CV: {cv_to_archive.id}")
+                print(f"Current status: {cv_to_archive.status}")
+                print("(Skipping most recent uploaded CV to avoid 'current' error)")
 
                 try:
                     client.configuration_versions.archive(cv_to_archive.id)
-                    print("    Archive request sent successfully")
+                    print("Archive request sent successfully")
 
                     # Check status after archive request
-                    print("\n   Checking status after archive request:")
+                    print("\n Checking status after archive request:")
                     time.sleep(3)
                     try:
                         updated_cv = client.configuration_versions.read(
                             cv_to_archive.id
                         )
-                        print(f"     Status after archive: {updated_cv.status}")
+                        print(f"Status after archive: {updated_cv.status}")
                         if updated_cv.status.value == "archived":
-                            print("      Successfully archived")
+                            print("Successfully archived")
                         else:
-                            print("      Still processing (archive may take time)")
+                            print("Still processing (archive may take time)")
                     except Exception:
-                        print(
-                            "      Could not read status after archive (may be expected)"
-                        )
+                        print("Could not read status after archive (may be expected)")
 
                 except Exception as e:
                     if "404" in str(e) or "not found" in str(e).lower():
-                        print("      CV may have been auto-archived or removed")
+                        print("CV may have been auto-archived or removed")
                     elif "current" in str(e).lower():
-                        print("      Cannot archive current configuration version")
-                        print(
-                            "      Function correctly handles 'current' CV restriction"
-                        )
+                        print("Cannot archive current configuration version")
+                        print("Function correctly handles 'current' CV restriction")
                     else:
-                        print(f"      Archive failed: {type(e).__name__}: {e}")
+                        print(f"Archive failed: {type(e).__name__}: {e}")
             else:
-                print("\n    No suitable configuration versions found for archiving")
-                print(
-                    "     Need at least 2 uploaded CVs (to avoid archiving current one)"
-                )
-                print("      Function correctly validates archivable CVs")
+                print("\n No suitable configuration versions found for archiving")
+                print("Need at least 2 uploaded CVs (to avoid archiving current one)")
+                print("Function correctly validates archivable CVs")
 
             # Test archiving already archived CV
             if already_archived:
-                print("\n   Testing archive of already archived CV:")
+                print("\n Testing archive of already archived CV:")
                 already_archived_cv = already_archived[0]
-                print(f"     CV ID: {already_archived_cv.id} (already archived)")
+                print(f"CV ID: {already_archived_cv.id} (already archived)")
 
                 try:
                     client.configuration_versions.archive(already_archived_cv.id)
-                    print("      Handled gracefully (no-op for already archived)")
+                    print("Handled gracefully (no-op for already archived)")
                 except Exception as e:
-                    print(f"      Correctly rejected: {type(e).__name__}")
+                    print(f"Correctly rejected: {type(e).__name__}")
 
     except Exception as e:
         print(f"    Error: {e}")
@@ -671,33 +657,31 @@ def main():
                 created_cv_id, read_options
             )
 
-            print(f"    Read configuration version with options: {cv_with_options.id}")
-            print(f"     Status: {cv_with_options.status}")
-            print(f"     Source: {cv_with_options.source}")
+            print(f"Read configuration version with options: {cv_with_options.id}")
+            print(f"Status: {cv_with_options.status}")
+            print(f"Source: {cv_with_options.source}")
 
             if (
                 hasattr(cv_with_options, "ingress_attributes")
                 and cv_with_options.ingress_attributes
             ):
-                print("    Ingress attributes included in response")
+                print("Ingress attributes included in response")
                 if hasattr(cv_with_options.ingress_attributes, "branch"):
-                    print(f"     Branch: {cv_with_options.ingress_attributes.branch}")
+                    print(f"Branch: {cv_with_options.ingress_attributes.branch}")
                 if hasattr(cv_with_options.ingress_attributes, "clone_url"):
-                    print(
-                        f"     Clone URL: {cv_with_options.ingress_attributes.clone_url}"
-                    )
+                    print(f"Clone URL: {cv_with_options.ingress_attributes.clone_url}")
             else:
-                print("    No ingress attributes (expected for API-created CVs)")
-                print("     Ingress attributes are only present for VCS-connected CVs")
+                print("No ingress attributes (expected for API-created CVs)")
+                print("Ingress attributes are only present for VCS-connected CVs")
 
         except Exception as e:
-            print(f"    Error: {e}")
+            print(f"Error: {e}")
             import traceback
 
             traceback.print_exc()
     else:
         print("\n7. Testing read_with_options() function:")
-        print("    Skipped - no configuration version created for testing")
+        print("Skipped - no configuration version created for testing")
 
     # =====================================================
     # TEST 8: CREATE FOR REGISTRY MODULE (BETA)
@@ -714,37 +698,33 @@ def main():
             "provider": "aws",
         }
 
-        print("   Testing registry module configuration version creation:")
-        print(f"   Module ID: {module_id}")
+        print("Testing registry module configuration version creation:")
+        print(f"Module ID: {module_id}")
 
         try:
             registry_cv = client.configuration_versions.create_for_registry_module(
                 module_id
             )
-            print(f"    Created registry module CV: {registry_cv.id}")
-            print(f"     Status: {registry_cv.status}")
-            print(f"     Source: {registry_cv.source}")
+            print(f"Created registry module CV: {registry_cv.id}")
+            print(f"Status: {registry_cv.status}")
+            print(f"Source: {registry_cv.source}")
 
         except Exception as e:
             if "404" in str(e) or "not found" in str(e).lower():
-                print(
-                    "    Registry module not found (expected - requires actual module)"
-                )
-                print("     Function exists and properly handles missing modules")
+                print("Registry module not found (expected - requires actual module)")
+                print("Function exists and properly handles missing modules")
             elif "403" in str(e) or "forbidden" in str(e).lower():
-                print("    No permission to access registry modules (expected)")
-                print("     Function exists and properly handles permission errors")
+                print("No permission to access registry modules (expected)")
+                print("Function exists and properly handles permission errors")
             elif "AttributeError" in str(e):
-                print(f"    Function parameter error: {e}")
-                print("     Function exists but may need parameter adjustment")
+                print(f"Function parameter error: {e}")
+                print("Function exists but may need parameter adjustment")
             else:
-                print(
-                    f"    Registry module CV creation failed: {type(e).__name__}: {e}"
-                )
-                print("     This may be expected if no registry modules exist")
+                print(f"Registry module CV creation failed: {type(e).__name__}: {e}")
+                print("This may be expected if no registry modules exist")
 
     except Exception as e:
-        print(f"    Error: {e}")
+        print(f"Error: {e}")
         import traceback
 
         traceback.print_exc()
@@ -766,8 +746,8 @@ def main():
         upload_url = upload_test_cv.upload_url
 
         if upload_url:
-            print(f"   Created CV for upload test: {upload_test_cv_id}")
-            print(f"   Upload URL available: {bool(upload_url)}")
+            print(f"Created CV for upload test: {upload_test_cv_id}")
+            print(f"Upload URL available: {bool(upload_url)}")
 
             # Create a simple tar.gz archive in memory for testing
             import tarfile
@@ -784,32 +764,30 @@ def main():
                     tar.add(test_file, arcname="main.tf")
 
                 archive_buffer.seek(0)
-                print(
-                    f"   Created test archive: {len(archive_buffer.getvalue())} bytes"
-                )
+                print(f"Created test archive: {len(archive_buffer.getvalue())} bytes")
 
                 # Test direct tar.gz upload
                 try:
                     client.configuration_versions.upload_tar_gzip(
                         upload_url, archive_buffer
                     )
-                    print("    Direct tar.gz upload successful!")
+                    print("Direct tar.gz upload successful!")
 
                     # Check status after upload
                     time.sleep(2)
                     updated_upload_cv = client.configuration_versions.read(
                         upload_test_cv_id
                     )
-                    print(f"     Status after upload: {updated_upload_cv.status}")
+                    print(f"Status after upload: {updated_upload_cv.status}")
 
                 except Exception as e:
-                    print(f"    Upload failed: {type(e).__name__}: {e}")
-                    print("     This may be expected depending on TFE configuration")
+                    print(f"Upload failed: {type(e).__name__}: {e}")
+                    print("This may be expected depending on TFE configuration")
         else:
-            print("    No upload URL available - cannot test upload_tar_gzip")
+            print("No upload URL available - cannot test upload_tar_gzip")
 
     except Exception as e:
-        print(f"    Error: {e}")
+        print(f"Error: {e}")
         import traceback
 
         traceback.print_exc()
@@ -823,38 +801,38 @@ def main():
     # on non-Enterprise installations, but we test that the functions exist
 
     if created_cv_id:
-        print(f"   Testing with CV: {created_cv_id}")
+        print(f"Testing with CV: {created_cv_id}")
 
         # Test soft delete backing data
-        print("\n   10a. Testing soft_delete_backing_data():")
+        print("\n 10a. Testing soft_delete_backing_data():")
         try:
             client.configuration_versions.soft_delete_backing_data(created_cv_id)
-            print("    Soft delete backing data request sent successfully")
+            print("Soft delete backing data request sent successfully")
         except Exception as e:
             if "404" in str(e) or "not found" in str(e).lower():
-                print("    CV not found for backing data operation")
+                print("CV not found for backing data operation")
             elif "403" in str(e) or "forbidden" in str(e).lower():
-                print("    Enterprise feature - not available (expected)")
+                print("Enterprise feature - not available (expected)")
             else:
-                print(f"    Soft delete failed: {type(e).__name__}: {e}")
-            print("    Function exists and properly handles Enterprise restrictions")
+                print(f"Soft delete failed: {type(e).__name__}: {e}")
+            print("Function exists and properly handles Enterprise restrictions")
 
         # Test restore backing data
-        print("\n   10b. Testing restore_backing_data():")
+        print("\n 10b. Testing restore_backing_data():")
         try:
             client.configuration_versions.restore_backing_data(created_cv_id)
-            print("    Restore backing data request sent successfully")
+            print("Restore backing data request sent successfully")
         except Exception as e:
             if "404" in str(e) or "not found" in str(e).lower():
-                print("    CV not found for backing data operation")
+                print("CV not found for backing data operation")
             elif "403" in str(e) or "forbidden" in str(e).lower():
-                print("    Enterprise feature - not available (expected)")
+                print("Enterprise feature - not available (expected)")
             else:
-                print(f"    Restore failed: {type(e).__name__}: {e}")
-            print("    Function exists and properly handles Enterprise restrictions")
+                print(f"Restore failed: {type(e).__name__}: {e}")
+            print("Function exists and properly handles Enterprise restrictions")
 
         # Test permanently delete backing data
-        print("\n   10c. Testing permanently_delete_backing_data():")
+        print("\n 10c. Testing permanently_delete_backing_data():")
         try:
             # Create a separate CV for this destructive test
             perm_delete_options = ConfigurationVersionCreateOptions(
@@ -869,15 +847,15 @@ def main():
             client.configuration_versions.permanently_delete_backing_data(
                 perm_delete_cv_id
             )
-            print("    Permanent delete backing data request sent successfully")
+            print("Permanent delete backing data request sent successfully")
         except Exception as e:
             if "404" in str(e) or "not found" in str(e).lower():
-                print("    CV not found for backing data operation")
+                print("CV not found for backing data operation")
             elif "403" in str(e) or "forbidden" in str(e).lower():
-                print("    Enterprise feature - not available (expected)")
+                print("Enterprise feature - not available (expected)")
             else:
-                print(f"    Permanent delete failed: {type(e).__name__}: {e}")
-            print("    Function exists and properly handles Enterprise restrictions")
+                print(f"Permanent delete failed: {type(e).__name__}: {e}")
+            print(" sFunction exists and properly handles Enterprise restrictions")
 
     # =====================================================
     # TEST SUMMARY

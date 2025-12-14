@@ -82,10 +82,8 @@ def main():
 
             for run in run_list.items:
                 print(f"- {run.id} | status={run.status} | created={run.created_at}")
-                print(f"  message: {run.message}")
-                print(
-                    f"  has_changes: {run.has_changes} | is_destroy: {run.is_destroy}"
-                )
+                print(f"message: {run.message}")
+                print(f"has_changes: {run.has_changes} | is_destroy: {run.is_destroy}")
 
             if not run_list.items:
                 print("No runs found.")
@@ -119,11 +117,11 @@ def main():
 
                     if detailed_run.actions:
                         print("\nAvailable Actions:")
-                        print(f"  Can Apply: {detailed_run.actions.is_confirmable}")
-                        print(f"  Can Cancel: {detailed_run.actions.is_cancelable}")
-                        print(f"  Can Discard: {detailed_run.actions.is_discardable}")
+                        print(f"Can Apply: {detailed_run.actions.is_confirmable}")
+                        print(f"Can Cancel: {detailed_run.actions.is_cancelable}")
+                        print(f"Can Discard: {detailed_run.actions.is_discardable}")
                         print(
-                            f"  Can Force Cancel: {detailed_run.actions.is_force_cancelable}"
+                            f"Can Force Cancel: {detailed_run.actions.is_force_cancelable}"
                         )
 
                     if detailed_run.created_by:
@@ -196,7 +194,7 @@ def main():
             for run in org_runs.items[:3]:  # Show first 3
                 print(f"- {run.id} | status={run.status}")
                 if run.workspace:
-                    print(f"  workspace: {run.workspace.name}")
+                    print(f"workspace: {run.workspace.name}")
 
         except Exception as e:
             print(f"Error listing organization runs: {e}")
@@ -226,37 +224,37 @@ def main():
         print("\n1. Basic read():")
         try:
             basic_run = client.runs.read(demo_run.id)
-            print(f"   Read run {basic_run.id} - status: {basic_run.status}")
+            print(f"Read run {basic_run.id} - status: {basic_run.status}")
         except Exception as e:
-            print(f"   Error: {e}")
+            print(f"Error: {e}")
 
         # Show action methods (but don't execute them for safety)
         print("\n2. Available action methods (not executed):")
-        print("   # Apply run:")
+        print("# Apply run:")
         print(
-            f"   # client.runs.apply('{demo_run.id}', RunApplyOptions(comment='Applied via SDK'))"
+            f"# client.runs.apply('{demo_run.id}', RunApplyOptions(comment='Applied via SDK'))"
         )
 
-        print("   # Cancel run:")
+        print("# Cancel run:")
         print(
-            f"   # client.runs.cancel('{demo_run.id}', RunCancelOptions(comment='Canceled via SDK'))"
+            f"# client.runs.cancel('{demo_run.id}', RunCancelOptions(comment='Canceled via SDK'))"
         )
 
-        print("   # Force cancel run:")
+        print("# Force cancel run:")
         print(
-            f"   # client.runs.force_cancel('{demo_run.id}', RunForceCancelOptions(comment='Force canceled'))"
+            f"# client.runs.force_cancel('{demo_run.id}', RunForceCancelOptions(comment='Force canceled'))"
         )
 
-        print("   # Discard run:")
+        print("# Discard run:")
         print(
-            f"   # client.runs.discard('{demo_run.id}', RunDiscardOptions(comment='Discarded via SDK'))"
+            f"# client.runs.discard('{demo_run.id}', RunDiscardOptions(comment='Discarded via SDK'))"
         )
 
-        print("   # Force execute run:")
-        print(f"   # client.runs.force_execute('{demo_run.id}')")
+        print("# Force execute run:")
+        print(f"# client.runs.force_execute('{demo_run.id}')")
 
         print("\n   Note: These actions are commented out for safety.")
-        print("   Uncomment and use them carefully in your own code.")
+        print("Uncomment and use them carefully in your own code.")
 
 
 if __name__ == "__main__":

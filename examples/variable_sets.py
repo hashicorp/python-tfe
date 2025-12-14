@@ -68,7 +68,7 @@ def variable_set_example():
         print(f"Found {len(variable_sets)} existing variable sets")
 
         for vs in variable_sets[:3]:  # Show first 3
-            print(f"  - {vs.name} (ID: {vs.id}, Global: {vs.global_})")
+            print(f"- {vs.name} (ID: {vs.id}, Global: {vs.global_})")
         print()
 
         # 2. Create a new variable set
@@ -87,9 +87,9 @@ def variable_set_example():
         print(
             f"Created variable set: {new_variable_set.name} (ID: {new_variable_set.id})"
         )
-        print(f"  Description: {new_variable_set.description}")
-        print(f"  Global: {new_variable_set.global_}")
-        print(f"  Priority: {new_variable_set.priority}")
+        print(f"Description: {new_variable_set.description}")
+        print(f"Global: {new_variable_set.global_}")
+        print(f"Priority: {new_variable_set.priority}")
         print()
 
         # 3. Create variables in the variable set
@@ -155,8 +155,8 @@ def variable_set_example():
         for var in variables:
             sensitive_note = " (sensitive)" if var.sensitive else ""
             hcl_note = " (HCL)" if var.hcl else ""
-            print(f"  - {var.key}: {var.category.value}{sensitive_note}{hcl_note}")
-            print(f"    Description: {var.description}")
+            print(f"- {var.key}: {var.category.value}{sensitive_note}{hcl_note}")
+            print(f"Description: {var.description}")
         print()
 
         # 5. Update a variable
@@ -171,7 +171,7 @@ def variable_set_example():
             created_variable_set_id, tf_variable.id, update_var_options
         )
         print(f"Updated variable: {updated_variable.key} = {updated_variable.value}")
-        print(f"  New description: {updated_variable.description}")
+        print(f"New description: {updated_variable.description}")
         print()
 
         # 6. Update the variable set itself
@@ -186,8 +186,8 @@ def variable_set_example():
             created_variable_set_id, update_set_options
         )
         print(f"Updated variable set: {updated_variable_set.name}")
-        print(f"  New description: {updated_variable_set.description}")
-        print(f"  Priority: {updated_variable_set.priority}")
+        print(f"New description: {updated_variable_set.description}")
+        print(f"Priority: {updated_variable_set.priority}")
         print()
 
         # 7. Example: Apply to workspaces (if any exist)
@@ -279,8 +279,8 @@ def variable_set_example():
             created_variable_set_id, read_options
         )
         print(f"Variable set: {detailed_varset.name}")
-        print(f"  Variables count: {len(detailed_varset.vars or [])}")
-        print(f"  Workspaces count: {len(detailed_varset.workspaces or [])}")
+        print(f"Variables count: {len(detailed_varset.vars or [])}")
+        print(f"Workspaces count: {len(detailed_varset.workspaces or [])}")
         print()
 
         print("=== Variable Set Operations Completed Successfully ===")
@@ -347,8 +347,8 @@ def global_variable_set_example():
         global_varset = client.variable_sets.create(org_name, global_create_options)
         created_variable_set_id = global_varset.id
         print(f"Created global variable set: {global_varset.name}")
-        print(f"  Global: {global_varset.global_}")
-        print(f"  Priority: {global_varset.priority}")
+        print(f"Global: {global_varset.global_}")
+        print(f"Priority: {global_varset.priority}")
 
         # Add some common variables
         print("\nAdding common variables...")
@@ -376,7 +376,7 @@ def global_variable_set_example():
             variable = client.variable_set_variables.create(
                 created_variable_set_id, var_options
             )
-            print(f"  Added {variable.category.value} variable: {variable.key}")
+            print(f"Added {variable.category.value} variable: {variable.key}")
 
         print(f"\nGlobal variable set is now available to all workspaces in {org_name}")
 
@@ -463,7 +463,7 @@ def project_scoped_variable_set_example():
             variable = client.variable_set_variables.create(
                 created_variable_set_id, var_options
             )
-            print(f"  Added variable: {variable.key}")
+            print(f"Added variable: {variable.key}")
 
         print(
             f"\nProject-scoped variable set is available to workspaces in project: {target_project.name}"
