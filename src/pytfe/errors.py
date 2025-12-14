@@ -40,6 +40,16 @@ class ValidationError(TFEError): ...
 class ServerError(TFEError): ...
 
 
+class ConnectionError(TFEError):
+    """Raised when a connection to the server cannot be established."""
+    ...
+
+
+class TimeoutError(TFEError):
+    """Raised when a request times out."""
+    ...
+
+
 class UnsupportedInCloud(TFEError): ...
 
 

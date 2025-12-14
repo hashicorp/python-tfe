@@ -4,17 +4,20 @@ import re
 import time
 from collections.abc import Mapping
 from typing import Any
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import httpx
 
 from ._jsonapi import build_headers, parse_error_payload
 from .errors import (
     AuthError,
+    ConnectionError,
     NotFound,
     RateLimited,
     ServerError,
     TFEError,
+    TimeoutError,
+    ValidationError,
 )
 
 _RETRY_STATUSES = {429, 502, 503, 504}
@@ -41,8 +44,7 @@ class HTTPTransport:
     ):
         self.base = address.rstrip("/")
         self.headers = build_headers(user_agent_suffix)
-        if token:
-            self.headers["Authorization"] = f"Bearer {token}"
+        self.headers["Authorization"] = f"Bearer {token}"
         self.timeout = timeout
         self.verify = verify_tls
         self.max_retries = max_retries
@@ -93,9 +95,20 @@ class HTTPTransport:
                     headers=hdrs,
                     follow_redirects=allow_redirects,
                 )
-            except httpx.HTTPError as e:
+            except httpx.TimeoutException as e:
+                # Timeout errors - don't retry by default, raise immediately
+                raise TimeoutError(f"request timed out after {self.timeout}s: {e}") from e
+            except (httpx.ConnectError, httpx.ConnectTimeout) as e:
+                # Connection errors (DNS, refused, etc.) - retry if we haven't exhausted retries
                 if attempt >= self.max_retries:
-                    raise ServerError(str(e)) from e
+                    raise ConnectionError(f"failed to connect to {url}: {e}") from e
+                self._sleep(attempt, None)
+                attempt += 1
+                continue
+            except httpx.HTTPError as e:
+                # Other HTTP errors - retry if we haven't exhausted retries
+                if attempt >= self.max_retries:
+                    raise ConnectionError(f"HTTP error: {e}") from e
                 self._sleep(attempt, None)
                 attempt += 1
                 continue

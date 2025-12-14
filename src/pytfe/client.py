@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from urllib.parse import urlparse
+
 from ._http import HTTPTransport
 from .config import TFEConfig
+from .errors import ValidationError
 from .resources.agent_pools import AgentPools
 from .resources.agents import Agents, AgentTokens
 from .resources.apply import Applies
@@ -40,6 +43,18 @@ from .resources.workspaces import Workspaces
 class TFEClient:
     def __init__(self, config: TFEConfig | None = None):
         cfg = config or TFEConfig.from_env()
+        
+        # Parse the address to make sure it's a valid URL
+        try:
+            parsed = urlparse(cfg.address)
+        except Exception as e:
+            raise ValidationError(f"invalid address: {e}")
+        
+        # This value must be provided by the user
+        if not cfg.token:
+            raise ValidationError("missing API token")
+        
+        # Create the HTTP transport with validated configuration
         self._transport = HTTPTransport(
             cfg.address,
             cfg.token,
