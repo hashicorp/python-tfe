@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -54,7 +53,9 @@ class QueryRunStatusTimestamps(BaseModel):
         None, alias="running-at", description="When the query run started running"
     )
     finished_at: datetime | None = Field(
-        None, alias="finished-at", description="When the query run finished successfully"
+        None,
+        alias="finished-at",
+        description="When the query run finished successfully",
     )
     errored_at: datetime | None = Field(
         None, alias="errored-at", description="When the query run encountered an error"
@@ -90,9 +91,7 @@ class QueryRun(BaseModel):
     updated_at: datetime | None = Field(
         None, alias="updated-at", description="The time this query run was last updated"
     )
-    source: QueryRunSource | str = Field(
-        ..., description="The source of the query run"
-    )
+    source: QueryRunSource | str = Field(..., description="The source of the query run")
     status: QueryRunStatus = Field(
         ..., description="The current status of the query run"
     )
@@ -127,14 +126,14 @@ class QueryRunCreateOptions(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    source: QueryRunSource | str = Field(
-        ..., description="The source of the query run"
-    )
+    source: QueryRunSource | str = Field(..., description="The source of the query run")
     variables: list[QueryRunVariable] | None = Field(
         None, description="Run-specific variable values"
     )
     workspace_id: str = Field(
-        ..., alias="workspace-id", description="The workspace ID to run the query against"
+        ...,
+        alias="workspace-id",
+        description="The workspace ID to run the query against",
     )
     configuration_version_id: str | None = Field(
         None,

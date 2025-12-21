@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import io
-from typing import Any, Iterator
+from collections.abc import Iterator
+from typing import Any
 
 from ..errors import (
     InvalidQueryRunIDError,
@@ -26,16 +27,16 @@ class QueryRuns(_Service):
         self, workspace_id: str, options: QueryRunListOptions | None = None
     ) -> Iterator[QueryRun]:
         """Iterate through all query runs for the given workspace.
-        
+
         This method automatically handles pagination and yields QueryRun objects one at a time.
-        
+
         Args:
             workspace_id: The ID of the workspace
             options: Optional list options (page_size, include, etc.)
-            
+
         Yields:
             QueryRun objects one at a time
-            
+
         Example:
             for query_run in client.query_runs.list(workspace_id):
                 print(f"Query Run: {query_run.id} - Status: {query_run.status}")
@@ -47,7 +48,7 @@ class QueryRuns(_Service):
         if options:
             params = options.model_dump(by_alias=True, exclude_none=True)
             # Convert include list to comma-separated string
-            if "include" in params and params["include"]:
+            if "include" in params and params["include"] and options.include:
                 params["include"] = ",".join([i.value for i in options.include])
 
         path = f"/api/v2/workspaces/{workspace_id}/queries"
@@ -59,27 +60,27 @@ class QueryRuns(_Service):
     def create(self, options: QueryRunCreateOptions) -> QueryRun:
         """Create a new query run."""
         attrs = options.model_dump(by_alias=True, exclude_none=True)
-        
+
         # Build relationships
         relationships: dict[str, Any] = {}
-        
+
         if workspace_id := attrs.pop("workspace-id", None):
             relationships["workspace"] = {
                 "data": {"type": "workspaces", "id": workspace_id}
             }
-        
+
         if config_version_id := attrs.pop("configuration-version-id", None):
             relationships["configuration-version"] = {
                 "data": {"type": "configuration-versions", "id": config_version_id}
             }
-        
+
         body: dict[str, Any] = {
             "data": {
                 "type": "queries",
                 "attributes": attrs,
             }
         }
-        
+
         if relationships:
             body["data"]["relationships"] = relationships
 
@@ -119,7 +120,7 @@ class QueryRuns(_Service):
 
         params = options.model_dump(by_alias=True, exclude_none=True)
         # Convert include list to comma-separated string
-        if "include" in params and params["include"]:
+        if "include" in params and params["include"] and options.include:
             params["include"] = ",".join([i.value for i in options.include])
 
         r = self.t.request("GET", f"/api/v2/queries/{query_run_id}", params=params)
@@ -133,7 +134,7 @@ class QueryRuns(_Service):
 
     def logs(self, query_run_id: str) -> io.IOBase:
         """Retrieve the logs for a query run.
-        
+
         Returns an IO stream that can be read to get the log content.
         """
         if not valid_string_id(query_run_id):
@@ -141,13 +142,13 @@ class QueryRuns(_Service):
 
         # First get the query run to retrieve the log read URL
         query_run = self.read(query_run_id)
-        
+
         if not query_run.log_read_url:
             raise ValueError(f"Query run {query_run_id} does not have a log URL")
 
         # Fetch the logs from the URL (absolute URLs are handled by _build_url)
         r = self.t.request("GET", query_run.log_read_url)
-        
+
         # Return the content as a BytesIO stream
         return io.BytesIO(r.content)
 
@@ -155,7 +156,7 @@ class QueryRuns(_Service):
         self, query_run_id: str, options: QueryRunCancelOptions | None = None
     ) -> None:
         """Cancel a query run.
-        
+
         Returns 202 on success with empty body.
         """
         if not valid_string_id(query_run_id):
@@ -177,7 +178,7 @@ class QueryRuns(_Service):
         self, query_run_id: str, options: QueryRunForceCancelOptions | None = None
     ) -> None:
         """Force cancel a query run.
-        
+
         Returns 202 on success with empty body.
         """
         if not valid_string_id(query_run_id):
