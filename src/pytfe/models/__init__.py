@@ -467,12 +467,10 @@ __all__ = [
     "RegistryProviderVersionPermissions",
     # Query runs
     "QueryRun",
-    "QueryRunActions",
     "QueryRunCancelOptions",
     "QueryRunCreateOptions",
     "QueryRunForceCancelOptions",
     "QueryRunIncludeOpt",
-    "QueryRunList",
     "QueryRunListOptions",
     "QueryRunReadOptions",
     "QueryRunSource",

@@ -87,8 +87,8 @@ class QueryRun(BaseModel):
     created_at: datetime = Field(
         ..., alias="created-at", description="The time this query run was created"
     )
-    updated_at: datetime = Field(
-        ..., alias="updated-at", description="The time this query run was last updated"
+    updated_at: datetime | None = Field(
+        None, alias="updated-at", description="The time this query run was last updated"
     )
     source: QueryRunSource | str = Field(
         ..., description="The source of the query run"
@@ -146,8 +146,8 @@ class QueryRunCreateOptions(BaseModel):
 class QueryRunIncludeOpt(str, Enum):
     """Options for including related resources in query run requests."""
 
-    CREATED_BY = "created-by"
-    CONFIGURATION_VERSION = "configuration-version"
+    CREATED_BY = "created_by"
+    CONFIGURATION_VERSION = "configuration_version"
     CONFIGURATION_VERSION_INGRESS_ATTRIBUTES = (
         "configuration_version.ingress_attributes"
     )
@@ -209,6 +209,6 @@ class QueryRunList(BaseModel):
     )
     current_page: int | None = Field(None, description="Current page number")
     total_pages: int | None = Field(None, description="Total number of pages")
-    prev_page: str | None = Field(None, description="URL of the previous page")
-    next_page: str | None = Field(None, description="URL of the next page")
+    prev_page: int | str | None = Field(None, description="Previous page number or URL")
+    next_page: int | str | None = Field(None, description="Next page number or URL")
     total_count: int | None = Field(None, description="Total number of items")

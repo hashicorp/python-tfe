@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import io
-from typing import Any
+from typing import Any, Iterator
 
 from ..errors import (
     InvalidQueryRunIDError,
@@ -12,7 +12,6 @@ from ..models.query_run import (
     QueryRunCancelOptions,
     QueryRunCreateOptions,
     QueryRunForceCancelOptions,
-    QueryRunList,
     QueryRunListOptions,
     QueryRunReadOptions,
 )
@@ -25,39 +24,37 @@ class QueryRuns(_Service):
 
     def list(
         self, workspace_id: str, options: QueryRunListOptions | None = None
-    ) -> QueryRunList:
-        """List query runs for the given workspace."""
+    ) -> Iterator[QueryRun]:
+        """Iterate through all query runs for the given workspace.
+        
+        This method automatically handles pagination and yields QueryRun objects one at a time.
+        
+        Args:
+            workspace_id: The ID of the workspace
+            options: Optional list options (page_size, include, etc.)
+            
+        Yields:
+            QueryRun objects one at a time
+            
+        Example:
+            for query_run in client.query_runs.list(workspace_id):
+                print(f"Query Run: {query_run.id} - Status: {query_run.status}")
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
-        params = (
-            options.model_dump(by_alias=True, exclude_none=True) if options else None
-        )
+        params: dict[str, Any] = {}
+        if options:
+            params = options.model_dump(by_alias=True, exclude_none=True)
+            # Convert include list to comma-separated string
+            if "include" in params and params["include"]:
+                params["include"] = ",".join([i.value for i in options.include])
 
-        r = self.t.request(
-            "GET",
-            f"/api/v2/workspaces/{workspace_id}/queries",
-            params=params,
-        )
-
-        jd = r.json()
-        items = []
-        meta = jd.get("meta", {})
-        pagination = meta.get("pagination", {})
-
-        for d in jd.get("data", []):
-            attrs = d.get("attributes", {})
-            attrs["id"] = d.get("id")
-            items.append(QueryRun.model_validate(attrs))
-
-        return QueryRunList(
-            items=items,
-            current_page=pagination.get("current-page"),
-            total_pages=pagination.get("total-pages"),
-            prev_page=pagination.get("prev-page"),
-            next_page=pagination.get("next-page"),
-            total_count=pagination.get("total-count"),
-        )
+        path = f"/api/v2/workspaces/{workspace_id}/queries"
+        for item in self._list(path, params=params):
+            attrs = item.get("attributes", {})
+            attrs["id"] = item.get("id")
+            yield QueryRun.model_validate(attrs)
 
     def create(self, options: QueryRunCreateOptions) -> QueryRun:
         """Create a new query run."""
@@ -121,6 +118,9 @@ class QueryRuns(_Service):
             raise InvalidQueryRunIDError()
 
         params = options.model_dump(by_alias=True, exclude_none=True)
+        # Convert include list to comma-separated string
+        if "include" in params and params["include"]:
+            params["include"] = ",".join([i.value for i in options.include])
 
         r = self.t.request("GET", f"/api/v2/queries/{query_run_id}", params=params)
 

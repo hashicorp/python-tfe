@@ -1,325 +1,290 @@
 #!/usr/bin/env python3
 """
-Query Run Management Example
+Query Run Individual Function Tests
 
-This example demonstrates all available query run operations in the Python TFE SDK,
-including create, read, list, logs, cancel, and force cancel operations.
+This file provides individual test functions for each query run operation.
+You can run specific functions to test individual parts of the API.
+
+Functions available:
+- test_list() - List query runs in a workspace
+- test_create() - Create a new query run
+- test_read() - Read a specific query run
+- test_logs() - Retrieve logs for a query run
+- test_cancel() - Cancel a query run
+- test_force_cancel() - Force cancel a query run
 
 Usage:
-    python examples/query_run.py
-
-Requirements:
-    - TFE_TOKEN environment variable set
-    - TFE_WORKSPACE_ID environment variable set
-    - TFE_ADDRESS environment variable set (optional, defaults to Terraform Cloud)
-    - An existing workspace in your Terraform Cloud/Enterprise instance
-
-Query Run Operations Demonstrated:
-    1. List query runs for a workspace
-    2. Create new query runs
-    3. Read query run details
-    4. Read query run with additional options
-    5. Retrieve query run logs
-    6. Cancel running query runs
-    7. Force cancel stuck query runs
+    python query_run.py
+    
+Note: Query Runs require Terraform 1.10+ which includes the 'terraform query' command.
+      These tests may fail with error status since the feature is not fully available yet.
 """
 
 import os
 import time
-from datetime import datetime
 
 from pytfe import TFEClient, TFEConfig
 from pytfe.models import (
     QueryRunCreateOptions,
-    QueryRunIncludeOpt,
     QueryRunListOptions,
-    QueryRunReadOptions,
     QueryRunSource,
-    QueryRunStatus,
 )
 
 
-def test_list_query_runs(client, workspace_id):
-    """Test listing query runs with various options."""
-    print("=== Testing Query Run List Operations ===")
+def get_client_and_workspace():
+    """Initialize client and get workspace ID."""
+    client = TFEClient(TFEConfig.from_env())
+    organization = os.getenv("TFE_ORG", "aayush-test")
+    workspace_name = "query-test"  # Default workspace for testing
+    
+    # Get workspace
+    workspace = client.workspaces.read(workspace_name, organization=organization)
+    return client, workspace
 
-    # 1. List all query runs
-    print("\n1. Listing All Query Runs:")
+
+def test_list():
+    """Test 1: List query runs in a workspace."""
+    print("=== Test 1: List Query Runs ===")
+    
+    client, workspace = get_client_and_workspace()
+    
     try:
-        query_runs = client.query_runs.list(workspace_id)
-        print(f"   SUCCESS: Found {len(query_runs.items)} query runs")
-        if query_runs.items:
-            print(f"   SUCCESS: Latest query run: {query_runs.items[0].id}")
-            print(f"   SUCCESS: Status: {query_runs.items[0].status}")
-            print(f"   SUCCESS: Source: {query_runs.items[0].source}")
+        # Simple list
+        query_runs = list(client.query_runs.list(workspace.id))
+        print(f"Found {len(query_runs)} query runs in workspace '{workspace.name}'")
+        
+        for i, qr in enumerate(query_runs[:5], 1):
+            print(f"  {i}. {qr.id}")
+            print(f"     Status: {qr.status}")
+            print(f"     Created: {qr.created_at}")
+            print()
+        
+        # List with options
+        options = QueryRunListOptions(page_size=5)
+        limited_runs = list(client.query_runs.list(workspace.id, options))
+        print(f"Retrieved {len(limited_runs)} query runs (page_size=5)")
+        
+        return query_runs
+        
     except Exception as e:
-        print(f"   ERROR: Error: {e}")
+        print(f"Error: {e}")
+        return []
 
-    # 2. List with pagination
-    print("\n2. Listing Query Runs with Pagination:")
+
+def test_create():
+    """Test 2: Create a new query run."""
+    print("\n=== Test 2: Create Query Run ===")
+    
+    client, workspace = get_client_and_workspace()
+    
     try:
-        options = QueryRunListOptions(page_number=1, page_size=5)
-        query_runs = client.query_runs.list(workspace_id, options)
-        print(f"   SUCCESS: Page 1 has {len(query_runs.items)} query runs")
-        print(f"   SUCCESS: Total pages: {query_runs.total_pages}")
-        print(f"   SUCCESS: Total count: {query_runs.total_count}")
-    except Exception as e:
-        print(f"   ERROR: Error: {e}")
-
-    # 3. List with include options
-    print("\n3. Listing Query Runs with Related Resources:")
-    try:
-        options = QueryRunListOptions(
-            page_size=10,
-            include=[QueryRunIncludeOpt.CREATED_BY]
-        )
-        query_runs = client.query_runs.list(workspace_id, options)
-        print(f"   SUCCESS: Found {len(query_runs.items)} query runs with created_by info")
-        for qr in query_runs.items[:3]:  # Show first 3
-            print(f"     - {qr.id}: Status={qr.status}")
-    except Exception as e:
-        print(f"   ERROR: Error: {e}")
-
-    return query_runs.items[0] if query_runs.items else None
-
-
-def test_create_query_run(client, workspace_id):
-    """Test creating a query run."""
-    print("\n=== Testing Query Run Creation ===")
-
-    # Create a query run
-    print("\n1. Creating Query Run:")
-    try:
+        # Get the latest configuration version
+        config_versions = list(client.configuration_versions.list(workspace.id))
+        if not config_versions:
+            print("ERROR: No configuration versions found in workspace")
+            return None
+        
+        config_version = config_versions[0]
+        print(f"Using configuration version: {config_version.id}")
+        
+        # Create query run
         options = QueryRunCreateOptions(
             source=QueryRunSource.API,
-            workspace_id=workspace_id,
+            workspace_id=workspace.id,
+            configuration_version_id=config_version.id,
         )
+        
         query_run = client.query_runs.create(options)
-        print(f"   SUCCESS: Created query run: {query_run.id}")
-        print(f"   SUCCESS: Status: {query_run.status}")
-        print(f"   SUCCESS: Source: {query_run.source}")
-        print(f"   SUCCESS: Created at: {query_run.created_at}")
+        print(f"Created query run: {query_run.id}")
+        print(f"  Status: {query_run.status}")
+        print(f"  Source: {query_run.source}")
+        print(f"  Created: {query_run.created_at}")
+        
         return query_run
-    except Exception as e:
-        print(f"   ERROR: Error: {e}")
-        return None
-
-
-def test_read_query_run(client, query_run_id):
-    """Test reading query run details."""
-    print(f"\n=== Testing Query Run Read Operations for {query_run_id} ===")
-
-    # 1. Basic read
-    print("\n1. Reading Query Run Details:")
-    try:
-        query_run = client.query_runs.read(query_run_id)
-        print(f"   SUCCESS: Query Run ID: {query_run.id}")
-        print(f"   SUCCESS: Status: {query_run.status}")
-        print(f"   SUCCESS: Source: {query_run.source}")
-        print(f"   SUCCESS: Created: {query_run.created_at}")
-        print(f"   SUCCESS: Updated: {query_run.updated_at}")
-        if query_run.actions:
-            print(f"   SUCCESS: Is Cancelable: {query_run.actions.is_cancelable}")
-            print(f"   SUCCESS: Is Force Cancelable: {query_run.actions.is_force_cancelable}")
-        if query_run.log_read_url:
-            print(f"   SUCCESS: Log URL available")
-    except Exception as e:
-        print(f"   ERROR: Error: {e}")
-        return None
-
-    # 2. Read with options
-    print("\n2. Reading Query Run with Options:")
-    try:
-        options = QueryRunReadOptions(
-            include=[QueryRunIncludeOpt.CREATED_BY, QueryRunIncludeOpt.CONFIGURATION_VERSION]
-        )
-        query_run = client.query_runs.read_with_options(query_run_id, options)
-        print("   SUCCESS: Read query run with additional data")
-        print(f"   SUCCESS: Status: {query_run.status}")
-    except Exception as e:
-        print(f"   ERROR: Error: {e}")
-
-    return query_run
-
-
-def test_query_run_logs(client, query_run_id):
-    """Test retrieving query run logs."""
-    print(f"\n=== Testing Query Run Logs for {query_run_id} ===")
-
-    try:
-        logs_stream = client.query_runs.logs(query_run_id)
-        log_content = logs_stream.read()
         
-        if isinstance(log_content, bytes):
-            log_text = log_content.decode('utf-8')
-        else:
-            log_text = log_content
-            
-        print(f"   SUCCESS: Retrieved logs for query run")
-        print(f"   SUCCESS: Log size: {len(log_text)} characters")
-
-        # Show first few lines of logs
-        log_lines = log_text.split("\n")[:5]
-        print("   SUCCESS: Log preview:")
-        for line in log_lines:
-            if line.strip():
-                print(f"     {line}")
     except Exception as e:
-        print(f"   ERROR: Error retrieving logs: {e}")
+        print(f"Error: {e}")
+        return None
 
 
-def test_query_run_cancellation(client, query_run_id):
-    """Test canceling query runs."""
-    print(f"\n=== Testing Query Run Cancellation for {query_run_id} ===")
-
-    # First check if the query run is in a cancelable state
+def test_read(query_run_id=None):
+    """Test 3: Read a specific query run."""
+    print("\n=== Test 3: Read Query Run ===")
+    
+    client, workspace = get_client_and_workspace()
+    
     try:
+        # If no query_run_id provided, get the first one from the list
+        if not query_run_id:
+            query_runs = list(client.query_runs.list(workspace.id))
+            if not query_runs:
+                print("ERROR: No query runs found to read")
+                return None
+            query_run_id = query_runs[0].id
+            print(f"Using first query run from list: {query_run_id}")
+        
+        # Read the query run
         query_run = client.query_runs.read(query_run_id)
-        if query_run.status not in [QueryRunStatus.PENDING, QueryRunStatus.QUEUED, QueryRunStatus.RUNNING]:
-            print(
-                f"   INFO: Query run is {query_run.status}, not in a cancelable state"
-            )
-            return
-            
-        if not query_run.actions or not query_run.actions.is_cancelable:
-            print(f"   INFO: Query run is not cancelable")
-            return
+        print(f"Read query run: {query_run.id}")
+        print(f"  Status: {query_run.status}")
+        print(f"  Source: {query_run.source}")
+        print(f"  Created: {query_run.created_at}")
+        
+        if query_run.status_timestamps:
+            print(f"  Status Timestamps:")
+            if query_run.status_timestamps.queued_at:
+                print(f"    Queued: {query_run.status_timestamps.queued_at}")
+            if query_run.status_timestamps.running_at:
+                print(f"    Running: {query_run.status_timestamps.running_at}")
+            if query_run.status_timestamps.finished_at:
+                print(f"    Finished: {query_run.status_timestamps.finished_at}")
+            if query_run.status_timestamps.errored_at:
+                print(f"    Errored: {query_run.status_timestamps.errored_at}")
+        
+        return query_run
+        
     except Exception as e:
-        print(f"   ERROR: Error checking query run status: {e}")
-        return
+        print(f"Error: {e}")
+        return None
 
-    # Test regular cancel
-    print("\n1. Testing Regular Cancellation:")
+
+def test_logs(query_run_id=None):
+    """Test 4: Retrieve logs for a query run."""
+    print("\n=== Test 4: Get Query Run Logs ===")
+    
+    client, workspace = get_client_and_workspace()
+    
     try:
+        # If no query_run_id provided, get the first one from the list
+        if not query_run_id:
+            query_runs = list(client.query_runs.list(workspace.id))
+            if not query_runs:
+                print("ERROR: No query runs found to get logs")
+                return None
+            query_run_id = query_runs[0].id
+            print(f"Using first query run from list: {query_run_id}")
+        
+        # Get logs
+        logs = client.query_runs.logs(query_run_id)
+        log_content = logs.read().decode("utf-8")
+        
+        print(f"Retrieved logs for query run: {query_run_id}")
+        print(f"  Log size: {len(log_content)} bytes")
+        print(f"\n--- Log Preview (first 500 chars) ---")
+        print(log_content[:500])
+        if len(log_content) > 500:
+            print(f"\n... ({len(log_content) - 500} more characters)")
+        print("--- End of Log Preview ---")
+        
+        return log_content
+        
+    except Exception as e:
+        print(f"Error: {e}")
+        print(f"  Note: Logs may not be available if the query run hasn't started yet")
+        return None
+
+
+def test_cancel(query_run_id=None):
+    """Test 5: Cancel a query run."""
+    print("\n=== Test 5: Cancel Query Run ===")
+    
+    client, workspace = get_client_and_workspace()
+    
+    try:
+        # If no query_run_id provided, create a new one
+        if not query_run_id:
+            print("Creating a new query run to cancel...")
+            new_run = test_create()
+            if not new_run:
+                print("ERROR: Could not create query run to cancel")
+                return False
+            query_run_id = new_run.id
+            time.sleep(1)  # Give it a moment to start
+        
+        # Cancel the query run
         client.query_runs.cancel(query_run_id)
-        print(f"   SUCCESS: Canceled query run: {query_run_id}")
+        print(f"Cancel requested for query run: {query_run_id}")
         
-        # Read to verify
+        # Verify cancellation
+        time.sleep(2)
         query_run = client.query_runs.read(query_run_id)
-        print(f"   SUCCESS: New status: {query_run.status}")
+        print(f"  Status after cancel: {query_run.status}")
+        
+        return True
+        
     except Exception as e:
-        print(f"   ERROR: Error canceling query run: {e}")
+        print(f"Error: {e}")
+        print(f"  Note: Query run may not be in a cancelable state")
+        return False
 
 
-def test_query_run_workflow(client, workspace_id):
-    """Test a complete query run workflow."""
-    print("\n=== Testing Complete Query Run Workflow ===")
-
-    # 1. Create a query run
-    print("\n1. Creating Query Run:")
+def test_force_cancel(query_run_id=None):
+    """Test 6: Force cancel a query run."""
+    print("\n=== Test 6: Force Cancel Query Run ===")
+    
+    client, workspace = get_client_and_workspace()
+    
     try:
-        options = QueryRunCreateOptions(
-            source=QueryRunSource.API,
-            workspace_id=workspace_id,
-        )
-        query_run = client.query_runs.create(options)
-        print(f"   SUCCESS: Created: {query_run.id}")
-        query_run_id = query_run.id
+        # If no query_run_id provided, create a new one
+        if not query_run_id:
+            print("Creating a new query run to force cancel...")
+            new_run = test_create()
+            if not new_run:
+                print("ERROR: Could not create query run to force cancel")
+                return False
+            query_run_id = new_run.id
+            time.sleep(1)  # Give it a moment to start
+        
+        # Force cancel the query run
+        client.query_runs.force_cancel(query_run_id)
+        print(f"Force cancel requested for query run: {query_run_id}")
+        
+        # Verify force cancellation
+        time.sleep(2)
+        query_run = client.query_runs.read(query_run_id)
+        print(f"  Status after force cancel: {query_run.status}")
+        
+        return True
+        
     except Exception as e:
-        print(f"   ERROR: Error creating query run: {e}")
-        return
-
-    # 2. Monitor execution
-    print("\n2. Monitoring Execution:")
-    max_attempts = 30
-    attempt = 0
-
-    while attempt < max_attempts:
-        try:
-            query_run = client.query_runs.read(query_run_id)
-            print(f"   Attempt {attempt + 1}: Status = {query_run.status}")
-
-            if query_run.status in [
-                QueryRunStatus.FINISHED,
-                QueryRunStatus.ERRORED,
-                QueryRunStatus.CANCELED,
-            ]:
-                break
-
-            time.sleep(2)  # Wait 2 seconds before checking again
-            attempt += 1
-        except Exception as e:
-            print(f"   ERROR: Error monitoring query run: {e}")
-            break
-
-    # 3. Get final logs if finished
-    print("\n3. Getting Final Status:")
-    try:
-        if query_run.status == QueryRunStatus.FINISHED:
-            print("   SUCCESS: Query completed successfully")
-            
-            # Get logs
-            if query_run.log_read_url:
-                logs_stream = client.query_runs.logs(query_run_id)
-                log_content = logs_stream.read()
-                print(f"   SUCCESS: Retrieved execution logs ({len(log_content)} bytes)")
-        else:
-            print(f"   ERROR: Query run finished with status: {query_run.status}")
-    except Exception as e:
-        print(f"   ERROR: Error getting final results: {e}")
-
-    return query_run_id
+        print(f"Error: {e}")
+        print(f"  Note: Query run may not be in a force-cancelable state")
+        return False
 
 
 def main():
-    """Main function to demonstrate query run operations."""
-    # Get configuration from environment
-    token = os.environ.get("TFE_TOKEN")
-    workspace_id = os.environ.get("TFE_WORKSPACE_ID")
-    address = os.environ.get("TFE_ADDRESS", "https://app.terraform.io")
-
-    if not token:
-        print("Error: TFE_TOKEN environment variable is required")
-        return 1
-
-    if not workspace_id:
-        print("Error: TFE_WORKSPACE_ID environment variable is required")
-        print("  Set it to the workspace ID where you want to run queries")
-        return 1
-
-    # Initialize client
-    print("=== Terraform Enterprise Query Run SDK Example ===")
-    print(f"Address: {address}")
-    print(f"Workspace ID: {workspace_id}")
-    print(f"Timestamp: {datetime.now()}")
-
-    config = TFEConfig(address=address, token=token)
-    client = TFEClient(config)
-
-    try:
-        # 1. List existing query runs
-        existing_query_run = test_list_query_runs(client, workspace_id)
-
-        # 2. Create a new query run
-        created_query_run = test_create_query_run(client, workspace_id)
-
-        # 3. Test read operations
-        if existing_query_run:
-            test_read_query_run(client, existing_query_run.id)
-
-            # Only test logs if query run is finished
-            if existing_query_run.status == QueryRunStatus.FINISHED:
-                test_query_run_logs(client, existing_query_run.id)
-
-        # 4. Test cancellation (if query run is cancelable)
-        if created_query_run:
-            test_query_run_cancellation(client, created_query_run.id)
-
-        # 5. Test complete workflow
-        test_query_run_workflow(client, workspace_id)
-
-        print("\n" + "=" * 80)
-        print("Query Run operations completed successfully!")
-        print("=" * 80)
-
-    except Exception as e:
-        print(f"\nUnexpected error: {e}")
-        import traceback
-        traceback.print_exc()
-        return 1
-
-    return 0
+    """Run all tests in sequence."""
+    print("=" * 80)
+    print("QUERY RUN FUNCTION TESTS")
+    print("=" * 80)
+    print("Testing all Query Run API operations")
+    print()
+    print("NOTE: Query Runs require Terraform 1.10+ with 'terraform query' command.")
+    print("      Most query runs will error since this feature is not yet available.")
+    print("=" * 80)
+    
+    # Test 1: List query runs
+    query_runs = test_list()
+    
+    # Test 2: Create a query run
+    new_query_run = test_create()
+    
+    # Test 3: Read a query run
+    if query_runs:
+        test_read(query_runs[0].id)
+    elif new_query_run:
+        test_read(new_query_run.id)
+    
+    # Test 4: Get logs (use first query run from list)
+    if query_runs:
+        test_logs(query_runs[0].id)
+    
+    # Test 5: Cancel a query run (creates new one)
+    test_cancel()
+    
+    # Test 6: Force cancel a query run (creates new one)
+    test_force_cancel()
 
 
 if __name__ == "__main__":
-    exit(main())
+    main()
