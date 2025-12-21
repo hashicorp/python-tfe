@@ -16,7 +16,7 @@ Functions available:
 Usage:
     python query_run.py
     
-Note: Query Runs require Terraform 1.10+ which includes the 'terraform query' command.
+Note: Query Runs require Terraform ~>1.14 which includes the 'terraform query' command.
       These tests may fail with error status since the feature is not fully available yet.
 """
 
