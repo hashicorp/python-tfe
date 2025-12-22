@@ -460,3 +460,25 @@ class InvalidPolicyEvaluationIDError(InvalidValues):
 
     def __init__(self, message: str = "invalid value for policy evaluation ID"):
         super().__init__(message)
+
+
+# Organization Tag errors
+class InvalidTagIDError(InvalidValues):
+    """Raised when an invalid tag ID is provided."""
+
+    def __init__(self, message: str = "invalid value for tag ID"):
+        super().__init__(message)
+
+
+class RequiredTagIDError(RequiredFieldMissing):
+    """Raised when a required tag ID field is missing."""
+
+    def __init__(self, message: str = "tag ID is required"):
+        super().__init__(message)
+
+
+class RequiredTagWorkspaceIDError(RequiredFieldMissing):
+    """Raised when a required workspace ID for tag operations is missing."""
+
+    def __init__(self, message: str = "workspace ID is required for tag operations"):
+        super().__init__(message)

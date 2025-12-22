@@ -86,6 +86,13 @@ from .organization import (
     ReadRunQueueOptions,
     RunQueue,
 )
+from .organization_tag import (
+    AddWorkspacesToTagOptions,
+    OrganizationTag,
+    OrganizationTagsDeleteOptions,
+    OrganizationTagsList,
+    OrganizationTagsListOptions,
+)
 from .policy import (
     Policy,
     PolicyCreateOptions,
@@ -449,6 +456,13 @@ __all__ = [
     "Organization",
     "OrganizationCreateOptions",
     "OrganizationUpdateOptions",
+    # Organization tags
+    "AddWorkspacesToTagOptions",
+    "OrganizationTag",
+    "OrganizationTagsDeleteOptions",
+    "OrganizationTagsList",
+    "OrganizationTagsListOptions",
+    # Project
     "Project",
     "ProjectAddTagBindingsOptions",
     "ProjectCreateOptions",

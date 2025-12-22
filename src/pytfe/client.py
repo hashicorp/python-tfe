@@ -9,6 +9,7 @@ from .resources.configuration_version import ConfigurationVersions
 from .resources.notification_configuration import NotificationConfigurations
 from .resources.oauth_client import OAuthClients
 from .resources.oauth_token import OAuthTokens
+from .resources.organization_tags import OrganizationTags
 from .resources.organizations import Organizations
 from .resources.plan import Plans
 from .resources.policy import Policies
@@ -64,6 +65,7 @@ class TFEClient:
         self.applies = Applies(self._transport)
         self.plans = Plans(self._transport)
         self.organizations = Organizations(self._transport)
+        self.organization_tags = OrganizationTags(self._transport)
         self.projects = Projects(self._transport)
         self.variables = Variables(self._transport)
         self.variable_sets = VariableSets(self._transport)
