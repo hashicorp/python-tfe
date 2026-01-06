@@ -93,19 +93,6 @@ class Example(BaseModel):
     )
 
 
-class ExampleList(BaseModel):
-    """Represents a paginated list of examples."""
-    
-    model_config = ConfigDict(populate_by_name=True)
-    
-    items: list[Example] = Field(default_factory=list, description="List of examples")
-    current_page: int | None = Field(None, description="Current page number")
-    total_pages: int | None = Field(None, description="Total number of pages")
-    prev_page: int | str | None = Field(None, description="Previous page number")
-    next_page: int | str | None = Field(None, description="Next page number")
-    total_count: int | None = Field(None, description="Total number of items")
-
-
 class ExampleListOptions(BaseModel):
     """Options for listing examples."""
     
@@ -333,7 +320,6 @@ __all__ = [
     # ... existing exports ...
     "Example",
     "ExampleCreateOptions",
-    "ExampleList",
     "ExampleListOptions",
     "ExampleStatus",
     "ExampleUpdateOptions",
