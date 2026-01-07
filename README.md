@@ -28,11 +28,10 @@ Construct a new **pyTFE** client, then use the resource services on the client t
 from pytfe import TFEClient, TFEConfig
 
 config = TFEConfig(
-    host="https://tfe.local",
+    address="https://tfe.local",
     token="insert-your-token-here",
-    retry_server_errors=True,
     timeout=30.0,
-    user_agent="example-app/0.1 pytfe/0.1",
+    user_agent_suffix="example-app/0.1 pytfe/0.1",
 )
 
 client = TFEClient(config)
@@ -50,7 +49,7 @@ The default configuration reads the `TFE_ADDRESS` and `TFE_TOKEN` environment va
 2. `TFE_TOKEN` — An [API token](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/api-tokens) for the HCP Terraform or Terraform Enterprise instance.
 
 
-Environment variables are used as a fallback when `host` or `token` are not provided explicitly:
+Environment variables are used as a fallback when `address` or `token` are not provided explicitly:
 
 #### Using the default configuration
 ```python
