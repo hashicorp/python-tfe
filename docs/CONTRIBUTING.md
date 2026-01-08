@@ -4,8 +4,6 @@ If you find an issue with this package, please create an issue in GitHub. If you
 
 ## Adding New Functionality or Fixing Bugs
 
-If you are adding a new endpoint, make sure to update the API coverage list where we keep track of the HCP Terraform APIs that this SDK supports.
-
 If you are making relevant changes worth communicating to our users, please include a note about it in our `CHANGELOG.md`. You can include it as part of the PR where you are submitting your changes.
 
 `CHANGELOG.md` should have the next minor version listed as `# v0.X.0 (Unreleased)` and any changes can go under there. But if you feel that your changes are better suited for a patch version (like a critical bug fix), you may list a new section for this version. You should repeat the same formatting style introduced by previous versions.
@@ -42,6 +40,7 @@ make test
 * A resource class should cover one RESTful resource, which sometimes involves two or more endpoints.
 * Each resource class must be registered in the `TFEClient` class in `client.py`.
 * You'll need to add unit tests that cover each method of the resource class with mocked responses.
+* Each API resource implementation must have a corresponding example file added to the `examples/` directory demonstrating its usage.
 * Option classes serve as a proxy for either passing query params or request bodies:
     - `ListOptions` and `ReadOptions` are values passed as query parameters.
     - `CreateOptions` and `UpdateOptions` represent the request body.
@@ -559,7 +558,6 @@ Before submitting a PR, ensure:
 - [ ] All tests pass (`make test`)
 - [ ] New functionality has unit tests
 - [ ] CHANGELOG.md is updated
-- [ ] API coverage list is updated (if adding endpoints)
 - [ ] Example file is added/updated (if adding resource)
 - [ ] Docstrings are added to new classes/methods
 
