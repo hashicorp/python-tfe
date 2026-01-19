@@ -25,6 +25,7 @@ from .resources.reserved_tag_key import ReservedTagKey
 from .resources.run import Runs
 from .resources.run_event import RunEvents
 from .resources.run_task import RunTasks
+from .resources.run_tasks_integration import RunTasksIntegration
 from .resources.run_trigger import RunTriggers
 from .resources.ssh_keys import SSHKeys
 from .resources.state_version_outputs import StateVersionOutputs
@@ -76,6 +77,7 @@ class TFEClient:
         self.state_versions = StateVersions(self._transport)
         self.state_version_outputs = StateVersionOutputs(self._transport)
         self.run_tasks = RunTasks(self._transport)
+        self.run_tasks_integration = RunTasksIntegration(self._transport)
         self.run_triggers = RunTriggers(self._transport)
         self.runs = Runs(self._transport)
         self.query_runs = QueryRuns(self._transport)
