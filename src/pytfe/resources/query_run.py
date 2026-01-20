@@ -10,9 +10,7 @@ from ..errors import (
 )
 from ..models.query_run import (
     QueryRun,
-    QueryRunCancelOptions,
     QueryRunCreateOptions,
-    QueryRunForceCancelOptions,
     QueryRunListOptions,
     QueryRunReadOptions,
 )
@@ -152,9 +150,7 @@ class QueryRuns(_Service):
         # Return the content as a BytesIO stream
         return io.BytesIO(r.content)
 
-    def cancel(
-        self, query_run_id: str, options: QueryRunCancelOptions | None = None
-    ) -> None:
+    def cancel(self, query_run_id: str) -> None:
         """Cancel a query run.
 
         Returns 202 on success with empty body.
@@ -162,21 +158,12 @@ class QueryRuns(_Service):
         if not valid_string_id(query_run_id):
             raise InvalidQueryRunIDError()
 
-        body: dict[str, Any] | None = None
-        if options:
-            attrs = options.model_dump(by_alias=True, exclude_none=True)
-            if attrs:
-                body = {"data": {"attributes": attrs}}
-
         self.t.request(
             "POST",
             f"/api/v2/queries/{query_run_id}/actions/cancel",
-            json_body=body,
         )
 
-    def force_cancel(
-        self, query_run_id: str, options: QueryRunForceCancelOptions | None = None
-    ) -> None:
+    def force_cancel(self, query_run_id: str) -> None:
         """Force cancel a query run.
 
         Returns 202 on success with empty body.
@@ -184,14 +171,7 @@ class QueryRuns(_Service):
         if not valid_string_id(query_run_id):
             raise InvalidQueryRunIDError()
 
-        body: dict[str, Any] | None = None
-        if options:
-            attrs = options.model_dump(by_alias=True, exclude_none=True)
-            if attrs:
-                body = {"data": {"attributes": attrs}}
-
         self.t.request(
             "POST",
             f"/api/v2/queries/{query_run_id}/actions/force-cancel",
-            json_body=body,
         )

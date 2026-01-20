@@ -21,9 +21,7 @@ import pytest
 from pytfe.errors import InvalidQueryRunIDError, InvalidWorkspaceIDError
 from pytfe.models import (
     QueryRun,
-    QueryRunCancelOptions,
     QueryRunCreateOptions,
-    QueryRunForceCancelOptions,
     QueryRunIncludeOpt,
     QueryRunListOptions,
     QueryRunReadOptions,
@@ -431,26 +429,6 @@ class TestQueryRunsCancel:
         mock_transport.request.assert_called_once_with(
             "POST",
             "/api/v2/queries/qr-123abc456def/actions/cancel",
-            json_body=None,
-        )
-
-    def test_cancel_with_comment(self, query_runs_service, mock_transport):
-        """Test cancellation with comment."""
-        mock_response = Mock()
-        mock_transport.request.return_value = mock_response
-
-        options = QueryRunCancelOptions(comment="Canceling due to configuration error")
-
-        query_runs_service.cancel("qr-123abc456def", options)
-
-        # Verify the request includes comment
-        call_args = mock_transport.request.call_args
-        assert call_args[0][0] == "POST"
-        assert call_args[0][1] == "/api/v2/queries/qr-123abc456def/actions/cancel"
-        json_body = call_args[1]["json_body"]
-        assert (
-            json_body["data"]["attributes"]["comment"]
-            == "Canceling due to configuration error"
         )
 
     def test_cancel_invalid_id(self, query_runs_service):
@@ -478,26 +456,6 @@ class TestQueryRunsForceCancel:
         mock_transport.request.assert_called_once_with(
             "POST",
             "/api/v2/queries/qr-123abc456def/actions/force-cancel",
-            json_body=None,
-        )
-
-    def test_force_cancel_with_comment(self, query_runs_service, mock_transport):
-        """Test force cancellation with comment."""
-        mock_response = Mock()
-        mock_transport.request.return_value = mock_response
-
-        options = QueryRunForceCancelOptions(comment="Force canceling stuck query run")
-
-        query_runs_service.force_cancel("qr-123abc456def", options)
-
-        # Verify the request includes comment
-        call_args = mock_transport.request.call_args
-        assert call_args[0][0] == "POST"
-        assert call_args[0][1] == "/api/v2/queries/qr-123abc456def/actions/force-cancel"
-        json_body = call_args[1]["json_body"]
-        assert (
-            json_body["data"]["attributes"]["comment"]
-            == "Force canceling stuck query run"
         )
 
     def test_force_cancel_invalid_id(self, query_runs_service):

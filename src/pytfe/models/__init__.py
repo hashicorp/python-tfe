@@ -161,11 +161,8 @@ from .project import (
 from .query_run import (
     QueryRun,
     QueryRunActions,
-    QueryRunCancelOptions,
     QueryRunCreateOptions,
-    QueryRunForceCancelOptions,
     QueryRunIncludeOpt,
-    QueryRunList,
     QueryRunListOptions,
     QueryRunReadOptions,
     QueryRunSource,
@@ -468,11 +465,8 @@ __all__ = [
     # Query runs
     "QueryRun",
     "QueryRunActions",
-    "QueryRunCancelOptions",
     "QueryRunCreateOptions",
-    "QueryRunForceCancelOptions",
     "QueryRunIncludeOpt",
-    "QueryRunList",
     "QueryRunListOptions",
     "QueryRunReadOptions",
     "QueryRunSource",

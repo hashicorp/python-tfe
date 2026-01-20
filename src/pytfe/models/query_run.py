@@ -157,9 +157,6 @@ class QueryRunListOptions(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    page_number: int | None = Field(
-        None, alias="page[number]", description="Page number to retrieve", ge=1
-    )
     page_size: int | None = Field(
         None, alias="page[size]", description="Number of items per page", ge=1, le=100
     )
@@ -176,38 +173,3 @@ class QueryRunReadOptions(BaseModel):
     include: list[QueryRunIncludeOpt] | None = Field(
         None, description="List of related resources to include"
     )
-
-
-class QueryRunCancelOptions(BaseModel):
-    """Options for canceling a query run."""
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    comment: str | None = Field(
-        None, description="Optional comment about why the query run was canceled"
-    )
-
-
-class QueryRunForceCancelOptions(BaseModel):
-    """Options for force canceling a query run."""
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    comment: str | None = Field(
-        None, description="Optional comment about why the query run was force canceled"
-    )
-
-
-class QueryRunList(BaseModel):
-    """Represents a paginated list of query runs."""
-
-    model_config = ConfigDict(populate_by_name=True)
-
-    items: list[QueryRun] = Field(
-        default_factory=list, description="List of query runs"
-    )
-    current_page: int | None = Field(None, description="Current page number")
-    total_pages: int | None = Field(None, description="Total number of pages")
-    prev_page: int | str | None = Field(None, description="Previous page number or URL")
-    next_page: int | str | None = Field(None, description="Next page number or URL")
-    total_count: int | None = Field(None, description="Total number of items")
