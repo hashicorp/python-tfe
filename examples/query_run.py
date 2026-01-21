@@ -6,12 +6,12 @@ This file provides individual test functions for each query run operation.
 You can run specific functions to test individual parts of the API.
 
 Functions available:
-- test_list() - List query runs in a workspace
-- test_create() - Create a new query run
-- test_read() - Read a specific query run
-- test_logs() - Retrieve logs for a query run
-- test_cancel() - Cancel a query run
-- test_force_cancel() - Force cancel a query run
+- run_list() - List query runs in a workspace
+- run_create() - Create a new query run
+- run_read() - Read a specific query run
+- run_logs() - Retrieve logs for a query run
+- run_cancel() - Cancel a query run
+- run_force_cancel() - Force cancel a query run
 
 Usage:
     python query_run.py
@@ -42,7 +42,7 @@ def get_client_and_workspace():
     return client, workspace
 
 
-def test_list():
+def run_list():
     """Test 1: List query runs in a workspace."""
     print("=== Test 1: List Query Runs ===")
 
@@ -71,7 +71,7 @@ def test_list():
         return []
 
 
-def test_create():
+def run_create():
     """Test 2: Create a new query run."""
     print("\n=== Test 2: Create Query Run ===")
 
@@ -107,7 +107,7 @@ def test_create():
         return None
 
 
-def test_read(query_run_id=None):
+def run_read(query_run_id=None):
     """Test 3: Read a specific query run."""
     print("\n=== Test 3: Read Query Run ===")
 
@@ -148,7 +148,7 @@ def test_read(query_run_id=None):
         return None
 
 
-def test_logs(query_run_id=None):
+def run_logs(query_run_id=None):
     """Test 4: Retrieve logs for a query run."""
     print("\n=== Test 4: Get Query Run Logs ===")
 
@@ -184,7 +184,7 @@ def test_logs(query_run_id=None):
         return None
 
 
-def test_cancel(query_run_id=None):
+def run_cancel(query_run_id=None):
     """Test 5: Cancel a query run."""
     print("\n=== Test 5: Cancel Query Run ===")
 
@@ -194,7 +194,7 @@ def test_cancel(query_run_id=None):
         # If no query_run_id provided, create a new one
         if not query_run_id:
             print("Creating a new query run to cancel...")
-            new_run = test_create()
+            new_run = run_create()
             if not new_run:
                 print("ERROR: Could not create query run to cancel")
                 return False
@@ -218,7 +218,7 @@ def test_cancel(query_run_id=None):
         return False
 
 
-def test_force_cancel(query_run_id=None):
+def run_force_cancel(query_run_id=None):
     """Test 6: Force cancel a query run."""
     print("\n=== Test 6: Force Cancel Query Run ===")
 
@@ -228,7 +228,7 @@ def test_force_cancel(query_run_id=None):
         # If no query_run_id provided, create a new one
         if not query_run_id:
             print("Creating a new query run to force cancel...")
-            new_run = test_create()
+            new_run = run_create()
             if not new_run:
                 print("ERROR: Could not create query run to force cancel")
                 return False
@@ -264,26 +264,26 @@ def main():
     print("=" * 80)
 
     # Test 1: List query runs
-    query_runs = test_list()
+    query_runs = run_list()
 
     # Test 2: Create a query run
-    new_query_run = test_create()
+    new_query_run = run_create()
 
     # Test 3: Read a query run
     if query_runs:
-        test_read(query_runs[0].id)
+        run_read(query_runs[0].id)
     elif new_query_run:
-        test_read(new_query_run.id)
+        run_read(new_query_run.id)
 
     # Test 4: Get logs (use first query run from list)
     if query_runs:
-        test_logs(query_runs[0].id)
+        run_logs(query_runs[0].id)
 
     # Test 5: Cancel a query run (creates new one)
-    test_cancel()
+    run_cancel()
 
     # Test 6: Force cancel a query run (creates new one)
-    test_force_cancel()
+    run_force_cancel()
 
 
 if __name__ == "__main__":
