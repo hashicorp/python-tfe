@@ -190,7 +190,7 @@ class TestRuns:
             runs_service.create(options)
 
         # Test terraform_version with non-plan-only run
-        workspace = Workspace(id="ws-123", name="test", organization="test-org")
+        workspace = Workspace(id="ws-123", name="test")
         options = RunCreateOptions(
             workspace=workspace, terraform_version="1.5.0", plan_only=False
         )
@@ -227,7 +227,7 @@ class TestRuns:
         with patch.object(runs_service, "t") as mock_transport:
             mock_transport.request.return_value = mock_response
 
-            workspace = Workspace(id="ws-123", name="test", organization="test-org")
+            workspace = Workspace(id="ws-123", name="test")
             variables = [
                 RunVariable(key="env", value="test"),
                 RunVariable(key="region", value="us-east-1"),

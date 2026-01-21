@@ -4,80 +4,124 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
+from .agent import AgentPool
 from .common import EffectiveTagBinding, Pagination, Tag, TagBinding
-from .data_retention_policy import DataRetentionPolicy, DataRetentionPolicyChoice
-from .organization import ExecutionMode
+from .data_retention_policy import DataRetentionPolicyChoice
+from .organization import ExecutionMode, Organization
 from .project import Project
 
 
 class Workspace(BaseModel):
-    id: str
-    name: str | None = None
-    organization: str | None = None
-    execution_mode: ExecutionMode | None = None
-    project_id: str | None = None
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    id: str = Field(
+        json_schema_extra={"jsonapi_type": "primary", "jsonapi_name": "workspaces"}
+    )
+    name: str | None = Field(None, alias="name")
 
     # Core attributes
-    actions: WorkspaceActions | None = None
-    allow_destroy_plan: bool = False
-    assessments_enabled: bool = False
-    auto_apply: bool = False
-    auto_apply_run_trigger: bool = False
-    auto_destroy_at: datetime | None = None
-    auto_destroy_activity_duration: str | None = None
-    can_queue_destroy_plan: bool = False
-    created_at: datetime | None = None
-    description: str = ""
-    environment: str = ""
-    file_triggers_enabled: bool = False
-    global_remote_state: bool = False
-    inherits_project_auto_destroy: bool = False
-    locked: bool = False
-    migration_environment: str = ""
-    no_code_upgrade_available: bool = False
-    operations: bool = False
-    permissions: WorkspacePermissions | None = None
-    queue_all_runs: bool = False
-    speculative_enabled: bool = False
-    source: WorkspaceSource | None = None
-    source_name: str = ""
-    source_url: str = ""
-    structured_run_output_enabled: bool = False
-    terraform_version: str = ""
-    trigger_prefixes: list[str] = Field(default_factory=list)
-    trigger_patterns: list[str] = Field(default_factory=list)
-    vcs_repo: VCSRepo | None = None
-    working_directory: str = ""
-    updated_at: datetime | None = None
-    resource_count: int = 0
-    apply_duration_average: float | None = None  # in seconds
-    plan_duration_average: float | None = None  # in seconds
-    policy_check_failures: int = 0
-    run_failures: int = 0
-    runs_count: int = 0
-    tag_names: list[str] = Field(default_factory=list)
-    setting_overwrites: WorkspaceSettingOverwrites | None = None
+    actions: WorkspaceActions | None = Field(None, alias="actions")
+    allow_destroy_plan: bool | None = Field(None, alias="allow-destroy-plan")
+    assessments_enabled: bool | None = Field(None, alias="assessments-enabled")
+    auto_apply: bool | None = Field(None, alias="auto-apply")
+    auto_apply_run_trigger: bool | None = Field(None, alias="auto-apply-run-trigger")
+    auto_destroy_at: datetime | None = Field(None, alias="auto-destroy-at")
+    auto_destroy_activity_duration: str | None = Field(
+        None, alias="auto-destroy-activity-duration"
+    )
+    can_queue_destroy_plan: bool | None = Field(None, alias="can-queue-destroy-plan")
+    created_at: datetime | None = Field(None, alias="created-at")
+    description: str | None = Field(None, alias="description")
+    environment: str | None = Field(None, alias="environment")
+    execution_mode: ExecutionMode | None = Field(None, alias="execution-mode")
+    file_triggers_enabled: bool | None = Field(None, alias="file-triggers-enabled")
+    global_remote_state: bool | None = Field(None, alias="global-remote-state")
+    inherits_project_auto_destroy: bool | None = Field(
+        None, alias="inherits-project-auto-destroy"
+    )
+    locked: bool | None = Field(None, alias="locked")
+    migration_environment: str | None = Field(None, alias="migration-environment")
+    no_code_upgrade_available: bool | None = Field(
+        None, alias="no-code-upgrade-available"
+    )
+    operations: bool | None = Field(None, alias="operations")
+    permissions: WorkspacePermissions | None = Field(None, alias="permissions")
+    queue_all_runs: bool | None = Field(None, alias="queue-all-runs")
+    speculative_enabled: bool | None = Field(None, alias="speculative-enabled")
+    source: WorkspaceSource | None = Field(None, alias="source")
+    source_name: str | None = Field(None, alias="source-name")
+    source_url: str | None = Field(None, alias="source-url")
+    structured_run_output_enabled: bool | None = Field(
+        None, alias="structured-run-output-enabled"
+    )
+    terraform_version: str | None = Field(None, alias="terraform-version")
+    trigger_prefixes: list[str] = Field(default_factory=list, alias="trigger-prefixes")
+    trigger_patterns: list[str] = Field(default_factory=list, alias="trigger-patterns")
+    vcs_repo: VCSRepo | None = Field(None, alias="vcs-repo")
+    working_directory: str | None = Field(None, alias="working-directory")
+    updated_at: datetime | None = Field(None, alias="updated-at")
+    resource_count: int | None = Field(None, alias="resource-count")
+    apply_duration_average: float | None = Field(None, alias="apply-duration-average")
+    plan_duration_average: float | None = Field(None, alias="plan-duration-average")
+    policy_check_failures: int | None = Field(None, alias="policy-check-failures")
+    run_failures: int | None = Field(None, alias="run-failures")
+    runs_count: int | None = Field(None, alias="workspace-kpis-runs-count")
+    tag_names: list[str] = Field(default_factory=list, alias="tag-names")
+    setting_overwrites: WorkspaceSettingOverwrites | None = Field(
+        None, alias="setting-overwrites"
+    )
 
     # Relations
-    agent_pool: Any | None = None  # AgentPool object
-    current_run: Any | None = None  # Run object
-    current_state_version: Any | None = None  # StateVersion object
-    project: Project | None = None
-    ssh_key: Any | None = None  # SSHKey object
-    outputs: list[WorkspaceOutputs] = Field(default_factory=list)
-    tags: list[Tag] = Field(default_factory=list)
-    # tags: list[Tag] = Field(default_factory=list)
-    current_configuration_version: Any | None = None  # ConfigurationVersion object
-    locked_by: LockedByChoice | None = None
+    agent_pool: AgentPool | None = Field(
+        None,
+        json_schema_extra={"jsonapi_type": "relation", "jsonapi_name": "agent-pool"},
+    )  # AgentPool object
+    current_state_version: Any | None = Field(
+        None,
+        json_schema_extra={
+            "jsonapi_type": "relation",
+            "jsonapi_name": "current-state-version",
+        },
+    )  # StateVersion object
+    organization: Organization | None = Field(
+        None,
+        json_schema_extra={"jsonapi_type": "relation", "jsonapi_name": "organization"},
+    )
+    project: Project | None = Field(
+        None, json_schema_extra={"jsonapi_type": "relation", "jsonapi_name": "project"}
+    )
+    ssh_key: Any | None = Field(
+        None, json_schema_extra={"jsonapi_type": "relation", "jsonapi_name": "ssh-key"}
+    )  # SSHKey object
+    outputs: list[WorkspaceOutputs] = Field(
+        default_factory=list,
+        json_schema_extra={"jsonapi_type": "relation", "jsonapi_name": "outputs"},
+    )
+    tags: list[Tag] = Field(
+        default_factory=list,
+        json_schema_extra={"jsonapi_type": "relation", "jsonapi_name": "tags"},
+    )
+    current_configuration_version: Any | None = Field(
+        None,
+        json_schema_extra={
+            "jsonapi_type": "relation",
+            "jsonapi_name": "current-configuration-version",
+        },
+    )  # ConfigurationVersion object
+    locked_by: LockedByChoice | None = Field(
+        None,
+        json_schema_extra={"jsonapi_type": "polyrelation", "jsonapi_name": "locked-by"},
+    )
     variables: list[Any] = Field(default_factory=list)  # Variable objects
     tag_bindings: list[TagBinding] = Field(default_factory=list)
     effective_tag_bindings: list[EffectiveTagBinding] = Field(default_factory=list)
 
     # Links
-    links: dict[str, Any] = Field(default_factory=dict)
-    data_retention_policy: DataRetentionPolicy | None = None
+    links: dict[str, Any] | None = Field(None, alias="links")
+
+    data_retention_policy: Any | None = None  # Legacy field, deprecated
     data_retention_policy_choice: DataRetentionPolicyChoice | None = None
 
 
@@ -107,35 +151,43 @@ class WorkspaceSource(str, Enum):
 
 
 class WorkspaceActions(BaseModel):
-    is_destroyable: bool = False
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    is_destroyable: bool = Field(default=False, alias="is-destroyable")
 
 
 class WorkspacePermissions(BaseModel):
-    can_destroy: bool = False
-    can_force_unlock: bool = False
-    can_lock: bool = False
-    can_manage_run_tasks: bool = False
-    can_queue_apply: bool = False
-    can_queue_destroy: bool = False
-    can_queue_run: bool = False
-    can_read_settings: bool = False
-    can_unlock: bool = False
-    can_update: bool = False
-    can_update_variable: bool = False
-    can_force_delete: bool | None = None
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    can_destroy: bool = Field(default=False, alias="can-destroy")
+    can_force_unlock: bool = Field(default=False, alias="can-force-unlock")
+    can_lock: bool = Field(default=False, alias="can-lock")
+    can_manage_run_tasks: bool = Field(default=False, alias="can-manage-run-tasks")
+    can_queue_apply: bool = Field(default=False, alias="can-queue-apply")
+    can_queue_destroy: bool = Field(default=False, alias="can-queue-destroy")
+    can_queue_run: bool = Field(default=False, alias="can-queue-run")
+    can_read_settings: bool = Field(default=False, alias="can-read-settings")
+    can_unlock: bool = Field(default=False, alias="can-unlock")
+    can_update: bool = Field(default=False, alias="can-update")
+    can_update_variable: bool = Field(default=False, alias="can-update-variable")
+    can_force_delete: bool | None = Field(default=None, alias="can-force-delete")
 
 
 class WorkspaceSettingOverwrites(BaseModel):
-    execution_mode: bool | None = None
-    agent_pool: bool | None = None
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    execution_mode: bool | None = Field(None, alias="execution-mode")
+    agent_pool: bool | None = Field(None, alias="agent-pool")
 
 
 class WorkspaceOutputs(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
     id: str
-    name: str
-    sensitive: bool = False
-    output_type: str
-    value: Any | None = None
+    name: str | None = Field(default=None, alias="name")
+    sensitive: bool = Field(default=False, alias="sensitive")
+    output_type: str | None = Field(default=None, alias="output-type")
+    value: Any | None = Field(default=None, alias="value")
 
 
 class LockedByChoice(BaseModel):
@@ -331,12 +383,23 @@ class WorkspaceAddTagBindingsOptions(BaseModel):
 
 
 class VCSRepo(BaseModel):
-    branch: str | None = None
-    identifier: str | None = None
-    ingress_submodules: bool | None = None
-    oauth_token_id: str | None = None
-    tags_regex: str | None = None
-    gha_installation_id: str | None = None
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    branch: str | None = Field(default=None, alias="branch")
+    display_identifier: str | None = Field(default=None, alias="display-identifier")
+    identifier: str | None = Field(default=None, alias="identifier")
+    ingress_submodules: bool | None = Field(default=None, alias="ingress-submodules")
+    oauth_token_id: str | None = Field(default=None, alias="oauth-token-id")
+    tags_regex: str | None = Field(default=None, alias="tags-regex")
+    gha_installation_id: str | None = Field(
+        default=None, alias="github-app-installation-id"
+    )
+    repository_http_url: str | None = Field(default=None, alias="repository-http-url")
+    service_provider: str | None = Field(default=None, alias="service-provider")
+    tags: bool | None = Field(default=None, alias="tags")
+    webhook_url: str | None = Field(default=None, alias="webhook-url")
+    tag_prefix: str | None = Field(default=None, alias="tag-prefix")
+    source_directory: str | None = Field(default=None, alias="source-directory")
 
 
 class VCSRepoOptions(BaseModel):

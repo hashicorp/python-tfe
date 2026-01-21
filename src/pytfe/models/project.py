@@ -6,7 +6,9 @@ from .common import TagBinding
 
 
 class Project(BaseModel):
-    id: str
+    id: str = Field(
+        json_schema_extra={"jsonapi_type": "primary", "jsonapi_name": "projects"}
+    )
     name: str | None = None
     description: str = ""
     organization: str | None = None

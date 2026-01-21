@@ -16,6 +16,7 @@ from ..errors import (
     WorkspaceMinimumLimitError,
     WorkspaceRequiredError,
 )
+from ..jsonapi.unmarshaler import unmarshal_payload
 from ..models.common import (
     EffectiveTagBinding,
     Tag,
@@ -29,6 +30,8 @@ from ..models.data_retention_policy import (
     DataRetentionPolicyDontDelete,
     DataRetentionPolicySetOptions,
 )
+from ..models.organization import Organization
+from ..models.project import Project
 from ..models.workspace import (
     ExecutionMode,
     LockedByChoice,
@@ -50,13 +53,11 @@ from ..models.workspace import (
     WorkspaceRemoveTagsOptions,
     WorkspaceRemoveVCSConnectionOptions,
     WorkspaceSettingOverwrites,
-    WorkspaceSource,
     WorkspaceTagListOptions,
     WorkspaceUpdateOptions,
     WorkspaceUpdateRemoteStateConsumersOptions,
 )
 from ..utils import (
-    _safe_str,
     valid_string,
     valid_string_id,
     validate_workspace_create_options,
@@ -73,190 +74,120 @@ def _em_safe(v: Any) -> ExecutionMode | None:
     return result if isinstance(result, ExecutionMode) else None
 
 
-def _ws_from(d: dict[str, Any], org: str | None = None) -> Workspace:
+def _ws_from(d: dict[str, Any]) -> Workspace:
     attr: dict[str, Any] = d.get("attributes", {}) or {}
-
-    # Coerce to required string fields (empty string fallback keeps mypy happy)
-    id_str: str = _safe_str(d.get("id"))
-    name_str: str = _safe_str(attr.get("name"))
-    org_str: str = _safe_str(org if org is not None else attr.get("organization"))
+    relationships: dict[str, Any] = d.get("relationships", {}) or {}
 
     # Optional fields
     em: ExecutionMode | None = _em_safe(attr.get("execution-mode"))
 
-    proj_id: str | None = None
-    proj = attr.get("project")
-    if isinstance(proj, dict):
-        proj_id = proj.get("id") if isinstance(proj.get("id"), str) else None
-
-    # Enhanced field mapping
-    tags_val = attr.get("tags", []) or []
-    tags_list: builtins.list[Tag] = []
-    if isinstance(tags_val, builtins.list):
-        for tag_item in tags_val:
-            if isinstance(tag_item, dict):
-                tags_list.append(
-                    Tag(id=tag_item.get("id"), name=tag_item.get("name", ""))
-                )
-            elif isinstance(tag_item, str):
-                tags_list.append(Tag(name=tag_item))
-
-    # Map additional attributes
     actions = None
     if attr.get("actions"):
-        actions = WorkspaceActions(
-            is_destroyable=attr["actions"].get("is-destroyable", False)
-        )
+        actions = WorkspaceActions.model_validate(attr["actions"])
 
     permissions = None
     if attr.get("permissions"):
-        perm_attr = attr["permissions"]
-        permissions = WorkspacePermissions(
-            can_destroy=perm_attr.get("can-destroy", False),
-            can_force_unlock=perm_attr.get("can-force-unlock", False),
-            can_lock=perm_attr.get("can-lock", False),
-            can_manage_run_tasks=perm_attr.get("can-manage-run-tasks", False),
-            can_queue_apply=perm_attr.get("can-queue-apply", False),
-            can_queue_destroy=perm_attr.get("can-queue-destroy", False),
-            can_queue_run=perm_attr.get("can-queue-run", False),
-            can_read_settings=perm_attr.get("can-read-settings", False),
-            can_unlock=perm_attr.get("can-unlock", False),
-            can_update=perm_attr.get("can-update", False),
-            can_update_variable=perm_attr.get("can-update-variable", False),
-            can_force_delete=perm_attr.get("can-force-delete"),
-        )
+        permissions = WorkspacePermissions.model_validate(attr["permissions"])
 
     setting_overwrites = None
     if attr.get("setting-overwrites"):
-        so_attr = attr["setting-overwrites"]
-        setting_overwrites = WorkspaceSettingOverwrites(
-            execution_mode=so_attr.get("execution-mode"),
-            agent_pool=so_attr.get("agent-pool"),
+        setting_overwrites = WorkspaceSettingOverwrites.model_validate(
+            attr["setting-overwrites"]
         )
 
     # Map VCS repo
     vcs_repo = None
     if attr.get("vcs-repo"):
-        vcs_attr = attr["vcs-repo"]
-        vcs_repo = VCSRepo(
-            branch=vcs_attr.get("branch"),
-            identifier=vcs_attr.get("identifier"),
-            ingress_submodules=vcs_attr.get("ingress-submodules"),
-            oauth_token_id=vcs_attr.get("oauth-token-id"),
-            gha_installation_id=vcs_attr.get("github-app-installation-id"),
-        )
+        vcs_repo = VCSRepo.model_validate(attr["vcs-repo"])
 
     # Map locked_by choice
     locked_by = None
-    if d.get("relationships", {}).get("locked-by"):
-        lb_data = d["relationships"]["locked-by"]["data"]
+    if relationships.get("locked-by", {}).get("data"):
+        lb_data = relationships["locked-by"]["data"]
         if lb_data:
-            locked_by = LockedByChoice(
-                run=lb_data.get("run"),
-                user=lb_data.get("user"),
-                team=lb_data.get("team"),
-            )
+            if lb_data.get("type") == "runs":
+                locked_by = LockedByChoice.model_validate({"run": lb_data.get("id")})
+            elif lb_data.get("type") == "users":
+                locked_by = LockedByChoice.model_validate({"user": lb_data.get("id")})
+            elif lb_data.get("type") == "teams":
+                locked_by = LockedByChoice.model_validate({"team": lb_data.get("id")})
 
     # Map outputs
     outputs = []
-    if d.get("relationships", {}).get("outputs"):
-        for output_data in d["relationships"]["outputs"].get("data", []):
-            outputs.append(
-                WorkspaceOutputs(
-                    id=output_data.get("id", ""),
-                    name=output_data.get("attributes", {}).get("name", ""),
-                    sensitive=output_data.get("attributes", {}).get("sensitive", False),
-                    output_type=output_data.get("attributes", {}).get(
-                        "output-type", ""
-                    ),
-                    value=output_data.get("attributes", {}).get("value"),
-                )
-            )
+    if relationships.get("outputs", {}).get("data"):
+        for output_data in relationships["outputs"].get("data", []):
+            output_attrs = output_data.get("attributes", {})
+            output_attrs["id"] = output_data.get("id", "")
+            outputs.append(WorkspaceOutputs.model_validate(output_attrs))
 
     data_retention_policy_choice: DataRetentionPolicyChoice | None = None
-    if d.get("relationships", {}).get("data-retention-policy-choice"):
-        drp_data = d["relationships"]["data-retention-policy-choice"]["data"]
+    if relationships.get("data-retention-policy-choice", {}).get("data"):
+        drp_data = relationships["data-retention-policy-choice"]["data"]
         if drp_data:
             if drp_data.get("type") == "data-retention-policy-delete-olders":
-                data_retention_policy_choice = DataRetentionPolicyChoice(
-                    data_retention_policy_delete_older=DataRetentionPolicyDeleteOlder(
-                        id=drp_data.get("id"),
-                        delete_older_than_n_days=drp_data.get("attributes", {}).get(
-                            "delete-older-than-n-days", 0
-                        ),
+                data_retention_policy_delete_older = (
+                    DataRetentionPolicyDeleteOlder.model_validate(
+                        {
+                            "id": drp_data.get("id"),
+                            "delete_older_than_n_days": drp_data.get(
+                                "attributes", {}
+                            ).get("delete-older-than-n-days", 0),
+                        }
                     )
                 )
+                data_retention_policy_choice = DataRetentionPolicyChoice.model_validate(
+                    {
+                        "data_retention_policy_delete_older": data_retention_policy_delete_older
+                    }
+                )
             elif drp_data.get("type") == "data-retention-policy-dont-deletes":
-                data_retention_policy_choice = DataRetentionPolicyChoice(
-                    data_retention_policy_dont_delete=DataRetentionPolicyDontDelete(
-                        id=drp_data.get("id")
+                data_retention_policy_dont_delete = (
+                    DataRetentionPolicyDontDelete.model_validate(
+                        {"id": drp_data.get("id")}
                     )
+                )
+                data_retention_policy_choice = DataRetentionPolicyChoice.model_validate(
+                    {
+                        "data_retention_policy_dont_delete": data_retention_policy_dont_delete
+                    }
                 )
             elif drp_data.get("type") == "data-retention-policies":
                 # Legacy data retention policy
-                data_retention_policy_choice = DataRetentionPolicyChoice(
-                    data_retention_policy=DataRetentionPolicy(
-                        id=drp_data.get("id"),
-                        delete_older_than_n_days=drp_data.get("attributes", {}).get(
+                data_retention_policy = DataRetentionPolicy.model_validate(
+                    {
+                        "id": drp_data.get("id"),
+                        "delete_older_than_n_days": drp_data.get("attributes", {}).get(
                             "delete-older-than-n-days", 0
                         ),
-                    )
+                    }
+                )
+                data_retention_policy_choice = DataRetentionPolicyChoice.model_validate(
+                    {"data_retention_policy": data_retention_policy}
                 )
 
-    return Workspace(
-        id=id_str,
-        name=name_str,
-        organization=org_str,
-        execution_mode=em,
-        project_id=proj_id,
-        tags=tags_list,
-        # Core attributes
-        actions=actions,
-        allow_destroy_plan=attr.get("allow-destroy-plan", False),
-        assessments_enabled=attr.get("assessments-enabled", False),
-        auto_apply=attr.get("auto-apply", False),
-        auto_apply_run_trigger=attr.get("auto-apply-run-trigger", False),
-        auto_destroy_at=attr.get("auto-destroy-at"),
-        auto_destroy_activity_duration=attr.get("auto-destroy-activity-duration"),
-        can_queue_destroy_plan=attr.get("can-queue-destroy-plan", False),
-        created_at=attr.get("created-at"),
-        description=attr.get("description") or "",
-        environment=attr.get("environment", ""),
-        file_triggers_enabled=attr.get("file-triggers-enabled", False),
-        global_remote_state=attr.get("global-remote-state", False),
-        inherits_project_auto_destroy=attr.get("inherits-project-auto-destroy", False),
-        locked=attr.get("locked", False),
-        migration_environment=attr.get("migration-environment", ""),
-        no_code_upgrade_available=attr.get("no-code-upgrade-available", False),
-        operations=attr.get("operations", False),
-        permissions=permissions,
-        queue_all_runs=attr.get("queue-all-runs", False),
-        speculative_enabled=attr.get("speculative-enabled", False),
-        source=WorkspaceSource(attr.get("source")) if attr.get("source") else None,
-        source_name=attr.get("source-name") or "",
-        source_url=attr.get("source-url") or "",
-        structured_run_output_enabled=attr.get("structured-run-output-enabled", False),
-        terraform_version=attr.get("terraform-version") or "",
-        trigger_prefixes=attr.get("trigger-prefixes", []),
-        trigger_patterns=attr.get("trigger-patterns", []),
-        vcs_repo=vcs_repo,
-        working_directory=attr.get("working-directory") or "",
-        updated_at=attr.get("updated-at"),
-        resource_count=attr.get("resource-count", 0),
-        apply_duration_average=attr.get("apply-duration-average"),
-        plan_duration_average=attr.get("plan-duration-average"),
-        policy_check_failures=attr.get("policy-check-failures") or 0,
-        run_failures=attr.get("run-failures") or 0,
-        runs_count=attr.get("workspace-kpis-runs-count") or 0,
-        tag_names=attr.get("tag-names", []),
-        setting_overwrites=setting_overwrites,
-        # Relations
-        outputs=outputs,
-        locked_by=locked_by,
-        data_retention_policy_choice=data_retention_policy_choice
-        if data_retention_policy_choice
-        else None,
-    )
+    attr["id"] = d.get("id")
+    attr["execution_mode"] = em
+    attr["actions"] = actions
+    attr["permissions"] = permissions
+    attr["setting_overwrites"] = setting_overwrites
+    attr["vcs-repo"] = vcs_repo
+
+    # Add parsed relations
+    if relationships.get("organization", {}).get("data"):
+        attr["organization"] = Organization.model_validate(
+            {"id": relationships["organization"]["data"].get("id")}
+        )
+    if relationships.get("project", {}).get("data"):
+        attr["project"] = Project.model_validate(
+            {"id": relationships["project"]["data"].get("id")}
+        )
+    if relationships.get("ssh-key", {}).get("data"):
+        attr["ssh_key"] = relationships["ssh-key"]["data"].get("id")
+    attr["outputs"] = outputs
+    attr["locked_by"] = locked_by
+    attr["data_retention_policy_choice"] = data_retention_policy_choice
+
+    return Workspace.model_validate(attr)
 
 
 class Workspaces(_Service):
@@ -305,7 +236,7 @@ class Workspaces(_Service):
 
         path = f"/api/v2/organizations/{organization}/workspaces"
         for item in self._list(path, params=params):
-            yield _ws_from(item, organization)
+            yield _ws_from(item)
 
     def read(self, workspace: str, *, organization: str) -> Workspace:
         """Read workspace by organization and name."""
@@ -333,7 +264,7 @@ class Workspaces(_Service):
             f"/api/v2/organizations/{organization}/workspaces/{workspace}",
             params=params,
         )
-        ws = _ws_from(r.json()["data"], organization)
+        ws = unmarshal_payload(r.json(), Workspace)
         ws.data_retention_policy = (
             ws.data_retention_policy_choice.convert_to_legacy_struct()
             if ws.data_retention_policy_choice
@@ -357,7 +288,7 @@ class Workspaces(_Service):
             if options.include:
                 params["include"] = ",".join([i.value for i in options.include])
         r = self.t.request("GET", f"/api/v2/workspaces/{workspace_id}", params=params)
-        ws = _ws_from(r.json()["data"], None)
+        ws = _ws_from(r.json()["data"])
         if ws.data_retention_policy_choice is not None:
             ws.data_retention_policy = (
                 ws.data_retention_policy_choice.convert_to_legacy_struct()
@@ -381,7 +312,7 @@ class Workspaces(_Service):
         r = self.t.request(
             "POST", f"/api/v2/organizations/{organization}/workspaces", json_body=body
         )
-        return _ws_from(r.json()["data"], organization)
+        return _ws_from(r.json()["data"])
 
     # Convenience methods for org+name operations
     def update(
@@ -403,7 +334,7 @@ class Workspaces(_Service):
             f"/api/v2/organizations/{organization}/workspaces/{workspace}",
             json_body=body,
         )
-        return _ws_from(r.json()["data"], organization)
+        return _ws_from(r.json()["data"])
 
     def update_by_id(
         self, workspace_id: str, options: WorkspaceUpdateOptions
@@ -420,7 +351,7 @@ class Workspaces(_Service):
         r = self.t.request(
             "PATCH", f"/api/v2/workspaces/{workspace_id}", json_body=body
         )
-        return _ws_from(r.json()["data"], None)
+        return _ws_from(r.json()["data"])
 
     def _build_workspace_payload(
         self,
@@ -643,7 +574,7 @@ class Workspaces(_Service):
             f"/api/v2/organizations/{organization}/workspaces/{workspace}",
             json_body=body,
         )
-        return _ws_from(r.json()["data"], organization)
+        return _ws_from(r.json()["data"])
 
     def remove_vcs_connection_by_id(self, workspace_id: str) -> Workspace:
         """Remove VCS connection from workspace by workspace ID."""
@@ -666,7 +597,7 @@ class Workspaces(_Service):
             f"/api/v2/workspaces/{workspace_id}",
             json_body=body,
         )
-        return _ws_from(r.json()["data"], None)
+        return _ws_from(r.json()["data"])
 
     def lock(self, workspace_id: str, options: WorkspaceLockOptions) -> Workspace:
         """Lock a workspace by workspace ID."""
@@ -681,7 +612,7 @@ class Workspaces(_Service):
             f"/api/v2/workspaces/{workspace_id}/actions/lock",
             json_body=body,
         )
-        return _ws_from(r.json()["data"], None)
+        return _ws_from(r.json()["data"])
 
     def unlock(self, workspace_id: str) -> Workspace:
         """Unlock a workspace by workspace ID."""
@@ -693,7 +624,7 @@ class Workspaces(_Service):
                 "POST",
                 f"/api/v2/workspaces/{workspace_id}/actions/unlock",
             )
-            return _ws_from(r.json()["data"], None)
+            return _ws_from(r.json()["data"])
         except Exception as e:
             if "latest state version is still pending" in str(e):
                 raise WorkspaceLockedStateVersionStillPending(str(e)) from e
@@ -709,7 +640,7 @@ class Workspaces(_Service):
             "POST",
             f"/api/v2/workspaces/{workspace_id}/actions/force-unlock",
         )
-        return _ws_from(r.json()["data"], None)
+        return _ws_from(r.json()["data"])
 
     def assign_ssh_key(
         self, workspace_id: str, options: WorkspaceAssignSSHKeyOptions
@@ -737,7 +668,7 @@ class Workspaces(_Service):
             f"/api/v2/workspaces/{workspace_id}/relationships/ssh-key",
             json_body=body,
         )
-        return _ws_from(r.json()["data"], None)
+        return _ws_from(r.json()["data"])
 
     def unassign_ssh_key(self, workspace_id: str) -> Workspace:
         """Unassign the SSH key from a workspace by workspace ID."""
@@ -758,7 +689,7 @@ class Workspaces(_Service):
             json_body=body,
         )
 
-        return _ws_from(r.json()["data"], None)
+        return _ws_from(r.json()["data"])
 
     def list_remote_state_consumers(
         self, workspace_id: str, options: WorkspaceListRemoteStateConsumersOptions
@@ -778,7 +709,7 @@ class Workspaces(_Service):
 
         path = f"/api/v2/workspaces/{workspace_id}/relationships/remote-state-consumers"
         for item in self._list(path, params=params):
-            yield _ws_from(item, None)
+            yield _ws_from(item)
 
     def add_remote_state_consumers(
         self, workspace_id: str, options: WorkspaceAddRemoteStateConsumersOptions

@@ -48,12 +48,8 @@ def _run_trigger_from(d: dict[str, Any], org: str | None = None) -> RunTrigger:
         sourceable_id = sourceable_rel["data"].get("id", "")
 
     # Create workspace objects with proper IDs
-    workspace = Workspace(
-        id=workspace_id, name=workspace_name_str, organization=org or ""
-    )
-    sourceable = Workspace(
-        id=sourceable_id, name=sourceable_name_str, organization=org or ""
-    )
+    workspace = Workspace(id=workspace_id, name=workspace_name_str)  # type: ignore[call-arg]
+    sourceable = Workspace(id=sourceable_id, name=sourceable_name_str)  # type: ignore[call-arg]
     sourceable_choice = SourceableChoice(
         workspace=sourceable
     )  # Should reference sourceable, not workspace
