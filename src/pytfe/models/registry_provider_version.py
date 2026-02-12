@@ -171,5 +171,4 @@ class RegistryProviderVersionListOptions(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
-    page_number: int | None = Field(alias="page[number]", default=None)
     page_size: int | None = Field(alias="page[size]", default=None)
