@@ -203,7 +203,27 @@ class AgentPools(_Service):
                 options.allowed_workspace_policy.value
             )
 
-        payload = {"data": {"type": "agent-pools", "attributes": attributes}}
+        relationships: dict[str, Any] = {}
+        if options.allowed_workspace_ids:
+            relationships["allowed-workspaces"] = {
+                "data": [
+                    {"type": "workspaces", "id": ws_id}
+                    for ws_id in options.allowed_workspace_ids
+                ]
+            }
+        if options.excluded_workspace_ids:
+            relationships["excluded-workspaces"] = {
+                "data": [
+                    {"type": "workspaces", "id": ws_id}
+                    for ws_id in options.excluded_workspace_ids
+                ]
+            }
+
+        payload: dict[str, Any] = {
+            "data": {"type": "agent-pools", "attributes": attributes}
+        }
+        if relationships:
+            payload["data"]["relationships"] = relationships
 
         response = self.t.request("POST", path, json_body=payload)
         data = response.json()["data"]
@@ -320,13 +340,31 @@ class AgentPools(_Service):
                 options.allowed_workspace_policy.value
             )
 
-        payload = {
+        relationships: dict[str, Any] = {}
+        if options.allowed_workspace_ids:
+            relationships["allowed-workspaces"] = {
+                "data": [
+                    {"type": "workspaces", "id": ws_id}
+                    for ws_id in options.allowed_workspace_ids
+                ]
+            }
+        if options.excluded_workspace_ids:
+            relationships["excluded-workspaces"] = {
+                "data": [
+                    {"type": "workspaces", "id": ws_id}
+                    for ws_id in options.excluded_workspace_ids
+                ]
+            }
+
+        payload: dict[str, Any] = {
             "data": {
                 "type": "agent-pools",
                 "id": agent_pool_id,
                 "attributes": attributes,
             }
         }
+        if relationships:
+            payload["data"]["relationships"] = relationships
 
         response = self.t.request("PATCH", path, json_body=payload)
         data = response.json()["data"]
@@ -372,7 +410,11 @@ class AgentPools(_Service):
     def assign_to_workspaces(
         self, agent_pool_id: str, options: AgentPoolAssignToWorkspacesOptions
     ) -> None:
-        """Assign an agent pool to workspaces.
+        """Assign an agent pool to workspaces by updating the allowed-workspaces
+        relationship via PATCH /agent-pools/:id.
+
+        The provided workspace IDs become the new complete list of allowed
+        workspaces for this pool (full replacement, not append).
 
         Args:
             agent_pool_id: Agent pool ID
@@ -388,26 +430,41 @@ class AgentPools(_Service):
         if not options.workspace_ids:
             raise ValueError("At least one workspace ID is required")
 
-        path = f"/api/v2/agent-pools/{agent_pool_id}/relationships/workspaces"
-
-        # Create data payload with workspace references
-        workspace_data = []
         for workspace_id in options.workspace_ids:
             if not valid_string_id(workspace_id):
                 raise ValueError(f"Invalid workspace ID: {workspace_id}")
-            workspace_data.append({"type": "workspaces", "id": workspace_id})
 
-        payload = {"data": workspace_data}
-        self.t.request("POST", path, json_body=payload)
+        path = f"/api/v2/agent-pools/{agent_pool_id}"
+        payload: dict[str, Any] = {
+            "data": {
+                "type": "agent-pools",
+                "id": agent_pool_id,
+                "attributes": {},
+                "relationships": {
+                    "allowed-workspaces": {
+                        "data": [
+                            {"type": "workspaces", "id": ws_id}
+                            for ws_id in options.workspace_ids
+                        ]
+                    }
+                },
+            }
+        }
+        self.t.request("PATCH", path, json_body=payload)
 
     def remove_from_workspaces(
         self, agent_pool_id: str, options: AgentPoolRemoveFromWorkspacesOptions
     ) -> None:
-        """Remove an agent pool from workspaces.
+        """Exclude workspaces from an agent pool by updating the excluded-workspaces
+        relationship via PATCH /agent-pools/:id.
+
+        Use this for organization-scoped pools where most workspaces are allowed
+        but you want to block specific ones.  The provided list becomes the new
+        complete excluded-workspaces list (full replacement, not append).
 
         Args:
             agent_pool_id: Agent pool ID
-            options: Removal options containing workspace IDs
+            options: Removal options containing workspace IDs to exclude
 
         Raises:
             ValueError: If parameters are invalid
@@ -419,14 +476,24 @@ class AgentPools(_Service):
         if not options.workspace_ids:
             raise ValueError("At least one workspace ID is required")
 
-        path = f"/api/v2/agent-pools/{agent_pool_id}/relationships/workspaces"
-
-        # Create data payload with workspace references
-        workspace_data = []
         for workspace_id in options.workspace_ids:
             if not valid_string_id(workspace_id):
                 raise ValueError(f"Invalid workspace ID: {workspace_id}")
-            workspace_data.append({"type": "workspaces", "id": workspace_id})
 
-        payload = {"data": workspace_data}
-        self.t.request("DELETE", path, json_body=payload)
+        path = f"/api/v2/agent-pools/{agent_pool_id}"
+        payload: dict[str, Any] = {
+            "data": {
+                "type": "agent-pools",
+                "id": agent_pool_id,
+                "attributes": {},
+                "relationships": {
+                    "excluded-workspaces": {
+                        "data": [
+                            {"type": "workspaces", "id": ws_id}
+                            for ws_id in options.workspace_ids
+                        ]
+                    }
+                },
+            }
+        }
+        self.t.request("PATCH", path, json_body=payload)
