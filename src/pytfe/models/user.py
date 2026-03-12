@@ -7,6 +7,7 @@ class User(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     id: str = Field(..., alias="id")
+    auth_method: str = Field(default="", alias="auth-method")
     avatar_url: str = Field(default="", alias="avatar-url")
     email: str = Field(default="", alias="email")
     is_service_account: bool = Field(default=False, alias="is-service-account")
