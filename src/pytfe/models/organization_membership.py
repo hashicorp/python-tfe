@@ -31,8 +31,8 @@ class OrganizationMembership(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     id: str
-    status: OrganizationMembershipStatus
-    email: str
+    status: OrganizationMembershipStatus | None = Field(default=None, alias="status")
+    email: str = Field(default="", alias="email")
 
     # Relations
     organization: Organization | None = None

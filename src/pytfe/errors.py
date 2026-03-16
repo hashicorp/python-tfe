@@ -527,3 +527,10 @@ class InvalidKeyIDError(InvalidValues):
 
     def __init__(self, message: str = "invalid value for key-id"):
         super().__init__(message)
+
+
+class EmptyTeamNameError(InvalidValues):
+    """Raised when a team name is empty."""
+
+    def __init__(self, message: str = "team names cannot be empty"):
+        super().__init__(message)

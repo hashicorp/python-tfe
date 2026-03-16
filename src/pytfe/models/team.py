@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from ..errors import ERR_REQUIRED_NAME, EmptyTeamNameError
 from .organization_membership import OrganizationMembership
 from .user import User
 
@@ -85,6 +86,15 @@ class TeamListOptions(BaseModel):
     names: list[str] | None = Field(None, alias="filter[names]")
     query: str | None = Field(None, alias="q")
 
+    @model_validator(mode="after")
+    def valid(self) -> TeamListOptions:
+        """Validate the options."""
+
+        if self.names is not None and any(not name for name in self.names):
+            raise EmptyTeamNameError()
+
+        return self
+
 
 class OrganizationAccessOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
@@ -123,6 +133,13 @@ class TeamCreateOptions(BaseModel):
     allow_member_token_management: bool | None = Field(
         default=None, alias="allow-member-token-management"
     )
+
+    @model_validator(mode="after")
+    def valid(self) -> TeamCreateOptions:
+        """Validate the options."""
+        if not self.name:
+            raise ValueError(ERR_REQUIRED_NAME)
+        return self
 
 
 class TeamUpdateOptions(BaseModel):
