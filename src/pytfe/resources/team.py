@@ -85,7 +85,7 @@ class Teams(_Service):
         )
         data = r.json().get("data", {})
         return self._team_from(data)
-    
+
     def read(self, team_id: str) -> Team:
         """Read a single team by its ID."""
         if not valid_string_id(team_id):
@@ -96,3 +96,13 @@ class Teams(_Service):
         )
         data = r.json().get("data", {})
         return self._team_from(data)
+
+    def delete(self, team_id: str) -> None:
+        """Delete a team by its ID."""
+        if not valid_string_id(team_id):
+            raise InvalidTeamIDError()
+        self.t.request(
+            "DELETE",
+            path=f"/api/v2/teams/{team_id}",
+        )
+        return None

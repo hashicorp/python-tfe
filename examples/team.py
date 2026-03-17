@@ -92,9 +92,14 @@ def main():
         help="Read a team by ID before listing",
     )
     parser.add_argument(
+        "--delete",
+        action="store_true",
+        help="Delete a team by ID before listing",
+    )
+    parser.add_argument(
         "--team-id",
         default=None,
-        help="Team ID for read/update operation",
+        help="Team ID for read/update/delete operation",
     )
     args = parser.parse_args()
 
@@ -172,6 +177,16 @@ def main():
         print(
             f"Organization memberships included: {len(team.organization_memberships)}"
         )
+        print()
+
+    if args.delete:
+        if not args.team_id:
+            print("Error: --team-id is required when using --delete")
+            return
+
+        _print_header(f"Deleting team: {args.team_id}")
+        client.teams.delete(args.team_id)
+        print(f"Deleted Team ID: {args.team_id}")
         print()
 
     includes: list[TeamIncludeOpt] = []
