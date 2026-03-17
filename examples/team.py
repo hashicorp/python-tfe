@@ -4,7 +4,12 @@ import argparse
 import os
 
 from pytfe import TFEClient, TFEConfig
-from pytfe.models import TeamCreateOptions, TeamIncludeOpt, TeamListOptions
+from pytfe.models import (
+    TeamCreateOptions,
+    TeamIncludeOpt,
+    TeamListOptions,
+    TeamUpdateOptions,
+)
 
 
 def _print_header(title: str):
@@ -74,7 +79,17 @@ def main():
     parser.add_argument(
         "--allow-member-token-management",
         action="store_true",
-        help="Enable member token management on create",
+        help="Enable member token management on create/update",
+    )
+    parser.add_argument(
+        "--update",
+        action="store_true",
+        help="Update a team before listing",
+    )
+    parser.add_argument(
+        "--team-id",
+        default=None,
+        help="Team ID for update operation",
     )
     args = parser.parse_args()
 
@@ -93,13 +108,33 @@ def main():
             sso_team_id=args.sso_team_id,
             allow_member_token_management=args.allow_member_token_management,
         )
-        print("Create options:", create_options)
         new_team = client.teams.create(args.org, create_options)
         print(f"Created Team ID: {new_team.id}")
         print(f"Name: {new_team.name}")
         print(f"Visibility: {new_team.visibility}")
         print(
             f"Allow Member Token Management: {new_team.allow_member_token_management}"
+        )
+        print()
+
+    if args.update:
+        if not args.team_id:
+            print("Error: --team-id is required when using --update")
+            return
+
+        _print_header(f"Updating team: {args.team_id}")
+        update_options = TeamUpdateOptions(
+            name=args.name,
+            visibility=args.visibility,
+            sso_team_id=args.sso_team_id,
+            allow_member_token_management=args.allow_member_token_management,
+        )
+        updated_team = client.teams.update(args.team_id, update_options)
+        print(f"Updated Team ID: {updated_team.id}")
+        print(f"Name: {updated_team.name}")
+        print(f"Visibility: {updated_team.visibility}")
+        print(
+            f"Allow Member Token Management: {updated_team.allow_member_token_management}"
         )
         print()
 

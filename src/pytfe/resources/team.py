@@ -4,12 +4,14 @@ from collections.abc import Iterator
 
 from ..errors import (
     ERR_INVALID_ORG,
+    InvalidTeamIDError,
 )
 from ..models.organization_membership import OrganizationMembership
 from ..models.team import (
     Team,
     TeamCreateOptions,
     TeamListOptions,
+    TeamUpdateOptions,
 )
 from ..models.user import User
 from ..utils import valid_string_id
@@ -62,10 +64,23 @@ class Teams(_Service):
             raise ValueError(ERR_INVALID_ORG)
         attributes = options.model_dump(by_alias=True, exclude_none=True)
         payload = {"data": {"attributes": attributes, "type": "teams"}}
-        print(f"Creating team with payload: {payload}")
         r = self.t.request(
             "POST",
-            f"/api/v2/organizations/{organization}/teams",
+            path=f"/api/v2/organizations/{organization}/teams",
+            json_body=payload,
+        )
+        data = r.json().get("data", {})
+        return self._team_from(data)
+
+    def update(self, team_id: str, options: TeamUpdateOptions) -> Team:
+        """Update a team by its ID."""
+        if not valid_string_id(team_id):
+            raise InvalidTeamIDError()
+        attributes = options.model_dump(by_alias=True, exclude_none=True)
+        payload = {"data": {"attributes": attributes, "type": "teams"}}
+        r = self.t.request(
+            "PATCH",
+            path=f"/api/v2/teams/{team_id}",
             json_body=payload,
         )
         data = r.json().get("data", {})
