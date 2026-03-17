@@ -85,3 +85,14 @@ class Teams(_Service):
         )
         data = r.json().get("data", {})
         return self._team_from(data)
+    
+    def read(self, team_id: str) -> Team:
+        """Read a single team by its ID."""
+        if not valid_string_id(team_id):
+            raise InvalidTeamIDError()
+        r = self.t.request(
+            "GET",
+            path=f"/api/v2/teams/{team_id}",
+        )
+        data = r.json().get("data", {})
+        return self._team_from(data)

@@ -87,9 +87,14 @@ def main():
         help="Update a team before listing",
     )
     parser.add_argument(
+        "--read",
+        action="store_true",
+        help="Read a team by ID before listing",
+    )
+    parser.add_argument(
         "--team-id",
         default=None,
-        help="Team ID for update operation",
+        help="Team ID for read/update operation",
     )
     args = parser.parse_args()
 
@@ -135,6 +140,37 @@ def main():
         print(f"Visibility: {updated_team.visibility}")
         print(
             f"Allow Member Token Management: {updated_team.allow_member_token_management}"
+        )
+        print()
+
+    if args.read:
+        if not args.team_id:
+            print("Error: --team-id is required when using --read")
+            return
+
+        _print_header(f"Reading team: {args.team_id}")
+        team = client.teams.read(args.team_id)
+        print(f"Team ID: {team.id}")
+        print(f"Name: {team.name}")
+        print(f"Visibility: {team.visibility}")
+        print(f"Is Unified: {team.is_unified}")
+        print(f"User Count: {team.user_count}")
+        print(f"Allow Member Token Management: {team.allow_member_token_management}")
+
+        if team.organization_access:
+            print("Organization Access:")
+            print(f"  - manage_workspaces={team.organization_access.manage_workspaces}")
+            print(f"  - read_workspaces={team.organization_access.read_workspaces}")
+            print(f"  - manage_projects={team.organization_access.manage_projects}")
+
+        if team.permissions:
+            print("Permissions:")
+            print(f"  - can_update_membership={team.permissions.can_update_membership}")
+            print(f"  - can_destroy={team.permissions.can_destroy}")
+
+        print(f"Users included: {len(team.users)}")
+        print(
+            f"Organization memberships included: {len(team.organization_memberships)}"
         )
         print()
 
