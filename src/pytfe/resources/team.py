@@ -8,6 +8,7 @@ from ..errors import (
 from ..models.organization_membership import OrganizationMembership
 from ..models.team import (
     Team,
+    TeamCreateOptions,
     TeamListOptions,
 )
 from ..models.user import User
@@ -54,3 +55,18 @@ class Teams(_Service):
         ]
 
         return Team.model_validate(attrs)
+
+    def create(self, organization: str, options: TeamCreateOptions) -> Team:
+        """Create a new team in the given organization."""
+        if not valid_string_id(organization):
+            raise ValueError(ERR_INVALID_ORG)
+        attributes = options.model_dump(by_alias=True, exclude_none=True)
+        payload = {"data": {"attributes": attributes, "type": "teams"}}
+        print(f"Creating team with payload: {payload}")
+        r = self.t.request(
+            "POST",
+            f"/api/v2/organizations/{organization}/teams",
+            json_body=payload,
+        )
+        data = r.json().get("data", {})
+        return self._team_from(data)

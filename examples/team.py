@@ -4,7 +4,7 @@ import argparse
 import os
 
 from pytfe import TFEClient, TFEConfig
-from pytfe.models import TeamIncludeOpt, TeamListOptions
+from pytfe.models import TeamCreateOptions, TeamIncludeOpt, TeamListOptions
 
 
 def _print_header(title: str):
@@ -51,10 +51,57 @@ def main():
         action="store_true",
         help="Include related organization-memberships",
     )
+    parser.add_argument(
+        "--create",
+        action="store_true",
+        help="Create a new team before listing",
+    )
+    parser.add_argument(
+        "--name",
+        default=None,
+        help="Team name for create operation",
+    )
+    parser.add_argument(
+        "--visibility",
+        default="secret",
+        help="Team visibility for create operation (secret or organization)",
+    )
+    parser.add_argument(
+        "--sso-team-id",
+        default=None,
+        help="Optional SSO team ID for create operation",
+    )
+    parser.add_argument(
+        "--allow-member-token-management",
+        action="store_true",
+        help="Enable member token management on create",
+    )
     args = parser.parse_args()
 
     cfg = TFEConfig(address=args.address, token=args.token)
     client = TFEClient(cfg)
+
+    if args.create:
+        if not args.name:
+            print("Error: --name is required when using --create")
+            return
+
+        _print_header(f"Creating team in organization: {args.org}")
+        create_options = TeamCreateOptions(
+            name=args.name,
+            visibility=args.visibility,
+            sso_team_id=args.sso_team_id,
+            allow_member_token_management=args.allow_member_token_management,
+        )
+        print("Create options:", create_options)
+        new_team = client.teams.create(args.org, create_options)
+        print(f"Created Team ID: {new_team.id}")
+        print(f"Name: {new_team.name}")
+        print(f"Visibility: {new_team.visibility}")
+        print(
+            f"Allow Member Token Management: {new_team.allow_member_token_management}"
+        )
+        print()
 
     includes: list[TeamIncludeOpt] = []
     if args.include_users:
@@ -75,7 +122,6 @@ def main():
     print(f"- query={args.query}")
     print(f"- names={args.names}")
     print(f"- include={[item.value for item in includes] if includes else None}")
-    print("options", options)
     print()
 
     count = 0
@@ -87,7 +133,6 @@ def main():
         print(f"Is Unified: {team.is_unified}")
         print(f"User Count: {team.user_count}")
         print(f"Allow Member Token Management: {team.allow_member_token_management}")
-        print("team user", team.organization_memberships)
 
         if team.organization_access:
             print("Organization Access:")

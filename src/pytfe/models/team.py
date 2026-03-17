@@ -123,7 +123,6 @@ class OrganizationAccessOptions(BaseModel):
 class TeamCreateOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    type: str = "teams"
     name: str = Field(alias="name")
     sso_team_id: str | None = Field(default=None, alias="sso-team-id")
     organization_access: OrganizationAccessOptions | None = Field(
