@@ -162,7 +162,7 @@ def main():
         print(f"Deleting organization token for organization: {organization_name}")
         client.organization_tokens.delete(organization_name)
 
-        print("✓ Token deleted successfully!")
+        print(" Token deleted successfully!")
         print()
 
     except Exception as e:
