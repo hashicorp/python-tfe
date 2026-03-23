@@ -22,3 +22,10 @@ class User(BaseModel):
 
     # Relations
     # authentication_tokens: AuthenticationTokens = Field(..., alias="authentication-tokens")
+
+
+class UserUpdateCurrentOptions(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    username: str | None = Field(default=None, alias="username")
+    email: str | None = Field(default=None, alias="email")

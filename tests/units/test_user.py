@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from pytfe.models.user import User
+from pytfe.models.user import User, UserUpdateCurrentOptions
 from pytfe.resources.user import Users
 
 
@@ -72,3 +72,45 @@ class TestUsers:
         """Test reading a user with an invalid user ID."""
         with pytest.raises(ValueError, match="invalid user id"):
             users_service.read("")
+
+    def test_read_current_user(
+        self, users_service, mock_transport, sample_user_response
+    ):
+        """Test reading the currently authenticated user."""
+        mock_transport.request.return_value.json.return_value = sample_user_response
+
+        user = users_service.read_current()
+
+        mock_transport.request.assert_called_once_with("GET", "/api/v2/account/details")
+        assert isinstance(user, User)
+        assert user.id == "user-MA4GL63FmYRpSFxa"
+        assert user.username == "admin"
+        assert user.email == "admin@example.com"
+
+    def test_update_current_user(
+        self, users_service, mock_transport, sample_user_response
+    ):
+        """Test updating the currently authenticated user."""
+        mock_transport.request.return_value.json.return_value = sample_user_response
+        options = UserUpdateCurrentOptions(
+            username="new-admin",
+            email="new-admin@example.com",
+        )
+
+        user = users_service.update_current(options)
+
+        mock_transport.request.assert_called_once_with(
+            "PATCH",
+            "/api/v2/account/update",
+            json_body={
+                "data": {
+                    "type": "users",
+                    "attributes": {
+                        "username": "new-admin",
+                        "email": "new-admin@example.com",
+                    },
+                }
+            },
+        )
+        assert isinstance(user, User)
+        assert user.id == "user-MA4GL63FmYRpSFxa"
