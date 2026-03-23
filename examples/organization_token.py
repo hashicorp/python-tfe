@@ -57,7 +57,7 @@ def main():
         print(f"Creating token for organization: {organization_name}")
         token = client.organization_tokens.create(organization_name)
 
-        print("✓ Token created successfully!")
+        print("Token created successfully!")
         print(f"  Token ID: {token.id}")
         print(f"  Created At: {token.created_at}")
         print(f"  Description: {token.description}")
@@ -85,7 +85,7 @@ def main():
             organization_name, options
         )
 
-        print("✓ Token created with options successfully!")
+        print("Token created with options successfully!")
         print(f"  Token ID: {token.id}")
         print(f"  Created At: {token.created_at}")
         if token.expired_at:
@@ -93,7 +93,7 @@ def main():
         print()
 
     except Exception as e:
-        print(f"✗ Error: {e}")
+        print(f" Error: {e}")
         print()
 
     # =====================================================
@@ -107,7 +107,7 @@ def main():
             organization_name, options
         )
 
-        print("✓ Audit-trails token created successfully!")
+        print(" Audit-trails token created successfully!")
         print(f"  Token ID: {token.id}")
         print(f"  Token Value: {token.token}")
         print()
@@ -123,7 +123,7 @@ def main():
         print(f"Reading organization token for organization: {organization_name}")
         token = client.organization_tokens.read(organization_name)
 
-        print("✓ Token read successfully!")
+        print("Token read successfully!")
         print(f"  Token ID: {token.id}")
         print(f"  Created At: {token.created_at}")
         print(f"  Description: {token.description}")
@@ -146,7 +146,7 @@ def main():
         print(f"Reading audit-trails token for organization: {organization_name}")
         token = client.organization_tokens.read_with_options(organization_name, options)
 
-        print("✓ Audit-trails token read successfully!")
+        print(" Audit-trails token read successfully!")
         print(f"  Token ID: {token.id}")
         print(f"  Token Value: {token.token}")
         print()
@@ -166,7 +166,7 @@ def main():
         print()
 
     except Exception as e:
-        print(f"✗ Error: {e}")
+        print(f" Error: {e}")
         print()
 
     # =====================================================
@@ -178,11 +178,11 @@ def main():
         print(f"Deleting audit-trails token for organization: {organization_name}")
         client.organization_tokens.delete_with_options(organization_name, options)
 
-        print("✓ Audit-trails token deleted successfully!")
+        print(" Audit-trails token deleted successfully!")
         print()
 
     except Exception as e:
-        print(f"✗ Error: {e}")
+        print(f"Error: {e}")
         print()
 
     print("=" * 80)
