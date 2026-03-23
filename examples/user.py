@@ -24,8 +24,8 @@ def main() -> None:
         print("=== Current Terraform Cloud User ===")
         print(f"User ID: {current_user.id}")
         print(f"Username: {current_user.username}")
-        print(f"Email: {current_user.email}")
-        print(f"Auth Method: {current_user.auth_method}")
+        print(f"Email: {current_user.email or 'N/A'}")
+        print(f"Auth Method: {current_user.auth_method or 'N/A'}")
 
         if not user_id:
             print("\nTFE_USER_ID not set. Skipping client.users.read(user_id).")
@@ -36,8 +36,8 @@ def main() -> None:
         print("\n=== Terraform Cloud User By ID ===")
         print(f"User ID: {user.id}")
         print(f"Username: {user.username}")
-        print(f"Email: {user.email}")
-        print(f"Auth Method: {user.auth_method}")
+        print(f"Email: {user.email or 'N/A'}")
+        print(f"Auth Method: {user.auth_method or 'N/A'}")
     except Exception as e:
         print(f"Error running user example: {e}")
 
