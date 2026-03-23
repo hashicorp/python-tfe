@@ -21,13 +21,10 @@ Prerequisites:
 - Appropriate permissions to manage organization tokens
 """
 
-import os
-import sys
 from datetime import datetime, timedelta
 
 # Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-
+##sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 from pytfe import TFEClient, TFEConfig
 from pytfe.models import (
     OrganizationTokenCreateOptions,
@@ -35,6 +32,28 @@ from pytfe.models import (
     OrganizationTokenReadOptions,
     TokenType,
 )
+
+
+def redact_token(token_value: str | None) -> str:
+    """Redact token value for safe display."""
+    if not token_value:
+        return "None"
+    if len(token_value) <= 8:
+        return f"{'*' * len(token_value)}"
+    # Show first 3 and last 3 characters
+    return f"{token_value[:3]}...{token_value[-3:]}".replace(
+        token_value[3:-3], "*" * (len(token_value) - 6)
+    )
+
+
+def redact_id(id_value: str | None) -> str:
+    """Redact ID for safe display."""
+    if not id_value:
+        return "None"
+    if len(id_value) <= 6:
+        return f"{'*' * len(id_value)}"
+    # Show first 3 and last 3 characters
+    return f"{id_value[:3]}...{id_value[-3:]}"
 
 
 def main():
@@ -46,8 +65,7 @@ def main():
 
     # Initialize the TFE client
     client = TFEClient(TFEConfig.from_env())
-    organization_name = "my-org"  # Change to your organization name
-
+    organization_name = "prab-sandbox01"
     # =====================================================
     # 1. CREATE ORGANIZATION TOKEN (BASIC)
     # =====================================================
@@ -58,16 +76,16 @@ def main():
         token = client.organization_tokens.create(organization_name)
 
         print("Token created successfully!")
-        print(f"  Token ID: {token.id}")
+        print(f"  Token ID: {redact_id(token.id)}")
         print(f"  Created At: {token.created_at}")
         print(f"  Description: {token.description}")
-        print(f"  Token Value: {token.token}")
+        print(f"  Token Value: {redact_token(token.token)}")
         if token.expired_at:
             print(f"  Expires At: {token.expired_at}")
         print()
 
     except Exception as e:
-        print(f"✗ Error: {e}")
+        print(f" Error: {e}")
         print()
 
     # =====================================================
@@ -86,7 +104,7 @@ def main():
         )
 
         print("Token created with options successfully!")
-        print(f"  Token ID: {token.id}")
+        print(f"  Token ID: {redact_id(token.id)}")
         print(f"  Created At: {token.created_at}")
         if token.expired_at:
             print(f"  Expires At: {token.expired_at}")
@@ -108,12 +126,12 @@ def main():
         )
 
         print(" Audit-trails token created successfully!")
-        print(f"  Token ID: {token.id}")
-        print(f"  Token Value: {token.token}")
+        print(f"  Token ID: {redact_id(token.id)}")
+        print(f"  Token Value: {redact_token(token.token)}")
         print()
 
     except Exception as e:
-        print(f"✗ Error: {e}")
+        print(f"Error: {e}")
         print()
 
     # =====================================================
@@ -124,7 +142,7 @@ def main():
         token = client.organization_tokens.read(organization_name)
 
         print("Token read successfully!")
-        print(f"  Token ID: {token.id}")
+        print(f"  Token ID: {redact_id(token.id)}")
         print(f"  Created At: {token.created_at}")
         print(f"  Description: {token.description}")
         if token.last_used_at:
@@ -134,7 +152,7 @@ def main():
         print()
 
     except Exception as e:
-        print(f"✗ Error: {e}")
+        print(f" Error: {e}")
         print()
 
     # =====================================================
@@ -147,12 +165,12 @@ def main():
         token = client.organization_tokens.read_with_options(organization_name, options)
 
         print(" Audit-trails token read successfully!")
-        print(f"  Token ID: {token.id}")
-        print(f"  Token Value: {token.token}")
+        print(f"  Token ID: {redact_id(token.id)}")
+        print(f"  Token Value: {redact_token(token.token)}")
         print()
 
     except Exception as e:
-        print(f"✗ Error: {e}")
+        print(f" Error: {e}")
         print()
 
     # =====================================================

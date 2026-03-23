@@ -30,7 +30,7 @@ class OrganizationTokens(_Service):
         Raises:
             ValueError: If the organization name is invalid
         """
-        return self.create_with_options(organization, None)
+        return self.create_with_options(organization)
 
     def create_with_options(
         self,
@@ -57,7 +57,7 @@ class OrganizationTokens(_Service):
         # Build request body
         body: dict[str, Any] = {
             "data": {
-                "type": "authentication-tokens",
+                "type": "authentication-token",
                 "attributes": {},
             }
         }

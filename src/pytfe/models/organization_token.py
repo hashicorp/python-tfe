@@ -23,9 +23,9 @@ class OrganizationToken(BaseModel):
 
     id: str = Field(..., description="Organization token ID")
     created_at: datetime = Field(..., description="Creation timestamp")
-    description: str = Field("", description="Token description")
+    description: str | None = Field(None, description="Token description")
     last_used_at: datetime | None = Field(None, description="Last usage timestamp")
-    token: str = Field("", description="The actual token value")
+    token: str | None = Field(None, description="The actual token value")
     expired_at: datetime | None = Field(None, description="Token expiration timestamp")
     created_by: Any | None = Field(
         None, description="The entity that created this token"
