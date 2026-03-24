@@ -95,12 +95,12 @@ class TestProjects:
         # Check first project
         assert result[0].id == "prj-123"
         assert result[0].name == "Test Project 1"
-        assert result[0].organization == organization
+        assert result[0].organization is None
 
         # Check second project
         assert result[1].id == "prj-456"
         assert result[1].name == "Test Project 2"
-        assert result[1].organization == organization
+        assert result[1].organization is None
 
         # Verify the correct API path was used
         expected_path = f"/api/v2/organizations/{organization}/projects"
@@ -129,12 +129,18 @@ class TestProjects:
         assert isinstance(result, Project)
         assert result.id == "prj-123"
         assert result.name == project_name
-        assert result.organization == organization
+        assert result.organization is None
 
         # Verify API call
         expected_path = f"/api/v2/organizations/{organization}/projects"
         expected_payload = {
-            "data": {"type": "projects", "attributes": {"name": project_name}}
+            "data": {
+                "type": "projects",
+                "attributes": {
+                    "name": project_name,
+                    "default-execution-mode": "remote",
+                },
+            }
         }
         self.mock_transport.request.assert_called_once_with(
             "POST", expected_path, json_body=expected_payload
@@ -162,7 +168,8 @@ class TestProjects:
         assert isinstance(result, Project)
         assert result.id == project_id
         assert result.name == "Test Project"
-        assert result.organization == "test-org"
+        assert result.organization is not None
+        assert result.organization.id == "test-org"
 
         # Verify API call
         expected_path = f"/api/v2/projects/{project_id}"
@@ -192,15 +199,18 @@ class TestProjects:
         assert isinstance(result, Project)
         assert result.id == project_id
         assert result.name == new_name
-        assert result.organization == "test-org"
+        assert result.organization is not None
+        assert result.organization.id == "test-org"
 
         # Verify API call
         expected_path = f"/api/v2/projects/{project_id}"
         expected_payload = {
             "data": {
                 "type": "projects",
-                "id": project_id,
-                "attributes": {"name": new_name},
+                "attributes": {
+                    "name": new_name,
+                    "default-execution-mode": "remote",
+                },
             }
         }
         self.mock_transport.request.assert_called_once_with(
@@ -268,7 +278,7 @@ class TestProjects:
 
         result = self.projects_service.read(project_id)
 
-        assert result.organization == ""  # Should default to empty string
+        assert result.organization is None
 
 
 class TestProjectTagBindings:
@@ -381,7 +391,7 @@ class TestProjectTagBindings:
 
         # Verify API call
         self.mock_transport.request.assert_called_once_with(
-            "GET", f"/api/v2/projects/{self.project_id}/tag-bindings/effective"
+            "GET", f"/api/v2/projects/{self.project_id}/effective-tag-bindings"
         )
 
     def test_list_effective_tag_bindings_invalid_project_id(self):
@@ -527,7 +537,14 @@ class TestProjectTagBindings:
 
         # Verify API call
         self.mock_transport.request.assert_called_once_with(
-            "DELETE", f"/api/v2/projects/{self.project_id}/tag-bindings"
+            "PATCH",
+            f"/api/v2/projects/{self.project_id}",
+            json_body={
+                "data": {
+                    "type": "projects",
+                    "relationships": {"tag-bindings": {"data": []}},
+                }
+            },
         )
 
     def test_delete_tag_bindings_invalid_project_id(self):
