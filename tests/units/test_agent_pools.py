@@ -290,10 +290,28 @@ class TestAgentPoolOperations:
         pool_id = "apool-123456789abcdef0"
         ws_id = "ws-aaaaaaaaaaaaaaa1"
 
-        agent_pools_service.assign_to_workspaces(
+        mock_response = {
+            "data": {
+                "id": pool_id,
+                "type": "agent-pools",
+                "attributes": {
+                    "name": "test-pool",
+                    "created-at": "2023-01-01T00:00:00Z",
+                    "organization-scoped": True,
+                    "allowed-workspace-policy": "all-workspaces",
+                    "agent-count": 0,
+                },
+            }
+        }
+        mock_transport.request.return_value.json.return_value = mock_response
+
+        agent_pool = agent_pools_service.assign_to_workspaces(
             pool_id,
             AgentPoolAssignToWorkspacesOptions(workspace_ids=[ws_id]),
         )
+
+        assert agent_pool.id == pool_id
+        assert agent_pool.name == "test-pool"
 
         call_args = mock_transport.request.call_args
         # Must be PATCH, not POST
@@ -317,10 +335,28 @@ class TestAgentPoolOperations:
         pool_id = "apool-123456789abcdef0"
         ws_id = "ws-aaaaaaaaaaaaaaa1"
 
-        agent_pools_service.remove_from_workspaces(
+        mock_response = {
+            "data": {
+                "id": pool_id,
+                "type": "agent-pools",
+                "attributes": {
+                    "name": "test-pool",
+                    "created-at": "2023-01-01T00:00:00Z",
+                    "organization-scoped": True,
+                    "allowed-workspace-policy": "all-workspaces",
+                    "agent-count": 0,
+                },
+            }
+        }
+        mock_transport.request.return_value.json.return_value = mock_response
+
+        agent_pool = agent_pools_service.remove_from_workspaces(
             pool_id,
             AgentPoolRemoveFromWorkspacesOptions(workspace_ids=[ws_id]),
         )
+
+        assert agent_pool.id == pool_id
+        assert agent_pool.name == "test-pool"
 
         call_args = mock_transport.request.call_args
         # Must be PATCH, not DELETE

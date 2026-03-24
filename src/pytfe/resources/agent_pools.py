@@ -409,7 +409,7 @@ class AgentPools(_Service):
 
     def assign_to_workspaces(
         self, agent_pool_id: str, options: AgentPoolAssignToWorkspacesOptions
-    ) -> None:
+    ) -> AgentPool:
         """Assign an agent pool to workspaces by updating the allowed-workspaces
         relationship via PATCH /agent-pools/:id.
 
@@ -419,6 +419,9 @@ class AgentPools(_Service):
         Args:
             agent_pool_id: Agent pool ID
             options: Assignment options containing workspace IDs
+
+        Returns:
+            Updated AgentPool object
 
         Raises:
             ValueError: If parameters are invalid
@@ -450,11 +453,34 @@ class AgentPools(_Service):
                 },
             }
         }
-        self.t.request("PATCH", path, json_body=payload)
+        response = self.t.request("PATCH", path, json_body=payload)
+        data = response.json()["data"]
+
+        # Extract agent pool data from response
+        attr = data.get("attributes", {}) or {}
+        agent_pool_data = {
+            "id": _safe_str(data.get("id")),
+            "name": _safe_str(attr.get("name")),
+            "created_at": attr.get("created-at"),
+            "organization_scoped": attr.get("organization-scoped"),
+            "allowed_workspace_policy": attr.get("allowed-workspace-policy"),
+            "agent_count": attr.get("agent-count", 0),
+        }
+
+        return AgentPool(
+            id=_safe_str(agent_pool_data["id"]) or "",
+            name=_safe_str(agent_pool_data["name"]),
+            created_at=cast(Any, agent_pool_data["created_at"]),
+            organization_scoped=_safe_bool(agent_pool_data["organization_scoped"]),
+            allowed_workspace_policy=_safe_workspace_policy(
+                agent_pool_data["allowed_workspace_policy"]
+            ),
+            agent_count=_safe_int(agent_pool_data["agent_count"]),
+        )
 
     def remove_from_workspaces(
         self, agent_pool_id: str, options: AgentPoolRemoveFromWorkspacesOptions
-    ) -> None:
+    ) -> AgentPool:
         """Exclude workspaces from an agent pool by updating the excluded-workspaces
         relationship via PATCH /agent-pools/:id.
 
@@ -465,6 +491,9 @@ class AgentPools(_Service):
         Args:
             agent_pool_id: Agent pool ID
             options: Removal options containing workspace IDs to exclude
+
+        Returns:
+            Updated AgentPool object
 
         Raises:
             ValueError: If parameters are invalid
@@ -496,4 +525,27 @@ class AgentPools(_Service):
                 },
             }
         }
-        self.t.request("PATCH", path, json_body=payload)
+        response = self.t.request("PATCH", path, json_body=payload)
+        data = response.json()["data"]
+
+        # Extract agent pool data from response
+        attr = data.get("attributes", {}) or {}
+        agent_pool_data = {
+            "id": _safe_str(data.get("id")),
+            "name": _safe_str(attr.get("name")),
+            "created_at": attr.get("created-at"),
+            "organization_scoped": attr.get("organization-scoped"),
+            "allowed_workspace_policy": attr.get("allowed-workspace-policy"),
+            "agent_count": attr.get("agent-count", 0),
+        }
+
+        return AgentPool(
+            id=_safe_str(agent_pool_data["id"]) or "",
+            name=_safe_str(agent_pool_data["name"]),
+            created_at=cast(Any, agent_pool_data["created_at"]),
+            organization_scoped=_safe_bool(agent_pool_data["organization_scoped"]),
+            allowed_workspace_policy=_safe_workspace_policy(
+                agent_pool_data["allowed_workspace_policy"]
+            ),
+            agent_count=_safe_int(agent_pool_data["agent_count"]),
+        )

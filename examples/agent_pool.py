@@ -107,18 +107,18 @@ def main():
         # remove_from_workspaces sends PATCH /agent-pools/:id with relationships.excluded-workspaces
         if workspace_id:
             print("\n Assigning workspace to agent pool...")
-            client.agent_pools.assign_to_workspaces(
+            updated_pool = client.agent_pools.assign_to_workspaces(
                 new_pool.id,
                 AgentPoolAssignToWorkspacesOptions(workspace_ids=[workspace_id]),
             )
-            print(f"  Assigned workspace {workspace_id} to pool")
+            print(f"  Assigned workspace {workspace_id} to pool {updated_pool.name}")
 
             print("\n Removing workspace from agent pool...")
-            client.agent_pools.remove_from_workspaces(
+            updated_pool = client.agent_pools.remove_from_workspaces(
                 new_pool.id,
                 AgentPoolRemoveFromWorkspacesOptions(workspace_ids=[workspace_id]),
             )
-            print(f"  Excluded workspace {workspace_id} from pool")
+            print(f"  Removed workspace {workspace_id} from pool {updated_pool.name}")
         else:
             print("\n Skipping workspace assignment (set TFE_WORKSPACE_ID to test)")
 
