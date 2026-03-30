@@ -631,7 +631,6 @@ class VariableSets(_Service):
                             {
                                 "id": proj["id"],
                                 "name": f"project-{proj['id']}",  # Placeholder name
-                                "organization": "placeholder-org",  # Placeholder organization
                             }
                         )
         parsed_data["projects"] = projects
@@ -667,7 +666,6 @@ class VariableSets(_Service):
                         "project": {
                             "id": parent_data["id"],
                             "name": f"project-{parent_data['id']}",
-                            "organization": "placeholder-org",
                         }
                     }
                 elif parent_data.get("type") == "organizations":

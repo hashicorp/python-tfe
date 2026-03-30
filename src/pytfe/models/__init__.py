@@ -153,6 +153,7 @@ from .project import (
     ProjectAddTagBindingsOptions,
     ProjectCreateOptions,
     ProjectListOptions,
+    ProjectSettingOverwrites,
     ProjectUpdateOptions,
 )
 
@@ -501,6 +502,7 @@ __all__ = [
     "ProjectCreateOptions",
     "ProjectListOptions",
     "ProjectUpdateOptions",
+    "ProjectSettingOverwrites",
     "DataRetentionPolicy",
     "DataRetentionPolicyChoice",
     "DataRetentionPolicyDeleteOlder",
