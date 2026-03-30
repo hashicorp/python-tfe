@@ -130,6 +130,32 @@ def main():
                 except Exception as e:
                     print(f"Error reading run details: {e}")
 
+        # Demonstrate RunSource enum values
+        _print_header("Run Source Types Demonstration")
+
+        from pytfe.models.run import RunSource
+
+        print("Available Run Source types and their meanings:")
+        print(
+            f"- {RunSource.Run_Source_API.value}: Runs created via Terraform Enterprise/Cloud API"
+        )
+        print(
+            f"- {RunSource.Run_Source_Configuration_Version.value}: Runs triggered by VCS configuration version uploads"
+        )
+        print(f"- {RunSource.Run_Source_UI.value}: Runs created via Terraform Cloud UI")
+        print(
+            f"- {RunSource.Run_Source_Terraform_Cloud.value}: Runs from Terraform CLI with cloud backend"
+        )
+        print(f"- {RunSource.Run_Source_Terraform.value}: Runs from Terraform CLI")
+        print(
+            f"- {RunSource.Run_Source_Run_Trigger.value}: Runs triggered by run triggers"
+        )
+        print(
+            f"- {RunSource.Run_Source_Infra_Lifecycle.value}: Runs from infrastructure lifecycle events"
+        )
+        print()
+        print("The SDK now supports all these run source types for proper validation.")
+
         # 3) Optionally create a new run
         if args.create_run:
             _print_header("Creating a new plan-only run")
@@ -218,7 +244,7 @@ def main():
             print("No runs available for actions demo")
             return
 
-        demo_run = run_list.items[0]
+        demo_run = run_list[0]
         print(f"Demonstrating actions for run: {demo_run.id}")
         print(f"Current status: {demo_run.status}")
 

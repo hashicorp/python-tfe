@@ -417,3 +417,37 @@ class TestRuns:
             assert call_args[0][0] == "POST"
             assert call_args[0][1] == "/api/v2/runs/run-discard-123/actions/discard"
             assert call_args[1]["json_body"]["comment"] == "Discarding run"
+
+    def test_run_source_enum_values(self):
+        """Test that all RunSource enum values work with Run model validation."""
+
+        # Test all RunSource enum values
+        test_sources = [
+            ("tfe-api", RunSource.Run_Source_API),
+            ("tfe-configuration-version", RunSource.Run_Source_Configuration_Version),
+            ("tfe-ui", RunSource.Run_Source_UI),
+            ("terraform+cloud", RunSource.Run_Source_Terraform_Cloud),
+            ("terraform", RunSource.Run_Source_Terraform),
+            ("tfe-run-trigger", RunSource.Run_Source_Run_Trigger),
+            ("tfe-infrastructure-lifecycle", RunSource.Run_Source_Infra_Lifecycle),
+        ]
+
+        for source_value, expected_enum in test_sources:
+            # Test that Run model can be created with this source
+            # Use the same format as the service methods (attributes flattened with id)
+            run_data = {
+                "id": f"run-test-{source_value.replace('+', '').replace('-', '_')}",
+                "status": "pending",
+                "source": source_value,
+                "message": f"Test run with source {source_value}",
+                "created-at": "2023-01-01T12:00:00Z",
+                "has-changes": False,
+                "is-destroy": False,
+            }
+
+            # This should not raise an exception
+            run = Run.model_validate(run_data)
+
+            # Verify the source was correctly parsed
+            assert run.source == expected_enum
+            assert run.source.value == source_value
