@@ -294,14 +294,113 @@ class TestRuns:
         mock_response_data = {
             "data": {
                 "id": "run-detailed-123",
+                "type": "runs",
                 "attributes": {
-                    "status": "planned",
-                    "source": "tfe-api",
-                    "message": "Detailed read test",
-                    "created-at": "2023-01-01T12:00:00Z",
+                    "actions": {
+                        "is-cancelable": False,
+                        "is-confirmable": False,
+                        "is-discardable": False,
+                        "is-force-cancelable": False,
+                    },
+                    "allow-config-generation": False,
+                    "allow-empty-apply": False,
+                    "auto-apply": False,
+                    "canceled-at": None,
+                    "created-at": "2026-02-19T01:58:46.126Z",
                     "has-changes": True,
                     "is-destroy": False,
+                    "message": "Triggered via CLI",
+                    "plan-only": False,
+                    "refresh": True,
+                    "refresh-only": False,
+                    "replace-addrs": None,
+                    "save-plan": False,
+                    "source": "terraform+cloud",
+                    "status-timestamps": {
+                        "errored-at": "2026-02-19T01:59:19+00:00",
+                        "planned-at": "2026-02-19T01:59:16+00:00",
+                        "queuing-at": "2026-02-19T01:58:46+00:00",
+                        "planning-at": "2026-02-19T01:58:48+00:00",
+                        "plan-queued-at": "2026-02-19T01:58:46+00:00",
+                        "plan-queueable-at": "2026-02-19T01:58:46+00:00",
+                    },
+                    "status": "errored",
+                    "target-addrs": None,
+                    "trigger-reason": "manual",
+                    "terraform-version": "1.13.5",
+                    "updated-at": "2026-02-19T01:59:19.891Z",
+                    "permissions": {
+                        "can-apply": True,
+                        "can-cancel": True,
+                        "can-comment": True,
+                        "can-discard": True,
+                        "can-force-execute": True,
+                        "can-force-cancel": True,
+                        "can-override-policy-check": True,
+                    },
+                    "variables": [],
+                    "invoke-action-addrs": None,
                 },
+                "relationships": {
+                    "workspace": {
+                        "data": {"id": "ws-a2Kntu53K79hsPRH", "type": "workspaces"}
+                    },
+                    "apply": {
+                        "data": {"id": "apply-Y1rVt6MpiwzdMjbK", "type": "applies"},
+                        "links": {"related": "/api/v2/runs/run-detailed-123/apply"},
+                    },
+                    "configuration-version": {
+                        "data": {
+                            "id": "cv-bakH4hn9cPXb2yZq",
+                            "type": "configuration-versions",
+                        },
+                        "links": {
+                            "related": "/api/v2/runs/run-detailed-123/configuration-version"
+                        },
+                    },
+                    "created-by": {
+                        "data": {"id": "user-FRJGnNMX6fpe9Cdd", "type": "users"},
+                        "links": {
+                            "related": "/api/v2/runs/run-detailed-123/created-by"
+                        },
+                    },
+                    "plan": {
+                        "data": {"id": "plan-WooDdHWZnSE3Zs8j", "type": "plans"},
+                        "links": {"related": "/api/v2/runs/run-detailed-123/plan"},
+                    },
+                    "run-events": {
+                        "data": [
+                            {"id": "re-bqJGaaCrt5QZfexJ", "type": "run-events"},
+                            {"id": "re-j8d6eWyfyHSUbX7x", "type": "run-events"},
+                            {"id": "re-UAXd9VyRTXZy3hpx", "type": "run-events"},
+                            {"id": "re-DFFf51Doi8mmHC9G", "type": "run-events"},
+                            {"id": "re-U2m4RMQhEY9voN1K", "type": "run-events"},
+                            {"id": "re-WWfUbu5NTWdYKgBs", "type": "run-events"},
+                        ],
+                        "links": {
+                            "related": "/api/v2/runs/run-detailed-123/run-events"
+                        },
+                    },
+                    "task-stages": {
+                        "data": [],
+                        "links": {
+                            "related": "/api/v2/runs/run-detailed-123/task-stages"
+                        },
+                    },
+                    "policy-checks": {
+                        "data": [
+                            {"id": "polchk-JxgtJ56kFifnngyT", "type": "policy-checks"}
+                        ],
+                        "links": {
+                            "related": "/api/v2/runs/run-detailed-123/policy-checks"
+                        },
+                    },
+                    "comments": {
+                        "data": [],
+                        "links": {"related": "/api/v2/runs/run-detailed-123/comments"},
+                    },
+                },
+                "links": {"self": "/api/v2/runs/run-detailed-123"},
             }
         }
 
@@ -330,6 +429,10 @@ class TestRuns:
             # Verify result
             assert isinstance(result, Run)
             assert result.id == "run-detailed-123"
+            assert result.created_by.id == "user-FRJGnNMX6fpe9Cdd"
+            assert result.plan.id == "plan-WooDdHWZnSE3Zs8j"
+            assert result.apply.id == "apply-Y1rVt6MpiwzdMjbK"
+            assert result.workspace.id == "ws-a2Kntu53K79hsPRH"
 
     def test_apply_run_success(self, runs_service):
         """Test successful apply operation."""
