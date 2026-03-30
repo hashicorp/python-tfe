@@ -146,7 +146,7 @@ def main():
                     name=workspace_data.name,
                     organization=workspace_data.organization,
                     execution_mode=workspace_data.execution_mode,
-                    project_id=workspace_data.project_id,
+                    project=workspace_data.project,  # Corrected to 'project' as per model
                     tags=getattr(workspace_data, "tags", []),
                 )
 
@@ -218,7 +218,7 @@ def main():
             print("No runs available for actions demo")
             return
 
-        demo_run = run_list.items[0]
+        demo_run = run_list[0]
         print(f"Demonstrating actions for run: {demo_run.id}")
         print(f"Current status: {demo_run.status}")
 
