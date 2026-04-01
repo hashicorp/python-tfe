@@ -37,6 +37,7 @@
 * Fixed configuration upload packaging flow (tarfile-based handling) by @isivaselvan [#107](https://github.com/hashicorp/python-tfe/pull/107)
 * Updated agent pool workspace assign/remove operations to consistently return AgentPool objects by @KshitijaChoudhari [#110](https://github.com/hashicorp/python-tfe/pull/110)
 * Updated Run relationships handling for improved model consistency by @ibm-richard [#119](https://github.com/hashicorp/python-tfe/pull/119)
+* Updated additional Run Source attributes by @isivaselvan [#123](https://github.com/hashicorp/python-tfe/pull/123)
 
 # v0.1.2
 
