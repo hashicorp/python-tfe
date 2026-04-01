@@ -27,7 +27,7 @@ class RunSource(str, Enum):
     Run_Source_Terraform = "terraform"
     Run_Source_Run_Trigger = "tfe-run-trigger"
     Run_Source_Infra_Lifecycle = "tfe-infrastructure-lifecycle"
-    Run_Source_MODULE = "tfe-module"
+    Run_Source_Module = "tfe-module"
 
 
 class RunStatus(str, Enum):
