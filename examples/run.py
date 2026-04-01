@@ -12,6 +12,7 @@ from pytfe.models import (
     RunListOptions,
     RunReadOptions,
     RunVariable,
+    Workspace,
 )
 
 
@@ -138,15 +139,11 @@ def main():
                 # Get workspace object - convert to the model type expected by run
                 workspace_data = client.workspaces.read_by_id(args.workspace_id)
 
-                # Create the workspace object that run models expect
-                from pytfe.models.workspace import Workspace
-
                 workspace = Workspace(
                     id=workspace_data.id,
                     name=workspace_data.name,
                     organization=workspace_data.organization,
                     execution_mode=workspace_data.execution_mode,
-                    project_id=workspace_data.project_id,
                     tags=getattr(workspace_data, "tags", []),
                 )
 

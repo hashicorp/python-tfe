@@ -24,6 +24,10 @@ class RunSource(str, Enum):
     Run_Source_Configuration_Version = "tfe-configuration-version"
     Run_Source_UI = "tfe-ui"
     Run_Source_Terraform_Cloud = "terraform+cloud"
+    Run_Source_Terraform = "terraform"
+    Run_Source_Run_Trigger = "tfe-run-trigger"
+    Run_Source_Infra_Lifecycle = "tfe-infrastructure-lifecycle"
+    Run_Source_Module = "tfe-module"
 
 
 class RunStatus(str, Enum):
