@@ -92,10 +92,10 @@ def main():
             PolicyKind.SENTINEL if args.kind == "sentinel" else PolicyKind.OPA
         )
 
-    policy_iter = client.policies.list(args.org, list_options)
+    policy_list = client.policies.list(args.org, list_options)
 
     existing_policy = None
-    for policy in policy_iter:
+    for policy in policy_list:
         print(
             f"- {policy.id} | {policy.name} | kind={policy.kind} | enforcement={policy.enforcement_level}"
         )
