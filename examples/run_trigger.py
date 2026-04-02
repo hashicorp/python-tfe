@@ -133,11 +133,9 @@ def main():
             )
 
             # Get run triggers and convert to list safely
-            run_trigger_gen = client.run_triggers.list(args.workspace_id, options)
-            run_trigger_list = []
+            run_trigger_list = list(client.run_triggers.list(args.workspace_id, options))
             count = 0
-            for trigger in run_trigger_gen:
-                run_trigger_list.append(trigger)
+            for trigger in run_trigger_list:
                 count += 1
                 if count >= args.page_size * 2:  # Safety limit based on page size
                     break

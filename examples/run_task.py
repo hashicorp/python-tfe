@@ -106,11 +106,9 @@ def main():
             f"Fetching run tasks from organization '{args.org}' (page {args.page}, size {args.page_size})..."
         )
         # Get run tasks and convert to list safely
-        run_task_gen = client.run_tasks.list(args.org, options)
-        run_task_list = []
+        run_task_list = list(client.run_tasks.list(args.org, options))
         count = 0
-        for task in run_task_gen:
-            run_task_list.append(task)
+        for task in run_task_list:
             count += 1
             if count >= args.page_size * 2:  # Safety limit based on page size
                 break
