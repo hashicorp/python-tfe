@@ -79,7 +79,9 @@ def main():
                     print(f"- Errored At: {pe.status_timestamp.errored_at}")
 
             if pe.policy_attachable:
-                print(f"Task Stage: {pe.task_stage.id} ({pe.task_stage.type})")
+                print(
+                    f"Task Stage ID: {pe.policy_attachable.id} ({pe.policy_attachable.type})"
+                )
 
             if pe.created_at:
                 print(f"Created At: {pe.created_at}")
