@@ -168,8 +168,6 @@ def main():
             # Create a workspace object for the source
             source_workspace = Workspace(
                 id=args.source_workspace_id,
-                name=f"source-workspace-{int(time.time())}",
-                organization=args.org,
             )
 
             create_options = RunTriggerCreateOptions(sourceable=source_workspace)

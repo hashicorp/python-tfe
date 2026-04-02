@@ -202,20 +202,19 @@ def main():
     if args.run_actions and args.workspace_id:
         _print_header("Run Actions Demo (Safe Mode)")
 
-        # Get runs first if not already available
-        if "run_list" not in locals() or not run_list:
-            try:
-                options = RunListOptions(page_size=1)
-                run_list = list(client.runs.list(args.workspace_id, options))
-            except Exception as e:
-                print(f"Error getting runs for actions demo: {e}")
-                return
+        try:
+            options = RunListOptions(page_size=1)
+            run_list = list(client.runs.list(args.workspace_id, options))
+            print(f"Fetched {len(run_list)} runs for actions demo")
+        except Exception as e:
+            print(f"Error getting runs for actions demo: {e}")
+            return
 
         if not run_list:
             print("No runs available for actions demo")
             return
 
-        demo_run = run_list.items[0]
+        demo_run = run_list[0]
         print(f"Demonstrating actions for run: {demo_run.id}")
         print(f"Current status: {demo_run.status}")
 
