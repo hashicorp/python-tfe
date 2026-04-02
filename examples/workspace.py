@@ -47,6 +47,7 @@ from pytfe.models import (
     ExecutionMode,
     Tag,
     WorkspaceAddTagsOptions,
+    WorkspaceAssignSSHKeyOptions,
     WorkspaceCreateOptions,
     WorkspaceIncludeOpt,
     WorkspaceListOptions,
@@ -56,7 +57,6 @@ from pytfe.models import (
     WorkspaceRemoveTagsOptions,
     WorkspaceTagListOptions,
     WorkspaceUpdateOptions,
-    WorkspaceAssignSSHKeyOptions,
 )
 
 
@@ -77,11 +77,15 @@ def main():
     parser.add_argument("--workspace-id", help="Workspace ID for ID-based operations")
 
     # Core CRUD Operations
-    parser.add_argument("--list", action="store_true", help="List workspaces in the organization")
+    parser.add_argument(
+        "--list", action="store_true", help="List workspaces in the organization"
+    )
     parser.add_argument("--create", action="store_true", help="Create a new workspace")
     parser.add_argument("--delete", action="store_true", help="Delete the workspace")
     parser.add_argument(
-        "--safe-delete", action="store_true", help="Safely delete the workspace, passed along with --delete"
+        "--safe-delete",
+        action="store_true",
+        help="Safely delete the workspace, passed along with --delete",
     )
     parser.add_argument(
         "--update", action="store_true", help="Update workspace settings"
@@ -98,7 +102,7 @@ def main():
     parser.add_argument(
         "--remove-vcs", action="store_true", help="Remove VCS connection"
     )
-    
+
     parser.add_argument("--read", action="store_true", help="Read workspace details")
     parser.add_argument(
         "--tag-ops", action="store_true", help="Test tag management operations"

@@ -35,7 +35,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import time
 
 from pytfe import TFEClient, TFEConfig
 from pytfe.models import (
