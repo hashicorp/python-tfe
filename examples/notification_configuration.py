@@ -56,10 +56,12 @@ def main():
         # ===== List notification configurations for workspace =====
         print("1. Listing notification configurations for workspace...")
         try:
-            workspace_notifications_list = list(client.notification_configurations.list(
-                subscribable_id=workspace_id
-            ))
-            print(f"Found {len(workspace_notifications_list)} notification configurations")
+            workspace_notifications_list = list(
+                client.notification_configurations.list(subscribable_id=workspace_id)
+            )
+            print(
+                f"Found {len(workspace_notifications_list)} notification configurations"
+            )
             for nc in workspace_notifications_list:
                 print(f"- {nc.name} (ID: {nc.id}, Enabled: {nc.enabled})")
         except Exception as e:
@@ -76,10 +78,14 @@ def main():
             options = NotificationConfigurationListOptions(
                 subscribable_choice=team_choice
             )
-            team_notifications_list = list(client.notification_configurations.list(
-                subscribable_id=team_id, options=options
-            ))
-            print(f"Found {len(team_notifications_list)} team notification configurations")
+            team_notifications_list = list(
+                client.notification_configurations.list(
+                    subscribable_id=team_id, options=options
+                )
+            )
+            print(
+                f"Found {len(team_notifications_list)} team notification configurations"
+            )
             for nc in team_notifications_list:
                 print(f"- {nc.name} (ID: {nc.id}, Enabled: {nc.enabled})")
         except Exception as e:

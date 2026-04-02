@@ -107,11 +107,6 @@ def main():
         )
         # Get run tasks and convert to list safely
         run_task_list = list(client.run_tasks.list(args.org, options))
-        count = 0
-        for task in run_task_list:
-            count += 1
-            if count >= args.page_size * 2:  # Safety limit based on page size
-                break
 
         print(f"Found {len(run_task_list)} run tasks")
         print()
