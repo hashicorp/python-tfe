@@ -84,7 +84,10 @@ class Organization(BaseModel):
     default_execution_mode: str | None = None
     email: str | None = None
     external_id: str | None = None
-    id: str | None = None
+    id: str | None = Field(
+        None,
+        json_schema_extra={"jsonapi_type": "primary", "jsonapi_name": "organizations"},
+    )
     is_unified: bool | None = None
     owners_team_saml_role_id: str | None = None
     permissions: dict | None = None

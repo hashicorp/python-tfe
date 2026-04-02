@@ -342,7 +342,7 @@ class TestWorkspaceOperations:
             sample_workspace_response
         )
 
-        project = Project(id="prj-123", name="Test Project", organization="test-org")
+        project = Project(id="prj-123", name="Test Project")
 
         options = WorkspaceCreateOptions(name="project-workspace", project=project)
 
@@ -614,11 +614,12 @@ class TestWorkspaceOperations:
     def test_ws_from_conversion(self, sample_workspace_response):
         """Test _ws_from helper function conversion."""
         workspace_data = sample_workspace_response["data"]
-        workspace = _ws_from(workspace_data, "test-org")
+        workspace = _ws_from(workspace_data)
 
         assert workspace.id == "ws-abc123def456"
         assert workspace.name == "test-workspace"
-        assert workspace.organization == "test-org"
+        # organization is now from relationships, not parameter
+        assert workspace.organization is None
         assert workspace.auto_apply
         assert workspace.execution_mode == ExecutionMode.REMOTE
         assert workspace.resource_count == 25
@@ -636,11 +637,12 @@ class TestWorkspaceOperations:
         """Test _ws_from with minimal data."""
         minimal_data = {"id": "ws-minimal", "attributes": {"name": "minimal-workspace"}}
 
-        workspace = _ws_from(minimal_data, "test-org")
+        workspace = _ws_from(minimal_data)
 
         assert workspace.id == "ws-minimal"
         assert workspace.name == "minimal-workspace"
-        assert workspace.organization == "test-org"
+        # organization is now from relationships, not parameter
+        assert workspace.organization is None
         assert not workspace.auto_apply  # Default value
         assert not workspace.locked  # Default value
 
@@ -679,11 +681,7 @@ class TestWorkspaceOperations:
             },
         }
 
-        workspace = _ws_from(data_with_nones, "test-org")
-
-        assert workspace.description == ""  # Should convert None to empty string
-        assert workspace.terraform_version == ""
-        assert workspace.working_directory == ""
+        workspace = _ws_from(data_with_nones)
         assert workspace.vcs_repo is None
 
     # ==========================================
@@ -767,8 +765,8 @@ class TestWorkspaceOperations:
     def test_add_remote_state_consumers_basic(self, workspaces_service, mock_transport):
         """Test adding remote state consumers."""
         consumer_workspaces = [
-            Workspace(id="ws-consumer-1", name="consumer-1", organization="test-org"),
-            Workspace(id="ws-consumer-2", name="consumer-2", organization="test-org"),
+            Workspace(id="ws-consumer-1", name="consumer-1"),
+            Workspace(id="ws-consumer-2", name="consumer-2"),
         ]
 
         options = WorkspaceAddRemoteStateConsumersOptions(
@@ -809,7 +807,7 @@ class TestWorkspaceOperations:
 
         # Test invalid workspace ID format (with slash)
         options = WorkspaceAddRemoteStateConsumersOptions(
-            workspaces=[Workspace(id="ws-valid", name="valid", organization="test-org")]
+            workspaces=[Workspace(id="ws-valid", name="valid")]
         )
 
         with pytest.raises(InvalidWorkspaceIDError):
@@ -820,7 +818,7 @@ class TestWorkspaceOperations:
     ):
         """Test removing remote state consumers."""
         consumer_workspaces = [
-            Workspace(id="ws-consumer-1", name="consumer-1", organization="test-org"),
+            Workspace(id="ws-consumer-1", name="consumer-1"),
         ]
 
         options = WorkspaceRemoveRemoteStateConsumersOptions(
@@ -847,8 +845,8 @@ class TestWorkspaceOperations:
     ):
         """Test updating (replacing) remote state consumers."""
         consumer_workspaces = [
-            Workspace(id="ws-consumer-3", name="consumer-3", organization="test-org"),
-            Workspace(id="ws-consumer-4", name="consumer-4", organization="test-org"),
+            Workspace(id="ws-consumer-3", name="consumer-3"),
+            Workspace(id="ws-consumer-4", name="consumer-4"),
         ]
 
         options = WorkspaceUpdateRemoteStateConsumersOptions(

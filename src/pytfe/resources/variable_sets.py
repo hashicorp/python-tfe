@@ -628,11 +628,7 @@ class VariableSets(_Service):
                 for ws in ws_data:
                     if "id" in ws:
                         workspaces.append(
-                            {
-                                "id": ws["id"],
-                                "name": f"workspace-{ws['id']}",  # Placeholder name
-                                "organization": "placeholder-org",  # Placeholder organization
-                            }
+                            {"id": ws["id"], "name": f"workspace-{ws['id']}"}
                         )
         parsed_data["workspaces"] = workspaces
 
@@ -644,11 +640,7 @@ class VariableSets(_Service):
                 for proj in proj_data:
                     if "id" in proj:
                         projects.append(
-                            {
-                                "id": proj["id"],
-                                "name": f"project-{proj['id']}",  # Placeholder name
-                                "organization": "placeholder-org",  # Placeholder organization
-                            }
+                            {"id": proj["id"], "name": f"project-{proj['id']}"}
                         )
         parsed_data["projects"] = projects
 
@@ -683,7 +675,6 @@ class VariableSets(_Service):
                         "project": {
                             "id": parent_data["id"],
                             "name": f"project-{parent_data['id']}",
-                            "organization": "placeholder-org",
                         }
                     }
                 elif parent_data.get("type") == "organizations":
