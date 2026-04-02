@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Run Events Example for python-tfe SDK
 
 This example demonstrates how to work with run events using the python-tfe SDK.

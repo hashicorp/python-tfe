@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Agent and Agent Pool models for the Python TFE SDK.
 
 This module contains Pydantic models for Terraform Enterprise/Cloud agents and agent pools,

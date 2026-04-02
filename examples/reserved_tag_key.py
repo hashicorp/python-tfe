@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Reserved Tag Keys Example Script.
 
 This script demonstrates how to use the Reserved Tag Keys API to:

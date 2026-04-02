@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from pytfe._http import HTTPTransport
 from pytfe.config import TFEConfig
 

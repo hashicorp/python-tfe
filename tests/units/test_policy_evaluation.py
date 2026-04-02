@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Unit tests for the policy evaluation module."""
 
 from unittest.mock import Mock

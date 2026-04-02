@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Agent Pool resource implementation for the Python TFE SDK.
 
 This module provides the AgentPools service for managing Terraform Enterprise/Cloud
