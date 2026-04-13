@@ -14,6 +14,7 @@ Usage:
     python examples/organization_membership.py <organization-name>
 """
 
+import os
 import sys
 
 from pytfe import TFEClient
@@ -28,7 +29,8 @@ from pytfe.models import (
 def main():
     """Demonstrate organization membership list functionality."""
 
-    organization_name = "aayush-test"
+    organization_name = os.getenv("TFE_ORG")
+    team_id = os.getenv("TFE_TEAM_ID")
 
     # Initialize the client (reads TFE_TOKEN and TFE_ADDRESS from environment)
     try:
@@ -272,13 +274,13 @@ def main():
         from pytfe.models import OrganizationMembershipCreateOptions, Team
 
         # Replace with a valid email for your organization
-        new_member_email = "sivaselvan.i@hashicorp.com"
+        new_member_email = os.getenv("TEST_MEMBER_EMAIL")
 
         # Create membership with teams (uncomment to use)
         from pytfe.models import OrganizationAccess
 
         team = Team(
-            id="team-dx24FR9xQUuwNTHA",
+            id=team_id,
             organization_access=OrganizationAccess(read_workspaces=True),
         )  # Replace with actual team ID
         create_options = OrganizationMembershipCreateOptions(
@@ -300,7 +302,9 @@ def main():
     try:
         from pytfe.errors import NotFound
 
-        membership_id = "ou-9mG77c6uE5GScg9k"  # Replace with actual membership ID
+        membership_id = os.getenv(
+            "TFE_MEMBERSHIP_ID"
+        )  # Replace with actual membership ID
         print(f"Attempting to delete membership: {membership_id}")
 
         client.organization_memberships.delete(membership_id)

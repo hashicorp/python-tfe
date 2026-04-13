@@ -37,8 +37,8 @@ def main():
 
     # Resolve organization and workspace from environment variables
     org_name = os.environ["TFE_ORG"]
-    workspace_name = os.getenv("TFE_WORKSPACE_NAME", "test-api")
-    workspace_id = os.getenv("TFE_WORKSPACE_ID", "")
+    workspace_name = os.getenv("TFE_WORKSPACE_NAME")
+    workspace_id = os.getenv("TFE_WORKSPACE_ID")
     if not workspace_id:
         print(f"Looking up workspace '{workspace_name}' in org '{org_name}'...")
         ws = client.workspaces.read(workspace_name, organization=org_name)
@@ -46,7 +46,7 @@ def main():
         print(f"Resolved workspace ID: {workspace_id}")
     print(f"Using workspace: {workspace_name} (ID: {workspace_id})")
 
-    team_id = os.getenv("TFE_TEAM_ID", "team-example123456789")
+    team_id = os.getenv("TFE_TEAM_ID")
     if team_id == "team-example123456789":
         print("Using fake team ID for demonstration (teams may require paid plan)")
     else:

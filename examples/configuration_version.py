@@ -178,7 +178,7 @@ def main():
 
     # Initialize the TFE client
     client = TFEClient(TFEConfig.from_env())
-    workspace_id = "ws-zLgDCHFz9mBfri2Q"  # Replace with your workspace ID
+    workspace_id = os.getenv("TFE_WORKSPACE_ID")  # Replace with your workspace ID
 
     # Variables to store created resources for dependent tests
     created_cv_id = None

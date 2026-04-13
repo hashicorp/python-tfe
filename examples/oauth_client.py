@@ -64,7 +64,7 @@ def main():
 
     # Initialize the TFE client
     client = TFEClient(TFEConfig.from_env())
-    organization_name = "aayush-test"  # Replace with your organization
+    organization_name = os.getenv("TFE_ORG")
 
     # Variables to store created resources for dependent tests
     created_oauth_client = None

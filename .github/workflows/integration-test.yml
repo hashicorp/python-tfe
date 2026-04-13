@@ -46,6 +46,7 @@ jobs:
       TFE_ADDRESS: ${{ secrets.TFE_ADDRESS }}
       TFE_WORKSPACE_ID: ${{ secrets.TFE_WORKSPACE_ID }}
       TFE_WORKSPACE_NAME: ${{ secrets.TFE_WORKSPACE_NAME }}
+      TFE_TEAM_ID: ${{ secrets.TFE_TEAM_ID }}
       TFE_RUN_ID: ${{ secrets.TFE_RUN_ID }}
       TFE_APPLY_ID: ${{ secrets.TFE_APPLY_ID }}
       TFE_PLAN_ID: ${{ secrets.TFE_PLAN_ID }}
@@ -58,6 +59,8 @@ jobs:
       OAUTH_CLIENT_GITHUB_TOKEN: ${{ secrets.OAUTH_CLIENT_GITHUB_TOKEN }}
       WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
       TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+      TEST_MEMBER_EMAIL: ${{ secrets.TEST_MEMBER_EMAIL }}
+      TEAM_MEMBERSHIP_ID: ${{secretS.TEAM_MEBERSHIP_ID}}
 
     steps:
       - name: Checkout code
@@ -72,67 +75,67 @@ jobs:
         run: make dev-install
 
       - name: agent.py
-        run: .venv/bin/python examples/agent.py || true
+        run: .venv/bin/python examples/agent.py  
 
       - name: agent_pool.py
-        run: .venv/bin/python examples/agent_pool.py || true
+        run: .venv/bin/python examples/agent_pool.py 
 
       - name: apply.py
         if: ${{ env.TFE_APPLY_ID != '' }}
-        run: .venv/bin/python examples/apply.py --apply-id "$TFE_APPLY_ID" || true
+        run: .venv/bin/python examples/apply.py --apply-id "$TFE_APPLY_ID" 
 
       - name: configuration_version.py
         if: ${{ env.TFE_WORKSPACE_ID != '' }}
-        run: .venv/bin/python examples/configuration_version.py || true
+        run: .venv/bin/python examples/configuration_version.py  
 
       - name: notification_configuration.py
         if: ${{ env.TFE_WORKSPACE_ID != '' || env.TFE_WORKSPACE_NAME != '' }}
-        run: .venv/bin/python examples/notification_configuration.py || true
+        run: .venv/bin/python examples/notification_configuration.py  
 
       - name: oauth_client.py
-        run: .venv/bin/python examples/oauth_client.py || true
+        run: .venv/bin/python examples/oauth_client.py
 
       - name: oauth_token.py
-        run: .venv/bin/python examples/oauth_token.py || true
+        run: .venv/bin/python examples/oauth_token.py
 
       - name: org.py
-        run: .venv/bin/python examples/org.py || true
+        run: .venv/bin/python examples/org.py 
 
       - name: organization_membership.py
-        run: .venv/bin/python examples/organization_membership.py || true
+        run: .venv/bin/python examples/organization_membership.py 
 
       - name: plan.py
         if: ${{ env.TFE_PLAN_ID != '' }}
-        run: .venv/bin/python examples/plan.py --plan-id "$TFE_PLAN_ID" || true
+        run: .venv/bin/python examples/plan.py --plan-id "$TFE_PLAN_ID" 
 
       - name: policy_check.py
         if: ${{ env.TFE_RUN_ID != '' }}
-        run: .venv/bin/python examples/policy_check.py --run-id "$TFE_RUN_ID" || true
+        run: .venv/bin/python examples/policy_check.py --run-id "$TFE_RUN_ID" 
 
       - name: policy_evaluation.py
         if: ${{ env.TFE_TASK_STAGE_ID != '' }}
-        run: .venv/bin/python examples/policy_evaluation.py --task-stage-id "$TFE_TASK_STAGE_ID" || true
+        run: .venv/bin/python examples/policy_evaluation.py --task-stage-id "$TFE_TASK_STAGE_ID"  
 
       - name: policy_set_parameter.py
         if: ${{ env.TFE_POLICY_SET_ID != '' }}
-        run: .venv/bin/python examples/policy_set_parameter.py --policy-set-id "$TFE_POLICY_SET_ID" || true
+        run: .venv/bin/python examples/policy_set_parameter.py --policy-set-id "$TFE_POLICY_SET_ID"  
 
       - name: policy_set.py
-        run: .venv/bin/python examples/policy_set.py --org "$TFE_ORG" || true
+        run: .venv/bin/python examples/policy_set.py --org "$TFE_ORG"  
 
       - name: policy.py
         if: ${{ env.TFE_POLICY_NAME != '' }}
-        run: .venv/bin/python examples/policy.py --org "$TFE_ORG" --policy-name "$TFE_POLICY_NAME" || true
+        run: .venv/bin/python examples/policy.py --org "$TFE_ORG" --policy-name "$TFE_POLICY_NAME" 
 
       - name: project.py
-        run: .venv/bin/python examples/project.py --list --organization "$TFE_ORG" || true
+        run: .venv/bin/python examples/project.py --list --organization "$TFE_ORG" 
 
       - name: query_run.py
         if: ${{ env.TFE_WORKSPACE_NAME != '' }}
-        run: .venv/bin/python examples/query_run.py || true
+        run: .venv/bin/python examples/query_run.py  
 
       - name: registry_module.py
-        run: .venv/bin/python examples/registry_module.py || true
+        run: .venv/bin/python examples/registry_module.py 
 
       - name: registry_provider_version.py
         if: ${{ env.TFE_REG_PROV_NS != '' && env.TFE_REG_PROV_NAME != '' }}
@@ -140,30 +143,30 @@ jobs:
           .venv/bin/python examples/registry_provider_version.py \
             --organization "$TFE_ORG" \
             --namespace "$TFE_REG_PROV_NS" \
-            --name "$TFE_REG_PROV_NAME" || true
+            --name "$TFE_REG_PROV_NAME" 
 
       - name: registry_provider.py
-        run: .venv/bin/python examples/registry_provider.py || true
+        run: .venv/bin/python examples/registry_provider.py 
 
       - name: reserved_tag_key.py
-        run: .venv/bin/python examples/reserved_tag_key.py || true
+        run: .venv/bin/python examples/reserved_tag_key.py  
 
       - name: run_events.py
         if: ${{ env.TFE_RUN_ID != '' }}
-        run: .venv/bin/python examples/run_events.py --run-id "$TFE_RUN_ID" || true
+        run: .venv/bin/python examples/run_events.py --run-id "$TFE_RUN_ID" 
 
       - name: run_task.py
-        run: .venv/bin/python examples/run_task.py --org "$TFE_ORG" || true
+        run: .venv/bin/python examples/run_task.py --org "$TFE_ORG" 
 
       - name: run_trigger.py
-        run: .venv/bin/python examples/run_trigger.py --org "$TFE_ORG" || true
+        run: .venv/bin/python examples/run_trigger.py --org "$TFE_ORG" 
 
       - name: run.py
-        run: .venv/bin/python examples/run.py --organization "$TFE_ORG" || true
+        run: .venv/bin/python examples/run.py --organization "$TFE_ORG" 
 
       - name: ssh_keys.py
         if: ${{ env.SSH_PRIVATE_KEY != '' }}
-        run: .venv/bin/python examples/ssh_keys.py || true
+        run: .venv/bin/python examples/ssh_keys.py 
 
       - name: state_versions.py
         if: ${{ env.TFE_WORKSPACE_ID != '' && env.TFE_WORKSPACE_NAME != '' }}
@@ -171,14 +174,14 @@ jobs:
           .venv/bin/python examples/state_versions.py \
             --org "$TFE_ORG" \
             --workspace "$TFE_WORKSPACE_NAME" \
-            --workspace-id "$TFE_WORKSPACE_ID" || true
+            --workspace-id "$TFE_WORKSPACE_ID" 
 
       - name: variable_sets.py
-        run: .venv/bin/python examples/variable_sets.py || true
+        run: .venv/bin/python examples/variable_sets.py 
 
       - name: variables.py
         if: ${{ env.TFE_WORKSPACE_ID != '' }}
-        run: .venv/bin/python examples/variables.py || true
+        run: .venv/bin/python examples/variables.py 
 
       - name: workspace_resources.py
         if: ${{ env.TFE_WORKSPACE_ID != '' }}
@@ -186,7 +189,7 @@ jobs:
           .venv/bin/python examples/workspace_resources.py \
             --list \
             --workspace-id "$TFE_WORKSPACE_ID" \
-            --page-size 10 || true
+            --page-size 10
 
       - name: workspace.py
-        run: .venv/bin/python examples/workspace.py --org "$TFE_ORG" --list || true
+        run: .venv/bin/python examples/workspace.py --org "$TFE_ORG" --list 

@@ -40,7 +40,7 @@ from pytfe.models import (
 def get_client_and_org():
     """Initialize client and get organization name."""
     client = TFEClient()
-    organization_name = os.getenv("TFE_ORGANIZATION", "aayush-test")
+    organization_name = os.environ["TFE_ORG"]
     return client, organization_name
 
 

@@ -37,8 +37,8 @@ from pytfe.models import (
 def get_client_and_workspace():
     """Initialize client and get workspace ID."""
     client = TFEClient(TFEConfig.from_env())
-    organization = os.getenv("TFE_ORG", "aayush-test")
-    workspace_name = "query-test"  # Default workspace for testing
+    organization = os.getenv("TFE_ORG")
+    workspace_name = os.getenv("TFE_WORKSPACE_NAME")  # Default workspace for testing
 
     # Get workspace
     workspace = client.workspaces.read(workspace_name, organization=organization)
