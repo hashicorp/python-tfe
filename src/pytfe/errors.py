@@ -545,3 +545,10 @@ class RequiredTeamError(RequiredFieldMissing):
 
     def __init__(self, message: str = "team is required"):
         super().__init__(message)
+
+
+class InvalidTeamProjectAccessIDError(InvalidValues):
+    """Raised when an invalid team project access ID is provided."""
+
+    def __init__(self, message: str = "invalid value for team project access ID"):
+        super().__init__(message)
