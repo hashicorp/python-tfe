@@ -218,8 +218,14 @@ def main():
             run_tasks=args.workspace_run_tasks,
         )
 
-    has_granular_permissions = project_access is not None or workspace_access is not None
-    if has_granular_permissions and args.access and args.access != TeamProjectAccessType.TEAM_PROJECT_ACCESS_CUSTOM.value:
+    has_granular_permissions = (
+        project_access is not None or workspace_access is not None
+    )
+    if (
+        has_granular_permissions
+        and args.access
+        and args.access != TeamProjectAccessType.TEAM_PROJECT_ACCESS_CUSTOM.value
+    ):
         parser.error(
             "When custom project/workspace permissions are provided, --access must be 'custom'"
         )
