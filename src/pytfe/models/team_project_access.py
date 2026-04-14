@@ -78,6 +78,7 @@ class WorkspaceStateVersionsPermissionType(str, Enum):
     WORKSPACE_STATE_VERSIONS_PERMISSION_NONE = "none"
     WORKSPACE_STATE_VERSIONS_PERMISSION_READ_OUTPUTS = "read-outputs"
     WORKSPACE_STATE_VERSIONS_PERMISSION_WRITE = "write"
+    WORKSPACE_STATE_VERSIONS_PERMISSION_READ = "read"
 
 
 class WorkspaceVariablesPermissionType(str, Enum):
@@ -157,6 +158,26 @@ class TeamProjectAccessProjectPermissionsOptions(BaseModel):
     )
 
 
+class TeamProjectAccessWorkspacePermissionsOptions(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    runs: WorkspaceRunsPermissionType | None = Field(default=None, alias="runs")
+    sentinel_mocks: WorkspaceSentinelMocksPermissionType | None = Field(
+        default=None, alias="sentinel-mocks"
+    )
+    state_versions: WorkspaceStateVersionsPermissionType | None = Field(
+        default=None, alias="state-versions"
+    )
+    variables: WorkspaceVariablesPermissionType | None = Field(
+        default=None, alias="variables"
+    )
+    create: bool | None = Field(default=None, alias="create")
+    delete: bool | None = Field(default=None, alias="delete")
+    locking: bool | None = Field(default=None, alias="locking")
+    move: bool | None = Field(default=None, alias="move")
+    run_tasks: bool | None = Field(default=None, alias="run-tasks")
+
+
 class TeamProjectAccessAddOptions(BaseModel):
     """TeamProjectAccessAddOptions represents the options for adding team access for a project"""
 
@@ -166,7 +187,7 @@ class TeamProjectAccessAddOptions(BaseModel):
     project_access: TeamProjectAccessProjectPermissionsOptions | None = Field(
         default=None, alias="project-access"
     )
-    workspace_access: TeamProjectAccessWorkspacePermissions | None = Field(
+    workspace_access: TeamProjectAccessWorkspacePermissionsOptions | None = Field(
         default=None, alias="workspace-access"
     )
 
@@ -194,6 +215,19 @@ class TeamProjectAccessUpdateOptions(BaseModel):
     project_access: TeamProjectAccessProjectPermissionsOptions | None = Field(
         default=None, alias="project-access"
     )
-    workspace_access: TeamProjectAccessWorkspacePermissions | None = Field(
+    workspace_access: TeamProjectAccessWorkspacePermissionsOptions | None = Field(
         default=None, alias="workspace-access"
     )
+
+    @model_validator(mode="after")
+    def valid(self) -> TeamProjectAccessUpdateOptions:
+        """Validate the options."""
+        if (
+            self.access is None
+            and self.project_access is None
+            and self.workspace_access is None
+        ):
+            raise ValueError(
+                "At least one of access, project_access, or workspace_access must be provided"
+            )
+        return self
