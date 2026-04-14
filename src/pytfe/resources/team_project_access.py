@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+
+from ..errors import InvalidTeamProjectAccessIDError
 from ..models.project import Project
 from ..models.team import Team
 from ..models.team_project_access import (
@@ -8,14 +11,17 @@ from ..models.team_project_access import (
     ProjectVariableSetsPermissionType,
     TeamProjectAccess,
     TeamProjectAccessAddOptions,
+    TeamProjectAccessListOptions,
     TeamProjectAccessProjectPermissions,
     TeamProjectAccessType,
+    TeamProjectAccessUpdateOptions,
     TeamProjectAccessWorkspacePermissions,
     WorkspaceRunsPermissionType,
     WorkspaceSentinelMocksPermissionType,
     WorkspaceStateVersionsPermissionType,
     WorkspaceVariablesPermissionType,
 )
+from ..utils import valid_string_id
 from ._base import _Service
 
 
@@ -105,3 +111,54 @@ class TeamProjectAccesses(_Service):
         attrs["project"] = Project(id=project_data.get("id")) if project_data else None
 
         return TeamProjectAccess.model_validate(attrs)
+
+    def update(
+        self, team_project_access_id: str, options: TeamProjectAccessUpdateOptions
+    ) -> TeamProjectAccess:
+        """Update a team access for a project."""
+        if not valid_string_id(team_project_access_id):
+            raise InvalidTeamProjectAccessIDError()
+        attributes = options.model_dump(by_alias=True, exclude_none=True)
+        payload = {
+            "data": {
+                "attributes": attributes,
+                "type": "team-project-access",
+            }
+        }
+        r = self.t.request(
+            "PATCH",
+            path=f"/api/v2/team-projects/{team_project_access_id}",
+            json_body=payload,
+        )
+        data = r.json().get("data", {})
+        return self._team_project_access_from(data)
+
+    def read(self, team_project_access_id: str) -> TeamProjectAccess:
+        """Read a team access for a project."""
+        if not valid_string_id(team_project_access_id):
+            raise InvalidTeamProjectAccessIDError()
+        r = self.t.request(
+            "GET",
+            path=f"/api/v2/team-projects/{team_project_access_id}",
+        )
+        data = r.json().get("data", {})
+        return self._team_project_access_from(data)
+
+    def list(
+        self, options: TeamProjectAccessListOptions
+    ) -> Iterator[TeamProjectAccess]:
+        """List team accesses for projects."""
+        params = options.model_dump(by_alias=True, exclude_none=True)
+        path = "/api/v2/team-projects"
+        for item in self._list(path, params=params):
+            yield self._team_project_access_from(item)
+
+    def remove(self, team_project_access_id: str) -> None:
+        """Remove a team access for a project."""
+        if not valid_string_id(team_project_access_id):
+            raise InvalidTeamProjectAccessIDError()
+        self.t.request(
+            "DELETE",
+            path=f"/api/v2/team-projects/{team_project_access_id}",
+        )
+        return None
