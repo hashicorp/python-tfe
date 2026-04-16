@@ -51,9 +51,7 @@ class TestStacks:
             },
             "relationships": {
                 "project": {"data": {"id": "prj-123", "type": "projects"}},
-                "agent-pool": {
-                    "data": {"id": "apool-123", "type": "agent-pools"}
-                },
+                "agent-pool": {"data": {"id": "apool-123", "type": "agent-pools"}},
             },
         }
 
@@ -86,7 +84,9 @@ class TestStacks:
         assert items[0].id == "st-123"
         assert items[0].name == "demo-stack"
 
-    def test_create_stack_success(self, stacks_service, mock_transport, stack_response_data):
+    def test_create_stack_success(
+        self, stacks_service, mock_transport, stack_response_data
+    ):
         """Test successful create operation."""
         mock_response = Mock()
         mock_response.json.return_value = {"data": stack_response_data}
@@ -124,9 +124,7 @@ class TestStacks:
                     },
                     "type": "stacks",
                     "relationships": {
-                        "project": {
-                            "data": {"id": "prj-123", "type": "projects"}
-                        },
+                        "project": {"data": {"id": "prj-123", "type": "projects"}},
                         "agent-pool": {
                             "data": {"id": "apool-123", "type": "agent-pools"}
                         },
@@ -140,7 +138,9 @@ class TestStacks:
         assert result.project.id == "prj-123"
         assert result.agent_pool.id == "apool-123"
 
-    def test_update_stack_success(self, stacks_service, mock_transport, stack_response_data):
+    def test_update_stack_success(
+        self, stacks_service, mock_transport, stack_response_data
+    ):
         """Test successful update operation."""
         mock_response = Mock()
         mock_response.json.return_value = {"data": stack_response_data}
@@ -172,9 +172,7 @@ class TestStacks:
                     },
                     "type": "stacks",
                     "relationships": {
-                        "project": {
-                            "data": {"id": "prj-123", "type": "projects"}
-                        },
+                        "project": {"data": {"id": "prj-123", "type": "projects"}},
                         "agent-pool": {
                             "data": {"id": "apool-123", "type": "agent-pools"}
                         },
@@ -186,7 +184,9 @@ class TestStacks:
         assert isinstance(result, Stack)
         assert result.id == "st-123"
 
-    def test_read_stack_success(self, stacks_service, mock_transport, stack_response_data):
+    def test_read_stack_success(
+        self, stacks_service, mock_transport, stack_response_data
+    ):
         """Test successful read operation."""
         mock_response = Mock()
         mock_response.json.return_value = {"data": stack_response_data}
