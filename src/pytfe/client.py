@@ -9,6 +9,7 @@ from .resources.agent_pools import AgentPools
 from .resources.agents import Agents, AgentTokens
 from .resources.apply import Applies
 from .resources.configuration_version import ConfigurationVersions
+from .resources.explorer import Explorer
 from .resources.notification_configuration import NotificationConfigurations
 from .resources.oauth_client import OAuthClients
 from .resources.oauth_token import OAuthTokens
@@ -72,6 +73,7 @@ class TFEClient:
         self.plans = Plans(self._transport)
         self.organizations = Organizations(self._transport)
         self.organization_memberships = OrganizationMemberships(self._transport)
+        self.explorer = Explorer(self._transport)  # org Explorer queries and saved views
 
         self.projects = Projects(self._transport)
         self.variables = Variables(self._transport)

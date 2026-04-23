@@ -58,6 +58,17 @@ from .data_retention_policy import (
     DataRetentionPolicyDontDeleteSetOptions,
     DataRetentionPolicySetOptions,
 )
+from .explorer import (
+    ExplorerQueryOptions,
+    ExplorerRow,
+    ExplorerSavedQuery,
+    ExplorerSavedQueryFilter,
+    ExplorerSavedView,
+    ExplorerSavedViewCreateOptions,
+    ExplorerSavedViewUpdateOptions,
+    ExplorerUrlFilter,
+    ExplorerViewType,
+)
 
 # ── OAuth ─────────────────────────────────────────────────────────────────────
 from .oauth_client import (
@@ -484,6 +495,16 @@ __all__ = [
     "QueryRunStatus",
     "QueryRunStatusTimestamps",
     "QueryRunVariable",
+    # Explorer
+    "ExplorerQueryOptions",
+    "ExplorerRow",
+    "ExplorerSavedQuery",
+    "ExplorerSavedQueryFilter",
+    "ExplorerSavedView",
+    "ExplorerSavedViewCreateOptions",
+    "ExplorerSavedViewUpdateOptions",
+    "ExplorerUrlFilter",
+    "ExplorerViewType",
     # Core (from old types.py, now split)
     "Entitlements",
     "ExecutionMode",

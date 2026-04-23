@@ -1,5 +1,13 @@
 # Unreleased
 
+## Features
+
+### Explorer API
+* Added Explorer resource support with query, CSV export, saved view CRUD, saved view result query, and saved view CSV export endpoints.
+* Added Explorer models, client registration, comprehensive unit tests, and end-to-end example usage.
+* Refactored Explorer resource helpers for organization and saved-view id validation and for shared create/update attribute serialization (no API behavior change).
+* Explorer: added structured logging (debug/info for operations and fallbacks) and `ValidationError` when create/read/update saved-view responses are not a valid json:api single-resource envelope.
+
 # v0.1.3
 
 ## Enhancements
