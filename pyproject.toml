@@ -36,6 +36,14 @@ dev = [
     "types-requests>=2.32.4.20250809",
 ]
 
+docs = [
+    "sphinx>=7.3",
+    "furo>=2024.1.29",
+    "sphinx-autodoc-typehints>=2.2",
+    "myst-parser>=3.0",
+    "sphinx-copybutton>=0.5",
+]
+
 [project.urls]
 "Repository" = "https://github.com/hashicorp/python-tfe"
 "Bug Tracker" = "https://github.com/hashicorp/python-tfe/issues"
@@ -117,3 +125,4 @@ disallow_untyped_defs = false
 
 [tool.hatch.build.targets.sdist]
 include = ["src/**", "README.md", "LICENSE", "docs/**"]
+exclude = ["docs/build/**"]

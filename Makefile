@@ -1,4 +1,4 @@
-.PHONY: help fmt fmt-check lint check test install dev-install type-check clean all venv activate
+.PHONY: help fmt fmt-check lint check test install dev-install type-check clean all venv activate docs-install docs docs-clean docs-linkcheck
 
 PYTHON := python3
 SRC_DIR := src/pytfe
@@ -6,6 +6,7 @@ TEST_DIR := tests
 VENV := .venv
 VENV_PYTHON := $(VENV)/bin/python
 VENV_PIP := $(VENV)/bin/pip
+DOCS_DIR := docs
 
 help:
 	@echo "Available targets:"
@@ -69,5 +70,21 @@ clean:
 	find . -type d -name ".mypy_cache" -exec rm -rf {} +
 	find . -type d -name ".ruff_cache" -exec rm -rf {} +
 	rm -rf build/ dist/ $(VENV)
+	rm -rf $(DOCS_DIR)/build
+
+
+# Documentation
+docs-install: venv
+	$(VENV_PIP) install -e ".[docs]"
+
+docs: venv
+	$(VENV_PYTHON) -m sphinx -b html $(DOCS_DIR)/source $(DOCS_DIR)/build/html
+	@echo "Docs built: open $(DOCS_DIR)/build/html/index.html"
+
+docs-clean:
+	rm -rf $(DOCS_DIR)/build
+
+docs-linkcheck: venv
+	$(VENV_PYTHON) -m sphinx -b linkcheck $(DOCS_DIR)/source $(DOCS_DIR)/build/linkcheck
 
 all: clean dev-install fmt lint test

@@ -138,3 +138,10 @@ protos.bin
 # Local RSA keys
 .local/*
 
+# Sphinx docs build output
+docs/build/
+
+# autosummary generated stubs
+docs/source/api/models_generated/
+docs/source/api/resources_generated/
+
