@@ -68,11 +68,11 @@ intersphinx_mapping = {
 myst_enable_extensions = ["colon_fence", "deflist", "tasklist"]
 myst_heading_anchors = 3
 
-html_theme = "furo"
+html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "navigation_with_keys": True,
     "source_repository": "https://github.com/hashicorp/python-tfe",
-    "source_branch": "main",
+    "source_branch": "sphinx-docs",
     "source_directory": "docs/source/",
 }
 html_static_path = ["_static"]

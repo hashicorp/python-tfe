@@ -38,9 +38,9 @@ dev = [
 
 docs = [
     "sphinx>=7.3",
-    "furo>=2024.1.29",
     "sphinx-autodoc-typehints>=2.2",
     "myst-parser>=3.0",
+    "sphinx-rtd-theme>=3.0",
     "sphinx-copybutton>=0.5",
 ]
 
