@@ -2,6 +2,7 @@
 
 # Released
 # v0.1.5
+
 * `pytfe.__version__` added in src/pytfe/init.py via importlib.metadata.version("pytfe"). This will resolve to the version from pyproject.toml.
 
 # v0.1.4

@@ -55,12 +55,12 @@ class DeliveryResponse(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    body: str = ""
-    code: str = ""
-    headers: dict[str, Any] = Field(default_factory=dict)
+    body: str | None = None
+    code: str | None = None
+    headers: dict[str, Any] | None = Field(default_factory=dict)
     sent_at: datetime | None = Field(default=None, alias="sent-at")
-    successful: str = ""
-    url: str = ""
+    successful: str | None = None
+    url: str | None = None
 
     def __init__(self, data: dict[str, Any] | None = None, /, **kwargs: Any) -> None:
         if data is not None:
@@ -88,9 +88,9 @@ class NotificationConfiguration(BaseModel):
     updated_at: datetime | None = Field(default=None, alias="updated-at")
     destination_type: str | None = Field(default=None, alias="destination-type")
     enabled: bool = False
-    name: str = ""
-    token: str = ""
-    url: str = ""
+    name: str | None = None
+    token: str | None = None
+    url: str | None = None
     triggers: list[NotificationTriggerType] = Field(default_factory=list)
     delivery_responses: list[DeliveryResponse] = Field(
         default_factory=list, alias="delivery-responses"
@@ -101,6 +101,16 @@ class NotificationConfiguration(BaseModel):
     subscribable_choice: NotificationConfigurationSubscribableChoice | None = Field(
         default=None, alias="subscribable-choice"
     )
+
+    @field_validator(
+        "delivery_responses",
+        "email_addresses",
+        "email_users",
+        mode="before",
+    )
+    @classmethod
+    def _none_to_empty_list(cls, value: Any) -> Any:
+        return [] if value is None else value
 
     @field_validator("triggers", mode="before")
     @classmethod
