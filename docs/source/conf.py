@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
 
-project = 'pyTFE SDK'
+project = 'pytfe'
 copyright = 'IBM Corp. 2025, 2026'
 author = 'HashiCorp, an IBM Corp.'
 release = '0.1.4'
