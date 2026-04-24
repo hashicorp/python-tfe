@@ -1,6 +1,12 @@
 # Unreleased
 
 # Released
+
+# v0.1.4
+
+## Enhancements
+* Standardize Notification Configuration option models on Pydantic [#132](https://github.com/hashicorp/python-tfe/pull/132)
+
 # v0.1.3
 
 ## Enhancements

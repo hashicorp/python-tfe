@@ -193,9 +193,7 @@ def _serialize_triggers(
     triggers: list[NotificationTriggerType | str],
 ) -> list[str]:
     """Serialize trigger enums or raw strings to their wire value."""
-    return [
-        t.value if isinstance(t, NotificationTriggerType) else t for t in triggers
-    ]
+    return [t.value if isinstance(t, NotificationTriggerType) else t for t in triggers]
 
 
 def _validate_triggers(
