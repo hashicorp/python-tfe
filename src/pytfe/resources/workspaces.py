@@ -39,8 +39,8 @@ from ..models.data_retention_policy import (
 from ..models.organization import Organization
 from ..models.project import Project
 from ..models.run import Run
-from ..models.variable import Variable
 from ..models.state_version import StateVersion
+from ..models.variable import Variable
 from ..models.workspace import (
     ExecutionMode,
     LockedByChoice,

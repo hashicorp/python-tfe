@@ -28,8 +28,8 @@ from .data_retention_policy import DataRetentionPolicyChoice
 from .organization import ExecutionMode, Organization
 from .project import Project
 from .ssh_key import SSHKey
-from .variable import Variable
 from .state_version import StateVersion
+from .variable import Variable
 
 if TYPE_CHECKING:
     from .run import Run
