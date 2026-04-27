@@ -23,9 +23,13 @@ from ..errors import (
 from ..utils import has_tags_regex_defined, is_valid_workspace_name, valid_string
 from .agent import AgentPool
 from .common import EffectiveTagBinding, Tag, TagBinding
+from .configuration_version import ConfigurationVersion
 from .data_retention_policy import DataRetentionPolicyChoice
 from .organization import ExecutionMode, Organization
 from .project import Project
+from .ssh_key import SSHKey
+from .variable import Variable
+from .state_version import StateVersion
 
 if TYPE_CHECKING:
     from .run import Run
@@ -168,15 +172,17 @@ class Workspace(BaseModel):
     # Relations
     agent_pool: AgentPool | None = None  # AgentPool object
     current_run: Run | None = None  # Run object
-    current_state_version: Any | None = None  # StateVersion object
+    current_state_version: StateVersion | None = None  # StateVersion object
     organization: Organization | None = None
     project: Project | None = None
-    ssh_key: Any | None = None  # SSHKey object
+    ssh_key: SSHKey | None = None  # SSHKey object
     outputs: list[WorkspaceOutputs] = Field(default_factory=list)
     tags: list[Tag] = Field(default_factory=list)
-    current_configuration_version: Any | None = None  # ConfigurationVersion object
+    current_configuration_version: ConfigurationVersion | None = (
+        None  # ConfigurationVersion object
+    )
     locked_by: LockedByChoice | None = None
-    variables: list[Any] = Field(default_factory=list)  # Variable objects
+    variables: list[Variable] = Field(default_factory=list)  # Variable objects
     tag_bindings: list[TagBinding] = Field(default_factory=list)
     effective_tag_bindings: list[EffectiveTagBinding] = Field(default_factory=list)
 
