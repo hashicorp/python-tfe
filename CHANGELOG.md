@@ -5,6 +5,9 @@
 
 * `pytfe.__version__` added in src/pytfe/init.py via importlib.metadata.version("pytfe"). This will resolve to the version from pyproject.toml.
 
+## Bug Fixes
+* Run.read / Run.create fail with pydantic ValidationError when response has a `cost-estimate` and  `comments` relationship.
+
 # v0.1.4
 
 ## Enhancements
