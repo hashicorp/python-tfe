@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
 import argparse
@@ -163,16 +166,15 @@ def main():
         )
 
     try:
-        ps_list = client.policy_sets.list(args.org, list_options)
+        ps_list = list(client.policy_sets.list(args.org, list_options))
 
-        print(f"Total policy sets: {ps_list.total_count}")
-        print(f"Page {ps_list.current_page} of {ps_list.total_pages}")
+        print(f"Total policy sets: {len(ps_list)}")
         print()
 
-        if not ps_list.items:
+        if not ps_list:
             print("No policy sets found for this organization.")
         else:
-            for ps in ps_list.items:
+            for ps in ps_list:
                 print(
                     f"- ID: {ps.id} | Name: {ps.name} | Kind: {ps.kind} | Global: {ps.Global}"
                 )

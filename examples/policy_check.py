@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
 import argparse
@@ -35,7 +38,6 @@ def main():
         action="store_true",
         help="Get logs for the specified policy check",
     )
-    parser.add_argument("--page", type=int, default=1)
     parser.add_argument("--page-size", type=int, default=20)
     args = parser.parse_args()
 
@@ -50,21 +52,19 @@ def main():
     _print_header(f"Listing policy checks for run: {args.run_id}")
 
     options = PolicyCheckListOptions(
-        page_number=args.page,
         page_size=args.page_size,
     )
 
     try:
-        pc_list = client.policy_checks.list(args.run_id, options)
+        pc_list = list(client.policy_checks.list(args.run_id, options))
 
-        print(f"Total policy checks: {pc_list.total_count}")
-        print(f"Page {pc_list.current_page} of {pc_list.total_pages}")
+        print(f"Total policy checks fetched: {len(pc_list)}")
         print()
 
-        if not pc_list.items:
+        if not pc_list:
             print("No policy checks found for this run.")
         else:
-            for pc in pc_list.items:
+            for pc in pc_list:
                 print(f"- ID: {pc.id}")
                 print(f"Status: {pc.status}")
                 print(f"Scope: {pc.scope}")

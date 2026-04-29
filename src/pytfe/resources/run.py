@@ -1,5 +1,9 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Any
 
 from ..errors import (
@@ -9,81 +13,102 @@ from ..errors import (
     RequiredWorkspaceError,
     TerraformVersionValidForPlanOnlyError,
 )
+from ..models.apply import Apply
+from ..models.comment import Comment
+from ..models.configuration_version import ConfigurationVersion
+from ..models.cost_estimate import CostEstimate
+from ..models.plan import Plan
+from ..models.policy_check import PolicyCheck
 from ..models.run import (
-    OrganizationRunList,
     Run,
     RunApplyOptions,
     RunCancelOptions,
     RunCreateOptions,
     RunDiscardOptions,
     RunForceCancelOptions,
-    RunList,
     RunListForOrganizationOptions,
     RunListOptions,
     RunReadOptions,
 )
+from ..models.run_event import RunEvent
+from ..models.task_stage import TaskStage
+from ..models.user import User
+from ..models.workspace import Workspace
 from ..utils import _safe_str, valid_string, valid_string_id
 from ._base import _Service
 
 
+def transform_relationships(relationships: dict) -> Any:
+    """
+    Transform relationships dict to map relationship names to their model objects.
+    Single IDs become model instances, multiple IDs become lists of model instances.
+    """
+    result = {}
+
+    # Map relationship keys to their model constructors
+    model_map = {
+        "apply": Apply,
+        "configuration-version": ConfigurationVersion,
+        "cost-estimate": CostEstimate,
+        "created-by": User,
+        "confirmed-by": User,
+        "plan": Plan,
+        "workspace": Workspace,
+        "policy-checks": PolicyCheck,
+        "run-events": RunEvent,
+        "task-stages": TaskStage,
+        "comments": Comment,
+    }
+
+    for key, value in relationships.items():
+        data = value.get("data")
+
+        if data is None:
+            continue
+
+        model_class = model_map.get(key)
+        if not model_class:
+            # Unknown relationship type, skip it
+            continue
+
+        if isinstance(data, list):
+            # Multiple entries - create list of model instances
+            result[key] = [model_class(id=item["id"]) for item in data if "id" in item]
+        elif isinstance(data, dict) and "id" in data:
+            # Single entry - create model instance
+            result[key] = model_class(id=data["id"])
+
+    return result
+
+
 class Runs(_Service):
-    def list(self, workspace_id: str, options: RunListOptions | None = None) -> RunList:
+    def list(
+        self, workspace_id: str, options: RunListOptions | None = None
+    ) -> Iterator[Run]:
         """List all the runs of the given workspace."""
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
-        params = (
-            options.model_dump(by_alias=True, exclude_none=True) if options else None
-        )
-        r = self.t.request(
-            "GET",
-            f"/api/v2/workspaces/{workspace_id}/runs",
-            params=params,
-        )
-        jd = r.json()
-        items = []
-        meta = jd.get("meta", {})
-        pagination = meta.get("pagination", {})
-        for d in jd.get("data", []):
-            attrs = d.get("attributes", {})
-            attrs["id"] = d.get("id")
-            items.append(Run.model_validate(attrs))
-        return RunList(
-            items=items,
-            current_page=pagination.get("current-page"),
-            total_pages=pagination.get("total-pages"),
-            prev_page=pagination.get("prev-page"),
-            next_page=pagination.get("next-page"),
-            total_count=pagination.get("total-count"),
-        )
+        params = options.model_dump(by_alias=True) if options else {}
+        path = f"/api/v2/workspaces/{workspace_id}/runs"
+        for item in self._list(path, params=params):
+            attrs = item.get("attributes", {})
+            attrs["id"] = item.get("id")
+            yield Run.model_validate(attrs)
 
     def list_for_organization(
         self, organization: str, options: RunListForOrganizationOptions | None = None
-    ) -> OrganizationRunList:
+    ) -> Iterator[Run]:
         """List all the runs of the given organization."""
         if not valid_string_id(organization):
             raise InvalidOrgError()
-        params = (
-            options.model_dump(by_alias=True, exclude_none=True) if options else None
-        )
-        r = self.t.request(
-            "GET",
-            f"/api/v2/organizations/{organization}/runs",
-            params=params,
-        )
-        jd = r.json()
-        items = []
-        meta = jd.get("meta", {})
-        pagination = meta.get("pagination", {})
-        for d in jd.get("data", []):
-            attrs = d.get("attributes", {})
-            attrs["id"] = d.get("id")
-            items.append(Run.model_validate(attrs))
-        return OrganizationRunList(
-            items=items,
-            current_page=pagination.get("current-page"),
-            prev_page=pagination.get("prev-page"),
-            next_page=pagination.get("next-page"),
-        )
+        path = f"/api/v2/organizations/{organization}/runs"
+        params = options.model_dump(by_alias=True, exclude_none=True) if options else {}
+        # meta = jd.get("meta", {})
+        # pagination = meta.get("pagination", {})
+        for item in self._list(path, params=params):
+            attrs = item.get("attributes", {})
+            attrs["id"] = item.get("id")
+            yield Run.model_validate(attrs)
 
     def create(self, options: RunCreateOptions) -> Run:
         """Create a new run for the given workspace."""
@@ -125,10 +150,11 @@ class Runs(_Service):
         )
         d = r.json().get("data", {})
         attrs = d.get("attributes", {})
-        return Run(
-            id=_safe_str(d.get("id")),
-            **{k.replace("-", "_"): v for k, v in attrs.items()},
-        )
+        relationships = transform_relationships(d.get("relationships", {}))
+        combined = {
+            k.replace("-", "_"): v for k, v in {**attrs, **relationships}.items()
+        }
+        return Run(id=_safe_str(d.get("id")), **combined)
 
     def read(self, run_id: str) -> Run:
         """Read a run by its ID."""
@@ -150,10 +176,11 @@ class Runs(_Service):
         )
         d = r.json().get("data", {})
         attrs = d.get("attributes", {})
-        return Run(
-            id=_safe_str(d.get("id")),
-            **{k.replace("-", "_"): v for k, v in attrs.items()},
-        )
+        relationships = transform_relationships(d.get("relationships", {}))
+        combined = {
+            k.replace("-", "_"): v for k, v in {**attrs, **relationships}.items()
+        }
+        return Run(id=_safe_str(d.get("id")), **combined)
 
     def apply(self, run_id: str, options: RunApplyOptions | None = None) -> None:
         """Apply a run by its ID."""

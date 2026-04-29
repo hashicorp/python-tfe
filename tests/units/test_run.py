@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Unit tests for the run module."""
 
 from unittest.mock import Mock, patch
@@ -11,7 +14,6 @@ from pytfe.errors import (
     TerraformVersionValidForPlanOnlyError,
 )
 from pytfe.models.run import (
-    OrganizationRunList,
     Run,
     RunApplyOptions,
     RunCancelOptions,
@@ -19,7 +21,6 @@ from pytfe.models.run import (
     RunDiscardOptions,
     RunForceCancelOptions,
     RunIncludeOpt,
-    RunList,
     RunListForOrganizationOptions,
     RunListOptions,
     RunReadOptions,
@@ -47,74 +48,59 @@ class TestRuns:
     def test_list_runs_success(self, runs_service):
         """Test successful list operation."""
 
-        mock_response_data = {
-            "data": [
-                {
-                    "id": "run-123",
-                    "attributes": {
-                        "status": "applied",
-                        "source": "tfe-configuration-version",
-                        "message": "Test run",
-                        "created-at": "2023-01-01T12:00:00Z",
-                        "has-changes": True,
-                        "is-destroy": False,
-                        "auto-apply": False,
-                        "plan-only": False,
-                    },
+        mock_list_data = [
+            {
+                "id": "run-123",
+                "attributes": {
+                    "status": "applied",
+                    "source": "tfe-configuration-version",
+                    "message": "Test run",
+                    "created-at": "2023-01-01T12:00:00Z",
+                    "has-changes": True,
+                    "is-destroy": False,
+                    "auto-apply": False,
+                    "plan-only": False,
                 },
-                {
-                    "id": "run-456",
-                    "attributes": {
-                        "status": "planned",
-                        "source": "tfe-ui",
-                        "message": "Another test run",
-                        "created-at": "2023-01-02T14:00:00Z",
-                        "has-changes": False,
-                        "is-destroy": True,
-                        "auto-apply": True,
-                        "plan-only": True,
-                    },
-                },
-            ],
-            "meta": {
-                "pagination": {
-                    "current-page": 1,
-                    "total-pages": 2,
-                    "prev-page": None,
-                    "next-page": 2,
-                    "total-count": 10,
-                }
             },
-        }
+            {
+                "id": "run-456",
+                "attributes": {
+                    "status": "planned",
+                    "source": "tfe-ui",
+                    "message": "Another test run",
+                    "created-at": "2023-01-02T14:00:00Z",
+                    "has-changes": False,
+                    "is-destroy": True,
+                    "auto-apply": True,
+                    "plan-only": True,
+                },
+            },
+        ]
 
-        mock_response = Mock()
-        mock_response.json.return_value = mock_response_data
+        with patch.object(runs_service, "_list") as mock_list:
+            mock_list.return_value = mock_list_data
 
-        with patch.object(runs_service, "t") as mock_transport:
-            mock_transport.request.return_value = mock_response
-
-            # Test with custom page_size - use a print statement to debug what's actually sent
+            # Test with options
             options = RunListOptions(page_number=1, page_size=5)
-            result = runs_service.list("ws-123", options)
+            result = list(runs_service.list("ws-123", options))
 
-            # Check what was actually called
-            call_args = mock_transport.request.call_args
-            actual_params = call_args[1]["params"]
+            # Verify _list was called with correct path
+            assert mock_list.call_count == 1
+            call_args = mock_list.call_args
+            assert call_args[0][0] == "/api/v2/workspaces/ws-123/runs"
 
-            # Verify the basic structure
-            assert call_args[0][0] == "GET"
-            assert call_args[0][1] == "/api/v2/workspaces/ws-123/runs"
-            assert actual_params["page[number]"] == 1
+            # Verify params structure includes pagination and options
+            params = call_args[1]["params"]
+            assert "page[number]" in params
+            assert "page[size]" in params
+            assert "include" in params
 
-            # Verify result structure
-            assert isinstance(result, RunList)
-            assert len(result.items) == 2
-            assert result.current_page == 1
-            assert result.total_pages == 2
-            assert result.total_count == 10
+            # Verify result structure - iterator yields Run objects
+            assert len(result) == 2
 
-            # Verify run objects
-            run1 = result.items[0]
+            # Verify run objects were created correctly from response data
+            run1 = result[0]
+            assert isinstance(run1, Run)
             assert run1.id == "run-123"
             assert run1.status == RunStatus.Run_Applied
             assert run1.source == RunSource.Run_Source_Configuration_Version
@@ -122,64 +108,53 @@ class TestRuns:
             assert run1.has_changes is True
             assert run1.is_destroy is False
 
-            run2 = result.items[1]
+            run2 = result[1]
+            assert isinstance(run2, Run)
             assert run2.id == "run-456"
             assert run2.status == RunStatus.Run_Planned
             assert run2.source == RunSource.Run_Source_UI
+            assert run2.message == "Another test run"
             assert run2.has_changes is False
             assert run2.is_destroy is True
 
     def test_list_for_organization_success(self, runs_service):
         """Test successful list_for_organization operation."""
 
-        mock_response_data = {
-            "data": [
-                {
-                    "id": "run-org-1",
-                    "attributes": {
-                        "status": "applied",
-                        "source": "tfe-api",
-                        "message": "Organization run",
-                        "created-at": "2023-01-01T12:00:00Z",
-                        "has-changes": True,
-                        "is-destroy": False,
-                    },
-                }
-            ],
-            "meta": {
-                "pagination": {
-                    "current-page": 1,
-                    "prev-page": None,
-                    "next-page": None,
-                }
-            },
-        }
+        mock_response_data = [
+            {
+                "id": "run-org-1",
+                "attributes": {
+                    "status": "applied",
+                    "source": "tfe-api",
+                    "message": "Organization run",
+                    "created-at": "2023-01-01T12:00:00Z",
+                    "has-changes": True,
+                    "is-destroy": False,
+                },
+            }
+        ]
 
-        mock_response = Mock()
-        mock_response.json.return_value = mock_response_data
-
-        with patch.object(runs_service, "t") as mock_transport:
-            mock_transport.request.return_value = mock_response
+        with patch.object(runs_service, "_list") as mock_list:
+            mock_list.return_value = mock_response_data
 
             options = RunListForOrganizationOptions(status="applied,planned")
-            result = runs_service.list_for_organization("test-org", options)
+            result = list(runs_service.list_for_organization("test-org", options))
 
-            # Verify request was made correctly (account for defaults and aliases)
+            # Verify _list was called with correct path and params
             expected_params = {
                 "page[number]": 1,
                 "page[size]": 20,
                 "filter[status]": "applied,planned",
                 "include": [],
             }
-            mock_transport.request.assert_called_once_with(
-                "GET", "/api/v2/organizations/test-org/runs", params=expected_params
+            mock_list.assert_called_once_with(
+                "/api/v2/organizations/test-org/runs", params=expected_params
             )
 
-            # Verify result structure
-            assert isinstance(result, OrganizationRunList)
-            assert len(result.items) == 1
-            assert result.current_page == 1
-            assert result.items[0].id == "run-org-1"
+            # Verify result structure - now returns list of Run objects
+            assert len(result) == 1
+            assert result[0].id == "run-org-1"
+            assert result[0].status == RunStatus.Run_Applied
 
     def test_create_run_validation_errors(self, runs_service):
         """Test create method with validation errors."""
@@ -190,7 +165,7 @@ class TestRuns:
             runs_service.create(options)
 
         # Test terraform_version with non-plan-only run
-        workspace = Workspace(id="ws-123", name="test", organization="test-org")
+        workspace = Workspace(id="ws-123", name="test", organization=None)
         options = RunCreateOptions(
             workspace=workspace, terraform_version="1.5.0", plan_only=False
         )
@@ -227,7 +202,7 @@ class TestRuns:
         with patch.object(runs_service, "t") as mock_transport:
             mock_transport.request.return_value = mock_response
 
-            workspace = Workspace(id="ws-123", name="test", organization="test-org")
+            workspace = Workspace(id="ws-123", name="test", organization=None)
             variables = [
                 RunVariable(key="env", value="test"),
                 RunVariable(key="region", value="us-east-1"),
@@ -322,14 +297,113 @@ class TestRuns:
         mock_response_data = {
             "data": {
                 "id": "run-detailed-123",
+                "type": "runs",
                 "attributes": {
-                    "status": "planned",
-                    "source": "tfe-api",
-                    "message": "Detailed read test",
-                    "created-at": "2023-01-01T12:00:00Z",
+                    "actions": {
+                        "is-cancelable": False,
+                        "is-confirmable": False,
+                        "is-discardable": False,
+                        "is-force-cancelable": False,
+                    },
+                    "allow-config-generation": False,
+                    "allow-empty-apply": False,
+                    "auto-apply": False,
+                    "canceled-at": None,
+                    "created-at": "2026-02-19T01:58:46.126Z",
                     "has-changes": True,
                     "is-destroy": False,
+                    "message": "Triggered via CLI",
+                    "plan-only": False,
+                    "refresh": True,
+                    "refresh-only": False,
+                    "replace-addrs": None,
+                    "save-plan": False,
+                    "source": "terraform+cloud",
+                    "status-timestamps": {
+                        "errored-at": "2026-02-19T01:59:19+00:00",
+                        "planned-at": "2026-02-19T01:59:16+00:00",
+                        "queuing-at": "2026-02-19T01:58:46+00:00",
+                        "planning-at": "2026-02-19T01:58:48+00:00",
+                        "plan-queued-at": "2026-02-19T01:58:46+00:00",
+                        "plan-queueable-at": "2026-02-19T01:58:46+00:00",
+                    },
+                    "status": "errored",
+                    "target-addrs": None,
+                    "trigger-reason": "manual",
+                    "terraform-version": "1.13.5",
+                    "updated-at": "2026-02-19T01:59:19.891Z",
+                    "permissions": {
+                        "can-apply": True,
+                        "can-cancel": True,
+                        "can-comment": True,
+                        "can-discard": True,
+                        "can-force-execute": True,
+                        "can-force-cancel": True,
+                        "can-override-policy-check": True,
+                    },
+                    "variables": [],
+                    "invoke-action-addrs": None,
                 },
+                "relationships": {
+                    "workspace": {
+                        "data": {"id": "ws-a2Kntu53K79hsPRH", "type": "workspaces"}
+                    },
+                    "apply": {
+                        "data": {"id": "apply-Y1rVt6MpiwzdMjbK", "type": "applies"},
+                        "links": {"related": "/api/v2/runs/run-detailed-123/apply"},
+                    },
+                    "configuration-version": {
+                        "data": {
+                            "id": "cv-bakH4hn9cPXb2yZq",
+                            "type": "configuration-versions",
+                        },
+                        "links": {
+                            "related": "/api/v2/runs/run-detailed-123/configuration-version"
+                        },
+                    },
+                    "created-by": {
+                        "data": {"id": "user-FRJGnNMX6fpe9Cdd", "type": "users"},
+                        "links": {
+                            "related": "/api/v2/runs/run-detailed-123/created-by"
+                        },
+                    },
+                    "plan": {
+                        "data": {"id": "plan-WooDdHWZnSE3Zs8j", "type": "plans"},
+                        "links": {"related": "/api/v2/runs/run-detailed-123/plan"},
+                    },
+                    "run-events": {
+                        "data": [
+                            {"id": "re-bqJGaaCrt5QZfexJ", "type": "run-events"},
+                            {"id": "re-j8d6eWyfyHSUbX7x", "type": "run-events"},
+                            {"id": "re-UAXd9VyRTXZy3hpx", "type": "run-events"},
+                            {"id": "re-DFFf51Doi8mmHC9G", "type": "run-events"},
+                            {"id": "re-U2m4RMQhEY9voN1K", "type": "run-events"},
+                            {"id": "re-WWfUbu5NTWdYKgBs", "type": "run-events"},
+                        ],
+                        "links": {
+                            "related": "/api/v2/runs/run-detailed-123/run-events"
+                        },
+                    },
+                    "task-stages": {
+                        "data": [],
+                        "links": {
+                            "related": "/api/v2/runs/run-detailed-123/task-stages"
+                        },
+                    },
+                    "policy-checks": {
+                        "data": [
+                            {"id": "polchk-JxgtJ56kFifnngyT", "type": "policy-checks"}
+                        ],
+                        "links": {
+                            "related": "/api/v2/runs/run-detailed-123/policy-checks"
+                        },
+                    },
+                    "comments": {
+                        "data": [],
+                        "links": {"related": "/api/v2/runs/run-detailed-123/comments"},
+                    },
+                },
+                "links": {"self": "/api/v2/runs/run-detailed-123"},
             }
         }
 
@@ -358,6 +432,10 @@ class TestRuns:
             # Verify result
             assert isinstance(result, Run)
             assert result.id == "run-detailed-123"
+            assert result.created_by.id == "user-FRJGnNMX6fpe9Cdd"
+            assert result.plan.id == "plan-WooDdHWZnSE3Zs8j"
+            assert result.apply.id == "apply-Y1rVt6MpiwzdMjbK"
+            assert result.workspace.id == "ws-a2Kntu53K79hsPRH"
 
     def test_apply_run_success(self, runs_service):
         """Test successful apply operation."""

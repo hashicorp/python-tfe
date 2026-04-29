@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
 import builtins
@@ -5,10 +8,12 @@ import re
 from collections.abc import Iterator
 from typing import Any
 
+from ..models.agent import AgentPool
 from ..models.common import (
     EffectiveTagBinding,
     TagBinding,
 )
+from ..models.organization import Organization
 from ..models.project import (
     Project,
     ProjectAddTagBindingsOptions,
@@ -44,37 +49,55 @@ def valid_organization_name(org_name: str) -> bool:
 
 
 def validate_project_create_options(
-    organization: str, name: str, description: str | None = None
+    organization: str, options: ProjectCreateOptions
 ) -> None:
     """Validate project creation parameters"""
     if not valid_organization_name(organization):
         raise ValueError("Organization name is required and must be valid")
 
-    if not valid_string(name):
+    if not valid_string(options.name):
         raise ValueError("Project name is required")
 
-    if not valid_project_name(name):
+    if not valid_project_name(options.name):
         raise ValueError("Project name contains invalid characters or is too long")
 
-    if description is not None and not valid_string(description):
+    if options.description is not None and not valid_string(options.description):
         raise ValueError("Description must be a valid string")
+
+    if (
+        options.default_execution_mode
+        and options.default_execution_mode == "agent"
+        and not options.default_agent_pool_id
+    ):
+        raise ValueError(
+            "Default agent pool is required when default execution mode is set to 'agent'"
+        )
 
 
 def validate_project_update_options(
-    project_id: str, name: str | None = None, description: str | None = None
+    project_id: str, options: ProjectUpdateOptions
 ) -> None:
     """Validate project update parameters"""
     if not valid_string_id(project_id):
         raise ValueError("Project ID is required")
 
-    if name is not None:
-        if not valid_string(name):
+    if options.name is not None:
+        if not valid_string(options.name):
             raise ValueError("Project name cannot be empty")
-        if not valid_project_name(name):
+        if not valid_project_name(options.name):
             raise ValueError("Project name contains invalid characters or is too long")
 
-    if description is not None and not valid_string(description):
+    if options.description is not None and not valid_string(options.description):
         raise ValueError("Description must be a valid string")
+
+    if (
+        options.default_execution_mode
+        and options.default_execution_mode == "agent"
+        and not options.default_agent_pool_id
+    ):
+        raise ValueError(
+            "Default agent pool is required when default execution mode is set to 'agent'"
+        )
 
 
 def validate_project_list_options(
@@ -118,8 +141,6 @@ class Projects(_Service):
                 params["q"] = options.query
             if options.name:
                 params["filter[names]"] = options.name
-            if options.page_number:
-                params["page[number]"] = options.page_number
             if options.page_size:
                 params["page[size]"] = options.page_size
 
@@ -130,51 +151,49 @@ class Projects(_Service):
 
         for item in items_iter:
             # Extract project data
-            attr = item.get("attributes", {}) or {}
-            project_data = {
-                "id": _safe_str(item.get("id")),
-                "name": _safe_str(attr.get("name")),
-                "description": _safe_str(attr.get("description")),
-                "organization": organization,
-                "created_at": _safe_str(attr.get("created-at")),
-                "updated_at": _safe_str(attr.get("updated-at")),
-                "workspace_count": attr.get("workspace-count", 0),
-                "default_execution_mode": _safe_str(
-                    attr.get("default-execution-mode"), "remote"
-                ),
-            }
-            yield Project(**project_data)
+            yield self._project_from(item)
 
     def create(self, organization: str, options: ProjectCreateOptions) -> Project:
         """Create a new project in an organization"""
         # Validate inputs
-        validate_project_create_options(organization, options.name, options.description)
+        validate_project_create_options(organization, options)
 
         path = f"/api/v2/organizations/{organization}/projects"
-        attributes = {"name": options.name}
-        if options.description:
-            attributes["description"] = options.description
-
-        payload = {"data": {"type": "projects", "attributes": attributes}}
+        attributes = options.model_dump(
+            by_alias=True,
+            exclude_none=True,
+            exclude={"tag_bindings", "setting_overwrites"},
+        )
+        if options.setting_overwrites:
+            attributes["setting-overwrites"] = options.setting_overwrites.model_dump(
+                by_alias=True, exclude_none=True
+            )
+        if options.tag_bindings:
+            relationships = {}
+            data = [
+                {
+                    "type": "tag-bindings",
+                    "attributes": tag_binding.model_dump(
+                        by_alias=True, exclude_none=True
+                    ),
+                }
+                for tag_binding in options.tag_bindings
+            ]
+            relationships["tag-bindings"] = {"data": data}
+            payload = {
+                "data": {
+                    "type": "projects",
+                    "attributes": attributes,
+                    "relationships": relationships,
+                }
+            }
+        else:
+            payload = {"data": {"type": "projects", "attributes": attributes}}
 
         response = self.t.request("POST", path, json_body=payload)
         data = response.json()["data"]
 
-        # Extract project data
-        attr = data.get("attributes", {}) or {}
-        project_data = {
-            "id": _safe_str(data.get("id")),
-            "name": _safe_str(attr.get("name")),
-            "description": _safe_str(attr.get("description")),
-            "organization": organization,
-            "created_at": _safe_str(attr.get("created-at")),
-            "updated_at": _safe_str(attr.get("updated-at")),
-            "workspace_count": attr.get("workspace-count", 0),
-            "default_execution_mode": _safe_str(
-                attr.get("default-execution-mode"), "remote"
-            ),
-        }
-        return Project(**project_data)
+        return self._project_from(data)
 
     def read(
         self, project_id: str, include: builtins.list[str] | None = None
@@ -196,67 +215,49 @@ class Projects(_Service):
 
         data = response.json()["data"]
 
-        # Extract organization from relationships
-        relationships = data.get("relationships", {})
-        org_data = relationships.get("organization", {}).get("data", {})
-        organization = _safe_str(org_data.get("id"))
-
-        # Extract project data
-        attr = data.get("attributes", {}) or {}
-        project_data = {
-            "id": _safe_str(data.get("id")),
-            "name": _safe_str(attr.get("name")),
-            "description": _safe_str(attr.get("description")),
-            "organization": organization,
-            "created_at": _safe_str(attr.get("created-at")),
-            "updated_at": _safe_str(attr.get("updated-at")),
-            "workspace_count": attr.get("workspace-count", 0),
-            "default_execution_mode": _safe_str(
-                attr.get("default-execution-mode"), "remote"
-            ),
-        }
-        return Project(**project_data)
+        return self._project_from(data)
 
     def update(self, project_id: str, options: ProjectUpdateOptions) -> Project:
         """Update a project's name and/or description"""
         # Validate inputs
-        validate_project_update_options(project_id, options.name, options.description)
+        validate_project_update_options(project_id, options)
 
         path = f"/api/v2/projects/{project_id}"
-        attributes = {}
-
-        if options.name is not None:
-            attributes["name"] = options.name
-        if options.description is not None:
-            attributes["description"] = options.description
-
-        payload = {
-            "data": {"type": "projects", "id": project_id, "attributes": attributes}
-        }
+        attributes = options.model_dump(
+            by_alias=True,
+            exclude_none=True,
+            exclude={"tag_bindings", "setting_overwrites"},
+        )
+        if options.setting_overwrites:
+            attributes["setting-overwrites"] = options.setting_overwrites.model_dump(
+                by_alias=True, exclude_none=True
+            )
+        if options.tag_bindings:
+            relationships = {}
+            data = [
+                {
+                    "type": "tag-bindings",
+                    "attributes": tag_binding.model_dump(
+                        by_alias=True, exclude_none=True
+                    ),
+                }
+                for tag_binding in options.tag_bindings
+            ]
+            relationships["tag-bindings"] = {"data": data}
+            payload = {
+                "data": {
+                    "type": "projects",
+                    "attributes": attributes,
+                    "relationships": relationships,
+                }
+            }
+        else:
+            payload = {"data": {"type": "projects", "attributes": attributes}}
 
         response = self.t.request("PATCH", path, json_body=payload)
         data = response.json()["data"]
 
-        # Extract organization from relationships
-        relationships = data.get("relationships", {})
-        org_data = relationships.get("organization", {}).get("data", {})
-        organization = _safe_str(org_data.get("id"))
-
-        # Extract project data
-        attr = data.get("attributes", {}) or {}
-        project_data = {
-            "id": _safe_str(data.get("id")),
-            "name": _safe_str(attr.get("name")),
-            "description": _safe_str(attr.get("description")),
-            "organization": organization,
-            "created_at": _safe_str(attr.get("created-at")),
-            "updated_at": _safe_str(attr.get("updated-at")),
-            "workspace_count": attr.get("workspace-count", 0),
-            "default_execution_mode": _safe_str(
-                attr.get("default-execution-mode"), "remote"
-            ),
-        }
-        return Project(**project_data)
+        return self._project_from(data)
 
     def delete(self, project_id: str) -> None:
         """Delete a project"""
@@ -297,7 +298,7 @@ class Projects(_Service):
         if not valid_string_id(project_id):
             raise ValueError("Project ID is required and must be valid")
 
-        path = f"/api/v2/projects/{project_id}/tag-bindings/effective"
+        path = f"/api/v2/projects/{project_id}/effective-tag-bindings"
         response = self.t.request("GET", path)
         data = response.json()["data"]
 
@@ -374,5 +375,32 @@ class Projects(_Service):
         if not valid_string_id(project_id):
             raise ValueError("Project ID is required and must be valid")
 
-        path = f"/api/v2/projects/{project_id}/tag-bindings"
-        self.t.request("DELETE", path)
+        payload = {
+            "data": {
+                "type": "projects",
+                "relationships": {"tag-bindings": {"data": []}},
+            }
+        }
+
+        path = f"/api/v2/projects/{project_id}"
+        self.t.request("PATCH", path, json_body=payload)
+
+    def _project_from(self, data: dict[str, Any]) -> Project:
+        """Helper method to create a Project object from API response data"""
+        attrs = data.get("attributes", {})
+        attrs["id"] = data.get("id")
+
+        relationships = data.get("relationships", {})
+        org_data = relationships.get("organization", {}).get("data", {})
+        organization = _safe_str(org_data.get("id")) if org_data else None
+        default_agent_pool_data = relationships.get("default-agent-pool", {}).get(
+            "data", {}
+        )
+        attrs["organization"] = Organization(id=organization) if organization else None
+        attrs["default_agent_pool"] = (
+            AgentPool(id=_safe_str(default_agent_pool_data.get("id")))
+            if default_agent_pool_data
+            else None
+        )
+
+        return Project.model_validate(attrs)

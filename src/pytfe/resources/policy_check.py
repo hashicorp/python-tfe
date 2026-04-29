@@ -1,6 +1,10 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
 import time
+from collections.abc import Iterator
 
 from ..errors import (
     InvalidPolicyCheckIDError,
@@ -8,7 +12,6 @@ from ..errors import (
 )
 from ..models.policy_check import (
     PolicyCheck,
-    PolicyCheckList,
     PolicyCheckListOptions,
     PolicyStatus,
 )
@@ -24,35 +27,19 @@ class PolicyChecks(_Service):
 
     def list(
         self, run_id: str, options: PolicyCheckListOptions | None = None
-    ) -> PolicyCheckList:
+    ) -> Iterator[PolicyCheck]:
         """List all policy checks of the given run."""
         if not valid_string_id(run_id):
             raise InvalidRunIDError()
         params = (
             options.model_dump(by_alias=True, exclude_none=True) if options else None
         )
-        r = self.t.request(
-            "GET",
-            f"/api/v2/runs/{run_id}/policy-checks",
-            params=params,
-        )
-        jd = r.json()
-        items = []
-        meta = jd.get("meta", {})
-        pagination = meta.get("pagination", {})
-        for d in jd.get("data", []):
-            attrs = d.get("attributes", {})
-            attrs["id"] = d.get("id")
-            attrs["run"] = d.get("relationships", {}).get("run", {})
-            items.append(PolicyCheck.model_validate(attrs))
-        return PolicyCheckList(
-            items=items,
-            current_page=pagination.get("current-page"),
-            total_pages=pagination.get("total-pages"),
-            prev_page=pagination.get("prev-page"),
-            next_page=pagination.get("next-page"),
-            total_count=pagination.get("total-count"),
-        )
+        path = f"/api/v2/runs/{run_id}/policy-checks"
+        for item in self._list(path, params=params):
+            attrs = item.get("attributes", {})
+            attrs["id"] = item.get("id")
+            attrs["run"] = item.get("relationships", {}).get("run", {}).get("data")
+            yield PolicyCheck.model_validate(attrs)
 
     def read(self, policy_check_id: str) -> PolicyCheck:
         """Read a policy check by its ID."""
@@ -66,7 +53,7 @@ class PolicyChecks(_Service):
         d = jd.get("data", {})
         attrs = d.get("attributes", {})
         attrs["id"] = d.get("id")
-        attrs["run"] = d.get("relationships", {}).get("run", {})
+        attrs["run"] = d.get("relationships", {}).get("run", {}).get("data")
         return PolicyCheck.model_validate(attrs)
 
     def override(self, policy_check_id: str) -> PolicyCheck:
@@ -81,7 +68,7 @@ class PolicyChecks(_Service):
         d = jd.get("data", {})
         attrs = d.get("attributes", {})
         attrs["id"] = d.get("id")
-        attrs["run"] = d.get("relationships", {}).get("run", {})
+        attrs["run"] = d.get("relationships", {}).get("run", {}).get("data")
         return PolicyCheck.model_validate(attrs)
 
     def logs(self, policy_check_id: str) -> str:

@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
 import builtins
@@ -29,6 +32,8 @@ from ..models.data_retention_policy import (
     DataRetentionPolicyDontDelete,
     DataRetentionPolicySetOptions,
 )
+from ..models.organization import Organization
+from ..models.project import Project
 from ..models.workspace import (
     ExecutionMode,
     LockedByChoice,
@@ -48,19 +53,14 @@ from ..models.workspace import (
     WorkspaceReadOptions,
     WorkspaceRemoveRemoteStateConsumersOptions,
     WorkspaceRemoveTagsOptions,
-    WorkspaceRemoveVCSConnectionOptions,
     WorkspaceSettingOverwrites,
-    WorkspaceSource,
     WorkspaceTagListOptions,
     WorkspaceUpdateOptions,
     WorkspaceUpdateRemoteStateConsumersOptions,
 )
 from ..utils import (
-    _safe_str,
     valid_string,
     valid_string_id,
-    validate_workspace_create_options,
-    validate_workspace_update_options,
 )
 from ._base import _Service
 
@@ -73,190 +73,120 @@ def _em_safe(v: Any) -> ExecutionMode | None:
     return result if isinstance(result, ExecutionMode) else None
 
 
-def _ws_from(d: dict[str, Any], org: str | None = None) -> Workspace:
+def _ws_from(d: dict[str, Any]) -> Workspace:
     attr: dict[str, Any] = d.get("attributes", {}) or {}
-
-    # Coerce to required string fields (empty string fallback keeps mypy happy)
-    id_str: str = _safe_str(d.get("id"))
-    name_str: str = _safe_str(attr.get("name"))
-    org_str: str = _safe_str(org if org is not None else attr.get("organization"))
+    relationships: dict[str, Any] = d.get("relationships", {}) or {}
 
     # Optional fields
     em: ExecutionMode | None = _em_safe(attr.get("execution-mode"))
 
-    proj_id: str | None = None
-    proj = attr.get("project")
-    if isinstance(proj, dict):
-        proj_id = proj.get("id") if isinstance(proj.get("id"), str) else None
-
-    # Enhanced field mapping
-    tags_val = attr.get("tags", []) or []
-    tags_list: builtins.list[Tag] = []
-    if isinstance(tags_val, builtins.list):
-        for tag_item in tags_val:
-            if isinstance(tag_item, dict):
-                tags_list.append(
-                    Tag(id=tag_item.get("id"), name=tag_item.get("name", ""))
-                )
-            elif isinstance(tag_item, str):
-                tags_list.append(Tag(name=tag_item))
-
-    # Map additional attributes
     actions = None
     if attr.get("actions"):
-        actions = WorkspaceActions(
-            is_destroyable=attr["actions"].get("is-destroyable", False)
-        )
+        actions = WorkspaceActions.model_validate(attr["actions"])
 
     permissions = None
     if attr.get("permissions"):
-        perm_attr = attr["permissions"]
-        permissions = WorkspacePermissions(
-            can_destroy=perm_attr.get("can-destroy", False),
-            can_force_unlock=perm_attr.get("can-force-unlock", False),
-            can_lock=perm_attr.get("can-lock", False),
-            can_manage_run_tasks=perm_attr.get("can-manage-run-tasks", False),
-            can_queue_apply=perm_attr.get("can-queue-apply", False),
-            can_queue_destroy=perm_attr.get("can-queue-destroy", False),
-            can_queue_run=perm_attr.get("can-queue-run", False),
-            can_read_settings=perm_attr.get("can-read-settings", False),
-            can_unlock=perm_attr.get("can-unlock", False),
-            can_update=perm_attr.get("can-update", False),
-            can_update_variable=perm_attr.get("can-update-variable", False),
-            can_force_delete=perm_attr.get("can-force-delete"),
-        )
+        permissions = WorkspacePermissions.model_validate(attr["permissions"])
 
     setting_overwrites = None
     if attr.get("setting-overwrites"):
-        so_attr = attr["setting-overwrites"]
-        setting_overwrites = WorkspaceSettingOverwrites(
-            execution_mode=so_attr.get("execution-mode"),
-            agent_pool=so_attr.get("agent-pool"),
+        setting_overwrites = WorkspaceSettingOverwrites.model_validate(
+            attr["setting-overwrites"]
         )
 
     # Map VCS repo
     vcs_repo = None
     if attr.get("vcs-repo"):
-        vcs_attr = attr["vcs-repo"]
-        vcs_repo = VCSRepo(
-            branch=vcs_attr.get("branch"),
-            identifier=vcs_attr.get("identifier"),
-            ingress_submodules=vcs_attr.get("ingress-submodules"),
-            oauth_token_id=vcs_attr.get("oauth-token-id"),
-            gha_installation_id=vcs_attr.get("github-app-installation-id"),
-        )
+        vcs_repo = VCSRepo.model_validate(attr["vcs-repo"])
 
     # Map locked_by choice
     locked_by = None
-    if d.get("relationships", {}).get("locked-by"):
-        lb_data = d["relationships"]["locked-by"]["data"]
+    if relationships.get("locked-by", {}).get("data"):
+        lb_data = relationships["locked-by"]["data"]
         if lb_data:
-            locked_by = LockedByChoice(
-                run=lb_data.get("run"),
-                user=lb_data.get("user"),
-                team=lb_data.get("team"),
-            )
+            if lb_data.get("type") == "runs":
+                locked_by = LockedByChoice.model_validate({"run": lb_data.get("id")})
+            elif lb_data.get("type") == "users":
+                locked_by = LockedByChoice.model_validate({"user": lb_data.get("id")})
+            elif lb_data.get("type") == "teams":
+                locked_by = LockedByChoice.model_validate({"team": lb_data.get("id")})
 
     # Map outputs
     outputs = []
-    if d.get("relationships", {}).get("outputs"):
-        for output_data in d["relationships"]["outputs"].get("data", []):
-            outputs.append(
-                WorkspaceOutputs(
-                    id=output_data.get("id", ""),
-                    name=output_data.get("attributes", {}).get("name", ""),
-                    sensitive=output_data.get("attributes", {}).get("sensitive", False),
-                    output_type=output_data.get("attributes", {}).get(
-                        "output-type", ""
-                    ),
-                    value=output_data.get("attributes", {}).get("value"),
-                )
-            )
+    if relationships.get("outputs", {}).get("data"):
+        for output_data in relationships["outputs"].get("data", []):
+            output_attrs = output_data.get("attributes", {})
+            output_attrs["id"] = output_data.get("id", "")
+            outputs.append(WorkspaceOutputs.model_validate(output_attrs))
 
     data_retention_policy_choice: DataRetentionPolicyChoice | None = None
-    if d.get("relationships", {}).get("data-retention-policy-choice"):
-        drp_data = d["relationships"]["data-retention-policy-choice"]["data"]
+    if relationships.get("data-retention-policy-choice", {}).get("data"):
+        drp_data = relationships["data-retention-policy-choice"]["data"]
         if drp_data:
             if drp_data.get("type") == "data-retention-policy-delete-olders":
-                data_retention_policy_choice = DataRetentionPolicyChoice(
-                    data_retention_policy_delete_older=DataRetentionPolicyDeleteOlder(
-                        id=drp_data.get("id"),
-                        delete_older_than_n_days=drp_data.get("attributes", {}).get(
-                            "delete-older-than-n-days", 0
-                        ),
+                data_retention_policy_delete_older = (
+                    DataRetentionPolicyDeleteOlder.model_validate(
+                        {
+                            "id": drp_data.get("id"),
+                            "delete_older_than_n_days": drp_data.get(
+                                "attributes", {}
+                            ).get("delete-older-than-n-days", 0),
+                        }
                     )
                 )
+                data_retention_policy_choice = DataRetentionPolicyChoice.model_validate(
+                    {
+                        "data_retention_policy_delete_older": data_retention_policy_delete_older
+                    }
+                )
             elif drp_data.get("type") == "data-retention-policy-dont-deletes":
-                data_retention_policy_choice = DataRetentionPolicyChoice(
-                    data_retention_policy_dont_delete=DataRetentionPolicyDontDelete(
-                        id=drp_data.get("id")
+                data_retention_policy_dont_delete = (
+                    DataRetentionPolicyDontDelete.model_validate(
+                        {"id": drp_data.get("id")}
                     )
+                )
+                data_retention_policy_choice = DataRetentionPolicyChoice.model_validate(
+                    {
+                        "data_retention_policy_dont_delete": data_retention_policy_dont_delete
+                    }
                 )
             elif drp_data.get("type") == "data-retention-policies":
                 # Legacy data retention policy
-                data_retention_policy_choice = DataRetentionPolicyChoice(
-                    data_retention_policy=DataRetentionPolicy(
-                        id=drp_data.get("id"),
-                        delete_older_than_n_days=drp_data.get("attributes", {}).get(
+                data_retention_policy = DataRetentionPolicy.model_validate(
+                    {
+                        "id": drp_data.get("id"),
+                        "delete_older_than_n_days": drp_data.get("attributes", {}).get(
                             "delete-older-than-n-days", 0
                         ),
-                    )
+                    }
+                )
+                data_retention_policy_choice = DataRetentionPolicyChoice.model_validate(
+                    {"data_retention_policy": data_retention_policy}
                 )
 
-    return Workspace(
-        id=id_str,
-        name=name_str,
-        organization=org_str,
-        execution_mode=em,
-        project_id=proj_id,
-        tags=tags_list,
-        # Core attributes
-        actions=actions,
-        allow_destroy_plan=attr.get("allow-destroy-plan", False),
-        assessments_enabled=attr.get("assessments-enabled", False),
-        auto_apply=attr.get("auto-apply", False),
-        auto_apply_run_trigger=attr.get("auto-apply-run-trigger", False),
-        auto_destroy_at=attr.get("auto-destroy-at"),
-        auto_destroy_activity_duration=attr.get("auto-destroy-activity-duration"),
-        can_queue_destroy_plan=attr.get("can-queue-destroy-plan", False),
-        created_at=attr.get("created-at"),
-        description=attr.get("description") or "",
-        environment=attr.get("environment", ""),
-        file_triggers_enabled=attr.get("file-triggers-enabled", False),
-        global_remote_state=attr.get("global-remote-state", False),
-        inherits_project_auto_destroy=attr.get("inherits-project-auto-destroy", False),
-        locked=attr.get("locked", False),
-        migration_environment=attr.get("migration-environment", ""),
-        no_code_upgrade_available=attr.get("no-code-upgrade-available", False),
-        operations=attr.get("operations", False),
-        permissions=permissions,
-        queue_all_runs=attr.get("queue-all-runs", False),
-        speculative_enabled=attr.get("speculative-enabled", False),
-        source=WorkspaceSource(attr.get("source")) if attr.get("source") else None,
-        source_name=attr.get("source-name") or "",
-        source_url=attr.get("source-url") or "",
-        structured_run_output_enabled=attr.get("structured-run-output-enabled", False),
-        terraform_version=attr.get("terraform-version") or "",
-        trigger_prefixes=attr.get("trigger-prefixes", []),
-        trigger_patterns=attr.get("trigger-patterns", []),
-        vcs_repo=vcs_repo,
-        working_directory=attr.get("working-directory") or "",
-        updated_at=attr.get("updated-at"),
-        resource_count=attr.get("resource-count", 0),
-        apply_duration_average=attr.get("apply-duration-average"),
-        plan_duration_average=attr.get("plan-duration-average"),
-        policy_check_failures=attr.get("policy-check-failures") or 0,
-        run_failures=attr.get("run-failures") or 0,
-        runs_count=attr.get("workspace-kpis-runs-count") or 0,
-        tag_names=attr.get("tag-names", []),
-        setting_overwrites=setting_overwrites,
-        # Relations
-        outputs=outputs,
-        locked_by=locked_by,
-        data_retention_policy_choice=data_retention_policy_choice
-        if data_retention_policy_choice
-        else None,
-    )
+    attr["id"] = d.get("id")
+    attr["execution_mode"] = em
+    attr["actions"] = actions
+    attr["permissions"] = permissions
+    attr["setting_overwrites"] = setting_overwrites
+    attr["vcs-repo"] = vcs_repo
+
+    # Add parsed relations
+    if relationships.get("organization", {}).get("data"):
+        attr["organization"] = Organization.model_validate(
+            {"id": relationships["organization"]["data"].get("id")}
+        )
+    if relationships.get("project", {}).get("data"):
+        attr["project"] = Project.model_validate(
+            {"id": relationships["project"]["data"].get("id")}
+        )
+    if relationships.get("ssh-key", {}).get("data"):
+        attr["ssh_key"] = relationships["ssh-key"]["data"].get("id")
+    attr["outputs"] = outputs
+    attr["locked_by"] = locked_by
+    attr["data_retention_policy_choice"] = data_retention_policy_choice
+
+    return Workspace.model_validate(attr)
 
 
 class Workspaces(_Service):
@@ -265,47 +195,32 @@ class Workspaces(_Service):
         organization: str,
         options: WorkspaceListOptions | None = None,
     ) -> Iterator[Workspace]:
-        # Validate parameters
         if not valid_string_id(organization):
             raise InvalidOrgError()
 
-        params: dict[str, Any] = {}
+        params = (
+            options.model_dump(
+                by_alias=True, exclude_none=True, exclude={"tag_bindings"}
+            )
+            if options
+            else {}
+        )
 
         if options is not None:
-            # Use structured options
-            if options.search:
-                params["search[name]"] = options.search
-            if options.tags:
-                params["search[tags]"] = options.tags
-            if options.exclude_tags:
-                params["search[exclude-tags]"] = options.exclude_tags
-            if options.wildcard_name:
-                params["search[wildcard-name]"] = options.wildcard_name
-            if options.project_id:
-                params["filter[project][id]"] = options.project_id
-            if options.current_run_status:
-                params["filter[current-run][status]"] = options.current_run_status
             if options.include:
                 params["include"] = ",".join([i.value for i in options.include])
-            if options.sort:
-                params["sort"] = options.sort
-            if options.page_number:
-                params["page[number]"] = options.page_number
-            if options.page_size:
-                params["page[size]"] = options.page_size
 
-            # Handle tag binding filters
             if options.tag_bindings:
                 for i, binding in enumerate(options.tag_bindings):
                     if binding.key and binding.value:
-                        params[f"search[tag-bindings][{i}][key]"] = binding.key
-                        params[f"search[tag-bindings][{i}][value]"] = binding.value
+                        params[f"filter[tagged][{i}][key]"] = binding.key
+                        params[f"filter[tagged][{i}][value]"] = binding.value
                     elif binding.key:
-                        params[f"search[tag-bindings][{i}][key]"] = binding.key
+                        params[f"filter[tagged][{i}][key]"] = binding.key
 
         path = f"/api/v2/organizations/{organization}/workspaces"
         for item in self._list(path, params=params):
-            yield _ws_from(item, organization)
+            yield _ws_from(item)
 
     def read(self, workspace: str, *, organization: str) -> Workspace:
         """Read workspace by organization and name."""
@@ -318,7 +233,6 @@ class Workspaces(_Service):
         *,
         organization: str,
     ) -> Workspace:
-        # Validate parameters
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(workspace):
@@ -333,7 +247,7 @@ class Workspaces(_Service):
             f"/api/v2/organizations/{organization}/workspaces/{workspace}",
             params=params,
         )
-        ws = _ws_from(r.json()["data"], organization)
+        ws = _ws_from(r.json()["data"])
         ws.data_retention_policy = (
             ws.data_retention_policy_choice.convert_to_legacy_struct()
             if ws.data_retention_policy_choice
@@ -348,7 +262,6 @@ class Workspaces(_Service):
     def read_by_id_with_options(
         self, workspace_id: str, options: WorkspaceReadOptions | None = None
     ) -> Workspace:
-        # Validate parameters
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -357,7 +270,7 @@ class Workspaces(_Service):
             if options.include:
                 params["include"] = ",".join([i.value for i in options.include])
         r = self.t.request("GET", f"/api/v2/workspaces/{workspace_id}", params=params)
-        ws = _ws_from(r.json()["data"], None)
+        ws = _ws_from(r.json()["data"])
         if ws.data_retention_policy_choice is not None:
             ws.data_retention_policy = (
                 ws.data_retention_policy_choice.convert_to_legacy_struct()
@@ -370,183 +283,93 @@ class Workspaces(_Service):
         options: WorkspaceCreateOptions,
     ) -> Workspace:
         """Create a new workspace in the given organization."""
-        # Validate parameters
         if not valid_string_id(organization):
             raise InvalidOrgError()
 
-        # Validate options before creating workspace
-        validate_workspace_create_options(options)
-
-        body = self._build_workspace_payload(options, is_create=True)
+        body = self._build_workspace_payload(options)
         r = self.t.request(
             "POST", f"/api/v2/organizations/{organization}/workspaces", json_body=body
         )
-        return _ws_from(r.json()["data"], organization)
+        return _ws_from(r.json()["data"])
 
-    # Convenience methods for org+name operations
     def update(
         self, workspace: str, options: WorkspaceUpdateOptions, *, organization: str
     ) -> Workspace:
         """Update workspace by organization and name."""
-        # Validate parameters
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(workspace):
             raise InvalidWorkspaceValueError()
 
-        # Validate options before updating workspace
-        validate_workspace_update_options(options)
-
-        body = self._build_workspace_payload(options, is_create=False)
+        body = self._build_workspace_payload(options)
         r = self.t.request(
             "PATCH",
             f"/api/v2/organizations/{organization}/workspaces/{workspace}",
             json_body=body,
         )
-        return _ws_from(r.json()["data"], organization)
+        return _ws_from(r.json()["data"])
 
     def update_by_id(
         self, workspace_id: str, options: WorkspaceUpdateOptions
     ) -> Workspace:
         """Update workspace by workspace ID."""
-        # Validate parameters
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
-        # Validate options before updating workspace
-        validate_workspace_update_options(options)
-
-        body = self._build_workspace_payload(options, is_create=False)
+        body = self._build_workspace_payload(options)
         r = self.t.request(
             "PATCH", f"/api/v2/workspaces/{workspace_id}", json_body=body
         )
-        return _ws_from(r.json()["data"], None)
+        return _ws_from(r.json()["data"])
 
     def _build_workspace_payload(
-        self,
-        options: WorkspaceCreateOptions | WorkspaceUpdateOptions,
-        is_create: bool = False,
+        self, options: WorkspaceCreateOptions | WorkspaceUpdateOptions
     ) -> dict[str, Any]:
         """Build the workspace payload from options following API specification.
 
         Args:
             options: Either WorkspaceCreateOptions or WorkspaceUpdateOptions
-            is_create: True for create operations, False for update operations
         """
-        body: dict[str, Any] = {"data": {"type": "workspaces", "attributes": {}}}
-
-        # Add attributes from options
-        attrs = body["data"]["attributes"]
-
-        # Required field for both create and update: name
-        attrs["name"] = options.name
-
-        # Common optional attributes
-        if options.agent_pool_id is not None:
-            attrs["agent-pool-id"] = options.agent_pool_id
-        if options.allow_destroy_plan is not None:
-            attrs["allow-destroy-plan"] = options.allow_destroy_plan
-        if options.assessments_enabled is not None:
-            attrs["assessments-enabled"] = options.assessments_enabled
-        if options.auto_apply is not None:
-            attrs["auto-apply"] = options.auto_apply
-        if options.auto_apply_run_trigger is not None:
-            attrs["auto-apply-run-trigger"] = options.auto_apply_run_trigger
-        if options.auto_destroy_at is not None:
-            # Format datetime as ISO8601 string as expected by the API
-            attrs["auto-destroy-at"] = options.auto_destroy_at.isoformat()
-        if options.auto_destroy_activity_duration is not None:
-            attrs["auto-destroy-activity-duration"] = (
-                options.auto_destroy_activity_duration
+        attrs = (
+            (
+                options.model_dump(
+                    by_alias=True,
+                    exclude_none=True,
+                    exclude={
+                        "vcs_repo",
+                        "setting_overwrites",
+                        "project",
+                        "tag_bindings",
+                    },
+                )
             )
-        if options.description is not None:
-            attrs["description"] = options.description
-        if options.execution_mode is not None:
-            # Accepts either an enum (with .value) or a string; fallback to the value itself if neither
-            attrs["execution-mode"] = getattr(
-                options.execution_mode, "value", options.execution_mode
-            )
-        if options.file_triggers_enabled is not None:
-            attrs["file-triggers-enabled"] = options.file_triggers_enabled
-        if options.global_remote_state is not None:
-            attrs["global-remote-state"] = options.global_remote_state
-        if options.queue_all_runs is not None:
-            attrs["queue-all-runs"] = options.queue_all_runs
-        if options.speculative_enabled is not None:
-            attrs["speculative-enabled"] = options.speculative_enabled
-        if options.terraform_version is not None:
-            attrs["terraform-version"] = options.terraform_version
-        if options.trigger_patterns:
-            attrs["trigger-patterns"] = options.trigger_patterns
-        if options.trigger_prefixes:
-            attrs["trigger-prefixes"] = options.trigger_prefixes
-        if options.working_directory is not None:
-            attrs["working-directory"] = options.working_directory
-        if options.allow_destroy_plan is not None:
-            attrs["allow-destroy-plan"] = options.allow_destroy_plan
-        if options.assessments_enabled is not None:
-            attrs["assessments-enabled"] = options.assessments_enabled
-
-        # Create-specific attributes
-        if (
-            is_create
-            and hasattr(options, "source_name")
-            and options.source_name is not None
-        ):
-            attrs["source-name"] = options.source_name
-        if (
-            is_create
-            and hasattr(options, "source_url")
-            and options.source_url is not None
-        ):
-            attrs["source-url"] = options.source_url
-        if (
-            is_create
-            and hasattr(options, "structured_run_output_enabled")
-            and options.structured_run_output_enabled is not None
-        ):
-            attrs["structured-run-output-enabled"] = (
-                options.structured_run_output_enabled
-            )
-        if (
-            is_create
-            and hasattr(options, "hyok_enabled")
-            and options.hyok_enabled is not None
-        ):
-            attrs["hyok-enabled"] = options.hyok_enabled
+            if options
+            else {}
+        )
 
         # VCS repository configuration
-        if hasattr(options, "vcs_repo") and options.vcs_repo is not None:
-            vcs_data: dict[str, Any] = {}
-            if options.vcs_repo.oauth_token_id is not None:
-                vcs_data["oauth-token-id"] = options.vcs_repo.oauth_token_id
-            if options.vcs_repo.identifier is not None:
-                vcs_data["identifier"] = options.vcs_repo.identifier
-            if options.vcs_repo.branch is not None:
-                vcs_data["branch"] = options.vcs_repo.branch
-            if options.vcs_repo.ingress_submodules is not None:
-                vcs_data["ingress-submodules"] = options.vcs_repo.ingress_submodules
-            if options.vcs_repo.tags_regex is not None:
-                vcs_data["tags-regex"] = options.vcs_repo.tags_regex
-            if options.vcs_repo.gha_installation_id is not None:
-                vcs_data["github-app-installation-id"] = (
-                    options.vcs_repo.gha_installation_id
-                )
+        if hasattr(options, "vcs_repo"):
+            vcs_data = (
+                (options.vcs_repo.model_dump(by_alias=True, exclude_none=True))
+                if options.vcs_repo
+                else {}
+            )
             attrs["vcs-repo"] = vcs_data
 
         # Setting overwrites
-        if (
-            hasattr(options, "setting_overwrites")
-            and options.setting_overwrites is not None
-        ):
-            setting_overwrites: dict[str, Any] = {}
-            if options.setting_overwrites.execution_mode is not None:
-                setting_overwrites["execution-mode"] = (
-                    options.setting_overwrites.execution_mode
+        if hasattr(options, "setting_overwrites"):
+            setting_overwrites = (
+                (
+                    options.setting_overwrites.model_dump(
+                        by_alias=True, exclude_none=True
+                    )
                 )
-            if options.setting_overwrites.agent_pool is not None:
-                setting_overwrites["agent-pool"] = options.setting_overwrites.agent_pool
+                if options.setting_overwrites
+                else {}
+            )
             attrs["setting-overwrites"] = setting_overwrites
+
+        body = {"data": {"type": "workspaces", "attributes": attrs}}
 
         # Add relationships
         relationships: dict[str, Any] = {}
@@ -576,7 +399,6 @@ class Workspaces(_Service):
 
     def delete(self, workspace: str, *, organization: str) -> None:
         """Delete workspace by organization and workspace name."""
-        # Validate parameters for proper API usage
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(workspace):
@@ -585,18 +407,18 @@ class Workspaces(_Service):
         self.t.request(
             "DELETE", f"/api/v2/organizations/{organization}/workspaces/{workspace}"
         )
+        return None
 
     def delete_by_id(self, workspace_id: str) -> None:
         """Delete workspace by workspace ID."""
-        # Validate parameters for proper API usage
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         self.t.request("DELETE", f"/api/v2/workspaces/{workspace_id}")
+        return None
 
     def safe_delete(self, workspace: str, *, organization: str) -> None:
         """Safely delete workspace by organization and name."""
-        # Validate parameters for proper API usage
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(workspace):
@@ -606,14 +428,15 @@ class Workspaces(_Service):
             "POST",
             f"/api/v2/organizations/{organization}/workspaces/{workspace}/actions/safe-delete",
         )
+        return None
 
     def safe_delete_by_id(self, workspace_id: str) -> None:
         """Safely delete workspace by workspace ID."""
-        # Validate parameters for proper API usage
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
         self.t.request("POST", f"/api/v2/workspaces/{workspace_id}/actions/safe-delete")
+        return None
 
     def remove_vcs_connection(
         self,
@@ -622,19 +445,15 @@ class Workspaces(_Service):
         organization: str | None = None,
     ) -> Workspace:
         """Remove VCS connection from workspace by organization and name."""
-        # Validate parameters
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(workspace):
             raise InvalidWorkspaceValueError()
 
-        # Create empty options with vcs_repo=None to remove VCS connection
-        options = WorkspaceRemoveVCSConnectionOptions(id="", vcs_repo=None)
-
         body = {
             "data": {
                 "type": "workspaces",
-                "attributes": {"vcs-repo": options.vcs_repo},
+                "attributes": {"vcs-repo": None},
             }
         }
 
@@ -643,21 +462,17 @@ class Workspaces(_Service):
             f"/api/v2/organizations/{organization}/workspaces/{workspace}",
             json_body=body,
         )
-        return _ws_from(r.json()["data"], organization)
+        return _ws_from(r.json()["data"])
 
     def remove_vcs_connection_by_id(self, workspace_id: str) -> Workspace:
         """Remove VCS connection from workspace by workspace ID."""
-        # Validate parameters
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
-
-        # Create empty options with vcs_repo=None to remove VCS connection
-        options = WorkspaceRemoveVCSConnectionOptions(id="", vcs_repo=None)
 
         body = {
             "data": {
                 "type": "workspaces",
-                "attributes": {"vcs-repo": options.vcs_repo},
+                "attributes": {"vcs-repo": None},
             }
         }
 
@@ -666,11 +481,10 @@ class Workspaces(_Service):
             f"/api/v2/workspaces/{workspace_id}",
             json_body=body,
         )
-        return _ws_from(r.json()["data"], None)
+        return _ws_from(r.json()["data"])
 
     def lock(self, workspace_id: str, options: WorkspaceLockOptions) -> Workspace:
         """Lock a workspace by workspace ID."""
-        # Validate parameters
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -681,11 +495,10 @@ class Workspaces(_Service):
             f"/api/v2/workspaces/{workspace_id}/actions/lock",
             json_body=body,
         )
-        return _ws_from(r.json()["data"], None)
+        return _ws_from(r.json()["data"])
 
     def unlock(self, workspace_id: str) -> Workspace:
         """Unlock a workspace by workspace ID."""
-        # Validate parameters
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         try:
@@ -693,7 +506,7 @@ class Workspaces(_Service):
                 "POST",
                 f"/api/v2/workspaces/{workspace_id}/actions/unlock",
             )
-            return _ws_from(r.json()["data"], None)
+            return _ws_from(r.json()["data"])
         except Exception as e:
             if "latest state version is still pending" in str(e):
                 raise WorkspaceLockedStateVersionStillPending(str(e)) from e
@@ -701,7 +514,6 @@ class Workspaces(_Service):
 
     def force_unlock(self, workspace_id: str) -> Workspace:
         """Force unlock a workspace by workspace ID."""
-        # Validate parameters
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -709,13 +521,12 @@ class Workspaces(_Service):
             "POST",
             f"/api/v2/workspaces/{workspace_id}/actions/force-unlock",
         )
-        return _ws_from(r.json()["data"], None)
+        return _ws_from(r.json()["data"])
 
     def assign_ssh_key(
         self, workspace_id: str, options: WorkspaceAssignSSHKeyOptions
     ) -> Workspace:
         """Assign an SSH key to a workspace by workspace ID."""
-        # Validate parameters
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -737,11 +548,10 @@ class Workspaces(_Service):
             f"/api/v2/workspaces/{workspace_id}/relationships/ssh-key",
             json_body=body,
         )
-        return _ws_from(r.json()["data"], None)
+        return _ws_from(r.json()["data"])
 
     def unassign_ssh_key(self, workspace_id: str) -> Workspace:
         """Unassign the SSH key from a workspace by workspace ID."""
-        # Validate parameters
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -758,27 +568,22 @@ class Workspaces(_Service):
             json_body=body,
         )
 
-        return _ws_from(r.json()["data"], None)
+        return _ws_from(r.json()["data"])
 
     def list_remote_state_consumers(
-        self, workspace_id: str, options: WorkspaceListRemoteStateConsumersOptions
+        self,
+        workspace_id: str,
+        options: WorkspaceListRemoteStateConsumersOptions | None = None,
     ) -> Iterator[Workspace]:
         """List remote state consumers of a workspace by workspace ID."""
-        # Validate parameters
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
-        params: dict[str, Any] = {}
-        if options is not None:
-            # Use structured options
-            if options.page_number:
-                params["page[number]"] = options.page_number
-            if options.page_size:
-                params["page[size]"] = options.page_size
+        params = options.model_dump(by_alias=True, exclude_none=True) if options else {}
 
         path = f"/api/v2/workspaces/{workspace_id}/relationships/remote-state-consumers"
         for item in self._list(path, params=params):
-            yield _ws_from(item, None)
+            yield _ws_from(item)
 
     def add_remote_state_consumers(
         self, workspace_id: str, options: WorkspaceAddRemoteStateConsumersOptions
@@ -799,6 +604,7 @@ class Workspaces(_Service):
             f"/api/v2/workspaces/{workspace_id}/relationships/remote-state-consumers",
             json_body=body,
         )
+        return None
 
     def remove_remote_state_consumers(
         self, workspace_id: str, options: WorkspaceRemoveRemoteStateConsumersOptions
@@ -818,6 +624,7 @@ class Workspaces(_Service):
             f"/api/v2/workspaces/{workspace_id}/relationships/remote-state-consumers",
             json_body=body,
         )
+        return None
 
     def update_remote_state_consumers(
         self, workspace_id: str, options: WorkspaceUpdateRemoteStateConsumersOptions
@@ -837,6 +644,7 @@ class Workspaces(_Service):
             f"/api/v2/workspaces/{workspace_id}/relationships/remote-state-consumers",
             json_body=body,
         )
+        return None
 
     def list_tags(
         self, workspace_id: str, options: WorkspaceTagListOptions | None = None
@@ -844,14 +652,7 @@ class Workspaces(_Service):
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
-        params: dict[str, Any] = {}
-        if options is not None:
-            if options.query is not None:
-                params["name"] = options.query
-            if options.page_number is not None:
-                params["page[number]"] = options.page_number
-            if options.page_size is not None:
-                params["page[size]"] = options.page_size
+        params = options.model_dump(by_alias=True, exclude_none=True) if options else {}
 
         path = f"/api/v2/workspaces/{workspace_id}/relationships/tags"
         for item in self._list(path, params=params):
@@ -879,6 +680,7 @@ class Workspaces(_Service):
             f"/api/v2/workspaces/{workspace_id}/relationships/tags",
             json_body=body,
         )
+        return None
 
     def remove_tags(
         self, workspace_id: str, options: WorkspaceRemoveTagsOptions
@@ -903,6 +705,7 @@ class Workspaces(_Service):
             f"/api/v2/workspaces/{workspace_id}/relationships/tags",
             json_body=body,
         )
+        return None
 
     def list_tag_bindings(self, workspace_id: str) -> Iterator[TagBinding]:
         if not valid_string_id(workspace_id):
@@ -980,6 +783,7 @@ class Workspaces(_Service):
             }
         }
         self.t.request("PATCH", f"/api/v2/workspaces/{workspace_id}", json_body=body)
+        return None
 
     def read_data_retention_policy(
         self, workspace_id: str
@@ -1149,6 +953,7 @@ class Workspaces(_Service):
             raise InvalidWorkspaceIDError()
 
         self.t.request("DELETE", self._data_retention_policy_link(workspace_id))
+        return None
 
     def readme(self, workspace_id: str) -> str | None:
         """Get the README content of a workspace by its ID."""

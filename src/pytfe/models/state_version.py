@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -78,7 +81,6 @@ class StateVersionListOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     # Standard pagination + filters
-    page_number: int | None = Field(None, alias="page[number]")
     page_size: int | None = Field(None, alias="page[size]")
     organization: str | None = Field(None, alias="filter[organization][name]")
     workspace: str | None = Field(None, alias="filter[workspace][name]")

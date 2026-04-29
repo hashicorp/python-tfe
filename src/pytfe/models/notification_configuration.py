@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """
 Notification Configuration Models
 
@@ -188,17 +191,14 @@ class NotificationConfigurationListOptions:
     """Represents the options for listing notification configurations."""
 
     # Type annotations for instance attributes
-    page_number: int | None
     page_size: int | None
     subscribable_choice: NotificationConfigurationSubscribableChoice | None
 
     def __init__(
         self,
-        page_number: int | None = None,
         page_size: int | None = None,
         subscribable_choice: NotificationConfigurationSubscribableChoice | None = None,
     ):
-        self.page_number = page_number
         self.page_size = page_size
         self.subscribable_choice = subscribable_choice
 
@@ -206,8 +206,6 @@ class NotificationConfigurationListOptions:
         """Convert to dictionary for API requests."""
         params = {}
 
-        if self.page_number is not None:
-            params["page[number]"] = self.page_number
         if self.page_size is not None:
             params["page[size]"] = self.page_size
 

@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
 from collections.abc import Iterator
@@ -16,7 +19,7 @@ class _Service:
         page = 1
         while True:
             p = dict(params or {})
-            p.setdefault("page[number]", page)
+            p["page[number]"] = page
             p.setdefault("page[size]", 100)
             r = self.t.request("GET", path, params=p)
 

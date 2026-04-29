@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Unit tests for Variable Set resources."""
 
 from unittest.mock import Mock
@@ -72,7 +75,7 @@ class TestVariableSets:
         self.mock_transport.request.return_value = mock_response
 
         # Call the method
-        result = self.variable_sets_service.list(self.org_name)
+        result = list(self.variable_sets_service.list(self.org_name))
 
         # Assertions
         assert len(result) == 1
@@ -85,7 +88,9 @@ class TestVariableSets:
 
         # Verify API call
         self.mock_transport.request.assert_called_once_with(
-            "GET", f"/api/v2/organizations/{self.org_name}/varsets", params={}
+            "GET",
+            f"/api/v2/organizations/{self.org_name}/varsets",
+            params={"page[number]": 1, "page[size]": 100},
         )
 
     def test_list_variable_sets_with_options(self):
@@ -97,21 +102,20 @@ class TestVariableSets:
 
         # Create options
         options = VariableSetListOptions(
-            page_number=2,
             page_size=50,
             query="test",
             include=[VariableSetIncludeOpt.WORKSPACES, VariableSetIncludeOpt.PROJECTS],
         )
 
         # Call the method
-        result = self.variable_sets_service.list(self.org_name, options)
+        result = list(self.variable_sets_service.list(self.org_name, options))
 
         # Verify the result
         assert isinstance(result, list)
 
         # Verify API call with parameters
         expected_params = {
-            "page[number]": "2",
+            "page[number]": 1,
             "page[size]": "50",
             "q": "test",
             "include": "workspaces,projects",
@@ -125,10 +129,10 @@ class TestVariableSets:
     def test_list_variable_sets_invalid_organization(self):
         """Test listing variable sets with invalid organization."""
         with pytest.raises(ValueError, match="Organization name is required"):
-            self.variable_sets_service.list("")
+            list(self.variable_sets_service.list(""))
 
         with pytest.raises(ValueError, match="Organization name is required"):
-            self.variable_sets_service.list(None)
+            list(self.variable_sets_service.list(None))
 
     def test_list_for_workspace_success(self):
         """Test successful listing of variable sets for workspace."""
@@ -152,7 +156,7 @@ class TestVariableSets:
         self.mock_transport.request.return_value = mock_response
 
         # Call the method
-        result = self.variable_sets_service.list_for_workspace(self.workspace_id)
+        result = list(self.variable_sets_service.list_for_workspace(self.workspace_id))
 
         # Assertions
         assert len(result) == 1
@@ -160,13 +164,15 @@ class TestVariableSets:
 
         # Verify API call
         self.mock_transport.request.assert_called_once_with(
-            "GET", f"/api/v2/workspaces/{self.workspace_id}/varsets", params={}
+            "GET",
+            f"/api/v2/workspaces/{self.workspace_id}/varsets",
+            params={"page[number]": 1, "page[size]": 100},
         )
 
     def test_list_for_workspace_invalid_id(self):
         """Test listing for workspace with invalid workspace ID."""
         with pytest.raises(ValueError, match="Workspace ID is required"):
-            self.variable_sets_service.list_for_workspace("")
+            list(self.variable_sets_service.list_for_workspace(""))
 
     def test_list_for_project_success(self):
         """Test successful listing of variable sets for project."""
@@ -190,7 +196,7 @@ class TestVariableSets:
         self.mock_transport.request.return_value = mock_response
 
         # Call the method
-        result = self.variable_sets_service.list_for_project(self.project_id)
+        result = list(self.variable_sets_service.list_for_project(self.project_id))
 
         # Assertions
         assert len(result) == 1
@@ -198,13 +204,15 @@ class TestVariableSets:
 
         # Verify API call
         self.mock_transport.request.assert_called_once_with(
-            "GET", f"/api/v2/projects/{self.project_id}/varsets", params={}
+            "GET",
+            f"/api/v2/projects/{self.project_id}/varsets",
+            params={"page[number]": 1, "page[size]": 100},
         )
 
     def test_list_for_project_invalid_id(self):
         """Test listing for project with invalid project ID."""
         with pytest.raises(ValueError, match="Project ID is required"):
-            self.variable_sets_service.list_for_project("")
+            list(self.variable_sets_service.list_for_project(""))
 
     def test_create_variable_set_success(self):
         """Test successful variable set creation."""
@@ -731,7 +739,7 @@ class TestVariableSetVariables:
         self.mock_transport.request.return_value = mock_response
 
         # Call the method
-        result = self.variables_service.list(self.variable_set_id)
+        result = list(self.variables_service.list(self.variable_set_id))
 
         # Assertions
         assert len(result) == 1
@@ -748,13 +756,13 @@ class TestVariableSetVariables:
         self.mock_transport.request.assert_called_once_with(
             "GET",
             f"/api/v2/varsets/{self.variable_set_id}/relationships/vars",
-            params={},
+            params={"page[number]": 1, "page[size]": 100},
         )
 
     def test_list_variables_invalid_varset_id(self):
         """Test listing variables with invalid variable set ID."""
         with pytest.raises(ValueError, match="Variable set ID is required"):
-            self.variables_service.list("")
+            list(self.variables_service.list(""))
 
     def test_create_variable_success(self):
         """Test successful variable creation."""

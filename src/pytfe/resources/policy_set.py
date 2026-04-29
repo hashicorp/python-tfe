@@ -1,4 +1,9 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
+
+from collections.abc import Iterator
 
 from ..errors import (
     InvalidNameError,
@@ -17,7 +22,6 @@ from ..models.policy_set import (
     PolicySetAddWorkspaceExclusionsOptions,
     PolicySetAddWorkspacesOptions,
     PolicySetCreateOptions,
-    PolicySetList,
     PolicySetListOptions,
     PolicySetReadOptions,
     PolicySetRemovePoliciesOptions,
@@ -38,47 +42,41 @@ class PolicySets(_Service):
 
     def list(
         self, organization: str, options: PolicySetListOptions | None = None
-    ) -> PolicySetList:
-        """List all the policy sets of the given organization."""
+    ) -> Iterator[PolicySet]:
+        """Iterate all the policy sets of the given organization."""
         if not valid_string_id(organization):
             raise InvalidOrgError()
+
+        # Build params from options but do not pass page[number] — let _list handle pagination.
         params = options.model_dump(by_alias=True, exclude_none=True) if options else {}
-        r = self.t.request(
-            "GET",
-            f"/api/v2/organizations/{organization}/policy-sets",
-            params=params,
-        )
-        jd = r.json()
-        items = []
-        meta = jd.get("meta", {})
-        pagination = meta.get("pagination", {})
-        for d in jd.get("data", []):
-            attrs = d.get("attributes", {})
-            attrs["id"] = d.get("id")
-            attrs["organization"] = d.get("relationships", {}).get("organization", {})
-            attrs["workspace_exclusions"] = (
-                d.get("relationships", {})
-                .get("workspace-exclusions", {})
-                .get("data", [])
-            )
-            attrs["workspaces"] = (
-                d.get("relationships", {}).get("workspaces", {}).get("data", [])
-            )
-            attrs["projects"] = (
-                d.get("relationships", {}).get("projects", {}).get("data", [])
-            )
-            attrs["policies"] = (
-                d.get("relationships", {}).get("policies", {}).get("data", [])
-            )
-            items.append(PolicySet.model_validate(attrs))
-        return PolicySetList(
-            items=items,
-            current_page=pagination.get("current-page"),
-            total_pages=pagination.get("total-pages"),
-            prev_page=pagination.get("prev-page"),
-            next_page=pagination.get("next-page"),
-            total_count=pagination.get("total-count"),
-        )
+        params.pop("page[number]", None)
+
+        path = f"/api/v2/organizations/{organization}/policy-sets"
+
+        def _gen() -> Iterator[PolicySet]:
+            for d in self._list(path, params=params):
+                attrs = d.get("attributes", {})
+                attrs["id"] = d.get("id")
+                attrs["organization"] = d.get("relationships", {}).get(
+                    "organization", {}
+                )
+                attrs["workspace_exclusions"] = (
+                    d.get("relationships", {})
+                    .get("workspace-exclusions", {})
+                    .get("data", [])
+                )
+                attrs["workspaces"] = (
+                    d.get("relationships", {}).get("workspaces", {}).get("data", [])
+                )
+                attrs["projects"] = (
+                    d.get("relationships", {}).get("projects", {}).get("data", [])
+                )
+                attrs["policies"] = (
+                    d.get("relationships", {}).get("policies", {}).get("data", [])
+                )
+                yield PolicySet.model_validate(attrs)
+
+        return _gen()
 
     def create(self, organization: str, options: PolicySetCreateOptions) -> PolicySet:
         """Create a new policy set in the given organization."""

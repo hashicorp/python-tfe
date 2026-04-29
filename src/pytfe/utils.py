@@ -1,7 +1,12 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
 import io
+import os
 import re
+import tarfile
 import time
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
@@ -12,30 +17,9 @@ if TYPE_CHECKING:
         OAuthClientCreateOptions,
         OAuthClientRemoveProjectsOptions,
     )
+    from .models.workspace import VCSRepoOptions
 
 from urllib.parse import urlparse
-
-try:
-    import slug  # type: ignore[import-not-found]
-except ImportError:
-    slug = None
-
-from .errors import (
-    InvalidNameError,
-    RequiredAgentModeError,
-    RequiredAgentPoolIDError,
-    RequiredNameError,
-    UnsupportedBothTagsRegexAndFileTriggersEnabledError,
-    UnsupportedBothTagsRegexAndTriggerPatternsError,
-    UnsupportedBothTagsRegexAndTriggerPrefixesError,
-    UnsupportedBothTriggerPatternsAndPrefixesError,
-    UnsupportedOperationsError,
-)
-from .models.workspace import (
-    VCSRepo,
-    WorkspaceCreateOptions,
-    WorkspaceUpdateOptions,
-)
 
 _STRING_ID_PATTERN = re.compile(r"^[^/\s]+$")
 _WS_ID_RE = re.compile(r"^ws-[A-Za-z0-9]+$")
@@ -126,92 +110,9 @@ def is_valid_workspace_name(name: str | None) -> bool:
     return True
 
 
-def has_tags_regex_defined(vcs_repo: VCSRepo | None) -> bool:
+def has_tags_regex_defined(vcs_repo: VCSRepoOptions | None) -> bool:
     """Check if VCS repo has tags regex defined."""
     return vcs_repo is not None and valid_string(vcs_repo.tags_regex)
-
-
-def validate_workspace_create_options(options: WorkspaceCreateOptions) -> None:
-    """
-    Validate workspace create options for proper API usage.
-    Raises specific validation errors if validation fails.
-    """
-    # Check required name
-    if not valid_string(options.name):
-        raise RequiredNameError()
-
-    # Check name format
-    if not is_valid_workspace_name(options.name):
-        raise InvalidNameError()
-
-    # Check operations and execution mode conflict
-    if options.operations is not None and options.execution_mode is not None:
-        raise UnsupportedOperationsError()
-
-    # Check agent mode requirements
-    if options.agent_pool_id is not None and (
-        options.execution_mode is None or options.execution_mode != "agent"
-    ):
-        raise RequiredAgentModeError()
-
-    if (
-        options.agent_pool_id is None
-        and options.execution_mode is not None
-        and options.execution_mode == "agent"
-    ):
-        raise RequiredAgentPoolIDError()
-
-    # Check trigger patterns and prefixes conflict
-    if len(options.trigger_prefixes) > 0 and len(options.trigger_patterns) > 0:
-        raise UnsupportedBothTriggerPatternsAndPrefixesError()
-
-    # Check tags regex conflicts
-    if has_tags_regex_defined(options.vcs_repo):
-        if len(options.trigger_patterns) > 0:
-            raise UnsupportedBothTagsRegexAndTriggerPatternsError()
-
-        if len(options.trigger_prefixes) > 0:
-            raise UnsupportedBothTagsRegexAndTriggerPrefixesError()
-
-        if options.file_triggers_enabled is not None and options.file_triggers_enabled:
-            raise UnsupportedBothTagsRegexAndFileTriggersEnabledError()
-
-
-def validate_workspace_update_options(options: WorkspaceUpdateOptions) -> None:
-    """
-    Validate workspace update options for proper API usage.
-    Raises specific validation errors if validation fails.
-    """
-    # Check name format if provided
-    if options.name is not None and not is_valid_workspace_name(options.name):
-        raise InvalidNameError()
-
-    # Check operations and execution mode conflict
-    if options.operations is not None and options.execution_mode is not None:
-        raise UnsupportedOperationsError()
-
-    # Check agent mode requirements
-    if (
-        options.agent_pool_id is None
-        and options.execution_mode is not None
-        and options.execution_mode == "agent"
-    ):
-        raise RequiredAgentPoolIDError()
-
-    # Check trigger patterns and prefixes conflict
-    if len(options.trigger_prefixes) > 0 and len(options.trigger_patterns) > 0:
-        raise UnsupportedBothTriggerPatternsAndPrefixesError()
-
-    # Check tags regex conflicts
-    if has_tags_regex_defined(options.vcs_repo):
-        if len(options.trigger_patterns) > 0:
-            raise UnsupportedBothTagsRegexAndTriggerPatternsError()
-
-        if len(options.trigger_prefixes) > 0:
-            raise UnsupportedBothTagsRegexAndTriggerPrefixesError()
-
-        if options.file_triggers_enabled is not None and options.file_triggers_enabled:
-            raise UnsupportedBothTagsRegexAndFileTriggersEnabledError()
 
 
 def validate_oauth_client_create_options(options: OAuthClientCreateOptions) -> None:
@@ -366,26 +267,25 @@ def pack_contents(path: str) -> io.BytesIO:
         BytesIO buffer containing the tar.gz archive
 
     Raises:
-        ImportError: If go-slug is not available
         ValueError: If path is invalid
     """
-    if slug is None:
-        raise ImportError(
-            "go-slug package is required for packing configuration files. "
-            "Install it with: pip install go-slug"
+    if not path or not os.path.isdir(path):
+        raise ValueError(
+            f"Failed to pack directory {path}: path must be an existing directory"
         )
 
     body = io.BytesIO()
 
-    # Use go-slug to pack the configuration directory
-    # This handles .terraformignore and other Terraform-specific behaviors
-    packer = slug.Packer()
-    _, err = packer.pack(path, body)
+    with tarfile.open(fileobj=body, mode="w:gz") as tar:
+        for root, _, files in os.walk(path):
+            rel_root = os.path.relpath(root, path)
+            for filename in files:
+                full_path = os.path.join(root, filename)
+                arcname = (
+                    filename if rel_root == "." else os.path.join(rel_root, filename)
+                )
+                tar.add(full_path, arcname=arcname, recursive=False)
 
-    if err:
-        raise ValueError(f"Failed to pack directory {path}: {err}")
-
-    # Reset buffer position to beginning for reading
     body.seek(0)
     return body
 

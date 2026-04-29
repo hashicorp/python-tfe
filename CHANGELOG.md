@@ -1,5 +1,44 @@
 # Unreleased
 
+# v0.1.3
+
+## Enhancements
+
+### Iterator Pattern Migration
+* Migrated Run resource list operations to iterator pattern by @NimishaShrivastava-dev [#91](https://github.com/hashicorp/python-tfe/pull/91)
+* Migrated Policy resource list operations to iterator pattern by @TanyaSingh369-svg [#92](https://github.com/hashicorp/python-tfe/pull/92)
+* Migrated Policy Set resource list operations to iterator pattern by @TanyaSingh369-svg [#95](https://github.com/hashicorp/python-tfe/pull/95)
+* Migrated Run Event resource list operations to iterator pattern by @NimishaShrivastava-dev [#97](https://github.com/hashicorp/python-tfe/pull/97)
+* Migrated SSH Keys resource list operations to iterator pattern by @NimishaShrivastava-dev [#101](https://github.com/hashicorp/python-tfe/pull/101)
+* Migrated Notification Configuration resource list operations to iterator pattern by @TanyaSingh369-svg [#109](https://github.com/hashicorp/python-tfe/pull/109)
+* Migrated Variable Set list operations to iterator pattern by @isivaselvan [#113](https://github.com/hashicorp/python-tfe/pull/113)
+* Migrated Variable Set Variables list operations to iterator pattern by @isivaselvan [#113](https://github.com/hashicorp/python-tfe/pull/113)
+* Migrated State Version list operations to iterator pattern by @isivaselvan [#113](https://github.com/hashicorp/python-tfe/pull/113)
+* Migrated State Version Output list operations to iterator pattern by @isivaselvan [#113](https://github.com/hashicorp/python-tfe/pull/113)
+* Migrated Policy Check list operations to iterator pattern by @isivaselvan [#113](https://github.com/hashicorp/python-tfe/pull/113)
+* Refreshed examples and unit tests to align with iterator pattern updates by @NimishaShrivastava-dev, @TanyaSingh369-svg, @isivaselvan [#91](https://github.com/hashicorp/python-tfe/pull/91) [#92](https://github.com/hashicorp/python-tfe/pull/92) [#95](https://github.com/hashicorp/python-tfe/pull/95) [#97](https://github.com/hashicorp/python-tfe/pull/97) [#101](https://github.com/hashicorp/python-tfe/pull/101) [#109](https://github.com/hashicorp/python-tfe/pull/109) [#113](https://github.com/hashicorp/python-tfe/pull/113)
+
+### Project and Workspace Management
+* Updated Project create and update models, including Project model refinements by @isivaselvan [#120](https://github.com/hashicorp/python-tfe/pull/120)
+* Updated Project endpoints for list-effective-tag-bindings and delete-tag-bindings by @isivaselvan [#120](https://github.com/hashicorp/python-tfe/pull/120)
+* Refactored Workspace models to improve validation with Pydantic by @isivaselvan [#106](https://github.com/hashicorp/python-tfe/pull/106)
+
+## Breaking Change
+
+### List Method Behavior
+* Standardized list methods across multiple resources to iterator-based behavior, replacing legacy list response patterns by @NimishaShrivastava-dev, @TanyaSingh369-svg, @isivaselvan [#91](https://github.com/hashicorp/python-tfe/pull/91) [#92](https://github.com/hashicorp/python-tfe/pull/92) [#95](https://github.com/hashicorp/python-tfe/pull/95) [#97](https://github.com/hashicorp/python-tfe/pull/97) [#101](https://github.com/hashicorp/python-tfe/pull/101) [#109](https://github.com/hashicorp/python-tfe/pull/109) [#113](https://github.com/hashicorp/python-tfe/pull/113)
+
+## Bug Fixes
+* Fixed pagination parameter handling across iterator-based page traversal by @isivaselvan [#111](https://github.com/hashicorp/python-tfe/pull/111)
+* Fixed state version and state version output model import/export registration by @isivaselvan [#105](https://github.com/hashicorp/python-tfe/pull/105)
+* Fixed the tag based filtering of workspace in list operation by @isivaselvan [#106](https://github.com/hashicorp/python-tfe/pull/106)
+* Fixed the project response of workspace relationship by @isivaselvan [#106](https://github.com/hashicorp/python-tfe/pull/106)
+* Fixed configuration version examples and added terraform+cloud support for ConfigurationSource usage by @isivaselvan [#107](https://github.com/hashicorp/python-tfe/pull/107)
+* Fixed configuration upload packaging flow (tarfile-based handling) by @isivaselvan [#107](https://github.com/hashicorp/python-tfe/pull/107)
+* Updated agent pool workspace assign/remove operations to consistently return AgentPool objects by @KshitijaChoudhari [#110](https://github.com/hashicorp/python-tfe/pull/110)
+* Updated Run relationships handling for improved model consistency by @ibm-richard [#119](https://github.com/hashicorp/python-tfe/pull/119)
+* Updated additional Run Source attributes by @isivaselvan [#123](https://github.com/hashicorp/python-tfe/pull/123)
+
 # v0.1.2
 
 ## Features

@@ -1,11 +1,14 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Any
 
 from ..errors import InvalidRunEventIDError, InvalidRunIDError
 from ..models.run_event import (
     RunEvent,
-    RunEventList,
     RunEventListOptions,
     RunEventReadOptions,
 )
@@ -16,34 +19,18 @@ from ._base import _Service
 class RunEvents(_Service):
     def list(
         self, run_id: str, options: RunEventListOptions | None = None
-    ) -> RunEventList:
+    ) -> Iterator[RunEvent]:
         """List all the run events of the given run."""
         if not valid_string_id(run_id):
             raise InvalidRunIDError()
         params: dict[str, Any] = {}
         if options and options.include:
             params["include"] = ",".join(options.include)
-        r = self.t.request(
-            "GET",
-            f"/api/v2/runs/{run_id}/run-events",
-            params=params,
-        )
-        jd = r.json()
-        items = []
-        meta = jd.get("meta", {})
-        pagination = meta.get("pagination", {})
-        for d in jd.get("data", []):
-            attrs = d.get("attributes", {})
-            attrs["id"] = d.get("id")
-            items.append(RunEvent.model_validate(attrs))
-        return RunEventList(
-            items=items,
-            current_page=pagination.get("current-page"),
-            total_pages=pagination.get("total-pages"),
-            prev_page=pagination.get("prev-page"),
-            next_page=pagination.get("next-page"),
-            total_count=pagination.get("total-count"),
-        )
+        path = f"/api/v2/runs/{run_id}/run-events"
+        for item in self._list(path, params=params):
+            attrs = item.get("attributes", {})
+            attrs["id"] = item.get("id")
+            yield RunEvent.model_validate(attrs)
 
     def read(self, run_event_id: str) -> RunEvent:
         """Read a specific run event by its ID."""

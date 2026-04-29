@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """
 Comprehensive unit tests for workspace operations in the Python TFE SDK.
 
@@ -33,7 +36,7 @@ from src.pytfe.models.organization import (
 )
 from src.pytfe.models.project import Project
 from src.pytfe.models.workspace import (
-    VCSRepo,
+    VCSRepoOptions,
     Workspace,
     WorkspaceAddRemoteStateConsumersOptions,
     WorkspaceAddTagBindingsOptions,
@@ -304,7 +307,7 @@ class TestWorkspaceOperations:
             sample_workspace_response
         )
 
-        vcs_repo = VCSRepo(
+        vcs_repo = VCSRepoOptions(
             identifier="myorg/myrepo",
             branch="main",
             oauth_token_id="ot-123456",
@@ -316,7 +319,6 @@ class TestWorkspaceOperations:
             name="vcs-workspace",
             vcs_repo=vcs_repo,
             working_directory="terraform/",
-            # Remove trigger_prefixes to avoid conflict with tags_regex
         )
 
         workspace = workspaces_service.create("test-org", options=options)
@@ -339,7 +341,9 @@ class TestWorkspaceOperations:
             sample_workspace_response
         )
 
-        project = Project(id="prj-123", name="Test Project", organization="test-org")
+        project = Project(
+            id="prj-123",
+        )
 
         options = WorkspaceCreateOptions(name="project-workspace", project=project)
 
@@ -611,11 +615,11 @@ class TestWorkspaceOperations:
     def test_ws_from_conversion(self, sample_workspace_response):
         """Test _ws_from helper function conversion."""
         workspace_data = sample_workspace_response["data"]
-        workspace = _ws_from(workspace_data, "test-org")
+        workspace = _ws_from(workspace_data)
 
         assert workspace.id == "ws-abc123def456"
         assert workspace.name == "test-workspace"
-        assert workspace.organization == "test-org"
+        assert workspace.organization is None
         assert workspace.auto_apply
         assert workspace.execution_mode == ExecutionMode.REMOTE
         assert workspace.resource_count == 25
@@ -633,11 +637,11 @@ class TestWorkspaceOperations:
         """Test _ws_from with minimal data."""
         minimal_data = {"id": "ws-minimal", "attributes": {"name": "minimal-workspace"}}
 
-        workspace = _ws_from(minimal_data, "test-org")
+        workspace = _ws_from(minimal_data)
 
         assert workspace.id == "ws-minimal"
         assert workspace.name == "minimal-workspace"
-        assert workspace.organization == "test-org"
+        assert workspace.organization is None
         assert not workspace.auto_apply  # Default value
         assert not workspace.locked  # Default value
 
@@ -676,11 +680,11 @@ class TestWorkspaceOperations:
             },
         }
 
-        workspace = _ws_from(data_with_nones, "test-org")
+        workspace = _ws_from(data_with_nones)
 
-        assert workspace.description == ""  # Should convert None to empty string
-        assert workspace.terraform_version == ""
-        assert workspace.working_directory == ""
+        assert workspace.description is None  # None values are preserved
+        assert workspace.terraform_version is None
+        assert workspace.working_directory is None
         assert workspace.vcs_repo is None
 
     # ==========================================
@@ -751,21 +755,20 @@ class TestWorkspaceOperations:
         """Test remote state consumers listing with pagination options."""
         mock_transport.request.return_value.json.return_value = {"data": []}
 
-        options = WorkspaceListRemoteStateConsumersOptions(page_number=2, page_size=5)
+        options = WorkspaceListRemoteStateConsumersOptions(page_size=5)
 
         list(workspaces_service.list_remote_state_consumers("ws-123", options))
 
         # Verify pagination parameters were passed
         call_args = mock_transport.request.call_args
         params = call_args[1]["params"]
-        assert params["page[number]"] == 2
         assert params["page[size]"] == 5
 
     def test_add_remote_state_consumers_basic(self, workspaces_service, mock_transport):
         """Test adding remote state consumers."""
         consumer_workspaces = [
-            Workspace(id="ws-consumer-1", name="consumer-1", organization="test-org"),
-            Workspace(id="ws-consumer-2", name="consumer-2", organization="test-org"),
+            Workspace(id="ws-consumer-1", name="consumer-1", organization=None),
+            Workspace(id="ws-consumer-2", name="consumer-2", organization=None),
         ]
 
         options = WorkspaceAddRemoteStateConsumersOptions(
@@ -806,7 +809,7 @@ class TestWorkspaceOperations:
 
         # Test invalid workspace ID format (with slash)
         options = WorkspaceAddRemoteStateConsumersOptions(
-            workspaces=[Workspace(id="ws-valid", name="valid", organization="test-org")]
+            workspaces=[Workspace(id="ws-valid", name="valid", organization=None)]
         )
 
         with pytest.raises(InvalidWorkspaceIDError):
@@ -817,7 +820,7 @@ class TestWorkspaceOperations:
     ):
         """Test removing remote state consumers."""
         consumer_workspaces = [
-            Workspace(id="ws-consumer-1", name="consumer-1", organization="test-org"),
+            Workspace(id="ws-consumer-1", name="consumer-1", organization=None),
         ]
 
         options = WorkspaceRemoveRemoteStateConsumersOptions(
@@ -844,8 +847,8 @@ class TestWorkspaceOperations:
     ):
         """Test updating (replacing) remote state consumers."""
         consumer_workspaces = [
-            Workspace(id="ws-consumer-3", name="consumer-3", organization="test-org"),
-            Workspace(id="ws-consumer-4", name="consumer-4", organization="test-org"),
+            Workspace(id="ws-consumer-3", name="consumer-3", organization=None),
+            Workspace(id="ws-consumer-4", name="consumer-4", organization=None),
         ]
 
         options = WorkspaceUpdateRemoteStateConsumersOptions(
@@ -921,7 +924,7 @@ class TestWorkspaceOperations:
         """Test tag listing with query and pagination options."""
         mock_transport.request.return_value.json.return_value = {"data": []}
 
-        options = WorkspaceTagListOptions(query="env", page_number=2, page_size=5)
+        options = WorkspaceTagListOptions(query="env", page_size=5)
 
         list(workspaces_service.list_tags("ws-123", options))
 
@@ -929,7 +932,6 @@ class TestWorkspaceOperations:
         call_args = mock_transport.request.call_args
         params = call_args[1]["params"]
         assert params["name"] == "env"
-        assert params["page[number]"] == 2
         assert params["page[size]"] == 5
 
     def test_add_tags_basic(self, workspaces_service, mock_transport):

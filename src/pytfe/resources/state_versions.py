@@ -1,5 +1,9 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Any
 from urllib.parse import urlencode
 
@@ -10,13 +14,11 @@ from ..models.state_version import (
     StateVersion,
     StateVersionCreateOptions,
     StateVersionCurrentOptions,
-    StateVersionList,
     StateVersionListOptions,
     StateVersionReadOptions,
 )
 from ..models.state_version_output import (
     StateVersionOutput,
-    StateVersionOutputsList,
     StateVersionOutputsListOptions,
 )
 from ..utils import looks_like_workspace_id, valid_string_id
@@ -69,28 +71,19 @@ class StateVersions(_Service):
             return ""
         return "?" + urlencode(clean, doseq=True)
 
-    def list(self, options: StateVersionListOptions | None = None) -> StateVersionList:
+    def list(
+        self, options: StateVersionListOptions | None = None
+    ) -> Iterator[StateVersion]:
         """
         GET /state-versions
         Accepts filters for organization and workspace and standard pagination.
         """
         params = options.model_dump(by_alias=True, exclude_none=True) if options else {}
         path = f"/api/v2/state-versions{self._encode_query(params)}"
-        r = self.t.request("GET", path)
-        jd = r.json()
-        # Expecting JSON:API list. Normalize to models.
-        items = []
-        meta = jd.get("meta", {})
-        for d in jd.get("data", []):
+        for d in self._list(path, params=params):
             attrs = d.get("attributes", {})
             attrs["id"] = d.get("id")
-            items.append(StateVersion.model_validate(attrs))
-        return StateVersionList(
-            items=items,
-            current_page=meta.get("pagination", {}).get("current-page"),
-            total_pages=meta.get("pagination", {}).get("total-pages"),
-            total_count=meta.get("pagination", {}).get("total-count"),
-        )
+            yield StateVersion.model_validate(attrs)
 
     def read(self, state_version_id: str) -> StateVersion:
         """Read a state version by ID."""
@@ -263,40 +256,24 @@ class StateVersions(_Service):
         self,
         state_version_id: str,
         options: StateVersionOutputsListOptions | None = None,
-    ) -> StateVersionOutputsList:
+    ) -> Iterator[StateVersionOutput]:
         """List outputs for a given state version (paged)."""
         if not valid_string_id(state_version_id):
             raise ValueError("invalid state version id")
 
         params: dict[str, Any] = {}
         if options:
-            if options.page_number is not None:
-                params["page[number]"] = options.page_number
             if options.page_size is not None:
                 params["page[size]"] = options.page_size
 
-        r = self.t.request(
-            "GET", f"/api/v2/state-versions/{state_version_id}/outputs", params=params
-        )
-        data = r.json()
+        path = f"/api/v2/state-versions/{state_version_id}/outputs"
 
-        items: list[StateVersionOutput] = []
-        for item in data.get("data", []):
-            attr = item.get("attributes", {}) or {}
-            items.append(
-                StateVersionOutput(
-                    id=_safe_str(item.get("id")),
-                    **{k.replace("-", "_"): v for k, v in attr.items()},
-                )
+        for d in self._list(path, params=params):
+            attr = d.get("attributes", {}) or {}
+            yield StateVersionOutput(
+                id=_safe_str(d.get("id")),
+                **{k.replace("-", "_"): v for k, v in attr.items()},
             )
-
-        meta = data.get("meta", {}).get("pagination", {}) or {}
-        return StateVersionOutputsList(
-            items=items,
-            current_page=meta.get("current-page"),
-            total_pages=meta.get("total-pages"),
-            total_count=meta.get("total-count"),
-        )
 
     # ----------------------------
     # TFE-only backing data actions

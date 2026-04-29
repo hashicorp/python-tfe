@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
 import argparse
@@ -33,7 +36,6 @@ def main():
     parser.add_argument("--workspace-id", required=True, help="Workspace ID")
     parser.add_argument("--download", help="Path to save downloaded current state")
     parser.add_argument("--upload", help="Path to a .tfstate (or JSON state) to upload")
-    parser.add_argument("--page", type=int, default=1)
     parser.add_argument("--page-size", type=int, default=10)
     args = parser.parse_args()
 
@@ -41,19 +43,16 @@ def main():
     client = TFEClient(cfg)
 
     options = StateVersionListOptions(
-        page_number=args.page,
         page_size=args.page_size,
         organization=args.org,
         workspace=args.workspace,
     )
 
-    sv_list = client.state_versions.list(options)
-
-    print(f"Total state versions: {sv_list.total_count}")
-    print(f"Page {sv_list.current_page} of {sv_list.total_pages}")
+    sv_list = list(client.state_versions.list(options))
+    print(f"Total state versions: {len(sv_list)}")
     print()
 
-    for sv in sv_list.items:
+    for sv in sv_list:
         print(f"- {sv.id} | status={sv.status} | created_at={sv.created_at}")
 
     # 1) List all state versions across org and workspace filters
@@ -63,7 +62,7 @@ def main():
             organization=args.org, workspace=args.workspace, page_size=args.page_size
         )
     )
-    for sv in all_sv.items:
+    for sv in all_sv:
         print(f"- {sv.id} | status={sv.status} | created_at={sv.created_at}")
 
     # 2) Read the current state version (with outputs included if you want)
@@ -84,14 +83,29 @@ def main():
 
     # 4) List outputs for the current state version (paged)
     _print_header("Listing outputs (current state version)")
-    outs = client.state_versions.list_outputs(
-        current.id, options=StateVersionOutputsListOptions(page_size=50)
+    outs = list(
+        client.state_versions.list_outputs(
+            current.id, options=StateVersionOutputsListOptions(page_size=50)
+        )
     )
-    if not outs.items:
+    if not outs:
         print("No outputs found.")
-    for o in outs.items:
+    for o in outs:
         # Sensitive outputs will have value = None
         print(f"- {o.name}: sensitive={o.sensitive} type={o.type} value={o.value}")
+
+    if args.workspace_id:
+        # 4b) List outputs for the current state version via workspace endpoint
+        _print_header("Listing outputs via workspace endpoint")
+        outs2 = list(
+            client.state_version_outputs.read_current(
+                args.workspace_id, options=StateVersionOutputsListOptions(page_size=50)
+            )
+        )
+        if not outs2:
+            print("No outputs found.")
+        for o in outs2:
+            print(f"- {o.name}: sensitive={o.sensitive} type={o.type} value={o.value}")
 
     # 5) (Optional) Upload a new state file
     if args.upload:

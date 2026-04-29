@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
 # ── Agent & Agent Pools ────────────────────────────────────────────────────────
@@ -115,7 +118,6 @@ from .policy_check import (
     PolicyActions,
     PolicyCheck,
     PolicyCheckIncludeOpt,
-    PolicyCheckList,
     PolicyCheckListOptions,
     PolicyPermissions,
     PolicyResult,
@@ -163,6 +165,7 @@ from .project import (
     ProjectAddTagBindingsOptions,
     ProjectCreateOptions,
     ProjectListOptions,
+    ProjectSettingOverwrites,
     ProjectUpdateOptions,
 )
 
@@ -299,6 +302,17 @@ from .ssh_key import (
     SSHKeyListOptions,
     SSHKeyUpdateOptions,
 )
+from .state_version import (
+    StateVersion,
+    StateVersionCreateOptions,
+    StateVersionCurrentOptions,
+    StateVersionListOptions,
+    StateVersionReadOptions,
+)
+from .state_version_output import (
+    StateVersionOutput,
+    StateVersionOutputsListOptions,
+)
 from .team import (
     OrganizationAccess,
     Team,
@@ -347,7 +361,6 @@ from .workspace import (
     WorkspaceAssignSSHKeyOptions,
     WorkspaceCreateOptions,
     WorkspaceIncludeOpt,
-    WorkspaceList,
     WorkspaceListOptions,
     WorkspaceListRemoteStateConsumersOptions,
     WorkspaceLockOptions,
@@ -507,6 +520,7 @@ __all__ = [
     "ProjectCreateOptions",
     "ProjectListOptions",
     "ProjectUpdateOptions",
+    "ProjectSettingOverwrites",
     "DataRetentionPolicy",
     "DataRetentionPolicyChoice",
     "DataRetentionPolicyDeleteOlder",
@@ -534,7 +548,6 @@ __all__ = [
     "WorkspaceAssignSSHKeyOptions",
     "WorkspaceCreateOptions",
     "WorkspaceIncludeOpt",
-    "WorkspaceList",
     "WorkspaceListOptions",
     "WorkspaceListRemoteStateConsumersOptions",
     "WorkspaceLockOptions",
@@ -611,7 +624,6 @@ __all__ = [
     "PolicyResult",
     "PolicyStatusTimestamps",
     "PolicyCheckListOptions",
-    "PolicyCheckList",
     # Policy Evaluation
     "PolicyAttachable",
     "PolicyEvaluation",
@@ -665,8 +677,16 @@ __all__ = [
     "VariableSetVariableCreateOptions",
     "VariableSetVariableListOptions",
     "VariableSetVariableUpdateOptions",
+    # State Versions
+    "StateVersion",
+    "StateVersionCreateOptions",
+    "StateVersionCurrentOptions",
+    "StateVersionListOptions",
+    "StateVersionReadOptions",
+    # State Version Outputs
+    "StateVersionOutput",
+    "StateVersionOutputsListOptions",
 ]
 
 # Rebuild models with forward references after all models are loaded
 PolicyCheck.model_rebuild()
-PolicyCheckList.model_rebuild()
