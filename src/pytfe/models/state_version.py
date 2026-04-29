@@ -32,7 +32,7 @@ class StateVersion(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     id: str = Field(..., alias="id")
-    created_at: datetime = Field(..., alias="created-at")
+    created_at: datetime | None = Field(None, alias="created-at")
     hosted_state_download_url: str | None = Field(
         None, alias="hosted-state-download-url"
     )
