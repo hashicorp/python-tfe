@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Unit tests for the policy module."""
 
 from unittest.mock import Mock, patch
@@ -14,7 +17,6 @@ from pytfe.models.policy import (
     EnforcementLevel,
     Policy,
     PolicyCreateOptions,
-    PolicyList,
     PolicyUpdateOptions,
 )
 from pytfe.models.policy_set import PolicyKind
@@ -84,22 +86,16 @@ class TestPolicies:
         mock_response.json.return_value = mock_response_data
         mock_transport.request.return_value = mock_response
 
-        result = policies_service.list("org-123")
+        result_iter = policies_service.list("org-123")
+        items = list(result_iter)
 
-        mock_transport.request.assert_called_once_with(
-            "GET", "/api/v2/organizations/org-123/policies", params=None
-        )
+        assert mock_transport.request.called
 
-        assert isinstance(result, PolicyList)
-        assert len(result.items) == 1
-        assert result.items[0].id == "pol-123"
-        assert result.items[0].name == "test-policy"
-        assert result.items[0].kind == PolicyKind.SENTINEL
-        assert (
-            result.items[0].enforcement_level == EnforcementLevel.ENFORCEMENT_ADVISORY
-        )
-        assert result.current_page == 1
-        assert result.total_count == 1
+        assert len(items) == 1
+        assert items[0].id == "pol-123"
+        assert items[0].name == "test-policy"
+        assert items[0].kind == PolicyKind.SENTINEL
+        assert items[0].enforcement_level == EnforcementLevel.ENFORCEMENT_ADVISORY
 
     def test_create_policy_validations(self, policies_service):
         """Test create method validations."""

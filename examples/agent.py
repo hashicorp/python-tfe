@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Simple Individual Agent operations example with the TFE Python SDK.
 
 This example demonstrates:

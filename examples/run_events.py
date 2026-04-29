@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Run Events Example for python-tfe SDK
 
 This example demonstrates how to work with run events using the python-tfe SDK.
@@ -94,23 +97,19 @@ def main():
     options = RunEventListOptions(include=include_opts if include_opts else None)
 
     try:
-        event_list = client.run_events.list(args.run_id, options)
+        event_count = 0
+        for event in client.run_events.list(args.run_id, options):
+            print(f"Event ID: {event.id}")
+            print(f"Action: {event.action or 'N/A'}")
+            print(f"Description: {event.description or 'N/A'}")
+            print(f"Created At: {event.created_at or 'N/A'}")
+            print()
+            event_count += 1
 
-        print(f"Total run events: {event_list.total_count or 'N/A'}")
-        if event_list.current_page and event_list.total_pages:
-            print(f"Page {event_list.current_page} of {event_list.total_pages}")
-        print()
-
-        if not event_list.items:
+        if event_count == 0:
             print("No run events found for this run.")
         else:
-            for event in event_list.items:
-                print(f"Event ID: {event.id}")
-                print(f"Action: {event.action or 'N/A'}")
-                print(f"Description: {event.description or 'N/A'}")
-                print(f"Created At: {event.created_at or 'N/A'}")
-
-                print()
+            print(f"Total run events listed: {event_count}")
 
     except Exception as e:
         print(f"Error listing run events: {e}")
@@ -139,7 +138,6 @@ def main():
     # 3) Summary
     _print_header("Summary")
     print(f"Successfully demonstrated run events for run: {args.run_id}")
-    print(f"Total events found: {event_list.total_count or 'N/A'}")
     if args.event_id:
         print(f"Successfully read specific event: {args.event_id}")
     return 0

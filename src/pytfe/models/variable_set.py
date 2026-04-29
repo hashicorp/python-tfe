@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -69,7 +72,6 @@ class VariableSetListOptions(BaseModel):
     """Options for listing variable sets."""
 
     # Pagination options
-    page_number: int | None = None
     page_size: int | None = None
     include: list[VariableSetIncludeOpt] | None = None
     query: str | None = None  # Filter by name

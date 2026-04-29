@@ -1,14 +1,8 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """
 Terraform Cloud/Enterprise Workspace Management Example
-
-This comprehensive example demonstrates 38 workspace operations using the python-tfe SDK,
-providing a complete command-line interface for managing TFE workspaces with advanced
-operations including create, read, update, delete, lock/unlock, tag management, VCS
-integration, SSH keys, remote state, data retention, and filtering capabilities.
-
-API Coverage: 38/38 workspace methods (100% coverage)
-Testing Status: All operations tested and validated
-Organization: Logically grouped into 16 sections for easy navigation
 
 Prerequisites:
     - Set TFE_TOKEN environment variable with your Terraform Cloud API token
@@ -29,21 +23,17 @@ Core Operations:
     python examples/workspace.py --org my-org --create
 
 3. Read Operations:
-    python examples/workspace.py --org my-org --workspace "my-workspace"
-    python examples/workspace.py --org my-org --workspace-id "ws-abc123xyz"
-    python examples/workspace.py --org my-org --workspace "my-workspace" --read-all
+    python examples/workspace.py --org my-org --workspace "my-workspace" --read
+    python examples/workspace.py --org my-org --workspace-id "ws-abc123xyz" --read
 
 4. Update Operations:
     python examples/workspace.py --org my-org --workspace "my-workspace" --update
-    python examples/workspace.py --org my-org --workspace "my-workspace" --update-all
+    python examples/workspace.py --org my-org --workspace-id "ws-abc123xyz" --update
 
 5. Lock Management:
-    python examples/workspace.py --org my-org --workspace "my-workspace" --lock
-    python examples/workspace.py --org my-org --workspace "my-workspace" --unlock
-    python examples/workspace.py --org my-org --workspace "my-workspace" --force-unlock
-
-6. Comprehensive Testing:
-    python examples/workspace.py --org my-org --workspace "my-workspace" --all-tests
+    python examples/workspace.py --org my-org --workspace-id "ws-abc123xyz" --lock
+    python examples/workspace.py --org my-org --workspace-id "ws-abc123xyz" --unlock
+    python examples/workspace.py --org my-org --workspace-id "ws-abc123xyz" --force-unlock
 """
 
 from __future__ import annotations
@@ -57,6 +47,7 @@ from pytfe.models import (
     ExecutionMode,
     Tag,
     WorkspaceAddTagsOptions,
+    WorkspaceAssignSSHKeyOptions,
     WorkspaceCreateOptions,
     WorkspaceIncludeOpt,
     WorkspaceListOptions,
@@ -86,10 +77,15 @@ def main():
     parser.add_argument("--workspace-id", help="Workspace ID for ID-based operations")
 
     # Core CRUD Operations
+    parser.add_argument(
+        "--list", action="store_true", help="List workspaces in the organization"
+    )
     parser.add_argument("--create", action="store_true", help="Create a new workspace")
     parser.add_argument("--delete", action="store_true", help="Delete the workspace")
     parser.add_argument(
-        "--safe-delete", action="store_true", help="Safely delete the workspace"
+        "--safe-delete",
+        action="store_true",
+        help="Safely delete the workspace, passed along with --delete",
     )
     parser.add_argument(
         "--update", action="store_true", help="Update workspace settings"
@@ -107,14 +103,7 @@ def main():
         "--remove-vcs", action="store_true", help="Remove VCS connection"
     )
 
-    # Method Testing Flags
-    parser.add_argument("--read-all", action="store_true", help="Test all read methods")
-    parser.add_argument(
-        "--update-all", action="store_true", help="Test all update methods"
-    )
-    parser.add_argument(
-        "--delete-all", action="store_true", help="Test all delete methods"
-    )
+    parser.add_argument("--read", action="store_true", help="Read workspace details")
     parser.add_argument(
         "--tag-ops", action="store_true", help="Test tag management operations"
     )
@@ -130,10 +119,8 @@ def main():
     parser.add_argument(
         "--readme", action="store_true", help="Test readme functionality"
     )
-    parser.add_argument("--all-tests", action="store_true", help="Run all method tests")
 
     # Listing and Filtering
-    parser.add_argument("--page", type=int, default=1, help="Page number for listing")
     parser.add_argument(
         "--page-size", type=int, default=10, help="Page size for listing"
     )
@@ -150,47 +137,47 @@ def main():
     client = TFEClient(cfg)
 
     # 1) List workspaces in the organization
-    _print_header("Listing workspaces")
-    try:
-        # Create options for listing workspaces with pagination and filters
-        options = WorkspaceListOptions(
-            page_number=args.page,
-            page_size=args.page_size,
-            search=args.search,
-            tags=args.tags,
-            exclude_tags=args.exclude_tags,
-            wildcard_name=args.wildcard_name,
-            project_id=args.project_id,
-        )
-        print(
-            f"Fetching workspaces from organization '{args.org}' (page {args.page}, size {args.page_size})..."
-        )
+    if args.list:
+        _print_header("Listing workspaces")
+        try:
+            # Create options for listing workspaces with pagination and filters
+            options = WorkspaceListOptions(
+                page_size=args.page_size,
+                search=args.search,
+                tags=args.tags,
+                exclude_tags=args.exclude_tags,
+                wildcard_name=args.wildcard_name,
+                project_id=args.project_id,
+            )
+            print(
+                f"Fetching workspaces from organization '{args.org}', size {args.page_size})..."
+            )
 
-        # Get workspaces and convert to list safely
-        workspace_gen = client.workspaces.list(args.org, options)
-        workspace_list = []
-        count = 0
-        for ws in workspace_gen:
-            workspace_list.append(ws)
-            count += 1
-            if count >= args.page_size * 2:  # Safety limit based on page size
-                break
+            # Get workspaces and convert to list safely
+            workspace_gen = client.workspaces.list(args.org, options)
+            workspace_list = []
+            count = 0
+            for ws in workspace_gen:
+                workspace_list.append(ws)
+                count += 1
+                if count >= args.page_size * 2:  # Safety limit based on page size
+                    break
 
-        print(f"Found {len(workspace_list)} workspaces")
-        print()
+            print(f"Found {len(workspace_list)} workspaces")
+            print()
 
-        if not workspace_list:
-            print("No workspaces found in this organization.")
-        else:
-            for i, ws in enumerate(workspace_list, 1):
-                print(f"{i:2d}. {ws.name}")
-                print(f"ID: {ws.id}")
-                print(f"Execution Mode: {ws.execution_mode}")
-                print(f"Auto Apply: {ws.auto_apply}")
-                print()
-    except Exception as e:
-        print(f"Error listing workspaces: {e}")
-        return
+            if not workspace_list:
+                print("No workspaces found in this organization.")
+            else:
+                for i, ws in enumerate(workspace_list, 1):
+                    print(f"{i:2d}. {ws.name}")
+                    print(f"ID: {ws.id}")
+                    print(f"Execution Mode: {ws.execution_mode}")
+                    print(f"Auto Apply: {ws.auto_apply}")
+                    print()
+        except Exception as e:
+            print(f"Error listing workspaces: {e}")
+            return
 
     # 2) Create a new workspace if requested
     if args.create:
@@ -233,9 +220,9 @@ def main():
             print(f"Error creating workspace: {e}")
             return
 
-    # 3a) Read workspace details using read_with_options
-    if args.workspace:
-        _print_header("Read Operations - Testing all read methods")
+    # 3a) Read workspace details by name
+    if args.read and args.workspace:
+        _print_header("Read workspace by name")
 
         # Test read_with_options (enhanced read)
         try:
@@ -261,33 +248,9 @@ def main():
         except Exception as e:
             print(f"read_with_options error: {e}")
 
-        # Test basic read method (when testing all read methods)
-        if args.read_all or args.all_tests:
-            try:
-                print("Testing read() without options...")
-                workspace = client.workspaces.read(
-                    args.workspace, organization=args.org
-                )
-                print(f"read: {workspace.name} (ID: {workspace.id})")
-                print(f"Description: {workspace.description}")
-                print(f"Execution Mode: {workspace.execution_mode}")
-            except Exception as e:
-                print(f"read error: {e}")
-
-    # 3b) Read workspace by ID methods (comprehensive testing)
-    if args.workspace_id and (args.read_all or args.all_tests):
-        if not args.workspace:  # Only show header if not already shown above
-            _print_header("ID-based Read Operations")
-
-        # Test read_by_id
-        try:
-            print("Testing read_by_id()...")
-            workspace = client.workspaces.read_by_id(args.workspace_id)
-            print(f"read_by_id: {workspace.name} (ID: {workspace.id})")
-        except Exception as e:
-            print(f"read_by_id error: {e}")
-
-        # Test read_by_id_with_options
+    # 3b) Read workspace by ID
+    if args.read and args.workspace_id:
+        _print_header("Read workspace by ID")
         try:
             print("Testing read_by_id_with_options()...")
             options = WorkspaceReadOptions(include=[WorkspaceIncludeOpt.ORGANIZATION])
@@ -301,33 +264,32 @@ def main():
             print(f"read_by_id_with_options error: {e}")
 
     # 4a) Update workspace by name
-    if args.update and args.workspace or args.update_all or args.all_tests:
-        if args.workspace:
-            _print_header("Update Operations - Testing all update methods")
+    if args.update and args.workspace:
+        _print_header("Update workspace by name")
 
-            # Test standard update method
-            try:
-                print("Testing update() by name...")
-                update_options = WorkspaceUpdateOptions(
-                    name=args.workspace,  # Name is required
-                    description=f"Updated workspace at {datetime.now()}",
-                    auto_apply=True,
-                    terraform_version="1.6.0",
-                )
-                updated_workspace = client.workspaces.update(
-                    args.workspace, update_options, organization=args.org
-                )
-                print("update: Successfully updated workspace!")
-                print(f"Name: {updated_workspace.name}")
-                print(f"Description: {updated_workspace.description}")
-                print(f"Auto Apply: {updated_workspace.auto_apply}")
-                print(f"Terraform Version: {updated_workspace.terraform_version}")
-                print()
-            except Exception as e:
-                print(f"update error: {e}")
+        # Test standard update method
+        try:
+            print("Testing update() by name...")
+            update_options = WorkspaceUpdateOptions(
+                name=args.workspace,  # Name is required
+                description=f"Updated workspace at {datetime.now()}",
+                auto_apply=True,
+                terraform_version="1.6.0",
+            )
+            updated_workspace = client.workspaces.update(
+                args.workspace, update_options, organization=args.org
+            )
+            print("update: Successfully updated workspace!")
+            print(f"Name: {updated_workspace.name}")
+            print(f"Description: {updated_workspace.description}")
+            print(f"Auto Apply: {updated_workspace.auto_apply}")
+            print(f"Terraform Version: {updated_workspace.terraform_version}")
+            print()
+        except Exception as e:
+            print(f"update error: {e}")
 
     # 4b) Update workspace by ID
-    if args.workspace_id and (args.update_all or args.all_tests):
+    if args.update and args.workspace_id and not args.workspace:
         try:
             print("Testing update_by_id()...")
             # Get current workspace to preserve the name
@@ -378,7 +340,7 @@ def main():
             print(f"Error removing VCS connection: {e}")
 
     # 8) Demonstrate tag operations
-    if args.workspace_id:
+    if args.tag_ops and args.workspace_id:
         _print_header("Tag operations")
 
         # List existing tags
@@ -399,8 +361,37 @@ def main():
         except Exception as e:
             print(f"Error adding tags: {e}")
 
+        # Test remove_tags
+        try:
+            print("Testing remove_tags()...")
+            remove_options = WorkspaceRemoveTagsOptions(tags=[Tag(name="demo")])
+            client.workspaces.remove_tags(args.workspace_id, remove_options)
+            print("remove_tags: Removed 'demo' tag")
+        except Exception as e:
+            print(f"remove_tags: {e}")
+
+        # Test list_tag_bindings
+        try:
+            print("Testing list_tag_bindings()...")
+            bindings = list(client.workspaces.list_tag_bindings(args.workspace_id))
+            print(f"list_tag_bindings: Found {len(bindings)} tag bindings")
+        except Exception as e:
+            print(f"list_tag_bindings error: {e}")
+
+        # Test list_effective_tag_bindings
+        try:
+            print("Testing list_effective_tag_bindings()...")
+            effective_bindings = list(
+                client.workspaces.list_effective_tag_bindings(args.workspace_id)
+            )
+            print(
+                f"list_effective_tag_bindings: Found {len(effective_bindings)} effective bindings"
+            )
+        except Exception as e:
+            print(f"list_effective_tag_bindings error: {e}")
+
     # 9) Demonstrate remote state consumer operations
-    if args.workspace_id:
+    if args.remote_state and args.workspace_id:
         _print_header("Remote state consumer operations")
 
         # List remote state consumers
@@ -418,7 +409,7 @@ def main():
             print(f"Error listing remote state consumers: {e}")
 
     # 10) Test force unlock
-    if (args.all_tests or args.force_unlock) and args.workspace_id:
+    if args.force_unlock and args.workspace_id:
         _print_header("Testing force unlock")
         try:
             print("Testing force_unlock()...")
@@ -429,22 +420,23 @@ def main():
             print("(Expected if workspace wasn't locked)")
 
     # 11) Test SSH key operations
-    if (args.all_tests or args.ssh_keys) and args.workspace_id:
+    if args.ssh_keys and args.workspace_id:
         _print_header("Testing SSH key operations")
 
         # First, list available SSH keys
         try:
             print("Listing available SSH keys...")
-            ssh_keys = client.ssh_keys.list(args.org)
-            if ssh_keys.items:
-                ssh_key = ssh_keys.items[0]
+            ssh_keys = list(client.ssh_keys.list(args.org))
+            if ssh_keys:
+                ssh_key = ssh_keys[0]
                 print(f"Found SSH key: {ssh_key.name} (ID: {ssh_key.id})")
 
                 # Test assign SSH key
                 try:
                     print("Testing assign_ssh_key()...")
+                    options = WorkspaceAssignSSHKeyOptions(ssh_key_id=ssh_key.id)
                     workspace = client.workspaces.assign_ssh_key(
-                        args.workspace_id, ssh_key.id
+                        args.workspace_id, options
                     )
                     print(f"assign_ssh_key: Assigned key to {workspace.name}")
 
@@ -464,51 +456,8 @@ def main():
         except Exception as e:
             print(f"SSH key listing error: {e}")
 
-    # 12) Test advanced tag operations
-    if (args.all_tests or args.tag_ops) and args.workspace_id:
-        _print_header("Testing advanced tag operations")
-
-        try:
-            # Test remove_tags
-            print("Testing remove_tags()...")
-            remove_options = WorkspaceRemoveTagsOptions(tags=[Tag(name="demo")])
-            client.workspaces.remove_tags(args.workspace_id, remove_options)
-            print("remove_tags: Removed 'demo' tag")
-        except Exception as e:
-            print(f"remove_tags: {e}")
-
-        try:
-            # Test list_tag_bindings
-            print("Testing list_tag_bindings()...")
-            bindings = list(client.workspaces.list_tag_bindings(args.workspace_id))
-            print(f"list_tag_bindings: Found {len(bindings)} tag bindings")
-        except Exception as e:
-            print(f"list_tag_bindings error: {e}")
-
-        try:
-            # Test list_effective_tag_bindings
-            print("Testing list_effective_tag_bindings()...")
-            effective_bindings = list(
-                client.workspaces.list_effective_tag_bindings(args.workspace_id)
-            )
-            print(
-                f"list_effective_tag_bindings: Found {len(effective_bindings)} effective bindings"
-            )
-        except Exception as e:
-            print(f"list_effective_tag_bindings error: {e}")
-
-    # 13) Test additional remote state operations
-    if (args.all_tests or args.remote_state) and args.workspace_id:
-        _print_header("Testing additional remote state operations")
-
-        print("Available remote state methods:")
-        print("list_remote_state_consumers() - Already tested above")
-        print("add_remote_state_consumers() - Requires consumer workspace IDs")
-        print("update_remote_state_consumers() - Requires specific setup")
-        print("remove_remote_state_consumers() - Requires existing consumers")
-
     # 14) Test data retention policies
-    if (args.all_tests or args.retention) and args.workspace_id:
+    if args.retention and args.workspace_id:
         _print_header("Testing data retention policies")
 
         try:
@@ -528,15 +477,8 @@ def main():
         except Exception as e:
             print(f"read_data_retention_policy_choice: {e}")
 
-        print("Available policy setting methods:")
-        print("set_data_retention_policy() - Set custom retention policy")
-        print("set_data_retention_policy_delete_older() - Delete older runs")
-        print("set_data_retention_policy_dont_delete() - Keep all runs")
-        print("delete_data_retention_policy() - Remove retention policy")
-        print("(Not executed to preserve workspace settings)")
-
     # 15) Test readme functionality
-    if (args.all_tests or args.readme) and args.workspace_id:
+    if args.readme and args.workspace_id:
         _print_header("Testing readme functionality")
 
         try:

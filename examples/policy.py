@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Policy management example for python-tfe SDK.
 
 This example demonstrates how to use the Policy API to:
@@ -82,7 +85,6 @@ def main():
     _print_header(f"Listing policies in organization: {args.org}")
 
     list_options = PolicyListOptions(
-        page_number=args.page,
         page_size=args.page_size,
     )
 
@@ -95,12 +97,8 @@ def main():
 
     policy_list = client.policies.list(args.org, list_options)
 
-    print(f"Total policies: {policy_list.total_count}")
-    print(f"Page {policy_list.current_page} of {policy_list.total_pages}")
-    print()
-
     existing_policy = None
-    for policy in policy_list.items:
+    for policy in policy_list:
         print(
             f"- {policy.id} | {policy.name} | kind={policy.kind} | enforcement={policy.enforcement_level}"
         )

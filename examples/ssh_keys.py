@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """SSH Keys Example Script.
 
 This script demonstrates how to use the SSH Keys API to:
@@ -99,10 +102,11 @@ def main():
     try:
         # 1. List existing SSH keys
         print("\n1. Listing SSH keys...")
-        ssh_keys = client.ssh_keys.list(TFE_ORG)
-        print(f"Found {len(ssh_keys.items)} SSH keys:")
-        for key in ssh_keys.items:
+        ssh_keys_count = 0
+        for key in client.ssh_keys.list(TFE_ORG):
             print(f"- ID: {key.id}, Name: {key.name}")
+            ssh_keys_count += 1
+        print(f"Found {ssh_keys_count} SSH keys")
 
         # 2. Create a new SSH key
         print("\n2. Creating a new SSH key...")
@@ -132,16 +136,17 @@ def main():
 
         # 6. Verify deletion by listing again
         print("\n6. Verifying deletion...")
-        ssh_keys_after = client.ssh_keys.list(TFE_ORG)
-        print(f"SSH keys after deletion: {len(ssh_keys_after.items)}")
+        ssh_keys_after_count = sum(1 for _ in client.ssh_keys.list(TFE_ORG))
+        print(f"SSH keys after deletion: {ssh_keys_after_count}")
 
-        # 7. Demonstrate pagination with options
-        print("\n7. Demonstrating pagination options...")
+        # 7. Demonstrate iterator with pagination options
+        print("\n7. Demonstrating iterator with pagination options...")
         list_options = SSHKeyListOptions(page_size=5, page_number=1)
-        paginated_keys = client.ssh_keys.list(TFE_ORG, list_options)
-        print(f"Page 1 with page size 5: {len(paginated_keys.items)} keys")
-        print(f"Total pages: {paginated_keys.total_pages}")
-        print(f"Total count: {paginated_keys.total_count}")
+        paginated_count = 0
+        for key in client.ssh_keys.list(TFE_ORG, list_options):
+            paginated_count += 1
+            print(f"  - {key.name}")
+        print(f"Listed {paginated_count} keys with pagination options")
 
         print("\n SSH Keys API example completed successfully!")
 

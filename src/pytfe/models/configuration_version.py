@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
 from enum import Enum
@@ -25,6 +28,7 @@ class ConfigurationSource(str, Enum):
     GITLAB = "gitlab"
     ADO = "ado"
     TERRAFORM = "terraform"
+    TERRAFORM_CLOUD = "terraform+cloud"
 
 
 class ConfigVerIncludeOpt(str, Enum):

@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Agent and Agent Pool models for the Python TFE SDK.
 
 This module contains Pydantic models for Terraform Enterprise/Cloud agents and agent pools,
@@ -82,6 +85,10 @@ class AgentPoolCreateOptions(BaseModel):
     organization_scoped: bool | None = None
     # Optional: Allowed workspace policy
     allowed_workspace_policy: AgentPoolAllowedWorkspacePolicy | None = None
+    # Optional: IDs of workspaces allowed to use this pool (sent as relationships.allowed-workspaces)
+    allowed_workspace_ids: list[str] = Field(default_factory=list)
+    # Optional: IDs of workspaces excluded from this pool (sent as relationships.excluded-workspaces)
+    excluded_workspace_ids: list[str] = Field(default_factory=list)
 
 
 class AgentPoolUpdateOptions(BaseModel):
@@ -93,6 +100,10 @@ class AgentPoolUpdateOptions(BaseModel):
     organization_scoped: bool | None = None
     # Optional: Allowed workspace policy
     allowed_workspace_policy: AgentPoolAllowedWorkspacePolicy | None = None
+    # Optional: Full replacement list of workspace IDs allowed to use this pool
+    allowed_workspace_ids: list[str] = Field(default_factory=list)
+    # Optional: Full replacement list of workspace IDs excluded from this pool
+    excluded_workspace_ids: list[str] = Field(default_factory=list)
 
 
 class AgentPoolReadOptions(BaseModel):

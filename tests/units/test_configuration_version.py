@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """
 Comprehensive unit tests for configuration version operations in the Python TFE SDK.
 
@@ -17,7 +20,7 @@ This test suite covers all 12 configuration version methods:
 """
 
 import io
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -164,7 +167,7 @@ class TestConfigurationVersionsList:
 
         workspace_id = "ws-YnyXLq9fy38afEeb"
         options = ConfigurationVersionListOptions(
-            include=[ConfigVerIncludeOpt.INGRESS_ATTRIBUTES], page_size=5, page_number=1
+            include=[ConfigVerIncludeOpt.INGRESS_ATTRIBUTES], page_size=5
         )
 
         list(configuration_versions_service.list(workspace_id, options))
@@ -173,7 +176,7 @@ class TestConfigurationVersionsList:
         expected_params = {
             "include": "ingress_attributes",
             "page[size]": "5",
-            "page[number]": "1",
+            "page[number]": 1,
         }
         mock_transport.request.assert_called_with(
             "GET",
@@ -343,35 +346,33 @@ class TestConfigurationVersionsReadWithOptions:
 class TestConfigurationVersionsUpload:
     """Test configuration versions upload functionality."""
 
-    def test_upload_missing_slug(self, configuration_versions_service):
-        """Test upload when go-slug is not available."""
+    def test_upload_packs_with_tar(self, configuration_versions_service, tmp_path):
+        """Test upload works by packing a directory to tar.gz with stdlib."""
         upload_url = "https://example.com/upload"
-        directory_path = "/tmp/test"
+        directory_path = tmp_path
+        (directory_path / "main.tf").write_text('resource "null_resource" "test" {}')
 
-        with patch("src.pytfe.utils.slug", None):
-            with pytest.raises(ImportError, match="go-slug package is required"):
-                configuration_versions_service.upload(upload_url, directory_path)
+        mock_response = Mock()
+        mock_response.status_code = 200
+        configuration_versions_service.t._sync.put.return_value = mock_response
 
-    @patch("src.pytfe.utils.slug")
-    def test_upload_success(self, mock_slug, configuration_versions_service):
+        configuration_versions_service.upload(upload_url, str(directory_path))
+
+        configuration_versions_service.t._sync.put.assert_called_once()
+
+    def test_upload_success(self, configuration_versions_service, tmp_path):
         """Test successful upload."""
-        # Mock slug.pack
-        mock_packer = Mock()
-        mock_packer.pack.return_value = (None, None)  # (size, error)
-        mock_slug.Packer.return_value = mock_packer
-
         upload_url = "https://example.com/upload"
-        directory_path = "/tmp/test"
+        directory_path = tmp_path
+        (directory_path / "main.tf").write_text('resource "null_resource" "test" {}')
 
         # Mock transport's underlying httpx client instead of direct httpx
         mock_response = Mock()
         mock_response.status_code = 200
         configuration_versions_service.t._sync.put.return_value = mock_response
 
-        configuration_versions_service.upload(upload_url, directory_path)
-
-        # Verify slug.pack was called
-        mock_packer.pack.assert_called_once()
+        configuration_versions_service.upload(upload_url, str(directory_path))
+        configuration_versions_service.t._sync.put.assert_called_once()
 
 
 class TestConfigurationVersionsUploadTarGzip:

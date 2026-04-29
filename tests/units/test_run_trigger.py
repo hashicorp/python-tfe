@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Unit tests for the run trigger module."""
 
 from datetime import datetime
@@ -190,7 +193,7 @@ class TestRunTriggers:
         """Test create method with invalid workspace ID."""
 
         options = RunTriggerCreateOptions(
-            sourceable=Workspace(id="ws-source", name="source", organization="org")
+            sourceable=Workspace(id="ws-source", name="source", organization=None)
         )
 
         with pytest.raises(InvalidWorkspaceIDError):
@@ -201,7 +204,7 @@ class TestRunTriggers:
         # is raised when the service method checks for None sourceable
         # Create valid options but then manually set sourceable to None to bypass model validation
         options = RunTriggerCreateOptions(
-            sourceable=Workspace(id="ws-source", name="source", organization="org")
+            sourceable=Workspace(id="ws-source", name="source", organization=None)
         )
         options.sourceable = None
 
@@ -227,7 +230,7 @@ class TestRunTriggers:
             mock_transport.request.return_value = mock_response
 
             options = RunTriggerCreateOptions(
-                sourceable=Workspace(id="ws-source", name="source", organization="org")
+                sourceable=Workspace(id="ws-source", name="source", organization=None)
             )
 
             result = run_triggers_service.create("ws-123", options)
@@ -340,7 +343,7 @@ class TestRunTriggers:
     def test_backfill_deprecated_sourceable_already_exists(self, run_triggers_service):
         """Test backfill when sourceable already exists."""
 
-        workspace = Workspace(id="ws-1", name="workspace", organization="org")
+        workspace = Workspace(id="ws-1", name="workspace", organization=None)
         rt = RunTrigger(
             id="rt-1",
             created_at=datetime.now(),

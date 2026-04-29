@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Example demonstrating Variable Set operations with the TFE Python SDK.
 
 This example shows how to:
@@ -64,7 +67,7 @@ def variable_set_example():
         list_options = VariableSetListOptions(
             page_size=10, include=[VariableSetIncludeOpt.WORKSPACES]
         )
-        variable_sets = client.variable_sets.list(org_name, list_options)
+        variable_sets = list(client.variable_sets.list(org_name, list_options))
         print(f"Found {len(variable_sets)} existing variable sets")
 
         for vs in variable_sets[:3]:  # Show first 3
@@ -90,6 +93,15 @@ def variable_set_example():
         print(f"Description: {new_variable_set.description}")
         print(f"Global: {new_variable_set.global_}")
         print(f"Priority: {new_variable_set.priority}")
+        print()
+
+        print("Listing existing variable sets...")
+        list_options = VariableSetListOptions(page_size=10)
+        variable_sets = list(client.variable_sets.list(org_name, list_options))
+        print(f"Found {len(variable_sets)} existing variable sets")
+
+        for vs in variable_sets:  # Show first 3
+            print(f"- {vs.name} (ID: {vs.id}, Global: {vs.global_})")
         print()
 
         # 3. Create variables in the variable set
@@ -147,12 +159,16 @@ def variable_set_example():
         # 4. List variables in the variable set
         print("4. Listing variables in the variable set...")
         var_list_options = VariableSetVariableListOptions(page_size=50)
-        variables = client.variable_set_variables.list(
-            created_variable_set_id, var_list_options
+        variables = list(
+            client.variable_set_variables.list(
+                created_variable_set_id, var_list_options
+            )
         )
         print(f"Found {len(variables)} variables in the set:")
 
-        for var in variables:
+        for var in client.variable_set_variables.list(
+            created_variable_set_id, var_list_options
+        ):
             sensitive_note = " (sensitive)" if var.sensitive else ""
             hcl_note = " (HCL)" if var.hcl else ""
             print(f"- {var.key}: {var.category.value}{sensitive_note}{hcl_note}")
@@ -212,10 +228,14 @@ def variable_set_example():
                 print("Successfully applied to workspace")
 
                 # List variable sets for this workspace
-                workspace_varsets = client.variable_sets.list_for_workspace(
+                print(f"Listing variable sets for workspace: {first_workspace.name}")
+                workspace_varsets = 0
+                for ws_varset in client.variable_sets.list_for_workspace(
                     first_workspace.id
-                )
-                print(f"Workspace now has {len(workspace_varsets)} variable sets")
+                ):
+                    print(f"- {ws_varset.name} (ID: {ws_varset.id})")
+                    workspace_varsets += 1
+                print(f"Workspace now has {workspace_varsets} variable sets")
 
                 # Remove from workspace
                 remove_ws_options = VariableSetRemoveFromWorkspacesOptions(
@@ -250,10 +270,14 @@ def variable_set_example():
                 print("Successfully applied to project")
 
                 # List variable sets for this project
-                project_varsets = client.variable_sets.list_for_project(
+                print(f"Listing variable sets for project: {first_project.name}")
+                project_varsets = 0
+                for proj_varset in client.variable_sets.list_for_project(
                     first_project.id
-                )
-                print(f"Project now has {len(project_varsets)} variable sets")
+                ):
+                    print(f"- {proj_varset.name} (ID: {proj_varset.id})")
+                    project_varsets += 1
+                print(f"Project now has {project_varsets} variable sets")
 
                 # Remove from project
                 remove_proj_options = VariableSetRemoveFromProjectsOptions(

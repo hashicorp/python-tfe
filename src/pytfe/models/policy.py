@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -38,7 +41,6 @@ class PolicyListOptions(BaseModel):
 
     search: str | None = Field(None, alias="search[name]")
     kind: PolicyKind | None = Field(None, alias="filter[kind]")
-    page_number: int | None = Field(None, alias="page[number]")
     page_size: int | None = Field(None, alias="page[size]")
 
 

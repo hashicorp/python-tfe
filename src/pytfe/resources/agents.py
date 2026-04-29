@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Agent resource implementation for the Python TFE SDK.
 
 This module provides the Agents service for managing individual Terraform Enterprise/Cloud

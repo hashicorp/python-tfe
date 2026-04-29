@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Example script for working with workspace resources in Terraform Enterprise.
 
 This script demonstrates how to list resources within a workspace.

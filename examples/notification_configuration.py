@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """
 Example usage of Notification Configuration API
 
@@ -32,9 +35,15 @@ def main():
 
     print("=== Python TFE Notification Configuration Example ===\n")
 
-    # Resolve workspace and team from environment (fallback to demo placeholders)
-    workspace_id = os.getenv("TFE_WORKSPACE_ID", "ws-example123456789")
-    workspace_name = os.getenv("TFE_ORG", "your-workspace-name")
+    # Resolve organization and workspace from environment variables
+    org_name = os.environ["TFE_ORG"]
+    workspace_name = os.getenv("TFE_WORKSPACE_NAME", "test-api")
+    workspace_id = os.getenv("TFE_WORKSPACE_ID", "")
+    if not workspace_id:
+        print(f"Looking up workspace '{workspace_name}' in org '{org_name}'...")
+        ws = client.workspaces.read(workspace_name, organization=org_name)
+        workspace_id = ws.id
+        print(f"Resolved workspace ID: {workspace_id}")
     print(f"Using workspace: {workspace_name} (ID: {workspace_id})")
 
     team_id = os.getenv("TFE_TEAM_ID", "team-example123456789")
@@ -47,13 +56,13 @@ def main():
         # ===== List notification configurations for workspace =====
         print("1. Listing notification configurations for workspace...")
         try:
-            workspace_notifications = client.notification_configurations.list(
-                subscribable_id=workspace_id
+            workspace_notifications_list = list(
+                client.notification_configurations.list(subscribable_id=workspace_id)
             )
             print(
-                f"Found {len(workspace_notifications.items)} notification configurations"
+                f"Found {len(workspace_notifications_list)} notification configurations"
             )
-            for nc in workspace_notifications.items:
+            for nc in workspace_notifications_list:
                 print(f"- {nc.name} (ID: {nc.id}, Enabled: {nc.enabled})")
         except Exception as e:
             print(f"Error listing workspace notifications: {e}")
@@ -69,13 +78,15 @@ def main():
             options = NotificationConfigurationListOptions(
                 subscribable_choice=team_choice
             )
-            team_notifications = client.notification_configurations.list(
-                subscribable_id=team_id, options=options
+            team_notifications_list = list(
+                client.notification_configurations.list(
+                    subscribable_id=team_id, options=options
+                )
             )
             print(
-                f"Found {len(team_notifications.items)} team notification configurations"
+                f"Found {len(team_notifications_list)} team notification configurations"
             )
-            for nc in team_notifications.items:
+            for nc in team_notifications_list:
                 print(f"- {nc.name} (ID: {nc.id}, Enabled: {nc.enabled})")
         except Exception as e:
             error_msg = str(e).lower()
@@ -93,16 +104,20 @@ def main():
             workspace_choice = NotificationConfigurationSubscribableChoice(
                 workspace={"id": workspace_id}
             )
-            slack_url = os.getenv(
+            # Use GENERIC destination type with a URL that returns HTTP 200.
+            # SLACK/MICROSOFT_TEAMS destinations are auto-verified by HCP Terraform
+            # at creation time; a fake Slack URL returns 302 and causes the create
+            # call to fail immediately.  GENERIC webhooks + httpbin always succeed.
+            webhook_url = os.getenv(
                 "WEBHOOK_URL",
-                "https://hooks.slack.com/services/YOUR_SLACK_WORKSPACE/YOUR_CHANNEL/YOUR_WEBHOOK_TOKEN",
+                "https://httpbin.org/status/200",
             )
             create_options = NotificationConfigurationCreateOptions(
-                destination_type=NotificationDestinationType.SLACK,
+                destination_type=NotificationDestinationType.GENERIC,
                 enabled=True,
-                name="Python TFE Example Slack Notification",
+                name="Python TFE Example Generic Notification",
                 subscribable_choice=workspace_choice,
-                url=slack_url,
+                url=webhook_url,
                 triggers=[
                     NotificationTriggerType.COMPLETED,
                     NotificationTriggerType.ERRORED,
@@ -175,12 +190,17 @@ def main():
 
         except Exception as e:
             error_msg = str(e).lower()
-            if "verification failed" in error_msg and "404" in error_msg:
-                print(" Webhook verification failed (expected with fake URL)")
-                print("The fake Slack URL returns 404 - this is normal for testing")
-                print("To test real verification, use a webhook from:")
-                print("webhook.site (instant test URL)")
-                print("Slack, Teams, or Discord webhook")
+            if "verification failed" in error_msg and (
+                "404" in error_msg or "302" in error_msg
+            ):
+                print("Webhook verification failed (expected with fake URL)")
+                print(
+                    "The URL returned a non-200 response - this is normal for testing"
+                )
+                print("To test real verification, use a webhook from webhook.site,")
+                print(
+                    "Slack, Teams, or Discord, or set WEBHOOK_URL=https://httpbin.org/status/200"
+                )
             else:
                 print(f" Error in workspace notification operations: {e}")
 

@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """
 Notification Configuration Resources
 
@@ -6,6 +9,7 @@ This module provides CRUD operations for Terraform Cloud/Enterprise notification
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Any
 
 from ..errors import (
@@ -15,7 +19,6 @@ from ..errors import (
 from ..models.notification_configuration import (
     NotificationConfiguration,
     NotificationConfigurationCreateOptions,
-    NotificationConfigurationList,
     NotificationConfigurationListOptions,
     NotificationConfigurationUpdateOptions,
 )
@@ -30,35 +33,21 @@ class NotificationConfigurations(_Service):
         self,
         subscribable_id: str,
         options: NotificationConfigurationListOptions | None = None,
-    ) -> NotificationConfigurationList:
+    ) -> Iterator[NotificationConfiguration]:
         """List all notification configurations associated with a workspace or team."""
         if not valid_string_id(subscribable_id):
             raise InvalidOrgError("Invalid subscribable ID")
 
         # Determine URL based on subscribable choice
         if options and options.subscribable_choice and options.subscribable_choice.team:
-            url = f"/api/v2/teams/{subscribable_id}/notification-configurations"
+            path = f"/api/v2/teams/{subscribable_id}/notification-configurations"
         else:
-            url = f"/api/v2/workspaces/{subscribable_id}/notification-configurations"
+            path = f"/api/v2/workspaces/{subscribable_id}/notification-configurations"
 
         params = options.to_dict() if options else None
 
-        r = self.t.request("GET", url, params=params)
-        jd = r.json()
-
-        items = []
-        meta = jd.get("meta", {})
-        pagination = meta.get("pagination", {})
-
-        for d in jd.get("data", []):
-            items.append(self._parse_notification_configuration(d))
-
-        return NotificationConfigurationList(
-            {
-                "data": [{"attributes": item.__dict__} for item in items],
-                "meta": {"pagination": pagination},
-            }
-        )
+        for d in self._list(path, params=params):
+            yield self._parse_notification_configuration(d)
 
     def create(
         self, subscribable_id: str, options: NotificationConfigurationCreateOptions

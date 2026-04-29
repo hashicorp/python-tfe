@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """
 Comprehensive example testing all variable functions in TFE workspace.
 Tests: list, list_all, create, read, update, and delete operations.

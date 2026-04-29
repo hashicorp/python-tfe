@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Agent Pool resource implementation for the Python TFE SDK.
 
 This module provides the AgentPools service for managing Terraform Enterprise/Cloud
@@ -203,7 +206,27 @@ class AgentPools(_Service):
                 options.allowed_workspace_policy.value
             )
 
-        payload = {"data": {"type": "agent-pools", "attributes": attributes}}
+        relationships: dict[str, Any] = {}
+        if options.allowed_workspace_ids:
+            relationships["allowed-workspaces"] = {
+                "data": [
+                    {"type": "workspaces", "id": ws_id}
+                    for ws_id in options.allowed_workspace_ids
+                ]
+            }
+        if options.excluded_workspace_ids:
+            relationships["excluded-workspaces"] = {
+                "data": [
+                    {"type": "workspaces", "id": ws_id}
+                    for ws_id in options.excluded_workspace_ids
+                ]
+            }
+
+        payload: dict[str, Any] = {
+            "data": {"type": "agent-pools", "attributes": attributes}
+        }
+        if relationships:
+            payload["data"]["relationships"] = relationships
 
         response = self.t.request("POST", path, json_body=payload)
         data = response.json()["data"]
@@ -320,13 +343,31 @@ class AgentPools(_Service):
                 options.allowed_workspace_policy.value
             )
 
-        payload = {
+        relationships: dict[str, Any] = {}
+        if options.allowed_workspace_ids:
+            relationships["allowed-workspaces"] = {
+                "data": [
+                    {"type": "workspaces", "id": ws_id}
+                    for ws_id in options.allowed_workspace_ids
+                ]
+            }
+        if options.excluded_workspace_ids:
+            relationships["excluded-workspaces"] = {
+                "data": [
+                    {"type": "workspaces", "id": ws_id}
+                    for ws_id in options.excluded_workspace_ids
+                ]
+            }
+
+        payload: dict[str, Any] = {
             "data": {
                 "type": "agent-pools",
                 "id": agent_pool_id,
                 "attributes": attributes,
             }
         }
+        if relationships:
+            payload["data"]["relationships"] = relationships
 
         response = self.t.request("PATCH", path, json_body=payload)
         data = response.json()["data"]
@@ -371,13 +412,20 @@ class AgentPools(_Service):
 
     def assign_to_workspaces(
         self, agent_pool_id: str, options: AgentPoolAssignToWorkspacesOptions
-    ) -> None:
-        """Assign an agent pool to workspaces.
+    ) -> AgentPool:
+        """Assign an agent pool to workspaces by updating the allowed-workspaces
+        relationship via PATCH /agent-pools/:id.
+
+        The provided workspace IDs become the new complete list of allowed
+        workspaces for this pool (full replacement, not append).
 
         Args:
             agent_pool_id: Agent pool ID
             options: Assignment options containing workspace IDs
 
+        Returns:
+            Updated AgentPool object
+
         Raises:
             ValueError: If parameters are invalid
             TFEError: If API request fails
@@ -388,26 +436,67 @@ class AgentPools(_Service):
         if not options.workspace_ids:
             raise ValueError("At least one workspace ID is required")
 
-        path = f"/api/v2/agent-pools/{agent_pool_id}/relationships/workspaces"
-
-        # Create data payload with workspace references
-        workspace_data = []
         for workspace_id in options.workspace_ids:
             if not valid_string_id(workspace_id):
                 raise ValueError(f"Invalid workspace ID: {workspace_id}")
-            workspace_data.append({"type": "workspaces", "id": workspace_id})
 
-        payload = {"data": workspace_data}
-        self.t.request("POST", path, json_body=payload)
+        path = f"/api/v2/agent-pools/{agent_pool_id}"
+        payload: dict[str, Any] = {
+            "data": {
+                "type": "agent-pools",
+                "id": agent_pool_id,
+                "attributes": {},
+                "relationships": {
+                    "allowed-workspaces": {
+                        "data": [
+                            {"type": "workspaces", "id": ws_id}
+                            for ws_id in options.workspace_ids
+                        ]
+                    }
+                },
+            }
+        }
+        response = self.t.request("PATCH", path, json_body=payload)
+        data = response.json()["data"]
+
+        # Extract agent pool data from response
+        attr = data.get("attributes", {}) or {}
+        agent_pool_data = {
+            "id": _safe_str(data.get("id")),
+            "name": _safe_str(attr.get("name")),
+            "created_at": attr.get("created-at"),
+            "organization_scoped": attr.get("organization-scoped"),
+            "allowed_workspace_policy": attr.get("allowed-workspace-policy"),
+            "agent_count": attr.get("agent-count", 0),
+        }
+
+        return AgentPool(
+            id=_safe_str(agent_pool_data["id"]) or "",
+            name=_safe_str(agent_pool_data["name"]),
+            created_at=cast(Any, agent_pool_data["created_at"]),
+            organization_scoped=_safe_bool(agent_pool_data["organization_scoped"]),
+            allowed_workspace_policy=_safe_workspace_policy(
+                agent_pool_data["allowed_workspace_policy"]
+            ),
+            agent_count=_safe_int(agent_pool_data["agent_count"]),
+        )
 
     def remove_from_workspaces(
         self, agent_pool_id: str, options: AgentPoolRemoveFromWorkspacesOptions
-    ) -> None:
-        """Remove an agent pool from workspaces.
+    ) -> AgentPool:
+        """Exclude workspaces from an agent pool by updating the excluded-workspaces
+        relationship via PATCH /agent-pools/:id.
+
+        Use this for organization-scoped pools where most workspaces are allowed
+        but you want to block specific ones.  The provided list becomes the new
+        complete excluded-workspaces list (full replacement, not append).
 
         Args:
             agent_pool_id: Agent pool ID
-            options: Removal options containing workspace IDs
+            options: Removal options containing workspace IDs to exclude
+
+        Returns:
+            Updated AgentPool object
 
         Raises:
             ValueError: If parameters are invalid
@@ -419,14 +508,47 @@ class AgentPools(_Service):
         if not options.workspace_ids:
             raise ValueError("At least one workspace ID is required")
 
-        path = f"/api/v2/agent-pools/{agent_pool_id}/relationships/workspaces"
-
-        # Create data payload with workspace references
-        workspace_data = []
         for workspace_id in options.workspace_ids:
             if not valid_string_id(workspace_id):
                 raise ValueError(f"Invalid workspace ID: {workspace_id}")
-            workspace_data.append({"type": "workspaces", "id": workspace_id})
 
-        payload = {"data": workspace_data}
-        self.t.request("DELETE", path, json_body=payload)
+        path = f"/api/v2/agent-pools/{agent_pool_id}"
+        payload: dict[str, Any] = {
+            "data": {
+                "type": "agent-pools",
+                "id": agent_pool_id,
+                "attributes": {},
+                "relationships": {
+                    "excluded-workspaces": {
+                        "data": [
+                            {"type": "workspaces", "id": ws_id}
+                            for ws_id in options.workspace_ids
+                        ]
+                    }
+                },
+            }
+        }
+        response = self.t.request("PATCH", path, json_body=payload)
+        data = response.json()["data"]
+
+        # Extract agent pool data from response
+        attr = data.get("attributes", {}) or {}
+        agent_pool_data = {
+            "id": _safe_str(data.get("id")),
+            "name": _safe_str(attr.get("name")),
+            "created_at": attr.get("created-at"),
+            "organization_scoped": attr.get("organization-scoped"),
+            "allowed_workspace_policy": attr.get("allowed-workspace-policy"),
+            "agent_count": attr.get("agent-count", 0),
+        }
+
+        return AgentPool(
+            id=_safe_str(agent_pool_data["id"]) or "",
+            name=_safe_str(agent_pool_data["name"]),
+            created_at=cast(Any, agent_pool_data["created_at"]),
+            organization_scoped=_safe_bool(agent_pool_data["organization_scoped"]),
+            allowed_workspace_policy=_safe_workspace_policy(
+                agent_pool_data["allowed_workspace_policy"]
+            ),
+            agent_count=_safe_int(agent_pool_data["agent_count"]),
+        )

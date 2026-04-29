@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """
 Terraform Cloud/Enterprise Run Trigger Management Example
 
@@ -32,7 +35,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import time
 
 from pytfe import TFEClient, TFEConfig
 from pytfe.models import (
@@ -131,14 +133,9 @@ def main():
             )
 
             # Get run triggers and convert to list safely
-            run_trigger_gen = client.run_triggers.list(args.workspace_id, options)
-            run_trigger_list = []
-            count = 0
-            for trigger in run_trigger_gen:
-                run_trigger_list.append(trigger)
-                count += 1
-                if count >= args.page_size * 2:  # Safety limit based on page size
-                    break
+            run_trigger_list = list(
+                client.run_triggers.list(args.workspace_id, options)
+            )
 
             print(f"Found {len(run_trigger_list)} run triggers")
             print()
@@ -168,8 +165,6 @@ def main():
             # Create a workspace object for the source
             source_workspace = Workspace(
                 id=args.source_workspace_id,
-                name=f"source-workspace-{int(time.time())}",
-                organization=args.org,
             )
 
             create_options = RunTriggerCreateOptions(sourceable=source_workspace)

@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """
 Complete Configuration Version Testing Suite
 
@@ -277,29 +280,8 @@ def main():
                     print(f"       - {filename} ({size} bytes)")
 
                 try:
-                    # Create tar.gz archive manually since go-slug isn't available
-                    print("Creating tar.gz archive manually...")
-
-                    import tarfile
-
-                    # Create tar.gz archive in memory
-                    archive_buffer = io.BytesIO()
-                    with tarfile.open(fileobj=archive_buffer, mode="w:gz") as tar:
-                        # Add all files from the temp directory
-                        for filename in files:
-                            filepath = os.path.join(temp_dir, filename)
-                            tar.add(filepath, arcname=filename)
-
-                    archive_buffer.seek(0)
-                    archive_bytes = archive_buffer.getvalue()
-                    print(f"Created archive: {len(archive_bytes)} bytes")
-
-                    # Use the SDK's upload_tar_gzip method instead of direct HTTP calls
-                    print("Uploading archive using SDK method...")
-                    archive_buffer.seek(0)  # Reset buffer position
-                    client.configuration_versions.upload_tar_gzip(
-                        new_cv.upload_url, archive_buffer
-                    )
+                    print("Uploading Terraform configuration...")
+                    client.configuration_versions.upload(new_cv.upload_url, temp_dir)
                     print("Terraform configuration uploaded successfully!")
 
                     # Wait and check status
@@ -408,8 +390,6 @@ def main():
     # =====================================================
     # TEST 4: UPLOAD CONFIGURATION VERSION
     # =====================================================
-    # Test 4: Upload function (requires go-slug)
-    # =====================================================
     print("\n4. Testing upload() function:")
     try:
         # Create a fresh configuration version specifically for upload testing
@@ -441,33 +421,19 @@ def main():
                 print(f"\n Uploading configuration to CV: {fresh_cv.id}")
                 print(f"Upload URL: {upload_url[:60]}...")
 
-                try:
-                    client.configuration_versions.upload(upload_url, temp_dir)
-                    print("Configuration uploaded successfully!")
+                client.configuration_versions.upload(upload_url, temp_dir)
+                print("Configuration uploaded successfully!")
 
-                    # Check status after upload
-                    print("\n Checking status after upload:")
-                    time.sleep(3)  # Give TFE time to process
-                    updated_cv = client.configuration_versions.read(fresh_cv.id)
-                    print(f"Status after upload: {updated_cv.status}")
+                # Check status after upload
+                print("\n Checking status after upload:")
+                time.sleep(3)  # Give TFE time to process
+                updated_cv = client.configuration_versions.read(fresh_cv.id)
+                print(f"Status after upload: {updated_cv.status}")
 
-                    if updated_cv.status.value != "pending":
-                        print("Status changed (upload processed)")
-                    else:
-                        print("Status still pending (may need more time)")
-
-                except ImportError as e:
-                    if "go-slug" in str(e):
-                        print("go-slug package not available")
-                        print("Install with: pip install go-slug")
-                        print(
-                            "Upload function exists but requires go-slug for packaging"
-                        )
-                        print(
-                            "Function correctly raises ImportError when go-slug unavailable"
-                        )
-                    else:
-                        raise
+                if updated_cv.status.value != "pending":
+                    print("Status changed (upload processed)")
+                else:
+                    print("Status still pending (may need more time)")
 
     except Exception as e:
         print(f"Error: {e}")
@@ -868,7 +834,7 @@ def main():
         "TEST 2:  create() - Create new configuration versions with different options"
     )
     print("TEST 3:  read() - Read configuration version details and validate fields")
-    print("TEST 4:  upload() - Upload Terraform configurations (requires go-slug)")
+    print("TEST 4:  upload() - Upload Terraform configurations (stdlib tarfile)")
     print("TEST 5:  download() - Download configuration version archives")
     print("TEST 6:  archive() - Archive configuration versions")
     print("TEST 7:  read_with_options() - Read with include options")

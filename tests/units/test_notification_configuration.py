@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """
 Unit tests for Notification Configuration API.
 
@@ -73,20 +76,28 @@ class TestNotificationConfigurations:
 
         # Test list operation
         workspace_id = "ws-123456789"
-        result = self.notifications.list(workspace_id)
+        result_iter = self.notifications.list(workspace_id)
+        items = list(result_iter)
 
-        # Verify API call
-        self.mock_transport.request.assert_called_once_with(
-            "GET",
-            f"/api/v2/workspaces/{workspace_id}/notification-configurations",
-            params=None,
+        # Verify API call (occurs when iterator is consumed)
+        self.mock_transport.request.assert_called_once()
+        call_args = self.mock_transport.request.call_args
+        assert call_args[0][0] == "GET"
+        assert (
+            call_args[0][1]
+            == f"/api/v2/workspaces/{workspace_id}/notification-configurations"
         )
+        params = call_args[1].get("params")
+        assert isinstance(params, dict)
+        assert "page[number]" in params and "page[size]" in params
+        assert params["page[number]"] == 1
+        assert params["page[size]"] == 100
 
         # Verify result
-        assert isinstance(result, NotificationConfigurationList)
-        assert len(result.items) == 1
-        assert result.items[0].id == "nc-123456789"
-        assert result.items[0].name == "Test Notification"
+        assert len(items) == 1
+        assert isinstance(items[0], NotificationConfiguration)
+        assert items[0].id == "nc-123456789"
+        assert items[0].name == "Test Notification"
 
     def test_list_team_notifications(self):
         """Test listing notification configurations for a team."""
@@ -105,16 +116,23 @@ class TestNotificationConfigurations:
         team_choice = NotificationConfigurationSubscribableChoice(team={"id": team_id})
         options = NotificationConfigurationListOptions(subscribable_choice=team_choice)
 
-        result = self.notifications.list(team_id, options)
+        result_iter = self.notifications.list(team_id, options)
+        items = list(result_iter)
 
-        # Verify API call
-        self.mock_transport.request.assert_called_once_with(
-            "GET", f"/api/v2/teams/{team_id}/notification-configurations", params={}
-        )
+        # Verify API call (occurs when iterator is consumed)
+        self.mock_transport.request.assert_called_once()
+        call_args = self.mock_transport.request.call_args
+        assert call_args[0][0] == "GET"
+        assert call_args[0][1] == f"/api/v2/teams/{team_id}/notification-configurations"
+        params = call_args[1].get("params")
+        assert isinstance(params, dict)
+        assert "page[number]" in params and "page[size]" in params
+        assert params["page[number]"] == 1
+        assert params["page[size]"] == 100
 
         # Verify result
-        assert isinstance(result, NotificationConfigurationList)
-        assert len(result.items) == 1
+        assert len(items) == 1
+        assert isinstance(items[0], NotificationConfiguration)
 
     def test_list_with_pagination(self):
         """Test listing with pagination options."""
@@ -130,21 +148,29 @@ class TestNotificationConfigurations:
 
         # Test with pagination
         workspace_id = "ws-123456789"
-        options = NotificationConfigurationListOptions(page_number=2, page_size=50)
+        options = NotificationConfigurationListOptions(page_size=50)
 
-        self.notifications.list(workspace_id, options)
+        result_iter = self.notifications.list(workspace_id, options)
+        _ = list(result_iter)
 
-        # Verify API call with pagination
-        self.mock_transport.request.assert_called_once_with(
-            "GET",
-            f"/api/v2/workspaces/{workspace_id}/notification-configurations",
-            params={"page[number]": 2, "page[size]": 50},
+        # page_size from options is respected by _list(); page[number] is controlled by _list()
+        self.mock_transport.request.assert_called_once()
+        call_args = self.mock_transport.request.call_args
+        assert call_args[0][0] == "GET"
+        assert (
+            call_args[0][1]
+            == f"/api/v2/workspaces/{workspace_id}/notification-configurations"
         )
+        params = call_args[1].get("params")
+        assert isinstance(params, dict)
+        assert "page[number]" in params and "page[size]" in params
+        assert params["page[number]"] == 1
+        assert params["page[size]"] == 50
 
     def test_list_invalid_id(self):
         """Test list with invalid subscribable ID."""
         with pytest.raises(InvalidOrgError):
-            self.notifications.list("")
+            list(self.notifications.list(""))
 
     def test_create_workspace_notification(self):
         """Test creating a notification configuration for a workspace."""
@@ -619,10 +645,10 @@ class TestNotificationConfigurationModels:
 
     def test_list_options_to_dict(self):
         """Test list options conversion to dictionary."""
-        options = NotificationConfigurationListOptions(page_number=2, page_size=50)
+        options = NotificationConfigurationListOptions(page_size=50)
         result = options.to_dict()
 
-        assert result == {"page[number]": 2, "page[size]": 50}
+        assert result == {"page[size]": 50}
 
     def test_create_options_to_dict(self):
         """Test create options conversion to dictionary."""

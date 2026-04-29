@@ -1,3 +1,6 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Unit tests for agent pool operations.
 
 These tests mock the TFE API responses and focus on:
@@ -6,6 +9,7 @@ These tests mock the TFE API responses and focus on:
 3. Agent token management
 4. Request building and parameter handling
 5. Response parsing and error handling
+6. Workspace assignment (assign_to_workspaces / remove_from_workspaces bug fix)
 
 Run with:
     pytest tests/units/test_agent_pools.py -v
@@ -19,8 +23,10 @@ from pytfe.errors import AuthError, NotFound, ValidationError
 from pytfe.models.agent import (
     AgentPool,
     AgentPoolAllowedWorkspacePolicy,
+    AgentPoolAssignToWorkspacesOptions,
     AgentPoolCreateOptions,
     AgentPoolListOptions,
+    AgentPoolRemoveFromWorkspacesOptions,
     AgentPoolUpdateOptions,
     AgentTokenCreateOptions,
 )
@@ -85,6 +91,26 @@ class TestAgentPoolModels:
             == AgentPoolAllowedWorkspacePolicy.SPECIFIC_WORKSPACES
         )
 
+    def test_agent_pool_create_options_workspace_ids(self):
+        """Test AgentPoolCreateOptions with allowed/excluded workspace IDs (bug fix)"""
+        options = AgentPoolCreateOptions(
+            name="scoped-pool",
+            organization_scoped=False,
+            allowed_workspace_ids=["ws-aaa", "ws-bbb"],
+            excluded_workspace_ids=["ws-ccc"],
+        )
+        assert options.allowed_workspace_ids == ["ws-aaa", "ws-bbb"]
+        assert options.excluded_workspace_ids == ["ws-ccc"]
+
+    def test_agent_pool_update_options_workspace_ids(self):
+        """Test AgentPoolUpdateOptions with allowed/excluded workspace IDs (bug fix)"""
+        options = AgentPoolUpdateOptions(
+            allowed_workspace_ids=["ws-aaa"],
+            excluded_workspace_ids=["ws-bbb"],
+        )
+        assert options.allowed_workspace_ids == ["ws-aaa"]
+        assert options.excluded_workspace_ids == ["ws-bbb"]
+
 
 class TestAgentPoolOperations:
     """Test agent pool CRUD operations"""
@@ -121,7 +147,6 @@ class TestAgentPoolOperations:
         }
 
         mock_transport.request.return_value.json.return_value = mock_response
-
         agent_pools = list(agent_pools_service.list("test-org"))
 
         assert len(agent_pools) == 1
@@ -139,7 +164,6 @@ class TestAgentPoolOperations:
         mock_transport.request.return_value.json.return_value = mock_response
 
         options = AgentPoolListOptions(
-            page_number=2,
             page_size=10,
             allowed_workspace_policy=AgentPoolAllowedWorkspacePolicy.ALL_WORKSPACES,
         )
@@ -150,7 +174,7 @@ class TestAgentPoolOperations:
         mock_transport.request.assert_called_once()
         call_args = mock_transport.request.call_args
         params = call_args[1]["params"]
-        assert params["page[number]"] == 2
+        assert params["page[number]"] == 1
         assert params["page[size]"] == 10
         assert params["filter[allowed_workspace_policy]"] == "all-workspaces"
 
@@ -171,7 +195,6 @@ class TestAgentPoolOperations:
         }
 
         mock_transport.request.return_value.json.return_value = mock_response
-
         options = AgentPoolCreateOptions(
             name="new-pool",
             organization_scoped=True,
@@ -207,7 +230,6 @@ class TestAgentPoolOperations:
         }
 
         mock_transport.request.return_value.json.return_value = mock_response
-
         agent_pool = agent_pools_service.read("apool-123456789abcdef0")
 
         assert agent_pool.id == "apool-123456789abcdef0"
@@ -238,9 +260,7 @@ class TestAgentPoolOperations:
         }
 
         mock_transport.request.return_value.json.return_value = mock_response
-
         options = AgentPoolUpdateOptions(name="updated-pool", organization_scoped=False)
-
         agent_pool = agent_pools_service.update("apool-123456789abcdef0", options)
 
         assert agent_pool.id == "apool-123456789abcdef0"
@@ -262,6 +282,96 @@ class TestAgentPoolOperations:
         call_args = mock_transport.request.call_args
         assert call_args[0][0] == "DELETE"
         assert "agent-pools/apool-123456789abcdef0" in call_args[0][1]
+
+    def test_assign_to_workspaces(self, agent_pools_service, mock_transport):
+        """assign_to_workspaces must PATCH /agent-pools/:id with relationships.allowed-workspaces.
+
+        Previously (broken): POST /agent-pools/:id/relationships/workspaces -> 404
+        Fixed: PATCH /agent-pools/:id with relationships.allowed-workspaces body
+        """
+        pool_id = "apool-123456789abcdef0"
+        ws_id = "ws-aaaaaaaaaaaaaaa1"
+
+        mock_response = {
+            "data": {
+                "id": pool_id,
+                "type": "agent-pools",
+                "attributes": {
+                    "name": "test-pool",
+                    "created-at": "2023-01-01T00:00:00Z",
+                    "organization-scoped": True,
+                    "allowed-workspace-policy": "all-workspaces",
+                    "agent-count": 0,
+                },
+            }
+        }
+        mock_transport.request.return_value.json.return_value = mock_response
+
+        agent_pool = agent_pools_service.assign_to_workspaces(
+            pool_id,
+            AgentPoolAssignToWorkspacesOptions(workspace_ids=[ws_id]),
+        )
+
+        assert agent_pool.id == pool_id
+        assert agent_pool.name == "test-pool"
+
+        call_args = mock_transport.request.call_args
+        # Must be PATCH, not POST
+        assert call_args[0][0] == "PATCH"
+        # Must target the pool URL, not a /relationships/workspaces sub-resource
+        assert call_args[0][1] == f"/api/v2/agent-pools/{pool_id}"
+        # Payload must use relationships.allowed-workspaces
+        body = call_args[1]["json_body"]["data"]
+        assert body["type"] == "agent-pools"
+        assert body["id"] == pool_id
+        ws_data = body["relationships"]["allowed-workspaces"]["data"]
+        assert ws_data[0]["id"] == ws_id
+        assert ws_data[0]["type"] == "workspaces"
+
+    def test_remove_from_workspaces(self, agent_pools_service, mock_transport):
+        """remove_from_workspaces must PATCH /agent-pools/:id with relationships.excluded-workspaces.
+
+        Previously (broken): DELETE /agent-pools/:id/relationships/workspaces -> 404
+        Fixed: PATCH /agent-pools/:id with relationships.excluded-workspaces body
+        """
+        pool_id = "apool-123456789abcdef0"
+        ws_id = "ws-aaaaaaaaaaaaaaa1"
+
+        mock_response = {
+            "data": {
+                "id": pool_id,
+                "type": "agent-pools",
+                "attributes": {
+                    "name": "test-pool",
+                    "created-at": "2023-01-01T00:00:00Z",
+                    "organization-scoped": True,
+                    "allowed-workspace-policy": "all-workspaces",
+                    "agent-count": 0,
+                },
+            }
+        }
+        mock_transport.request.return_value.json.return_value = mock_response
+
+        agent_pool = agent_pools_service.remove_from_workspaces(
+            pool_id,
+            AgentPoolRemoveFromWorkspacesOptions(workspace_ids=[ws_id]),
+        )
+
+        assert agent_pool.id == pool_id
+        assert agent_pool.name == "test-pool"
+
+        call_args = mock_transport.request.call_args
+        # Must be PATCH, not DELETE
+        assert call_args[0][0] == "PATCH"
+        # Must target the pool URL, not a /relationships/workspaces sub-resource
+        assert call_args[0][1] == f"/api/v2/agent-pools/{pool_id}"
+        # Payload must use relationships.excluded-workspaces
+        body = call_args[1]["json_body"]["data"]
+        assert body["type"] == "agent-pools"
+        assert body["id"] == pool_id
+        ws_data = body["relationships"]["excluded-workspaces"]["data"]
+        assert ws_data[0]["id"] == ws_id
+        assert ws_data[0]["type"] == "workspaces"
 
 
 class TestAgentTokenOperations:
@@ -297,7 +407,6 @@ class TestAgentTokenOperations:
         }
 
         mock_transport.request.return_value.json.return_value = mock_response
-
         tokens = list(agent_tokens_service.list("apool-123456789abcdef0"))
 
         assert len(tokens) == 1
@@ -328,7 +437,6 @@ class TestAgentTokenOperations:
         }
 
         mock_transport.request.return_value.json.return_value = mock_response
-
         options = AgentTokenCreateOptions(description="New token")
         token = agent_tokens_service.create("apool-123456789abcdef0", options)
 
@@ -361,7 +469,6 @@ class TestAgentTokenOperations:
         }
 
         mock_transport.request.return_value.json.return_value = mock_response
-
         token = agent_tokens_service.read("at-123456789abcdef0")
 
         assert token.id == "at-123456789abcdef0"

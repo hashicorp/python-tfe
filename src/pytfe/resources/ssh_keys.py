@@ -1,5 +1,9 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Any
 
 from ..errors import (
@@ -9,7 +13,6 @@ from ..errors import (
 from ..models.ssh_key import (
     SSHKey,
     SSHKeyCreateOptions,
-    SSHKeyList,
     SSHKeyListOptions,
     SSHKeyUpdateOptions,
 )
@@ -22,37 +25,17 @@ class SSHKeys(_Service):
 
     def list(
         self, organization: str, options: SSHKeyListOptions | None = None
-    ) -> SSHKeyList:
+    ) -> Iterator[SSHKey]:
         """List SSH keys for the given organization."""
         if not valid_string_id(organization):
             raise InvalidOrgError()
 
-        params = (
-            options.model_dump(by_alias=True, exclude_none=True) if options else None
-        )
-
-        r = self.t.request(
-            "GET",
-            f"/api/v2/organizations/{organization}/ssh-keys",
-            params=params,
-        )
-
-        jd = r.json()
-        items = []
-        meta = jd.get("meta", {})
-        pagination = meta.get("pagination", {})
-
-        for d in jd.get("data", []):
-            items.append(self._parse_ssh_key(d))
-
-        return SSHKeyList(
-            items=items,
-            current_page=pagination.get("current-page"),
-            total_pages=pagination.get("total-pages"),
-            prev_page=pagination.get("prev-page"),
-            next_page=pagination.get("next-page"),
-            total_count=pagination.get("total-count"),
-        )
+        params = options.model_dump(by_alias=True, exclude_none=True) if options else {}
+        path = f"/api/v2/organizations/{organization}/ssh-keys"
+        for item in self._list(path, params=params):
+            attrs = item.get("attributes", {})
+            attrs["id"] = item.get("id")
+            yield SSHKey.model_validate(attrs)
 
     def create(self, organization: str, options: SSHKeyCreateOptions) -> SSHKey:
         """Create a new SSH key for the given organization."""
