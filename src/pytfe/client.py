@@ -36,6 +36,7 @@ from .resources.ssh_keys import SSHKeys
 from .resources.stack import Stacks
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
+from .resources.user import Users
 from .resources.team import Teams
 from .resources.team_project_access import TeamProjectAccesses
 from .resources.variable import Variables
@@ -75,7 +76,7 @@ class TFEClient:
         self.plans = Plans(self._transport)
         self.organizations = Organizations(self._transport)
         self.organization_memberships = OrganizationMemberships(self._transport)
-
+        self.users = Users(self._transport)
         self.projects = Projects(self._transport)
         self.variables = Variables(self._transport)
         self.variable_sets = VariableSets(self._transport)
