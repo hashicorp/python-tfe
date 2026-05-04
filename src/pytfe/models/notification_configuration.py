@@ -9,9 +9,12 @@ This module provides models for working with Terraform Cloud/Enterprise notifica
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import datetime
 from enum import Enum
 from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class NotificationTriggerType(Enum):
@@ -47,209 +50,143 @@ class NotificationDestinationType(Enum):
     MICROSOFT_TEAMS = "microsoft-teams"
 
 
-class DeliveryResponse:
+class DeliveryResponse(BaseModel):
     """Represents a notification configuration delivery response."""
 
-    # Type annotations for instance attributes
-    body: str
-    code: str
-    headers: dict[str, Any]
-    sent_at: datetime | None
-    successful: str
-    url: str
+    model_config = ConfigDict(populate_by_name=True)
 
-    def __init__(self, data: dict[str, Any]):
-        self.body = data.get("body", "")
-        self.code = data.get("code", "")
-        self.headers = data.get("headers", {})
-        self.sent_at = self._parse_datetime(data.get("sent-at"))
-        self.successful = data.get("successful", "")
-        self.url = data.get("url", "")
+    body: str | None = None
+    code: str | None = None
+    headers: dict[str, Any] | None = Field(default_factory=dict)
+    sent_at: datetime | None = Field(default=None, alias="sent-at")
+    successful: str | None = None
+    url: str | None = None
 
-    def _parse_datetime(self, date_str: str | None) -> datetime | None:
-        """Parse ISO 8601 datetime string."""
-        if not date_str:
-            return None
-        try:
-            return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-        except (ValueError, AttributeError):
-            return None
-
-    def __repr__(self) -> str:
-        return f"DeliveryResponse(url='{self.url}', code='{self.code}', successful='{self.successful}')"
+    def __init__(self, data: dict[str, Any] | None = None, /, **kwargs: Any) -> None:
+        if data is not None:
+            super().__init__(**{**data, **kwargs})
+        else:
+            super().__init__(**kwargs)
 
 
-class NotificationConfigurationSubscribableChoice:
+class NotificationConfigurationSubscribableChoice(BaseModel):
     """Choice type struct that represents the possible values within a polymorphic relation."""
 
-    # Type annotations for instance attributes
-    team: Any | None
-    workspace: Any | None
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def __init__(self, team: Any | None = None, workspace: Any | None = None):
-        self.team = team
-        self.workspace = workspace
-
-    def __repr__(self) -> str:
-        if self.team:
-            return f"NotificationConfigurationSubscribableChoice(team={self.team})"
-        elif self.workspace:
-            return f"NotificationConfigurationSubscribableChoice(workspace={self.workspace})"
-        return "NotificationConfigurationSubscribableChoice()"
+    team: Any | None = None
+    workspace: Any | None = None
 
 
-class NotificationConfiguration:
+class NotificationConfiguration(BaseModel):
     """Represents a Notification Configuration."""
 
-    # Type annotations for instance attributes
-    id: str | None
-    created_at: datetime | None
-    updated_at: datetime | None
-    destination_type: str | None
-    enabled: bool
-    name: str
-    token: str
-    url: str
-    triggers: list[NotificationTriggerType]
-    delivery_responses: list[Any]
-    email_addresses: list[str]
-    email_users: list[Any]
-    subscribable: Any
-    subscribable_choice: Any | None
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
-    def __init__(self, data: dict[str, Any]):
-        self.id = data.get("id")
-        self.created_at = self._parse_datetime(data.get("created-at"))
-        self.updated_at = self._parse_datetime(data.get("updated-at"))
+    id: str | None = None
+    created_at: datetime | None = Field(default=None, alias="created-at")
+    updated_at: datetime | None = Field(default=None, alias="updated-at")
+    destination_type: str | None = Field(default=None, alias="destination-type")
+    enabled: bool = False
+    name: str | None = None
+    token: str | None = None
+    url: str | None = None
+    triggers: list[NotificationTriggerType] = Field(default_factory=list)
+    delivery_responses: list[DeliveryResponse] = Field(
+        default_factory=list, alias="delivery-responses"
+    )
+    email_addresses: list[str] = Field(default_factory=list, alias="email-addresses")
+    email_users: list[Any] = Field(default_factory=list, alias="email-users")
+    subscribable: Any = None
+    subscribable_choice: NotificationConfigurationSubscribableChoice | None = Field(
+        default=None, alias="subscribable-choice"
+    )
 
-        # Core attributes
-        self.destination_type = data.get("destination-type")
-        self.enabled = data.get("enabled", False)
-        self.name = data.get("name", "")
-        self.token = data.get("token", "")
-        self.url = data.get("url", "")
+    @field_validator(
+        "delivery_responses",
+        "email_addresses",
+        "email_users",
+        mode="before",
+    )
+    @classmethod
+    def _none_to_empty_list(cls, value: Any) -> Any:
+        return [] if value is None else value
 
-        # Triggers - convert from strings to enum values
-        self.triggers = self._parse_triggers(data.get("triggers", []))
-
-        # Delivery responses
-        delivery_responses_data = data.get("delivery-responses", [])
-        self.delivery_responses = [
-            DeliveryResponse(dr) for dr in delivery_responses_data
-        ]
-
-        # Email configuration
-        self.email_addresses = data.get("email-addresses", [])
-        self.email_users = data.get("email-users", [])
-
-        # Relationships - using polymorphic relation pattern
-        self.subscribable = data.get(
-            "subscribable"
-        )  # Deprecated but maintained for compatibility
-        self.subscribable_choice = self._parse_subscribable_choice(
-            data.get("subscribable-choice")
-        )
-
-    def _parse_datetime(self, date_str: str | None) -> datetime | None:
-        """Parse ISO 8601 datetime string."""
-        if not date_str:
-            return None
-        try:
-            return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-        except (ValueError, AttributeError):
-            return None
-
-    def _parse_triggers(self, triggers: list[str]) -> list[NotificationTriggerType]:
-        """Parse trigger strings to enum values."""
-        parsed_triggers = []
-        for trigger in triggers:
+    @field_validator("triggers", mode="before")
+    @classmethod
+    def _coerce_triggers(cls, value: Any) -> list[NotificationTriggerType]:
+        if not value:
+            return []
+        parsed: list[NotificationTriggerType] = []
+        for trigger in value:
+            if isinstance(trigger, NotificationTriggerType):
+                parsed.append(trigger)
+                continue
             try:
-                parsed_triggers.append(NotificationTriggerType(trigger))
-            except ValueError:
-                # If trigger is not in enum, keep as string for backwards compatibility
+                parsed.append(NotificationTriggerType(trigger))
+            except (ValueError, TypeError):
+                # Silently drop unknown triggers for backwards compatibility
                 pass
-        return parsed_triggers
+        return parsed
 
-    def _parse_subscribable_choice(
-        self, choice_data: dict[str, Any] | None
-    ) -> NotificationConfigurationSubscribableChoice | None:
-        """Parse subscribable choice data."""
-        if not choice_data:
-            return None
-
-        team = choice_data.get("team")
-        workspace = choice_data.get("workspace")
-        return NotificationConfigurationSubscribableChoice(
-            team=team, workspace=workspace
-        )
-
-    def __repr__(self) -> str:
-        return f"NotificationConfiguration(id='{self.id}', name='{self.name}', enabled={self.enabled})"
+    def __init__(self, data: dict[str, Any] | None = None, /, **kwargs: Any) -> None:
+        if data is not None:
+            super().__init__(**{**data, **kwargs})
+        else:
+            super().__init__(**kwargs)
 
 
-class NotificationConfigurationListOptions:
+def _serialize_triggers(
+    triggers: list[NotificationTriggerType | str],
+) -> list[str]:
+    """Serialize trigger enums or raw strings to their wire value."""
+    return [t.value if isinstance(t, NotificationTriggerType) else t for t in triggers]
+
+
+def _validate_triggers(
+    triggers: list[NotificationTriggerType | str],
+) -> list[str]:
+    """Collect errors for any non-enum, non-known-string trigger entries."""
+    errors: list[str] = []
+    for trigger in triggers:
+        if isinstance(trigger, NotificationTriggerType):
+            continue
+        try:
+            NotificationTriggerType(trigger)
+        except ValueError:
+            errors.append(f"Invalid trigger type: {trigger}")
+    return errors
+
+
+class NotificationConfigurationListOptions(BaseModel):
     """Represents the options for listing notification configurations."""
 
-    # Type annotations for instance attributes
-    page_size: int | None
-    subscribable_choice: NotificationConfigurationSubscribableChoice | None
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
-    def __init__(
-        self,
-        page_size: int | None = None,
-        subscribable_choice: NotificationConfigurationSubscribableChoice | None = None,
-    ):
-        self.page_size = page_size
-        self.subscribable_choice = subscribable_choice
+    page_size: int | None = Field(default=None, alias="page[size]")
+    subscribable_choice: NotificationConfigurationSubscribableChoice | None = Field(
+        default=None, exclude=True
+    )
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for API requests."""
-        params = {}
-
-        if self.page_size is not None:
-            params["page[size]"] = self.page_size
-
-        return params
+        return self.model_dump(by_alias=True, exclude_none=True)
 
 
-class NotificationConfigurationCreateOptions:
+class NotificationConfigurationCreateOptions(BaseModel):
     """Represents the options for creating a new notification configuration."""
 
-    # Type annotations for instance attributes
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
+
     destination_type: NotificationDestinationType
     enabled: bool
     name: str
-    token: str | None
-    triggers: list[NotificationTriggerType]
-    url: str | None
-    email_addresses: list[str]
-    email_users: list[Any]
-    subscribable_choice: NotificationConfigurationSubscribableChoice | None
-
-    def __init__(
-        self,
-        destination_type: NotificationDestinationType,
-        enabled: bool,
-        name: str,
-        token: str | None = None,
-        triggers: list[NotificationTriggerType] | None = None,
-        url: str | None = None,
-        email_addresses: list[str] | None = None,
-        email_users: list[Any] | None = None,
-        subscribable_choice: NotificationConfigurationSubscribableChoice | None = None,
-    ):
-        # Required fields
-        self.destination_type = destination_type
-        self.enabled = enabled
-        self.name = name
-
-        # Optional fields
-        self.token = token
-        self.triggers = triggers or []
-        self.url = url
-        self.email_addresses = email_addresses or []
-        self.email_users = email_users or []
-        self.subscribable_choice = subscribable_choice
+    token: str | None = None
+    triggers: list[NotificationTriggerType | str] = Field(default_factory=list)
+    url: str | None = None
+    email_addresses: list[str] = Field(default_factory=list)
+    email_users: list[Any] = Field(default_factory=list)
+    subscribable_choice: NotificationConfigurationSubscribableChoice | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for API requests."""
@@ -262,14 +199,11 @@ class NotificationConfigurationCreateOptions:
             },
         }
 
-        # Add optional attributes
         if self.token is not None:
             data["attributes"]["token"] = self.token
 
         if self.triggers:
-            data["attributes"]["triggers"] = [
-                trigger.value for trigger in self.triggers
-            ]
+            data["attributes"]["triggers"] = _serialize_triggers(self.triggers)
 
         if self.url is not None:
             data["attributes"]["url"] = self.url
@@ -277,84 +211,58 @@ class NotificationConfigurationCreateOptions:
         if self.email_addresses:
             data["attributes"]["email-addresses"] = self.email_addresses
 
-        # Handle relationships
         if self.email_users:
-            data["relationships"] = data.get("relationships", {})
-            data["relationships"]["users"] = {
-                "data": [
-                    {
-                        "type": "users",
-                        "id": user.id if hasattr(user, "id") else str(user),
-                    }
-                    for user in self.email_users
-                ]
+            data["relationships"] = {
+                "users": {
+                    "data": [
+                        {
+                            "type": "users",
+                            "id": user.id if hasattr(user, "id") else str(user),
+                        }
+                        for user in self.email_users
+                    ]
+                }
             }
 
         return data
 
-    def validate(self) -> list[str]:
+    def validate(self) -> list[str]:  # type: ignore[override]
         """Validate the create options and return any errors."""
-        errors = []
+        errors: list[str] = []
 
-        # Required field validation
         if not self.name or not self.name.strip():
             errors.append("Name is required")
 
-        if not isinstance(self.enabled, bool):
-            errors.append("Enabled must be a boolean")  # type: ignore[unreachable]
-
-        # URL validation for certain destination types
-        if self.destination_type in [
+        if self.destination_type in (
             NotificationDestinationType.GENERIC,
             NotificationDestinationType.SLACK,
             NotificationDestinationType.MICROSOFT_TEAMS,
-        ]:
+        ):
             if not self.url:
                 errors.append("URL is required for this destination type")
 
-        # Trigger validation
-        for trigger in self.triggers:
-            if not isinstance(trigger, NotificationTriggerType):
-                errors.append(f"Invalid trigger type: {trigger}")  # type: ignore[unreachable]
+        errors.extend(_validate_triggers(self.triggers))
 
         return errors
 
 
-class NotificationConfigurationUpdateOptions:
+class NotificationConfigurationUpdateOptions(BaseModel):
     """Represents the options for updating an existing notification configuration."""
 
-    # Type annotations for instance attributes
-    enabled: bool | None
-    name: str | None
-    token: str | None
-    triggers: list[NotificationTriggerType] | None
-    url: str | None
-    email_addresses: list[str] | None
-    email_users: list[Any] | None
+    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
 
-    def __init__(
-        self,
-        enabled: bool | None = None,
-        name: str | None = None,
-        token: str | None = None,
-        triggers: list[NotificationTriggerType] | None = None,
-        url: str | None = None,
-        email_addresses: list[str] | None = None,
-        email_users: list[Any] | None = None,
-    ):
-        self.enabled = enabled
-        self.name = name
-        self.token = token
-        self.triggers = triggers
-        self.url = url
-        self.email_addresses = email_addresses
-        self.email_users = email_users
+    enabled: bool | None = None
+    name: str | None = None
+    token: str | None = None
+    triggers: list[NotificationTriggerType | str] | None = None
+    url: str | None = None
+    email_addresses: list[str] | None = None
+    email_users: list[Any] | None = None
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for API requests."""
         data: dict[str, Any] = {"type": "notification-configurations", "attributes": {}}
 
-        # Add only specified attributes
         if self.enabled is not None:
             data["attributes"]["enabled"] = self.enabled
 
@@ -365,9 +273,7 @@ class NotificationConfigurationUpdateOptions:
             data["attributes"]["token"] = self.token
 
         if self.triggers is not None:
-            data["attributes"]["triggers"] = [
-                trigger.value for trigger in self.triggers
-            ]
+            data["attributes"]["triggers"] = _serialize_triggers(self.triggers)
 
         if self.url is not None:
             data["attributes"]["url"] = self.url
@@ -375,75 +281,71 @@ class NotificationConfigurationUpdateOptions:
         if self.email_addresses is not None:
             data["attributes"]["email-addresses"] = self.email_addresses
 
-        # Handle relationships
         if self.email_users is not None:
-            data["relationships"] = data.get("relationships", {})
-            data["relationships"]["users"] = {
-                "data": [
-                    {
-                        "type": "users",
-                        "id": user.id if hasattr(user, "id") else str(user),
-                    }
-                    for user in self.email_users
-                ]
+            data["relationships"] = {
+                "users": {
+                    "data": [
+                        {
+                            "type": "users",
+                            "id": user.id if hasattr(user, "id") else str(user),
+                        }
+                        for user in self.email_users
+                    ]
+                }
             }
 
         return data
 
-    def validate(self) -> list[str]:
+    def validate(self) -> list[str]:  # type: ignore[override]
         """Validate the update options and return any errors."""
-        errors = []
+        errors: list[str] = []
 
-        # Name validation (if provided)
         if self.name is not None and (not self.name or not self.name.strip()):
             errors.append("Name cannot be empty")
 
-        # Trigger validation (if provided)
         if self.triggers is not None:
-            for trigger in self.triggers:
-                if not isinstance(trigger, NotificationTriggerType):
-                    errors.append(f"Invalid trigger type: {trigger}")  # type: ignore[unreachable]
+            errors.extend(_validate_triggers(self.triggers))
 
         return errors
 
 
-class NotificationConfigurationList:
+class NotificationConfigurationList(BaseModel):
     """Represents a list of notification configurations with pagination."""
 
-    # Type annotations for instance attributes
-    items: list[NotificationConfiguration]
-    current_page: int
-    page_size: int
-    prev_page: int | None
-    next_page: int | None
-    total_pages: int
-    total_count: int
+    model_config = ConfigDict(populate_by_name=True)
 
-    def __init__(self, data: dict[str, Any]):
-        self.items = [
-            NotificationConfiguration(item.get("attributes", {}))
-            for item in data.get("data", [])
-        ]
+    items: list[NotificationConfiguration] = Field(default_factory=list)
+    current_page: int = 0
+    page_size: int = 20
+    prev_page: int | None = None
+    next_page: int | None = None
+    total_pages: int = 0
+    total_count: int = 0
 
-        # Pagination metadata
-        meta = data.get("meta", {})
-        pagination = meta.get("pagination", {})
+    def __init__(self, data: dict[str, Any] | None = None, /, **kwargs: Any) -> None:
+        if data is None:
+            super().__init__(**kwargs)
+            return
 
-        self.current_page = pagination.get("current-page", 0)
-        self.page_size = pagination.get("page-size", 20)
-        self.prev_page = pagination.get("prev-page")
-        self.next_page = pagination.get("next-page")
-        self.total_pages = pagination.get("total-pages", 0)
-        self.total_count = pagination.get("total-count", 0)
+        items_data = [item.get("attributes", {}) for item in data.get("data") or []]
+        pagination = (data.get("meta") or {}).get("pagination") or {}
+        parsed: dict[str, Any] = {
+            "items": items_data,
+            "current_page": pagination.get("current-page", 0),
+            "page_size": pagination.get("page-size", 20),
+            "prev_page": pagination.get("prev-page"),
+            "next_page": pagination.get("next-page"),
+            "total_pages": pagination.get("total-pages", 0),
+            "total_count": pagination.get("total-count", 0),
+        }
+        parsed.update(kwargs)
+        super().__init__(**parsed)
 
     def __len__(self) -> int:
         return len(self.items)
 
-    def __iter__(self) -> Any:
+    def __iter__(self) -> Iterator[NotificationConfiguration]:  # type: ignore[override]
         return iter(self.items)
 
     def __getitem__(self, index: int) -> NotificationConfiguration:
         return self.items[index]
-
-    def __repr__(self) -> str:
-        return f"NotificationConfigurationList(count={len(self.items)}, page={self.current_page}, total={self.total_count})"
