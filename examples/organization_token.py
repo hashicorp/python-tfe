@@ -65,7 +65,7 @@ def main():
 
     # Initialize the TFE client
     client = TFEClient(TFEConfig.from_env())
-    organization_name = "prab-sandbox01"
+    organization_name = "prab-sandbox02"
     # =====================================================
     # 1. CREATE ORGANIZATION TOKEN (BASIC)
     # =====================================================
@@ -76,7 +76,7 @@ def main():
         token = client.organization_tokens.create(organization_name)
 
         print("Token created successfully!")
-        print(f"  Token ID: {redact_id(token.id)}")
+        print(f"  Token ID: {token.id}")
         print(f"  Created At: {token.created_at}")
         print(f"  Description: {token.description}")
         print(f"  Token Value: {redact_token(token.token)}")
@@ -87,6 +87,8 @@ def main():
     except Exception as e:
         print(f" Error: {e}")
         print()
+        
+    
 
     # =====================================================
     # 2. CREATE WITH OPTIONS (WITH EXPIRATION)
@@ -104,7 +106,7 @@ def main():
         )
 
         print("Token created with options successfully!")
-        print(f"  Token ID: {redact_id(token.id)}")
+        print(f"  Token ID: {token.id}")
         print(f"  Created At: {token.created_at}")
         if token.expired_at:
             print(f"  Expires At: {token.expired_at}")
@@ -126,7 +128,7 @@ def main():
         )
 
         print(" Audit-trails token created successfully!")
-        print(f"  Token ID: {redact_id(token.id)}")
+        print(f"  Token ID: {token.id}")
         print(f"  Token Value: {redact_token(token.token)}")
         print()
 
@@ -173,35 +175,35 @@ def main():
         print(f" Error: {e}")
         print()
 
-    # =====================================================
-    print("6. delete() - Delete the organization token:")
-    print("-" * 40)
-    try:
-        print(f"Deleting organization token for organization: {organization_name}")
-        client.organization_tokens.delete(organization_name)
+    # # =====================================================
+    # print("6. delete() - Delete the organization token:")
+    # print("-" * 40)
+    # try:
+    #     print(f"Deleting organization token for organization: {organization_name}")
+    #     client.organization_tokens.delete(organization_name)
 
-        print(" Token deleted successfully!")
-        print()
+    #     print(" Token deleted successfully!")
+    #     print()
 
-    except Exception as e:
-        print(f" Error: {e}")
-        print()
+    # except Exception as e:
+    #     print(f" Error: {e}")
+    #     print()
 
-    # =====================================================
-    print("7. delete_with_options() - Delete audit-trails token:")
-    print("-" * 40)
-    try:
-        options = OrganizationTokenDeleteOptions(token_type=TokenType.AUDIT_TRAILS)
+    # # =====================================================
+    # print("7. delete_with_options() - Delete audit-trails token:")
+    # print("-" * 40)
+    # try:
+    #     options = OrganizationTokenDeleteOptions(token_type=TokenType.AUDIT_TRAILS)
 
-        print(f"Deleting audit-trails token for organization: {organization_name}")
-        client.organization_tokens.delete_with_options(organization_name, options)
+    #     print(f"Deleting audit-trails token for organization: {organization_name}")
+    #     client.organization_tokens.delete_with_options(organization_name, options)
 
-        print(" Audit-trails token deleted successfully!")
-        print()
+    #     print(" Audit-trails token deleted successfully!")
+    #     print()
 
-    except Exception as e:
-        print(f"Error: {e}")
-        print()
+    # except Exception as e:
+    #     print(f"Error: {e}")
+    #     print()
 
     print("=" * 80)
     print("ORGANIZATION TOKEN OPERATIONS COMPLETED")
