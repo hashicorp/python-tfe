@@ -36,9 +36,9 @@ from .resources.ssh_keys import SSHKeys
 from .resources.stack import Stacks
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
-from .resources.user import Users
 from .resources.team import Teams
 from .resources.team_project_access import TeamProjectAccesses
+from .resources.user import Users
 from .resources.variable import Variables
 from .resources.variable_sets import VariableSets, VariableSetVariables
 from .resources.workspace_resources import WorkspaceResourcesService
