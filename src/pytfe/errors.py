@@ -530,7 +530,7 @@ class InvalidKeyIDError(InvalidValues):
 
     def __init__(self, message: str = "invalid value for key-id"):
         super().__init__(message)
-        
+
 
 # Team errors
 class EmptyTeamNameError(InvalidValues):
@@ -567,4 +567,3 @@ class InvalidTeamProjectAccessIDError(InvalidValues):
 
     def __init__(self, message: str = "invalid value for team project access ID"):
         super().__init__(message)
-      

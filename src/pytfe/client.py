@@ -35,8 +35,8 @@ from .resources.run_trigger import RunTriggers
 from .resources.ssh_keys import SSHKeys
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
-from .resources.team_project_access import TeamProjectAccesses
 from .resources.team import Teams
+from .resources.team_project_access import TeamProjectAccesses
 from .resources.variable import Variables
 from .resources.variable_sets import VariableSets, VariableSetVariables
 from .resources.workspace_resources import WorkspaceResourcesService
