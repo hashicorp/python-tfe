@@ -33,6 +33,7 @@ from .resources.run_event import RunEvents
 from .resources.run_task import RunTasks
 from .resources.run_trigger import RunTriggers
 from .resources.ssh_keys import SSHKeys
+from .resources.stack import Stacks
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
 from .resources.team import Teams
@@ -109,6 +110,7 @@ class TFEClient:
 
         # Reserved Tag Key
         self.reserved_tag_key = ReservedTagKeys(self._transport)
+        self.stacks = Stacks(self._transport)
 
     def close(self) -> None:
         try:
