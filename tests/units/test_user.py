@@ -4,7 +4,11 @@ import copy
 from unittest.mock import Mock
 
 import pytest
-from pytfe.models.user import User, UserPermissions, UserUpdateCurrentOptions
+from pytfe.models.user import (
+    User,
+    UserPermissions,
+    UserUpdateCurrentOptions,
+)
 from pytfe.resources.user import Users
 
 
