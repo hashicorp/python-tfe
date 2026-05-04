@@ -13,7 +13,7 @@ class SSHKey(BaseModel):
 
     id: str = Field(..., description="The unique identifier for this SSH key")
     type: str = Field(default="ssh-keys", description="The type of this resource")
-    name: str = Field(..., description="A name to identify the SSH key")
+    name: str = Field(default="", description="A name to identify the SSH key")
 
 
 class SSHKeyCreateOptions(BaseModel):

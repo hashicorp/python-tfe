@@ -7,6 +7,8 @@ import builtins
 from collections.abc import Iterator
 from typing import Any
 
+from pytfe.models.ssh_key import SSHKey
+
 from ..errors import (
     InvalidOrgError,
     InvalidSSHKeyIDError,
@@ -19,11 +21,13 @@ from ..errors import (
     WorkspaceMinimumLimitError,
     WorkspaceRequiredError,
 )
+from ..models.agent import AgentPool
 from ..models.common import (
     EffectiveTagBinding,
     Tag,
     TagBinding,
 )
+from ..models.configuration_version import ConfigurationVersion
 from ..models.data_retention_policy import (
     DataRetentionPolicy,
     DataRetentionPolicyChoice,
@@ -34,6 +38,9 @@ from ..models.data_retention_policy import (
 )
 from ..models.organization import Organization
 from ..models.project import Project
+from ..models.run import Run
+from ..models.state_version import StateVersion
+from ..models.variable import Variable
 from ..models.workspace import (
     ExecutionMode,
     LockedByChoice,
@@ -181,7 +188,32 @@ def _ws_from(d: dict[str, Any]) -> Workspace:
             {"id": relationships["project"]["data"].get("id")}
         )
     if relationships.get("ssh-key", {}).get("data"):
-        attr["ssh_key"] = relationships["ssh-key"]["data"].get("id")
+        attr["ssh_key"] = SSHKey.model_validate(
+            {"id": relationships["ssh-key"]["data"].get("id")}
+        )
+    if relationships.get("agent-pool", {}).get("data"):
+        attr["agent_pools"] = AgentPool.model_validate(
+            {"id": relationships["agent-pool"]["data"].get("id")}
+        )
+    if relationships.get("current-run", {}).get("data"):
+        attr["current_run"] = Run.model_validate(
+            {"id": relationships["current-run"]["data"].get("id")}
+        )
+    if relationships.get("current-configuration-version", {}).get("data"):
+        attr["current_configuration_version"] = ConfigurationVersion.model_validate(
+            {"id": relationships["current-configuration-version"]["data"].get("id")}
+        )
+    if relationships.get("vars", {}).get("data"):
+        attr["variables"] = [
+            Variable.model_validate({"id": item.get("id")})
+            for item in relationships["vars"]["data"]
+            if item.get("id")
+        ]
+    if relationships.get("current-state-version", {}).get("data"):
+        attr["current_state_version"] = StateVersion.model_validate(
+            {"id": relationships["current-state-version"]["data"].get("id")}
+        )
+
     attr["outputs"] = outputs
     attr["locked_by"] = locked_by
     attr["data_retention_policy_choice"] = data_retention_policy_choice
