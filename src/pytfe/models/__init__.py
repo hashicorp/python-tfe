@@ -307,7 +307,11 @@ from .state_version_output import (
 from .team import (
     OrganizationAccess,
     Team,
+    TeamCreateOptions,
+    TeamIncludeOpt,
+    TeamListOptions,
     TeamPermissions,
+    TeamUpdateOptions,
 )
 
 # Variables
@@ -500,6 +504,10 @@ __all__ = [
     "OrganizationAccess",
     "Team",
     "TeamPermissions",
+    "TeamCreateOptions",
+    "TeamIncludeOpt",
+    "TeamListOptions",
+    "TeamUpdateOptions",
     "Project",
     "ProjectAddTagBindingsOptions",
     "ProjectCreateOptions",
