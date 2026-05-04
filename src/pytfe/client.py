@@ -36,6 +36,7 @@ from .resources.ssh_keys import SSHKeys
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
 from .resources.team import Teams
+from .resources.team_project_access import TeamProjectAccesses
 from .resources.variable import Variables
 from .resources.variable_sets import VariableSets, VariableSetVariables
 from .resources.workspace_resources import WorkspaceResourcesService
@@ -102,6 +103,8 @@ class TFEClient:
 
         # SSH Keys
         self.ssh_keys = SSHKeys(self._transport)
+        # Team project access
+        self.team_project_accesses = TeamProjectAccesses(self._transport)
         self.teams = Teams(self._transport)
 
         # Reserved Tag Key
