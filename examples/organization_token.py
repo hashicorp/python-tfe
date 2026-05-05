@@ -176,35 +176,36 @@ def main():
         print()
 
     # # =====================================================
-    # print("6. delete() - Delete the organization token:")
-    # print("-" * 40)
-    # try:
-    #     print(f"Deleting organization token for organization: {organization_name}")
-    #     client.organization_tokens.delete(organization_name)
+    print("6. delete() - Delete the organization token:")
+    print("-" * 40)
+    try:
+        print(f"Deleting organization token for organization: {organization_name}")
+        client.organization_tokens.delete(organization_name)
 
-    #     print(" Token deleted successfully!")
-    #     print()
+        print(" Token deleted successfully!")
+        print()
 
-    # except Exception as e:
-    #     print(f" Error: {e}")
-    #     print()
+    except Exception as e:
+        print(f" Error: {e}")
+        print()
 
-    # # =====================================================
-    # print("7. delete_with_options() - Delete audit-trails token:")
-    # print("-" * 40)
-    # try:
-    #     options = OrganizationTokenDeleteOptions(token_type=TokenType.AUDIT_TRAILS)
+    # =====================================================
+    print("7. delete_with_options() - Delete audit-trails token:")
+    print("-" * 40)
+    try:
+        options = OrganizationTokenDeleteOptions(token_type=TokenType.AUDIT_TRAILS)
 
-    #     print(f"Deleting audit-trails token for organization: {organization_name}")
-    #     client.organization_tokens.delete_with_options(organization_name, options)
+        print(f"Deleting audit-trails token for organization: {organization_name}")
+        client.organization_tokens.delete_with_options(organization_name, options)
 
-    #     print(" Audit-trails token deleted successfully!")
-    #     print()
+        print(" Audit-trails token deleted successfully!")
+        print()
 
-    # except Exception as e:
-    #     print(f"Error: {e}")
-    #     print()
-
+    except Exception as e:
+        print(f"Error: {e}")
+        print()
+    # -----------------------------
+    
     print("=" * 80)
     print("ORGANIZATION TOKEN OPERATIONS COMPLETED")
     print("=" * 80)
