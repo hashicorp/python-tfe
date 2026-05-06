@@ -13,6 +13,7 @@ from .resources.notification_configuration import NotificationConfigurations
 from .resources.oauth_client import OAuthClients
 from .resources.oauth_token import OAuthTokens
 from .resources.organization_membership import OrganizationMemberships
+from .resources.organization_token import OrganizationTokens
 from .resources.organizations import Organizations
 from .resources.plan import Plans
 from .resources.policy import Policies
@@ -33,7 +34,6 @@ from .resources.run_event import RunEvents
 from .resources.run_task import RunTasks
 from .resources.run_trigger import RunTriggers
 from .resources.ssh_keys import SSHKeys
-from .resources.stack import Stacks
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
 from .resources.team import Teams
@@ -77,6 +77,7 @@ class TFEClient:
         self.organizations = Organizations(self._transport)
         self.organization_memberships = OrganizationMemberships(self._transport)
         self.users = Users(self._transport)
+        self.organization_tokens = OrganizationTokens(self._transport)
         self.projects = Projects(self._transport)
         self.variables = Variables(self._transport)
         self.variable_sets = VariableSets(self._transport)
@@ -105,13 +106,9 @@ class TFEClient:
 
         # SSH Keys
         self.ssh_keys = SSHKeys(self._transport)
-        # Team project access
-        self.team_project_accesses = TeamProjectAccesses(self._transport)
-        self.teams = Teams(self._transport)
 
         # Reserved Tag Key
         self.reserved_tag_key = ReservedTagKeys(self._transport)
-        self.stacks = Stacks(self._transport)
 
     def close(self) -> None:
         try:
