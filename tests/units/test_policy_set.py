@@ -3,7 +3,6 @@
 from unittest.mock import Mock
 
 import pytest
-
 from pytfe._http import HTTPTransport
 from pytfe.errors import (
     InvalidNameError,

@@ -7,7 +7,6 @@ from datetime import datetime
 from unittest.mock import Mock, patch
 
 import pytest
-
 from pytfe._http import HTTPTransport
 from pytfe.errors import (
     InvalidRunTriggerIDError,

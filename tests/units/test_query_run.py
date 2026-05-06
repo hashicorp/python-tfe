@@ -20,7 +20,6 @@ Usage:
 from unittest.mock import Mock, patch
 
 import pytest
-
 from pytfe.errors import InvalidQueryRunIDError, InvalidWorkspaceIDError
 from pytfe.models import (
     QueryRun,

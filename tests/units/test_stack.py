@@ -6,7 +6,6 @@
 from unittest.mock import Mock
 
 import pytest
-
 from pytfe._http import HTTPTransport
 from pytfe.models.agent import AgentPool
 from pytfe.models.project import Project

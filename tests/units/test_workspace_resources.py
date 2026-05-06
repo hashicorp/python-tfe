@@ -6,7 +6,6 @@
 from unittest.mock import Mock
 
 import pytest
-
 from pytfe.models.workspace_resource import (
     WorkspaceResource,
     WorkspaceResourceListOptions,

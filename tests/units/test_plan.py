@@ -6,7 +6,6 @@
 from unittest.mock import Mock, patch
 
 import pytest
-
 from pytfe.errors import InvalidPlanIDError
 from pytfe.resources.plan import Plans
 

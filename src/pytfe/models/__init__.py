@@ -31,8 +31,9 @@ from .common import (
     Tag,
     TagBinding,
     TagList,
-)  # if you put ExecutionMode enum here
+)
 
+# if you put ExecutionMode enum here
 # ── Configuration Versions ────────────────────────────────────────────────────
 # (Old: .configuration_version_types) → import directly from real module
 from .configuration_version import (

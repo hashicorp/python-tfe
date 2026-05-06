@@ -4,7 +4,6 @@ from datetime import datetime
 from unittest.mock import Mock, patch
 
 import pytest
-
 from pytfe._http import HTTPTransport
 from pytfe.errors import ERR_INVALID_ORG
 from pytfe.models.organization_token import (

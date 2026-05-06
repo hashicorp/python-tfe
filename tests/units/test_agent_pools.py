@@ -18,7 +18,6 @@ Run with:
 from unittest.mock import Mock
 
 import pytest
-
 from pytfe.errors import AuthError, NotFound, ValidationError
 from pytfe.models.agent import (
     AgentPool,

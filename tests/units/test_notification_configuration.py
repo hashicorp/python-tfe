@@ -10,7 +10,6 @@ Tests all CRUD operations: List, Create, Read, Update, Delete, and Verify.
 from unittest.mock import Mock
 
 import pytest
-
 from pytfe.errors import InvalidOrgError, ValidationError
 from pytfe.models.notification_configuration import (
     DeliveryResponse,

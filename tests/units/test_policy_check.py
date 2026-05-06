@@ -3,7 +3,6 @@
 from unittest.mock import Mock, patch
 
 import pytest
-
 from pytfe._http import HTTPTransport
 from pytfe.errors import InvalidPolicyCheckIDError, InvalidRunIDError
 from pytfe.models.policy_check import (

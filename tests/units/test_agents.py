@@ -16,7 +16,6 @@ Run with:
 from unittest.mock import Mock
 
 import pytest
-
 from pytfe.errors import AuthError, NotFound
 from pytfe.models.agent import (
     Agent,
