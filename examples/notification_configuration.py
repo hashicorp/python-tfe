@@ -10,13 +10,9 @@ notification configurations for workspaces and teams.
 """
 
 import os
-import sys
-
-# Add the src directory to the Python path so we can import the tfe module
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from pytfe.client import TFEClient
-from pytfe.models.notification_configuration import (
+from pytfe.models import (
     NotificationConfigurationCreateOptions,
     NotificationConfigurationListOptions,
     NotificationConfigurationSubscribableChoice,

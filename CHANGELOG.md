@@ -1,5 +1,20 @@
 # Unreleased
 
+# Released
+# v0.1.5
+
+* `pytfe.__version__` added in src/pytfe/init.py via importlib.metadata.version("pytfe"). This will resolve to the version from pyproject.toml.
+* Updated comments, sshkey, stateversion and cost-estimate models to have id as mandatory attribute by @isivaselvan [#137](https://github.com/hashicorp/python-tfe/pull/137)
+* Updated workspace resource to include additional relationship models include AgentPool, Configuration-version, Run, Variables and State-version by @isivaselvan [#138](https://github.com/hashicorp/python-tfe/pull/138)
+
+## Bug Fixes
+* Run.read / Run.create fail with pydantic ValidationError when response has a `cost-estimate` and  `comments` relationship.
+
+# v0.1.4
+
+## Enhancements
+* Standardize Notification Configuration option models on Pydantic [#132](https://github.com/hashicorp/python-tfe/pull/132)
+
 # v0.1.3
 
 ## Enhancements
