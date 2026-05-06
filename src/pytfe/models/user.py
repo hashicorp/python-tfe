@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MPL-2.0
 from pydantic import BaseModel, ConfigDict, Field
 
+
 class TwoFactor(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
     enabled: bool = Field(default=False, alias="enabled")
@@ -41,6 +42,7 @@ class User(BaseModel):
     permissions: UserPermissions | None = Field(default=None, alias="permissions")
     # Relations
     # authentication_tokens: AuthenticationTokens = Field(..., alias="authentication-tokens")
+
 
 class UserUpdateCurrentOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
