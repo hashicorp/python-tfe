@@ -230,6 +230,13 @@ from .registry_provider import (
     RegistryProviderPermissions,
     RegistryProviderReadOptions,
 )
+from .registry_provider_platform import (
+    RegistryProviderPlatform,
+    RegistryProviderPlatformCreateOptions,
+    RegistryProviderPlatformID,
+    RegistryProviderPlatformListOptions,
+    RegistryProviderPlatformPermissions,
+)
 from .registry_provider_version import (
     RegistryProviderVersion,
     RegistryProviderVersionCreateOptions,
@@ -500,6 +507,12 @@ __all__ = [
     "RegistryProviderVersionID",
     "RegistryProviderVersionListOptions",
     "RegistryProviderVersionPermissions",
+    # Registry provider platforms
+    "RegistryProviderPlatform",
+    "RegistryProviderPlatformCreateOptions",
+    "RegistryProviderPlatformID",
+    "RegistryProviderPlatformListOptions",
+    "RegistryProviderPlatformPermissions",
     # Query runs
     "QueryRun",
     "QueryRunActions",
@@ -706,3 +719,6 @@ __all__ = [
 
 # Rebuild models with forward references after all models are loaded
 PolicyCheck.model_rebuild()
+RegistryProvider.model_rebuild()
+RegistryProviderVersion.model_rebuild()
+RegistryProviderPlatform.model_rebuild()
