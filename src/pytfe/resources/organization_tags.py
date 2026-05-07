@@ -82,7 +82,9 @@ class OrganizationTags(_Service):
         path = f"/api/v2/organizations/{quote(organization)}/tags"
         self.t.request("DELETE", path, json_body=body)
 
-    def add_workspaces(self, organization: str, tag: str, options: AddWorkspacesToTagOptions) -> None:
+    def add_workspaces(
+        self, organization: str, tag: str, options: AddWorkspacesToTagOptions
+    ) -> None:
         """Associate workspaces with an organization tag."""
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)

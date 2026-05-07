@@ -46,7 +46,9 @@ class TestOrganizationTags:
                         "instance-count": 2,
                     },
                     "relationships": {
-                        "organization": {"data": {"id": "org-1", "type": "organizations"}}
+                        "organization": {
+                            "data": {"id": "org-1", "type": "organizations"}
+                        }
                     },
                 }
             ],
@@ -117,7 +119,9 @@ class TestOrganizationTags:
             )
 
         with pytest.raises(ValueError, match=ERR_REQUIRED_TAG_ID):
-            organization_tags_service.delete("test-org", OrganizationTagsDeleteOptions())
+            organization_tags_service.delete(
+                "test-org", OrganizationTagsDeleteOptions()
+            )
 
         with pytest.raises(ValueError, match="is not a valid id value"):
             organization_tags_service.delete(
