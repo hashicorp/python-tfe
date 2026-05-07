@@ -116,9 +116,11 @@ class OrganizationTags(_Service):
         if org_data and isinstance(org_data, dict):
             org = Organization(id=org_data.get("id"))
 
-        return OrganizationTag(
-            id=data.get("id", ""),
-            name=attributes.get("name"),
-            instance_count=attributes.get("instance-count"),
-            organization=org,
+        return OrganizationTag.model_validate(
+            {
+                "id": data.get("id", ""),
+                "name": attributes.get("name"),
+                "instance-count": attributes.get("instance-count"),
+                "organization": org,
+            }
         )
