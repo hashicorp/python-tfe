@@ -36,6 +36,7 @@ from .resources.run_trigger import RunTriggers
 from .resources.ssh_keys import SSHKeys
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
+from .resources.user import Users
 from .resources.variable import Variables
 from .resources.variable_sets import VariableSets, VariableSetVariables
 from .resources.workspace_resources import WorkspaceResourcesService
@@ -73,6 +74,7 @@ class TFEClient:
         self.plans = Plans(self._transport)
         self.organizations = Organizations(self._transport)
         self.organization_memberships = OrganizationMemberships(self._transport)
+        self.users = Users(self._transport)
         self.organization_tokens = OrganizationTokens(self._transport)
         self.projects = Projects(self._transport)
         self.variables = Variables(self._transport)
