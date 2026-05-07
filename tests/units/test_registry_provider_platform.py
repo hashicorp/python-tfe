@@ -12,8 +12,8 @@ from pytfe.errors import (
     InvalidArchError,
     InvalidNameError,
     InvalidNamespaceError,
-    InvalidOSError,
     InvalidOrgError,
+    InvalidOSError,
     InvalidVersionError,
     RequiredArchError,
     RequiredFilenameError,
@@ -233,7 +233,11 @@ class TestRegistryProviderPlatforms:
     ):
         """Test successful list operation."""
         second = {**platform_api_data, "id": "provpltfrm-456"}
-        second["attributes"] = {**platform_api_data["attributes"], "os": "darwin", "arch": "arm64"}
+        second["attributes"] = {
+            **platform_api_data["attributes"],
+            "os": "darwin",
+            "arch": "arm64",
+        }
 
         with patch.object(
             platforms_service, "_list", return_value=[platform_api_data, second]
@@ -380,9 +384,7 @@ class TestRegistryProviderPlatforms:
                 "provider-binary-uploaded": False,
                 "permissions": {"can-delete": True, "can-upload-asset": True},
             },
-            "relationships": {
-                "registry-provider-version": {"data": None}
-            },
+            "relationships": {"registry-provider-version": {"data": None}},
         }
 
         result = platforms_service._registry_provider_platform_from(data)
