@@ -567,3 +567,63 @@ class InvalidTeamProjectAccessIDError(InvalidValues):
 
     def __init__(self, message: str = "invalid value for team project access ID"):
         super().__init__(message)
+
+
+# Registry Provider Platform errors
+class RequiredOSError(RequiredFieldMissing):
+    """Raised when a required OS field is missing."""
+
+    def __init__(self, message: str = "os is required"):
+        super().__init__(message)
+
+
+class RequiredArchError(RequiredFieldMissing):
+    """Raised when a required architecture field is missing."""
+
+    def __init__(self, message: str = "arch is required"):
+        super().__init__(message)
+
+
+class RequiredShasumError(RequiredFieldMissing):
+    """Raised when a required shasum field is missing."""
+
+    def __init__(self, message: str = "shasum is required"):
+        super().__init__(message)
+
+
+class RequiredFilenameError(RequiredFieldMissing):
+    """Raised when a required filename field is missing."""
+
+    def __init__(self, message: str = "filename is required"):
+        super().__init__(message)
+
+
+class InvalidOSError(InvalidValues):
+    """Raised when an invalid OS field is provided."""
+
+    def __init__(self, message: str = "invalid value for os"):
+        super().__init__(message)
+
+
+class InvalidArchError(InvalidValues):
+    """Raised when an invalid architecture field is provided."""
+
+    def __init__(self, message: str = "invalid value for arch"):
+        super().__init__(message)
+
+
+class InvalidNamespaceError(InvalidValues):
+    """Raised when an invalid namespace field is provided."""
+
+    def __init__(self, message: str = "invalid value for namespace"):
+        super().__init__(message)
+
+
+class InvalidRegistryNameError(InvalidValues):
+    """Raised when an invalid registry name field is provided."""
+
+    def __init__(
+        self,
+        message: str = "invalid value for registry-name. It must be either private or public",
+    ):
+        super().__init__(message)
