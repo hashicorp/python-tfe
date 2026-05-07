@@ -7,7 +7,15 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
+from ..errors import (
+    InvalidNameError,
+    InvalidNamespaceError,
+    InvalidOrgError,
+    InvalidValues,
+)
+from ..utils import valid_string_id
 
 
 class RegistryName(Enum):
@@ -35,12 +43,14 @@ class RegistryProvider(BaseModel):
     """Registry provider model."""
 
     id: str
-    name: str
-    namespace: str
-    created_at: datetime = Field(alias="created-at")
-    updated_at: datetime = Field(alias="updated-at")
-    registry_name: RegistryName = Field(alias="registry-name")
-    permissions: RegistryProviderPermissions
+    name: str = Field(alias="name", default="")
+    namespace: str = Field(alias="namespace", default="")
+    created_at: datetime | None = Field(alias="created-at", default=None)
+    updated_at: datetime | None = Field(alias="updated-at", default=None)
+    registry_name: RegistryName | None = Field(alias="registry-name", default=None)
+    permissions: RegistryProviderPermissions | None = Field(
+        alias="permissions", default=None
+    )
 
     # Relations
     organization: dict[str, Any] | None = None
@@ -62,6 +72,19 @@ class RegistryProviderID(BaseModel):
     namespace: str
     name: str
 
+    @model_validator(mode="after")
+    def valid(self) -> RegistryProviderID:
+        """Validate the registry provider ID."""
+        if not valid_string_id(self.organization_name):
+            raise InvalidOrgError()
+        if not valid_string_id(self.name):
+            raise InvalidNameError()
+        if not valid_string_id(self.namespace):
+            raise InvalidNamespaceError()
+        if not valid_string_id(self.registry_name.value):
+            raise InvalidValues("invalid value for registry name")
+        return self
+
 
 class RegistryProviderCreateOptions(BaseModel):
     """Options for creating a registry provider."""
@@ -71,6 +94,15 @@ class RegistryProviderCreateOptions(BaseModel):
     registry_name: RegistryName = Field(alias="registry-name")
 
     model_config = {"populate_by_name": True}
+
+    @model_validator(mode="after")
+    def valid(self) -> RegistryProviderCreateOptions:
+        """Validate the create options."""
+        if not valid_string_id(self.name):
+            raise InvalidNameError()
+        if not valid_string_id(self.namespace):
+            raise InvalidNamespaceError()
+        return self
 
 
 class RegistryProviderReadOptions(BaseModel):
