@@ -11,15 +11,16 @@ from ..errors import (
 )
 from ..models.registry_provider import (
     RegistryName,
+    RegistryProvider,
     RegistryProviderID,
 )
+from ..models.registry_provider_platform import RegistryProviderPlatform
 from ..models.registry_provider_version import (
     RegistryProviderVersion,
     RegistryProviderVersionCreateOptions,
     RegistryProviderVersionID,
     RegistryProviderVersionListOptions,
 )
-from ..utils import valid_string_id
 from ._base import _Service
 
 
@@ -32,9 +33,6 @@ class RegistryProviderVersions(_Service):
         options: RegistryProviderVersionCreateOptions,
     ) -> RegistryProviderVersion:
         """Create a registry provider version"""
-        if not self._validate_provider_id(provider_id):
-            raise ValueError("Invalid provider ID")
-
         if provider_id.registry_name != RegistryName.PRIVATE:
             raise RequiredPrivateRegistryError()
         path = f"/api/v2/organizations/{provider_id.organization_name}/registry-providers/{provider_id.registry_name.value}/{provider_id.namespace}/{provider_id.name}/versions"
@@ -53,18 +51,6 @@ class RegistryProviderVersions(_Service):
         data = r.json().get("data", {})
         return self._registry_provider_version_from(data)
 
-    def _validate_provider_id(self, provider_id: RegistryProviderID) -> bool:
-        """Validate a registry provider ID."""
-        if not valid_string_id(provider_id.organization_name):
-            return False
-        if not valid_string_id(provider_id.name):
-            return False
-        if not valid_string_id(provider_id.namespace):
-            return False
-        if provider_id.registry_name not in [RegistryName.PRIVATE, RegistryName.PUBLIC]:
-            return False
-        return True
-
     def _registry_provider_version_from(
         self, data: dict[str, Any]
     ) -> RegistryProviderVersion:
@@ -74,16 +60,22 @@ class RegistryProviderVersions(_Service):
         relationships = data.get("relationships", {})
         attrs["id"] = data.get("id")
 
-        # Parse relationships
+        # Parse relationships as typed stubs
         if "registry-provider" in relationships:
-            attrs["registry_provider"] = relationships["registry-provider"].get(
-                "data", {}
-            )
+            rp_data = relationships["registry-provider"].get("data")
+            if rp_data and rp_data.get("id"):
+                attrs["registry_provider"] = RegistryProvider.model_construct(
+                    id=rp_data["id"]
+                )
 
         if "platforms" in relationships:
-            attrs["registry_provider_platforms"] = relationships["platforms"].get(
-                "data", []
-            )
+            platforms_data = relationships["platforms"].get("data", [])
+            if platforms_data:
+                attrs["registry_provider_platforms"] = [
+                    RegistryProviderPlatform.model_construct(id=p["id"])
+                    for p in platforms_data
+                    if p.get("id")
+                ]
 
         return RegistryProviderVersion.model_validate(attrs)
 
@@ -93,9 +85,6 @@ class RegistryProviderVersions(_Service):
         options: RegistryProviderVersionListOptions | None = None,
     ) -> Iterator[RegistryProviderVersion]:
         """List registry provider versions"""
-        if not self._validate_provider_id(provider_id):
-            raise ValueError("Invalid provider ID")
-
         path = f"/api/v2/organizations/{provider_id.organization_name}/registry-providers/{provider_id.registry_name.value}/{provider_id.namespace}/{provider_id.name}/versions"
         params = options.model_dump(by_alias=True) if options else {}
         for item in self._list(path=path, params=params):
@@ -103,9 +92,6 @@ class RegistryProviderVersions(_Service):
 
     def read(self, version_id: RegistryProviderVersionID) -> RegistryProviderVersion:
         """Read a specific registry provider version"""
-        if not self._validate_provider_id(version_id):
-            raise ValueError("Invalid provider ID")
-
         path = f"/api/v2/organizations/{version_id.organization_name}/registry-providers/{version_id.registry_name.value}/{version_id.namespace}/{version_id.name}/versions/{version_id.version}"
         r = self.t.request(
             "GET",
@@ -116,9 +102,6 @@ class RegistryProviderVersions(_Service):
 
     def delete(self, version_id: RegistryProviderVersionID) -> None:
         """Delete a specific registry provider version"""
-        if not self._validate_provider_id(version_id):
-            raise ValueError("Invalid provider ID")
-
         path = f"/api/v2/organizations/{version_id.organization_name}/registry-providers/{version_id.registry_name.value}/{version_id.namespace}/{version_id.name}/versions/{version_id.version}"
         self.t.request(
             "DELETE",
