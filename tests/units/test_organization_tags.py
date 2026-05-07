@@ -129,7 +129,7 @@ class TestOrganizationTags:
             mock_t.request.return_value = Mock()
 
             options = AddWorkspacesToTagOptions(workspace_ids=["ws-1", "ws-2"])
-            organization_tags_service.add_workspaces("tag-1", options)
+            organization_tags_service.add_workspaces("test-org", "tag-1", options)
 
             call_args = mock_t.request.call_args
             assert call_args[0][0] == "POST"
@@ -142,17 +142,22 @@ class TestOrganizationTags:
             }
 
     def test_add_workspaces_validation_errors(self, organization_tags_service):
+        with pytest.raises(ValueError, match=ERR_INVALID_ORG):
+            organization_tags_service.add_workspaces(
+                "", "tag-1", AddWorkspacesToTagOptions(workspace_ids=["ws-1"])
+            )
+
         with pytest.raises(ValueError, match=ERR_INVALID_TAG):
             organization_tags_service.add_workspaces(
-                "", AddWorkspacesToTagOptions(workspace_ids=["ws-1"])
+                "test-org", "", AddWorkspacesToTagOptions(workspace_ids=["ws-1"])
             )
 
         with pytest.raises(ValueError, match=ERR_REQUIRED_TAG_WORKSPACE_ID):
             organization_tags_service.add_workspaces(
-                "tag-1", AddWorkspacesToTagOptions()
+                "test-org", "tag-1", AddWorkspacesToTagOptions()
             )
 
         with pytest.raises(ValueError, match="is not a valid id value"):
             organization_tags_service.add_workspaces(
-                "tag-1", AddWorkspacesToTagOptions(workspace_ids=[""])
+                "test-org", "tag-1", AddWorkspacesToTagOptions(workspace_ids=[""])
             )
