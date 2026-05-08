@@ -35,8 +35,12 @@ from .resources.run_event import RunEvents
 from .resources.run_task import RunTasks
 from .resources.run_trigger import RunTriggers
 from .resources.ssh_keys import SSHKeys
+from .resources.stack import Stacks
+from .resources.stack_configuration import StackConfigurations
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
+from .resources.team import Teams
+from .resources.team_project_access import TeamProjectAccesses
 from .resources.user import Users
 from .resources.variable import Variables
 from .resources.variable_sets import VariableSets, VariableSetVariables
@@ -88,6 +92,10 @@ class TFEClient:
         self.registry_provider_versions = RegistryProviderVersions(self._transport)
         self.registry_provider_platforms = RegistryProviderPlatforms(self._transport)
 
+        # Stack resources
+        self.stacks = Stacks(self._transport)
+        self.stack_configurations = StackConfigurations(self._transport)
+
         # State and execution resources
         self.state_versions = StateVersions(self._transport)
         self.state_version_outputs = StateVersionOutputs(self._transport)
@@ -106,6 +114,10 @@ class TFEClient:
 
         # SSH Keys
         self.ssh_keys = SSHKeys(self._transport)
+
+        # Team project access
+        self.teams = Teams(self._transport)
+        self.team_project_accesses = TeamProjectAccesses(self._transport)
 
         # Reserved Tag Key
         self.reserved_tag_key = ReservedTagKeys(self._transport)
