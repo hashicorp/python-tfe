@@ -5,9 +5,9 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional, TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
+
 
 class TaskResultStatus(str, Enum):
     passed = "passed"
@@ -26,11 +26,11 @@ class TaskEnforcementLevel(str, Enum):
 class TaskResultStatusTimestamps(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
-    errored_at: Optional[datetime] = Field(None, alias="errored-at")
-    running_at: Optional[datetime] = Field(None, alias="running-at")
-    canceled_at: Optional[datetime] = Field(None, alias="canceled-at")
-    failed_at: Optional[datetime] = Field(None, alias="failed-at")
-    passed_at: Optional[datetime] = Field(None, alias="passed-at")
+    errored_at: datetime | None = Field(None, alias="errored-at")
+    running_at: datetime | None = Field(None, alias="running-at")
+    canceled_at: datetime | None = Field(None, alias="canceled-at")
+    failed_at: datetime | None = Field(None, alias="failed-at")
+    passed_at: datetime | None = Field(None, alias="passed-at")
 
 
 class TaskResult(BaseModel):
@@ -40,7 +40,9 @@ class TaskResult(BaseModel):
     status: TaskResultStatus = Field(..., alias="status")
     message: str = Field(..., alias="message")
 
-    status_timestamps: TaskResultStatusTimestamps = Field(..., alias="status-timestamps")
+    status_timestamps: TaskResultStatusTimestamps = Field(
+        ..., alias="status-timestamps"
+    )
 
     url: str = Field(..., alias="url")
 
@@ -56,5 +58,5 @@ class TaskResult(BaseModel):
         ..., alias="workspace-task-enforcement-level"
     )
 
-    agent_pool_id: Optional[str] = Field(None, alias="agent-pool-id")
-    task_stage: Optional[dict] = Field(None, alias="task-stage")
+    agent_pool_id: str | None = Field(None, alias="agent-pool-id")
+    task_stage: dict | None = Field(None, alias="task-stage")

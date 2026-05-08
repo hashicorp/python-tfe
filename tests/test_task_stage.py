@@ -1,14 +1,13 @@
 import pytest
 
 from pytfe.client import TFEClient
-from pytfe.resources.task_stage import TaskStages
 from pytfe.models.task_stage import TaskStage
-from pytfe.errors import InvalidRunIDError
-
+from pytfe.resources.task_stage import TaskStages
 
 # ---------------------------
 # Basic existence tests
 # ---------------------------
+
 
 def test_task_stage_service_exists():
     client = TFEClient()
@@ -26,6 +25,7 @@ def test_task_stage_methods_exist():
 # ---------------------------
 # Read method tests
 # ---------------------------
+
 
 def test_read_raises_error_when_id_missing():
     client = TFEClient()
@@ -69,6 +69,7 @@ def test_read_calls_request_correctly(mocker):
 # List method tests
 # ---------------------------
 
+
 def test_list_with_valid_id_does_not_raise(mocker):
     mock_transport = mocker.Mock()
 
@@ -86,32 +87,33 @@ def test_list_calls_internal_list(mocker):
 
     service = TaskStages(mock_transport)
 
-    service._list = mocker.Mock(return_value=[
-        {
-            "id": "ts-1",
-            "attributes": {
-                "stage": "pre_plan",
-                "status": "pending",
-                "status-timestamps": {},
-                "created-at": "2024-01-01T00:00:00Z",
-                "updated-at": "2024-01-01T00:00:00Z",
-            },
-        }
-    ])
+    service._list = mocker.Mock(
+        return_value=[
+            {
+                "id": "ts-1",
+                "attributes": {
+                    "stage": "pre_plan",
+                    "status": "pending",
+                    "status-timestamps": {},
+                    "created-at": "2024-01-01T00:00:00Z",
+                    "updated-at": "2024-01-01T00:00:00Z",
+                },
+            }
+        ]
+    )
 
     result = list(service.list("run-123"))
 
     assert len(result) == 1
     assert isinstance(result[0], TaskStage)
 
-    service._list.assert_called_once_with(
-        "/api/v2/runs/run-123/task-stages"
-    )
+    service._list.assert_called_once_with("/api/v2/runs/run-123/task-stages")
 
 
 # ---------------------------
 # Override method tests
 # ---------------------------
+
 
 def test_override_raises_error_when_id_missing():
     client = TFEClient()

@@ -34,10 +34,10 @@ from .resources.run import Runs
 from .resources.run_event import RunEvents
 from .resources.run_task import RunTasks
 from .resources.run_trigger import RunTriggers
-from .resources.task_stage import TaskStages
 from .resources.ssh_keys import SSHKeys
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
+from .resources.task_stage import TaskStages
 from .resources.user import Users
 from .resources.variable import Variables
 from .resources.variable_sets import VariableSets, VariableSetVariables

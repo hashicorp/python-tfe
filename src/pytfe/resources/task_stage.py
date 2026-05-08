@@ -53,9 +53,7 @@ class TaskStages(_Service):
         if not valid_string_id(task_stage_id):
             raise ValueError("Invalid task_stage_id")
 
-        body: dict[str, Any] | None = (
-            {"comment": comment} if comment else None
-        )
+        body: dict[str, Any] | None = {"comment": comment} if comment else None
 
         response = self.t.request(
             "POST",
