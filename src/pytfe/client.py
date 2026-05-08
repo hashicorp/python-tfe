@@ -34,6 +34,7 @@ from .resources.run import Runs
 from .resources.run_event import RunEvents
 from .resources.run_task import RunTasks
 from .resources.run_trigger import RunTriggers
+from .resources.task_stage import TaskStages
 from .resources.ssh_keys import SSHKeys
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
@@ -94,6 +95,7 @@ class TFEClient:
         self.run_tasks = RunTasks(self._transport)
         self.run_triggers = RunTriggers(self._transport)
         self.runs = Runs(self._transport)
+        self.task_stages = TaskStages(self._transport)
         self.query_runs = QueryRuns(self._transport)
         self.run_events = RunEvents(self._transport)
         self.policies = Policies(self._transport)
