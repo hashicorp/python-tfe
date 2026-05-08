@@ -55,7 +55,7 @@ class StackConfiguration(BaseModel):
 
     id: str
     status: StackConfigurationStatus | None = Field(default=None, alias="status")
-    sequence_number: int = Field(default=0, alias="sequence-number")
+    sequence_number: int | None = Field(default=None, alias="sequence-number")
     components: list[StackComponent] = Field(default_factory=list, alias="components")
     preparing_event_stream_url: str = Field(
         default="", alias="preparing-event-stream-url"

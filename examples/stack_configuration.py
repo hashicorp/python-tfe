@@ -70,7 +70,7 @@ def main():
     ):
         config_count += 1
         print(f"- ID: {config.id}")
-        print(f"  Status: {config.status}")
+        print(f"  Status: {config.status.value if config.status else None}")
         print(f"  Sequence: {config.sequence_number}")
         print(f"  Speculative: {config.speculative}")
         print(f"  Created: {config.created_at}")
@@ -92,7 +92,7 @@ def main():
             stack_id=args.stack_id, options=create_opts
         )
         print(f"Created stack configuration: {config.id}")
-        print(f"  Status: {config.status}")
+        print(f"  Status: {config.status.value if config.status else None}")
         print(f"  Speculative: {config.speculative}")
         print(f"  Sequence: {config.sequence_number}")
         print(f"  Created: {config.created_at}")
@@ -105,7 +105,7 @@ def main():
             _print_header(f"Reading stack configuration: {args.id}")
             config = client.stack_configurations.read(stack_configuration_id=args.id)
             print(f"ID: {config.id}")
-            print(f"Status: {config.status}")
+            print(f"Status: {config.status.value if config.status else None}")
             print(f"Sequence: {config.sequence_number}")
             print(f"Speculative: {config.speculative}")
             print(f"Created: {config.created_at}")
