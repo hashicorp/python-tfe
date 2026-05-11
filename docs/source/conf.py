@@ -32,8 +32,7 @@ source_suffix = {
     ".md": "markdown",
 }
 
-autosummary_generate = True
-autosummary_generate_overwrite = False
+autosummary_generate = False
 
 autodoc_default_options = {
     "members": True,
@@ -61,19 +60,31 @@ simplify_optional_unions = True
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
-    "httpx": ("https://www.python-httpx.org/", None),
     "pydantic": ("https://docs.pydantic.dev/latest/", None),
 }
 
 myst_enable_extensions = ["colon_fence", "deflist", "tasklist"]
 myst_heading_anchors = 3
 
+suppress_warnings = [
+    # Models are re-exported from pytfe.models.__init__ AND their own submodule,
+    # causing duplicate cross-reference targets. This is expected behaviour.
+    "ref.python",
+    # pydantic internals trigger guarded-import warnings we cannot fix.
+    "sphinx_autodoc_typehints.guarded_import",
+]
+
 html_theme = "sphinx_rtd_theme"
 html_theme_options = {
     "navigation_with_keys": True,
-    "source_repository": "https://github.com/hashicorp/python-tfe",
-    "source_branch": "sphinx-docs",
-    "source_directory": "docs/source/",
+    "vcs_pageview_mode": "blob",
+}
+html_context = {
+    "display_github": True,
+    "github_user": "hashicorp",
+    "github_repo": "python-tfe",
+    "github_version": "sphinx-docs",
+    "conf_py_path": "/docs/source/",
 }
 html_static_path = ["_static"]
 html_title = f"pyTFE {release}"

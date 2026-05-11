@@ -165,3 +165,8 @@ class PolicySetRemoveProjectsOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     projects: list[Project] = Field(default_factory=list)
+
+
+# Resolve forward reference: PolicySetVersion.policy_set refers to PolicySet,
+# which is defined in this module. Rebuild now that PolicySet is available.
+PolicySetVersion.model_rebuild()
