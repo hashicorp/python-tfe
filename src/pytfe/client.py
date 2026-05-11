@@ -12,6 +12,7 @@ from .resources.configuration_version import ConfigurationVersions
 from .resources.notification_configuration import NotificationConfigurations
 from .resources.oauth_client import OAuthClients
 from .resources.oauth_token import OAuthTokens
+from .resources.organization_audit_configuration import OrganizationAuditConfigurations
 from .resources.organization_membership import OrganizationMemberships
 from .resources.organization_token import OrganizationTokens
 from .resources.organizations import Organizations
@@ -75,6 +76,9 @@ class TFEClient:
         self.plans = Plans(self._transport)
         self.organizations = Organizations(self._transport)
         self.organization_memberships = OrganizationMemberships(self._transport)
+        self.organization_audit_configurations = OrganizationAuditConfigurations(
+            self._transport
+        )
         self.users = Users(self._transport)
         self.organization_tokens = OrganizationTokens(self._transport)
         self.projects = Projects(self._transport)
