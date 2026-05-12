@@ -5,6 +5,7 @@ from typing import Any
 
 from pytfe.models.task_result import TaskResult
 from pytfe.utils import valid_string_id
+
 from ._base import _Service
 
 

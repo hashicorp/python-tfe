@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -30,11 +29,11 @@ class TaskEnforcementLevel(str, Enum):
 class TaskResultStatusTimestamps(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    errored_at: Optional[datetime] = Field(None, alias="errored-at")
-    running_at: Optional[datetime] = Field(None, alias="running-at")
-    canceled_at: Optional[datetime] = Field(None, alias="canceled-at")
-    failed_at: Optional[datetime] = Field(None, alias="failed-at")
-    passed_at: Optional[datetime] = Field(None, alias="passed-at")
+    errored_at: datetime | None = Field(None, alias="errored-at")
+    running_at: datetime | None = Field(None, alias="running-at")
+    canceled_at: datetime | None = Field(None, alias="canceled-at")
+    failed_at: datetime | None = Field(None, alias="failed-at")
+    passed_at: datetime | None = Field(None, alias="passed-at")
 
 
 class TaskResult(BaseModel):
@@ -42,28 +41,28 @@ class TaskResult(BaseModel):
 
     id: str
 
-    status: Optional[TaskResultStatus] = Field(None, alias="status")
-    message: Optional[str] = Field(None, alias="message")
+    status: TaskResultStatus | None = Field(None, alias="status")
+    message: str | None = Field(None, alias="message")
 
-    status_timestamps: Optional[TaskResultStatusTimestamps] = Field(
+    status_timestamps: TaskResultStatusTimestamps | None = Field(
         None, alias="status-timestamps"
     )
 
-    url: Optional[str] = Field(None, alias="url")
+    url: str | None = Field(None, alias="url")
 
-    created_at: Optional[datetime] = Field(None, alias="created-at")
-    updated_at: Optional[datetime] = Field(None, alias="updated-at")
+    created_at: datetime | None = Field(None, alias="created-at")
+    updated_at: datetime | None = Field(None, alias="updated-at")
 
-    task_id: Optional[str] = Field(None, alias="task-id")
-    task_name: Optional[str] = Field(None, alias="task-name")
-    task_url: Optional[str] = Field(None, alias="task-url")
+    task_id: str | None = Field(None, alias="task-id")
+    task_name: str | None = Field(None, alias="task-name")
+    task_url: str | None = Field(None, alias="task-url")
 
-    workspace_task_id: Optional[str] = Field(None, alias="workspace-task-id")
-    workspace_task_enforcement_level: Optional[TaskEnforcementLevel] = Field(
+    workspace_task_id: str | None = Field(None, alias="workspace-task-id")
+    workspace_task_enforcement_level: TaskEnforcementLevel | None = Field(
         None, alias="workspace-task-enforcement-level"
     )
 
-    agent_pool_id: Optional[str] = Field(None, alias="agent-pool-id")
+    agent_pool_id: str | None = Field(None, alias="agent-pool-id")
 
     # Relation (matches Go: *TaskStage)
-    task_stage: Optional[TaskStage] = Field(None, alias="task-stage")
+    task_stage: TaskStage | None = Field(None, alias="task-stage")

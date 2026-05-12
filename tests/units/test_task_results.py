@@ -1,8 +1,9 @@
-import pytest
 from unittest.mock import Mock
 
-from pytfe.resources.task_result import TaskResults
+import pytest
+
 from pytfe.models.task_result import TaskResult
+from pytfe.resources.task_result import TaskResults
 
 
 class TestTaskResults:
@@ -58,9 +59,7 @@ class TestTaskResults:
 
     def test_missing_attributes(self, service, mock_transport):
         response = Mock()
-        response.json.return_value = {
-            "data": {"id": "tr-123"}
-        }
+        response.json.return_value = {"data": {"id": "tr-123"}}
 
         mock_transport.request.return_value = response
 
@@ -112,9 +111,7 @@ class TestTaskResults:
                 "attributes": {
                     "status": "passed",
                     "message": "ok",
-                    "status-timestamps": {
-                        "passed-at": "2024-01-01T00:00:00Z"
-                    },
+                    "status-timestamps": {"passed-at": "2024-01-01T00:00:00Z"},
                 },
             }
         }
