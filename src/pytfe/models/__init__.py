@@ -313,6 +313,16 @@ from .ssh_key import (
     SSHKeyListOptions,
     SSHKeyUpdateOptions,
 )
+from .stack_configuration import (
+    StackComponent,
+    StackConfiguration,
+    StackConfigurationCreateOptions,
+    StackConfigurationIncludeOps,
+    StackConfigurationListOptions,
+    StackConfigurationReadOptions,
+    StackConfigurationSource,
+    StackConfigurationStatus,
+)
 from .state_version import (
     StateVersion,
     StateVersionCreateOptions,
@@ -513,6 +523,15 @@ __all__ = [
     "RegistryProviderPlatformID",
     "RegistryProviderPlatformListOptions",
     "RegistryProviderPlatformPermissions",
+    # Stack Configuration
+    "StackComponent",
+    "StackConfiguration",
+    "StackConfigurationCreateOptions",
+    "StackConfigurationIncludeOps",
+    "StackConfigurationListOptions",
+    "StackConfigurationReadOptions",
+    "StackConfigurationSource",
+    "StackConfigurationStatus",
     # Query runs
     "QueryRun",
     "QueryRunActions",
