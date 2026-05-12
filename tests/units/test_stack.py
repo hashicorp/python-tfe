@@ -265,3 +265,75 @@ class TestStacks:
         assert result.id == "st-789"
         assert result.project is None
         assert result.agent_pool is None
+
+    def test_fetch_latest_from_vcs_success(
+        self, stacks_service, mock_transport, stack_response_data
+    ):
+        """Test successful fetch-latest-from-vcs operation."""
+        mock_response = Mock()
+        mock_response.json.return_value = {"data": stack_response_data}
+        mock_transport.request.return_value = mock_response
+
+        result = stacks_service.fetch_latest_from_vcs("st-123")
+
+        mock_transport.request.assert_called_once_with(
+            "POST",
+            path="/api/v2/stacks/st-123/fetch-latest-from-vcs",
+        )
+        assert isinstance(result, Stack)
+        assert result.id == "st-123"
+
+    def test_create_stack_invalid_name(self):
+        """StackCreateOptions raises when name is empty."""
+        with pytest.raises(ValueError):
+            StackCreateOptions(
+                name="",
+                project=Project(id="prj-123"),
+            )
+
+    def test_create_stack_invalid_project_id(self):
+        """StackCreateOptions raises when project id is empty."""
+        with pytest.raises(ValueError):
+            StackCreateOptions(
+                name="demo-stack",
+                project=Project(id=""),
+            )
+
+    def test_list_stacks_no_options(self, stacks_service):
+        """list() works correctly with minimal options (no filter/sort)."""
+        stacks_service._list = Mock(return_value=[])
+
+        results = list(
+            stacks_service.list(
+                "org-123",
+                StackListOptions(),
+            )
+        )
+
+        stacks_service._list.assert_called_once_with(
+            "/api/v2/organizations/org-123/stacks",
+            params={},
+        )
+        assert results == []
+
+    def test_stack_from_with_vcs_repo(self, stacks_service):
+        """_stack_from parses vcs-repo fields correctly."""
+        data = {
+            "id": "st-vcs",
+            "attributes": {
+                "name": "vcs-stack",
+                "vcs-repo": {
+                    "identifier": "hashicorp/terraform",
+                    "branch": "main",
+                    "oauth-token-id": "ot-abc",
+                },
+            },
+            "relationships": {},
+        }
+
+        result = stacks_service._stack_from(data)
+
+        assert result.vcs_repo is not None
+        assert result.vcs_repo.identifier == "hashicorp/terraform"
+        assert result.vcs_repo.branch == "main"
+        assert result.vcs_repo.oauth_token_id == "ot-abc"
