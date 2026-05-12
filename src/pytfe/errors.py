@@ -642,3 +642,18 @@ class InvalidStackConfigurationIDError(InvalidValues):
 
     def __init__(self, message: str = "invalid value for stack configuration ID"):
         super().__init__(message)
+
+
+# Comment errors
+class InvalidCommentIDError(InvalidValues):
+    """Raised when an invalid comment ID is provided."""
+
+    def __init__(self, message: str = "invalid value for comment ID"):
+        super().__init__(message)
+
+
+class RequiredCommentBodyError(TFEError):
+    """Raised when comment body is empty or missing."""
+
+    def __init__(self, message: str = "comment body is required"):
+        super().__init__(message)

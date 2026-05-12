@@ -21,6 +21,10 @@ from .agent import (
     AgentTokenCreateOptions,
     AgentTokenListOptions,
 )
+from .comment import (
+    Comment,
+    CommentCreateOptions,
+)
 
 # ── Core models split out of old types.py ─────────────────────────────────────
 # Adjust these imports to match where you placed them during the split.
@@ -642,6 +646,9 @@ __all__ = [
     "RunEventList",
     "RunEventListOptions",
     "RunEventReadOptions",
+    # Comments
+    "Comment",
+    "CommentCreateOptions",
     # Run tasks
     "RunTask",
     "RunTaskIncludeOptions",
