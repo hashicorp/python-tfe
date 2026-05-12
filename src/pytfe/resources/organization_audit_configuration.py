@@ -79,7 +79,9 @@ class OrganizationAuditConfigurations(_Service):
 
         return self._parse_audit_configuration(data)
 
-    def _parse_audit_configuration(self, data: dict[str, Any]) -> OrganizationAuditConfiguration:
+    def _parse_audit_configuration(
+        self, data: dict[str, Any]
+    ) -> OrganizationAuditConfiguration:
         attrs = data.get("attributes", {})
         relationships = data.get("relationships", {})
 

@@ -65,7 +65,9 @@ class TestOrganizationAuditConfigurations:
 
             call_args = mock_t.request.call_args
             assert call_args[0][0] == "GET"
-            assert call_args[0][1] == "/api/v2/organizations/test-org/audit-configuration"
+            assert (
+                call_args[0][1] == "/api/v2/organizations/test-org/audit-configuration"
+            )
 
     def test_read_validation_errors(self, service):
         with pytest.raises(ValueError, match=ERR_INVALID_ORG):
@@ -137,7 +139,9 @@ class TestOrganizationAuditConfigurations:
 
             call_args = mock_t.request.call_args
             assert call_args[0][0] == "PATCH"
-            assert call_args[0][1] == "/api/v2/organizations/test-org/audit-configuration"
+            assert (
+                call_args[0][1] == "/api/v2/organizations/test-org/audit-configuration"
+            )
             assert call_args[1]["json_body"]["data"]["type"] == "audit-configurations"
             attrs = call_args[1]["json_body"]["data"]["attributes"]
             assert attrs["audit-trails"]["enabled"] is True
