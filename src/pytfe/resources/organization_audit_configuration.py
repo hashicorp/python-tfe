@@ -51,7 +51,7 @@ class OrganizationAuditConfigurations(_Service):
             if isinstance(attrs, dict) and "request-id" in attrs:
                 return OrganizationAuditConfigurationTest.model_validate(attrs)
 
-        return OrganizationAuditConfigurationTest(request_id=None)
+        return OrganizationAuditConfigurationTest()
 
     def update(
         self,
