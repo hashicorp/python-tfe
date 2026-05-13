@@ -372,6 +372,13 @@ class InvalidQueryRunIDError(InvalidValues):
         super().__init__(message)
 
 
+class InvalidExplorerSavedViewIDError(InvalidValues):
+    """Raised when a saved view id is missing or blank (Explorer view-scoped routes)."""
+
+    def __init__(self, message: str = "invalid value for explorer saved view ID"):
+        super().__init__(message)
+
+
 class TerraformVersionValidForPlanOnlyError(ValidationError):
     """Raised when terraform_version is set without plan_only being true."""
 
