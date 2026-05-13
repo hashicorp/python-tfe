@@ -537,3 +537,115 @@ class InvalidKeyIDError(InvalidValues):
 
     def __init__(self, message: str = "invalid value for key-id"):
         super().__init__(message)
+
+
+# Team errors
+class EmptyTeamNameError(InvalidValues):
+    """Raised when a team name is empty."""
+
+    def __init__(self, message: str = "team names cannot be empty"):
+        super().__init__(message)
+
+
+class InvalidTeamIDError(InvalidValues):
+    """Raised when an invalid team ID is provided."""
+
+    def __init__(self, message: str = "invalid value for team ID"):
+        super().__init__(message)
+
+
+# Team Project Access errors
+class InvalidProjectIDError(InvalidValues):
+    """Raised when an invalid project ID is provided."""
+
+    def __init__(self, message: str = "invalid value for project ID"):
+        super().__init__(message)
+
+
+class RequiredTeamError(RequiredFieldMissing):
+    """Raised when a required team field is missing."""
+
+    def __init__(self, message: str = "team is required"):
+        super().__init__(message)
+
+
+class InvalidTeamProjectAccessIDError(InvalidValues):
+    """Raised when an invalid team project access ID is provided."""
+
+    def __init__(self, message: str = "invalid value for team project access ID"):
+        super().__init__(message)
+
+
+# Registry Provider Platform errors
+class RequiredOSError(RequiredFieldMissing):
+    """Raised when a required OS field is missing."""
+
+    def __init__(self, message: str = "os is required"):
+        super().__init__(message)
+
+
+class RequiredArchError(RequiredFieldMissing):
+    """Raised when a required architecture field is missing."""
+
+    def __init__(self, message: str = "arch is required"):
+        super().__init__(message)
+
+
+class RequiredShasumError(RequiredFieldMissing):
+    """Raised when a required shasum field is missing."""
+
+    def __init__(self, message: str = "shasum is required"):
+        super().__init__(message)
+
+
+class RequiredFilenameError(RequiredFieldMissing):
+    """Raised when a required filename field is missing."""
+
+    def __init__(self, message: str = "filename is required"):
+        super().__init__(message)
+
+
+class InvalidOSError(InvalidValues):
+    """Raised when an invalid OS field is provided."""
+
+    def __init__(self, message: str = "invalid value for os"):
+        super().__init__(message)
+
+
+class InvalidArchError(InvalidValues):
+    """Raised when an invalid architecture field is provided."""
+
+    def __init__(self, message: str = "invalid value for arch"):
+        super().__init__(message)
+
+
+class InvalidNamespaceError(InvalidValues):
+    """Raised when an invalid namespace field is provided."""
+
+    def __init__(self, message: str = "invalid value for namespace"):
+        super().__init__(message)
+
+
+class InvalidRegistryNameError(InvalidValues):
+    """Raised when an invalid registry name field is provided."""
+
+    def __init__(
+        self,
+        message: str = "invalid value for registry-name. It must be either private or public",
+    ):
+        super().__init__(message)
+
+
+# Stack Configuration errors
+class InvalidStackIDError(InvalidValues):
+    """Raised when an invalid stack ID is provided."""
+
+    def __init__(self, message: str = "invalid value for stack ID"):
+        super().__init__(message)
+
+
+class InvalidStackConfigurationIDError(InvalidValues):
+    """Raised when an invalid stack configuration ID is provided."""
+
+    def __init__(self, message: str = "invalid value for stack configuration ID"):
+        super().__init__(message)

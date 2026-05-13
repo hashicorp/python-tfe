@@ -70,6 +70,19 @@ from .explorer import (
     ExplorerViewType,
 )
 
+# ── Notification Configurations ───────────────────────────────────────────────
+from .notification_configuration import (
+    DeliveryResponse,
+    NotificationConfiguration,
+    NotificationConfigurationCreateOptions,
+    NotificationConfigurationList,
+    NotificationConfigurationListOptions,
+    NotificationConfigurationSubscribableChoice,
+    NotificationConfigurationUpdateOptions,
+    NotificationDestinationType,
+    NotificationTriggerType,
+)
+
 # ── OAuth ─────────────────────────────────────────────────────────────────────
 from .oauth_client import (
     OAuthClient,
@@ -228,6 +241,13 @@ from .registry_provider import (
     RegistryProviderPermissions,
     RegistryProviderReadOptions,
 )
+from .registry_provider_platform import (
+    RegistryProviderPlatform,
+    RegistryProviderPlatformCreateOptions,
+    RegistryProviderPlatformID,
+    RegistryProviderPlatformListOptions,
+    RegistryProviderPlatformPermissions,
+)
 from .registry_provider_version import (
     RegistryProviderVersion,
     RegistryProviderVersionCreateOptions,
@@ -304,6 +324,16 @@ from .ssh_key import (
     SSHKeyListOptions,
     SSHKeyUpdateOptions,
 )
+from .stack_configuration import (
+    StackComponent,
+    StackConfiguration,
+    StackConfigurationCreateOptions,
+    StackConfigurationIncludeOps,
+    StackConfigurationListOptions,
+    StackConfigurationReadOptions,
+    StackConfigurationSource,
+    StackConfigurationStatus,
+)
 from .state_version import (
     StateVersion,
     StateVersionCreateOptions,
@@ -318,7 +348,11 @@ from .state_version_output import (
 from .team import (
     OrganizationAccess,
     Team,
+    TeamCreateOptions,
+    TeamIncludeOpt,
+    TeamListOptions,
     TeamPermissions,
+    TeamUpdateOptions,
 )
 
 # Variables
@@ -387,6 +421,16 @@ from .workspace_resource import (
 
 # ── Public surface ────────────────────────────────────────────────────────────
 __all__ = [
+    # Notification configurations
+    "DeliveryResponse",
+    "NotificationConfiguration",
+    "NotificationConfigurationCreateOptions",
+    "NotificationConfigurationList",
+    "NotificationConfigurationListOptions",
+    "NotificationConfigurationSubscribableChoice",
+    "NotificationConfigurationUpdateOptions",
+    "NotificationDestinationType",
+    "NotificationTriggerType",
     # OAuth
     "OAuthClient",
     "OAuthClientAddProjectsOptions",
@@ -484,6 +528,21 @@ __all__ = [
     "RegistryProviderVersionID",
     "RegistryProviderVersionListOptions",
     "RegistryProviderVersionPermissions",
+    # Registry provider platforms
+    "RegistryProviderPlatform",
+    "RegistryProviderPlatformCreateOptions",
+    "RegistryProviderPlatformID",
+    "RegistryProviderPlatformListOptions",
+    "RegistryProviderPlatformPermissions",
+    # Stack Configuration
+    "StackComponent",
+    "StackConfiguration",
+    "StackConfigurationCreateOptions",
+    "StackConfigurationIncludeOps",
+    "StackConfigurationListOptions",
+    "StackConfigurationReadOptions",
+    "StackConfigurationSource",
+    "StackConfigurationStatus",
     # Query runs
     "QueryRun",
     "QueryRunActions",
@@ -521,6 +580,10 @@ __all__ = [
     "OrganizationAccess",
     "Team",
     "TeamPermissions",
+    "TeamCreateOptions",
+    "TeamIncludeOpt",
+    "TeamListOptions",
+    "TeamUpdateOptions",
     "Project",
     "ProjectAddTagBindingsOptions",
     "ProjectCreateOptions",
@@ -696,3 +759,6 @@ __all__ = [
 
 # Rebuild models with forward references after all models are loaded
 PolicyCheck.model_rebuild()
+RegistryProvider.model_rebuild()
+RegistryProviderVersion.model_rebuild()
+RegistryProviderPlatform.model_rebuild()
