@@ -296,6 +296,10 @@ from .run_task import (
     Stage,
     TaskEnforcementLevel,
 )
+from .run_task_request import (
+    RunTaskRequest,
+    RunTaskRequestCapabilitites,
+)
 from .run_trigger import (
     RunTrigger,
     RunTriggerCreateOptions,
