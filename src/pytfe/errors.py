@@ -121,6 +121,11 @@ ERR_INVALID_RESERVED_TAG_KEY_ID = "invalid reserved tag key ID"
 ERR_REQUIRED_TAG_KEY = "tag key is required"
 ERR_INVALID_TAG_KEY = "invalid tag key"
 
+# Organization Tag Error Constants
+ERR_INVALID_TAG = "invalid value for tag"
+ERR_REQUIRED_TAG_ID = "tag ID is required"
+ERR_REQUIRED_TAG_WORKSPACE_ID = "workspace ID is required"
+
 
 class WorkspaceNotFound(NotFound): ...
 

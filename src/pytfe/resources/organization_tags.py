@@ -9,6 +9,9 @@ from urllib.parse import quote
 
 from ..errors import (
     ERR_INVALID_ORG,
+    ERR_INVALID_TAG,
+    ERR_REQUIRED_TAG_ID,
+    ERR_REQUIRED_TAG_WORKSPACE_ID,
 )
 from ..models.organization import Organization
 from ..models.organization_tags import (
@@ -19,10 +22,6 @@ from ..models.organization_tags import (
 )
 from ..utils import valid_string_id
 from ._base import _Service
-
-ERR_INVALID_TAG = "invalid value for tag"
-ERR_REQUIRED_TAG_ID = "tag ID is required"
-ERR_REQUIRED_TAG_WORKSPACE_ID = "workspace ID is required"
 
 
 class OrganizationTags(_Service):

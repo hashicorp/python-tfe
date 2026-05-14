@@ -10,6 +10,9 @@ import pytest
 from pytfe._http import HTTPTransport
 from pytfe.errors import (
     ERR_INVALID_ORG,
+    ERR_INVALID_TAG,
+    ERR_REQUIRED_TAG_ID,
+    ERR_REQUIRED_TAG_WORKSPACE_ID,
 )
 from pytfe.models.organization_tags import (
     AddWorkspacesToTagOptions,
@@ -17,10 +20,6 @@ from pytfe.models.organization_tags import (
     OrganizationTagsListOptions,
 )
 from pytfe.resources.organization_tags import OrganizationTags
-
-ERR_INVALID_TAG = "invalid value for tag"
-ERR_REQUIRED_TAG_ID = "tag ID is required"
-ERR_REQUIRED_TAG_WORKSPACE_ID = "workspace ID is required"
 
 
 class TestOrganizationTags:
