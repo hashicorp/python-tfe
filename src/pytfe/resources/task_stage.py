@@ -25,14 +25,12 @@ class TaskStages(_Service):
         run_data = relationships.get("run", {}).get("data")
         attributes["run"] = run_data
 
-        task_results_data = relationships.get(
-            "task-results", {}
-        ).get("data", [])
+        task_results_data = relationships.get("task-results", {}).get("data", [])
         attributes["task-results"] = task_results_data
 
-        policy_evaluations_data = relationships.get(
-            "policy-evaluations", {}
-        ).get("data", [])
+        policy_evaluations_data = relationships.get("policy-evaluations", {}).get(
+            "data", []
+        )
         attributes["policy-evaluations"] = policy_evaluations_data
 
         return TaskStage.model_validate(attributes)
