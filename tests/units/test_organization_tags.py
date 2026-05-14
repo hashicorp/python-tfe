@@ -43,14 +43,14 @@ class TestOrganizationTags:
                     "instance-count": 2,
                 },
                 "relationships": {
-                    "organization": {
-                        "data": {"id": "org-1", "type": "organizations"}
-                    }
+                    "organization": {"data": {"id": "org-1", "type": "organizations"}}
                 },
             }
         ]
 
-        with patch.object(organization_tags_service, "_list", return_value=iter(mock_items)):
+        with patch.object(
+            organization_tags_service, "_list", return_value=iter(mock_items)
+        ):
             options = OrganizationTagsListOptions(query="env")
             result = list(organization_tags_service.list("test-org", options))
 

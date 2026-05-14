@@ -21,11 +21,16 @@ import os
 
 from pytfe import TFEClient, TFEConfig
 from pytfe.errors import TFEError
-from pytfe.models.organization_tags import AddWorkspacesToTagOptions, OrganizationTagsDeleteOptions
+from pytfe.models.organization_tags import (
+    AddWorkspacesToTagOptions,
+    OrganizationTagsDeleteOptions,
+)
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Organization Tags demo for python-tfe SDK")
+    parser = argparse.ArgumentParser(
+        description="Organization Tags demo for python-tfe SDK"
+    )
     parser.add_argument(
         "--address", default=os.getenv("TFE_ADDRESS", "https://app.terraform.io")
     )
