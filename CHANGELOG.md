@@ -1,6 +1,15 @@
 # Unreleased
 
+
 # Released
+# v1.0.0
+
+## Features
+
+### Explorer API
+* Added Explorer resource support with query, CSV export, saved view CRUD, saved view result query, and saved view CSV export endpoints.
+
+
 # v0.1.5
 
 * `pytfe.__version__` added in src/pytfe/init.py via importlib.metadata.version("pytfe"). This will resolve to the version from pyproject.toml.

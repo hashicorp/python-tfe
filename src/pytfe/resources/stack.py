@@ -117,6 +117,13 @@ class Stacks(_Service):
         )
         return None
 
+    def fetch_latest_from_vcs(self, stack_id: str) -> Stack:
+        """FetchLatestFromVcs updates the configuration of a stack, triggering stack preparation."""
+        path = f"/api/v2/stacks/{stack_id}/fetch-latest-from-vcs"
+        r = self.t.request("POST", path=path)
+        data = r.json().get("data", {})
+        return self._stack_from(data)
+
     def _stack_from(self, data: dict) -> Stack:
         attrs = data.get("attributes", {})
         attrs["id"] = data.get("id")

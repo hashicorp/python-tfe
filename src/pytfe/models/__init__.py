@@ -21,6 +21,10 @@ from .agent import (
     AgentTokenCreateOptions,
     AgentTokenListOptions,
 )
+from .comment import (
+    Comment,
+    CommentCreateOptions,
+)
 
 # ── Core models split out of old types.py ─────────────────────────────────────
 # Adjust these imports to match where you placed them during the split.
@@ -57,6 +61,17 @@ from .data_retention_policy import (
     DataRetentionPolicyDontDelete,
     DataRetentionPolicyDontDeleteSetOptions,
     DataRetentionPolicySetOptions,
+)
+from .explorer import (
+    ExplorerQueryOptions,
+    ExplorerRow,
+    ExplorerSavedQuery,
+    ExplorerSavedQueryFilter,
+    ExplorerSavedView,
+    ExplorerSavedViewCreateOptions,
+    ExplorerSavedViewUpdateOptions,
+    ExplorerUrlFilter,
+    ExplorerViewType,
 )
 
 # ── Notification Configurations ───────────────────────────────────────────────
@@ -313,6 +328,16 @@ from .ssh_key import (
     SSHKeyListOptions,
     SSHKeyUpdateOptions,
 )
+from .stack_configuration import (
+    StackComponent,
+    StackConfiguration,
+    StackConfigurationCreateOptions,
+    StackConfigurationIncludeOps,
+    StackConfigurationListOptions,
+    StackConfigurationReadOptions,
+    StackConfigurationSource,
+    StackConfigurationStatus,
+)
 from .state_version import (
     StateVersion,
     StateVersionCreateOptions,
@@ -513,6 +538,15 @@ __all__ = [
     "RegistryProviderPlatformID",
     "RegistryProviderPlatformListOptions",
     "RegistryProviderPlatformPermissions",
+    # Stack Configuration
+    "StackComponent",
+    "StackConfiguration",
+    "StackConfigurationCreateOptions",
+    "StackConfigurationIncludeOps",
+    "StackConfigurationListOptions",
+    "StackConfigurationReadOptions",
+    "StackConfigurationSource",
+    "StackConfigurationStatus",
     # Query runs
     "QueryRun",
     "QueryRunActions",
@@ -524,6 +558,16 @@ __all__ = [
     "QueryRunStatus",
     "QueryRunStatusTimestamps",
     "QueryRunVariable",
+    # Explorer
+    "ExplorerQueryOptions",
+    "ExplorerRow",
+    "ExplorerSavedQuery",
+    "ExplorerSavedQueryFilter",
+    "ExplorerSavedView",
+    "ExplorerSavedViewCreateOptions",
+    "ExplorerSavedViewUpdateOptions",
+    "ExplorerUrlFilter",
+    "ExplorerViewType",
     # Core (from old types.py, now split)
     "Entitlements",
     "ExecutionMode",
@@ -623,6 +667,9 @@ __all__ = [
     "RunEventList",
     "RunEventListOptions",
     "RunEventReadOptions",
+    # Comments
+    "Comment",
+    "CommentCreateOptions",
     # Run tasks
     "RunTask",
     "RunTaskIncludeOptions",

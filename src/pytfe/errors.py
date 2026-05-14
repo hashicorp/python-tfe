@@ -372,6 +372,13 @@ class InvalidQueryRunIDError(InvalidValues):
         super().__init__(message)
 
 
+class InvalidExplorerSavedViewIDError(InvalidValues):
+    """Raised when a saved view id is missing or blank (Explorer view-scoped routes)."""
+
+    def __init__(self, message: str = "invalid value for explorer saved view ID"):
+        super().__init__(message)
+
+
 class TerraformVersionValidForPlanOnlyError(ValidationError):
     """Raised when terraform_version is set without plan_only being true."""
 
@@ -626,4 +633,34 @@ class InvalidRegistryNameError(InvalidValues):
         self,
         message: str = "invalid value for registry-name. It must be either private or public",
     ):
+        super().__init__(message)
+
+
+# Stack Configuration errors
+class InvalidStackIDError(InvalidValues):
+    """Raised when an invalid stack ID is provided."""
+
+    def __init__(self, message: str = "invalid value for stack ID"):
+        super().__init__(message)
+
+
+class InvalidStackConfigurationIDError(InvalidValues):
+    """Raised when an invalid stack configuration ID is provided."""
+
+    def __init__(self, message: str = "invalid value for stack configuration ID"):
+        super().__init__(message)
+
+
+# Comment errors
+class InvalidCommentIDError(InvalidValues):
+    """Raised when an invalid comment ID is provided."""
+
+    def __init__(self, message: str = "invalid value for comment ID"):
+        super().__init__(message)
+
+
+class RequiredCommentBodyError(TFEError):
+    """Raised when comment body is empty or missing."""
+
+    def __init__(self, message: str = "comment body is required"):
         super().__init__(message)
