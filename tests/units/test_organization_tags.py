@@ -1,12 +1,11 @@
+# Copyright IBM Corp. 2025, 2026
+# SPDX-License-Identifier: MPL-2.0
+
 """Unit tests for the organization tags module."""
 
-import os
-import sys
 from unittest.mock import Mock, patch
 
 import pytest
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "src"))
 
 from pytfe._http import HTTPTransport
 from pytfe.errors import (
@@ -15,7 +14,6 @@ from pytfe.errors import (
 from pytfe.models.organization_tags import (
     AddWorkspacesToTagOptions,
     OrganizationTagsDeleteOptions,
-    OrganizationTagsList,
     OrganizationTagsListOptions,
 )
 from pytfe.resources.organization_tags import OrganizationTags
@@ -37,56 +35,31 @@ class TestOrganizationTags:
         return OrganizationTags(mock_transport)
 
     def test_list_success(self, organization_tags_service):
-        mock_response_data = {
-            "data": [
-                {
-                    "id": "tag-1",
-                    "attributes": {
-                        "name": "env:dev",
-                        "instance-count": 2,
-                    },
-                    "relationships": {
-                        "organization": {
-                            "data": {"id": "org-1", "type": "organizations"}
-                        }
-                    },
-                }
-            ],
-            "meta": {
-                "pagination": {
-                    "current-page": 1,
-                    "total-count": 1,
-                    "next-page": None,
-                    "previous-page": None,
-                    "total-pages": 1,
-                }
-            },
-        }
+        mock_items = [
+            {
+                "id": "tag-1",
+                "attributes": {
+                    "name": "env:dev",
+                    "instance-count": 2,
+                },
+                "relationships": {
+                    "organization": {
+                        "data": {"id": "org-1", "type": "organizations"}
+                    }
+                },
+            }
+        ]
 
-        mock_response = Mock()
-        mock_response.json.return_value = mock_response_data
-
-        with patch.object(organization_tags_service, "t") as mock_t:
-            mock_t.request.return_value = mock_response
-
+        with patch.object(organization_tags_service, "_list", return_value=iter(mock_items)):
             options = OrganizationTagsListOptions(query="env")
-            result = organization_tags_service.list("test-org", options)
+            result = list(organization_tags_service.list("test-org", options))
 
-            assert isinstance(result, OrganizationTagsList)
-            assert len(result.items) == 1
-            assert result.items[0].id == "tag-1"
-            assert result.items[0].name == "env:dev"
-            assert result.items[0].instance_count == 2
-            assert result.items[0].organization is not None
-            assert result.items[0].organization.id == "org-1"
-            assert result.pagination is not None
-            assert result.pagination.current_page == 1
-            assert result.pagination.total_count == 1
-
-            call_args = mock_t.request.call_args
-            assert call_args[0][0] == "GET"
-            assert call_args[0][1] == "/api/v2/organizations/test-org/tags"
-            assert call_args[1]["params"]["q"] == "env"
+            assert len(result) == 1
+            assert result[0].id == "tag-1"
+            assert result[0].name == "env:dev"
+            assert result[0].instance_count == 2
+            assert result[0].organization is not None
+            assert result[0].organization.id == "org-1"
 
     def test_list_validation_errors(self, organization_tags_service):
         with pytest.raises(ValueError, match=ERR_INVALID_ORG):

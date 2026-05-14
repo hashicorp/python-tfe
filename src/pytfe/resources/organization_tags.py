@@ -3,19 +3,18 @@
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from typing import Any
 from urllib.parse import quote
 
 from ..errors import (
     ERR_INVALID_ORG,
 )
-from ..models.common import Pagination
 from ..models.organization import Organization
 from ..models.organization_tags import (
     AddWorkspacesToTagOptions,
     OrganizationTag,
     OrganizationTagsDeleteOptions,
-    OrganizationTagsList,
     OrganizationTagsListOptions,
 )
 from ..utils import valid_string_id
@@ -33,34 +32,21 @@ class OrganizationTags(_Service):
         self,
         organization: str,
         options: OrganizationTagsListOptions | None = None,
-    ) -> OrganizationTagsList:
+    ) -> Iterator[OrganizationTag]:
         """List all tags within an organization."""
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
+        return self._iter_tags(organization, options)
 
+    def _iter_tags(
+        self,
+        organization: str,
+        options: OrganizationTagsListOptions | None = None,
+    ) -> Iterator[OrganizationTag]:
         path = f"/api/v2/organizations/{quote(organization)}/tags"
-        params = (
-            options.model_dump(by_alias=True, exclude_none=True) if options else None
-        )
-
-        response = self.t.request("GET", path, params=params)
-        payload = response.json() or {}
-
-        items = [self._parse_organization_tag(item) for item in payload.get("data", [])]
-
-        pagination = None
-        meta = payload.get("meta", {})
-        pagination_data = meta.get("pagination", {}) if isinstance(meta, dict) else {}
-        if pagination_data:
-            pagination = Pagination(
-                current_page=pagination_data.get("current-page", 1),
-                total_count=pagination_data.get("total-count", len(items)),
-                previous_page=pagination_data.get("previous-page"),
-                next_page=pagination_data.get("next-page"),
-                total_pages=pagination_data.get("total-pages"),
-            )
-
-        return OrganizationTagsList(pagination=pagination, items=items)
+        params = options.model_dump(by_alias=True, exclude_none=True) if options else {}
+        for item in self._list(path, params=params):
+            yield self._parse_organization_tag(item)
 
     def delete(
         self,

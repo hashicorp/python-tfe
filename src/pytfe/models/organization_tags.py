@@ -5,7 +5,6 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .common import Pagination
 from .organization import Organization
 
 
@@ -25,15 +24,6 @@ class OrganizationTag(BaseModel):
         None,
         description="Organization this tag belongs to",
     )
-
-
-class OrganizationTagsList(BaseModel):
-    """Represents a list response for organization tags."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    pagination: Pagination | None = Field(None)
-    items: list[OrganizationTag] = Field(default_factory=list)
 
 
 class OrganizationTagsListOptions(BaseModel):
