@@ -62,14 +62,6 @@ class TaskStage(BaseModel):
 
     id: str
 
-    # stage: Stage = Field(..., alias="stage")
-    # status: TaskStageStatus = Field(..., alias="status")
-    # status_timestamps: TaskStageStatusTimestamps = Field(..., alias="status-timestamps")
-    # created_at: datetime = Field(..., alias="created-at")
-    # updated_at: datetime = Field(..., alias="updated-at")
-    # permissions: Permissions = Field(..., alias="permissions")
-    # actions: Actions = Field(..., alias="actions")
-
     stage: Stage = Field(..., alias="stage")
     status: TaskStageStatus = Field(..., alias="status")
     status_timestamps: TaskStageStatusTimestamps = Field(..., alias="status-timestamps")
@@ -79,11 +71,6 @@ class TaskStage(BaseModel):
 
     permissions: Permissions | None = Field(None, alias="permissions")
     actions: Actions | None = Field(None, alias="actions")
-
-    # # Relations
-    # run: Run = Field(..., alias="run")
-    # task_results: list[TaskResult] = Field(..., alias="task-results")
-    # policy_evaluations: list[PolicyEvaluation] = Field(..., alias="policy-evaluations")
 
     run: dict | None = Field(None, alias="run")
     task_results: list[TaskResult] | None = Field(None, alias="task-results")
