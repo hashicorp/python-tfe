@@ -8,6 +8,7 @@ from .config import TFEConfig
 from .resources.agent_pools import AgentPools
 from .resources.agents import Agents, AgentTokens
 from .resources.apply import Applies
+from .resources.comment import Comments
 from .resources.configuration_version import ConfigurationVersions
 from .resources.explorer import Explorer
 from .resources.notification_configuration import NotificationConfigurations
@@ -109,6 +110,7 @@ class TFEClient:
         self.runs = Runs(self._transport)
         self.query_runs = QueryRuns(self._transport)
         self.run_events = RunEvents(self._transport)
+        self.comments = Comments(self._transport)
         self.policies = Policies(self._transport)
         self.policy_evaluations = PolicyEvaluations(self._transport)
         self.policy_checks = PolicyChecks(self._transport)
