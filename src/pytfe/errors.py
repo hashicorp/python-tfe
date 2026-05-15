@@ -664,3 +664,11 @@ class RequiredCommentBodyError(TFEError):
 
     def __init__(self, message: str = "comment body is required"):
         super().__init__(message)
+
+
+# Team Token errors
+class InvalidTokenIDError(InvalidValues):
+    """Raised when an invalid authentication token ID is provided."""
+
+    def __init__(self, message: str = "invalid value for token ID"):
+        super().__init__(message)
