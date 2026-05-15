@@ -32,7 +32,7 @@ def main():
     print("\nReading task stage...")
     try:
         stage = client.task_stages.read(task_stage_id)
-        print(f"ID: {stage.id}, Status: {stage.status}")
+        print(stage)
     except Exception as e:
         print(f"Read failed: {e}")
 
@@ -41,7 +41,8 @@ def main():
     try:
         stages = list(client.task_stages.list(run_id))
         for s in stages:
-            print(f"{s.id} - {s.status}")
+            print(s)
+            print("-" * 80)
     except Exception as e:
         print(f"List failed: {e}")
 

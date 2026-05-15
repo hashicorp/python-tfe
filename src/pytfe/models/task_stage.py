@@ -9,9 +9,11 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from pytfe.models.policy_evaluation import PolicyEvaluation
+from pytfe.models.task_result import TaskResult
+
 if TYPE_CHECKING:
-    from pytfe.models.policy_evaluation import PolicyEvaluation
-    from pytfe.models.task_result import TaskResult
+    from pytfe.models.run import Run
 
 
 class Stage(str, Enum):
@@ -56,36 +58,65 @@ class Actions(BaseModel):
     is_overridable: bool | None = Field(None, alias="is-overridable")
 
 
-# TaskStage represents a HCP Terraform or Terraform Enterprise run's stage
 class TaskStage(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     id: str
 
     stage: Stage = Field(..., alias="stage")
-    status: TaskStageStatus = Field(..., alias="status")
-    status_timestamps: TaskStageStatusTimestamps = Field(..., alias="status-timestamps")
+
+    status: TaskStageStatus = Field(
+        ...,
+        alias="status",
+    )
+
+    status_timestamps: TaskStageStatusTimestamps = Field(
+        ...,
+        alias="status-timestamps",
+    )
 
     created_at: datetime = Field(..., alias="created-at")
     updated_at: datetime = Field(..., alias="updated-at")
 
-    permissions: Permissions | None = Field(None, alias="permissions")
-    actions: Actions | None = Field(None, alias="actions")
+    permissions: Permissions | None = Field(
+        None,
+        alias="permissions",
+    )
 
-    run: dict | None = Field(None, alias="run")
-    task_results: list[TaskResult] | None = Field(None, alias="task-results")
+    actions: Actions | None = Field(
+        None,
+        alias="actions",
+    )
+
+    # Relationships
+    run: Run | None = Field(
+        None,
+        alias="run",
+    )
+
+    task_results: list[TaskResult] | None = Field(
+        None,
+        alias="task-results",
+    )
+
     policy_evaluations: list[PolicyEvaluation] | None = Field(
-        None, alias="policy-evaluations"
+        None,
+        alias="policy-evaluations",
     )
 
 
 def _rebuild_task_stage_model() -> None:
-    global TaskResult, PolicyEvaluation
-
-    from pytfe.models.policy_evaluation import PolicyEvaluation
-    from pytfe.models.task_result import TaskResult
-
-    TaskStage.model_rebuild()
+    # Do not import Run here: run.py imports TaskStage, so importing Run during
+    # TaskStage module initialization creates a circular import on Python 3.14.
+    TaskStage.model_rebuild(
+        # Leave unresolved cyclic refs (Run) for later resolution while still
+        # resolving non-cyclic refs needed during import-time schema generation.
+        raise_errors=False,
+        _types_namespace={
+            "TaskResult": TaskResult,
+            "PolicyEvaluation": PolicyEvaluation,
+        },
+    )
 
 
 _rebuild_task_stage_model()

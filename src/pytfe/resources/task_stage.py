@@ -7,6 +7,9 @@ from collections.abc import Iterator
 from typing import Any
 
 from ..errors import InvalidRunIDError
+from ..models.policy_evaluation import PolicyEvaluation
+from ..models.run import Run
+from ..models.task_result import TaskResult
 from ..models.task_stage import TaskStage
 from ..utils import _safe_str, valid_string_id
 from ._base import _Service
@@ -16,6 +19,13 @@ class TaskStages(_Service):
     """TaskStages provides access to task stage endpoints."""
 
     def _parse_task_stage(self, data: dict[str, Any]) -> TaskStage:
+        # TaskStage defers Run resolution to avoid model import-time cycles.
+        # Rebuild here where Run is already imported and fully available.
+        TaskStage.model_rebuild(
+            raise_errors=False,
+            _types_namespace={"Run": Run},
+        )
+
         attributes = data.get("attributes", {})
 
         attributes["id"] = _safe_str(data.get("id"))
@@ -23,15 +33,30 @@ class TaskStages(_Service):
         relationships = data.get("relationships", {})
 
         run_data = relationships.get("run", {}).get("data")
-        attributes["run"] = run_data
+        if run_data:
+            attributes["run"] = Run.model_validate(run_data)
 
-        task_results_data = relationships.get("task-results", {}).get("data", [])
-        attributes["task-results"] = task_results_data
-
-        policy_evaluations_data = relationships.get("policy-evaluations", {}).get(
-            "data", []
+        task_results_data = relationships.get("task-results", {}).get(
+            "data",
+            [],
         )
-        attributes["policy-evaluations"] = policy_evaluations_data
+
+        attributes["task-results"] = [
+            TaskResult.model_validate(task_result) for task_result in task_results_data
+        ]
+
+        policy_evaluations_data = relationships.get(
+            "policy-evaluations",
+            {},
+        ).get(
+            "data",
+            [],
+        )
+
+        attributes["policy-evaluations"] = [
+            PolicyEvaluation.model_validate(policy_evaluation)
+            for policy_evaluation in policy_evaluations_data
+        ]
 
         return TaskStage.model_validate(attributes)
 

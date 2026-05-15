@@ -36,26 +36,29 @@ class TaskResultStatusTimestamps(BaseModel):
 class TaskResult(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
+    # All non-id fields are optional so JSON:API relationship references
+    # ({id, type} only) can be hydrated as TaskResult stubs without raising
+    # "field required" validation errors.
     id: str
-    status: TaskResultStatus = Field(..., alias="status")
-    message: str = Field(..., alias="message")
+    status: TaskResultStatus | None = Field(None, alias="status")
+    message: str | None = Field(None, alias="message")
 
-    status_timestamps: TaskResultStatusTimestamps = Field(
-        ..., alias="status-timestamps"
+    status_timestamps: TaskResultStatusTimestamps | None = Field(
+        None, alias="status-timestamps"
     )
 
-    url: str = Field(..., alias="url")
+    url: str | None = Field(None, alias="url")
 
-    created_at: datetime = Field(..., alias="created-at")
-    updated_at: datetime = Field(..., alias="updated-at")
+    created_at: datetime | None = Field(None, alias="created-at")
+    updated_at: datetime | None = Field(None, alias="updated-at")
 
-    task_id: str = Field(..., alias="task-id")
-    task_name: str = Field(..., alias="task-name")
-    task_url: str = Field(..., alias="task-url")
+    task_id: str | None = Field(None, alias="task-id")
+    task_name: str | None = Field(None, alias="task-name")
+    task_url: str | None = Field(None, alias="task-url")
 
-    workspace_task_id: str = Field(..., alias="workspace-task-id")
-    workspace_task_enforcement_level: TaskEnforcementLevel = Field(
-        ..., alias="workspace-task-enforcement-level"
+    workspace_task_id: str | None = Field(None, alias="workspace-task-id")
+    workspace_task_enforcement_level: TaskEnforcementLevel | None = Field(
+        None, alias="workspace-task-enforcement-level"
     )
 
     agent_pool_id: str | None = Field(None, alias="agent-pool-id")
