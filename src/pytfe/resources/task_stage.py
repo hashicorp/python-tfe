@@ -19,8 +19,6 @@ class TaskStages(_Service):
     """TaskStages provides access to task stage endpoints."""
 
     def _parse_task_stage(self, data: dict[str, Any]) -> TaskStage:
-        # TaskStage defers Run resolution to avoid model import-time cycles.
-        # Rebuild here where Run is already imported and fully available.
         TaskStage.model_rebuild(
             raise_errors=False,
             _types_namespace={"Run": Run},

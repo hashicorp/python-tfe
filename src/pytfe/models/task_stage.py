@@ -106,11 +106,7 @@ class TaskStage(BaseModel):
 
 
 def _rebuild_task_stage_model() -> None:
-    # Do not import Run here: run.py imports TaskStage, so importing Run during
-    # TaskStage module initialization creates a circular import on Python 3.14.
     TaskStage.model_rebuild(
-        # Leave unresolved cyclic refs (Run) for later resolution while still
-        # resolving non-cyclic refs needed during import-time schema generation.
         raise_errors=False,
         _types_namespace={
             "TaskResult": TaskResult,

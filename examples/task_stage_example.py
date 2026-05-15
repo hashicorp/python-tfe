@@ -18,7 +18,6 @@ from pytfe import TFEClient, TFEConfig
 def main():
     client = TFEClient(TFEConfig.from_env())
 
-    # Read from environment variables (NO hardcoding)
     task_stage_id = os.getenv("TFE_TASK_STAGE_ID")
     run_id = os.getenv("TFE_RUN_ID")
 
