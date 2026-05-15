@@ -103,9 +103,7 @@ def main():
                     team_id=args.team_id, options=create_opts
                 )
             else:
-                _print_header(
-                    f"Creating legacy team token for team: {args.team_id}"
-                )
+                _print_header(f"Creating legacy team token for team: {args.team_id}")
                 t = client.team_tokens.create(team_id=args.team_id)
             print("Created team token:")
             _print_token(t)

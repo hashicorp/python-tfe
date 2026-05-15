@@ -70,8 +70,6 @@ class TeamTokens(_Service):
         r = self.t.request("POST", path=path, json_body=payload)
         data = r.json().get("data", {})
         return self._team_token_from(data)
-    
-
 
     def read(self, team_id: str) -> TeamToken:
         """Read the legacy (descriptionless) team token by team ID."""
