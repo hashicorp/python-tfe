@@ -26,6 +26,7 @@ def main():
         print(f"Message: {result.message}")
         print(f"Task Name: {result.task_name}")
         print(f"URL: {result.url}")
+        print(f"Task Stage: {result.task_stage.id if result.task_stage else None}")
 
     except Exception as e:
         print(f"Error: {e}")

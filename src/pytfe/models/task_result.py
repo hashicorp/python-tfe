@@ -5,11 +5,14 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-# Reuse, do NOT duplicate
-from pytfe.models.task_stage import TaskStage
+if TYPE_CHECKING:
+    # Imported only for type checking to avoid a circular import:
+    # task_stage.py already imports TaskResult.
+    from pytfe.models.task_stage import TaskStage
 
 
 class TaskResultStatus(str, Enum):
@@ -45,7 +48,8 @@ class TaskResult(BaseModel):
     message: str | None = Field(None, alias="message")
 
     status_timestamps: TaskResultStatusTimestamps | None = Field(
-        None, alias="status-timestamps"
+        None,
+        alias="status-timestamps",
     )
 
     url: str | None = Field(None, alias="url")
@@ -58,11 +62,44 @@ class TaskResult(BaseModel):
     task_url: str | None = Field(None, alias="task-url")
 
     workspace_task_id: str | None = Field(None, alias="workspace-task-id")
+
     workspace_task_enforcement_level: TaskEnforcementLevel | None = Field(
-        None, alias="workspace-task-enforcement-level"
+        None,
+        alias="workspace-task-enforcement-level",
     )
 
     agent_pool_id: str | None = Field(None, alias="agent-pool-id")
 
-    # Relation (matches Go: *TaskStage)
+    # Relationships
+    # Forward-referenced to avoid circular import; resolved lazily below.
     task_stage: TaskStage | None = Field(None, alias="task-stage")
+    run: dict | None = None
+    workspace: dict | None = None
+
+    policy_evaluations: list[dict] | None = None
+
+    @classmethod
+    def model_validate(cls, *args: Any, **kwargs: Any) -> TaskResult:
+        # Ensure the TaskStage forward reference is resolved before validating.
+        # The import-time rebuild may run while task_stage.py is still
+        # partially loaded (circular import), in which case we retry here.
+        if not getattr(cls, "__pydantic_complete__", True):
+            _rebuild_task_result_model()
+        return super().model_validate(*args, **kwargs)
+
+
+def _rebuild_task_result_model() -> None:
+    # Resolve the TaskStage forward reference once both modules are loaded.
+    try:
+        from pytfe.models.task_stage import TaskStage
+
+        TaskResult.model_rebuild(
+            raise_errors=False,
+            _types_namespace={"TaskStage": TaskStage},
+        )
+    except Exception:
+        # TaskStage not yet importable during partial init; safe to skip.
+        pass
+
+
+_rebuild_task_result_model()
