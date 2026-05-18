@@ -43,6 +43,14 @@ def main():
     parser.add_argument(
         "--run-actions", action="store_true", help="Demo run actions (safe mode)"
     )
+    parser.add_argument(
+        "--invoke-action",
+        metavar="ACTION_ADDR",
+        help=(
+            "Invoke a Terraform Action by its address, e.g. "
+            "'action.aws_lambda_invoke.api_handler'. Requires --workspace-id."
+        ),
+    )
     args = parser.parse_args()
 
     if not args.token:
@@ -55,6 +63,10 @@ def main():
 
     if args.create_run and not args.workspace_id:
         print("Error: --create-run requires --workspace-id")
+        return
+
+    if args.invoke_action and not args.workspace_id:
+        print("Error: --invoke-action requires --workspace-id")
         return
 
     cfg = TFEConfig(address=args.address, token=args.token)
@@ -256,6 +268,32 @@ def main():
 
         print("\n   Note: These actions are commented out for safety.")
         print("Uncomment and use them carefully in your own code.")
+
+    # 6) Invoke a Terraform Action
+    if args.invoke_action and args.workspace_id:
+        _print_header(f"Invoking Terraform Action: {args.invoke_action}")
+
+        try:
+            workspace = Workspace(id=args.workspace_id)
+
+            create_options = RunCreateOptions(
+                workspace=workspace,
+                message=f"Invoking {args.invoke_action} via python-tfe SDK",
+                invoke_action_addrs=[args.invoke_action],
+            )
+
+            run = client.runs.create(create_options)
+
+            print(f"Run ID             : {run.id}")
+            print(f"Status             : {run.status}")
+            print(f"invoke-action-addrs: {run.invoke_action_addrs}")
+            print(f"Message            : {run.message}")
+
+        except Exception as e:
+            print(f"Error invoking action: {e}")
+            import traceback
+
+            traceback.print_exc()
 
 
 if __name__ == "__main__":
