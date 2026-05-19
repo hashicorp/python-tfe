@@ -673,6 +673,8 @@ __all__ = [
     "RunTaskCreateOptions",
     "RunTaskUpdateOptions",
     "RunTaskReadOptions",
+    "RunTaskRequest",
+    "RunTaskRequestCapabilitites",
     # Run triggers
     "RunTrigger",
     "RunTriggerCreateOptions",
