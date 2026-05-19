@@ -411,6 +411,14 @@ from .workspace_resource import (
     WorkspaceResource,
     WorkspaceResourceListOptions,
 )
+from .workspace_run_task import (
+    WorkspaceRunTask,
+    WorkspaceRunTaskCreateOptions,
+    WorkspaceRunTaskListOptions,
+    WorkspaceRunTaskRunTask,
+    WorkspaceRunTaskUpdateOptions,
+    WorkspaceRunTaskWorkspace,
+)
 
 # ── Public surface ────────────────────────────────────────────────────────────
 __all__ = [
@@ -617,6 +625,13 @@ __all__ = [
     # Workspace Resources
     "WorkspaceResource",
     "WorkspaceResourceListOptions",
+    # Workspace Run Tasks
+    "WorkspaceRunTask",
+    "WorkspaceRunTaskRunTask",
+    "WorkspaceRunTaskWorkspace",
+    "WorkspaceRunTaskListOptions",
+    "WorkspaceRunTaskCreateOptions",
+    "WorkspaceRunTaskUpdateOptions",
     "RunQueue",
     "ReadRunQueueOptions",
     # Runs
