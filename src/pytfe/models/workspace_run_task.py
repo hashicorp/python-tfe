@@ -35,11 +35,17 @@ class WorkspaceRunTask(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     id: str
-    enforcement_level: str | None = Field(None, alias="enforcement-level")
-    stage: str | None = Field(None, alias="stage")
-    stages: list[str] = Field(default_factory=list, alias="stages")
-    run_task: WorkspaceRunTaskRunTask | None = Field(None, alias="run-task")
-    workspace: WorkspaceRunTaskWorkspace | None = Field(None, alias="workspace")
+    enforcement_level: str | None = Field(
+        default=None, validation_alias="enforcement-level"
+    )
+    stage: str | None = Field(default=None, validation_alias="stage")
+    stages: list[str] = Field(default_factory=list, validation_alias="stages")
+    run_task: WorkspaceRunTaskRunTask | None = Field(
+        default=None, validation_alias="run-task"
+    )
+    workspace: WorkspaceRunTaskWorkspace | None = Field(
+        default=None, validation_alias="workspace"
+    )
 
     @field_validator("stage", mode="before")
     @classmethod
