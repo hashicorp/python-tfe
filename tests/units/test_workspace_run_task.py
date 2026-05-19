@@ -16,7 +16,10 @@ from pytfe.models.workspace_run_task import (
     WorkspaceRunTaskRunTask,
     WorkspaceRunTaskUpdateOptions,
 )
-from pytfe.resources.workspace_run_task import WorkspaceRunTasks, _workspace_run_task_from
+from pytfe.resources.workspace_run_task import (
+    WorkspaceRunTasks,
+    _workspace_run_task_from,
+)
 
 
 class TestWorkspaceRunTaskFrom:
@@ -30,9 +33,7 @@ class TestWorkspaceRunTaskFrom:
             },
             "relationships": {
                 "task": {"data": {"id": "task-123", "type": "tasks"}},
-                "workspace": {
-                    "data": {"id": "ws-123", "type": "workspaces"}
-                },
+                "workspace": {"data": {"id": "ws-123", "type": "workspaces"}},
             },
         }
 
@@ -63,7 +64,10 @@ class TestWorkspaceRunTasks:
         mock_response.json.return_value = {
             "data": {
                 "id": "wst-1",
-                "attributes": {"enforcement-level": "advisory", "stages": ["post_plan"]},
+                "attributes": {
+                    "enforcement-level": "advisory",
+                    "stages": ["post_plan"],
+                },
                 "relationships": {
                     "task": {"data": {"id": "task-1", "type": "tasks"}},
                     "workspace": {"data": {"id": "ws-1", "type": "workspaces"}},
@@ -105,7 +109,10 @@ class TestWorkspaceRunTasks:
                 },
                 {
                     "id": "wst-2",
-                    "attributes": {"enforcement-level": "mandatory", "stages": ["pre_apply"]},
+                    "attributes": {
+                        "enforcement-level": "mandatory",
+                        "stages": ["pre_apply"],
+                    },
                     "relationships": {},
                 },
             ]
@@ -131,7 +138,10 @@ class TestWorkspaceRunTasks:
         mock_response.json.return_value = {
             "data": {
                 "id": "wst-1",
-                "attributes": {"enforcement-level": "advisory", "stages": ["post_plan"]},
+                "attributes": {
+                    "enforcement-level": "advisory",
+                    "stages": ["post_plan"],
+                },
                 "relationships": {},
             }
         }

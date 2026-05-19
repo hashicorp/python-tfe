@@ -43,7 +43,9 @@ def _workspace_run_task_from(data: dict[str, Any]) -> WorkspaceRunTask:
         id=_safe_str(data.get("id")),
         enforcement_level=_safe_str(attributes.get("enforcement-level")) or None,
         stage=_safe_str(attributes.get("stage")) or None,
-        stages=[stage for stage in attributes.get("stages", []) if isinstance(stage, str)],
+        stages=[
+            stage for stage in attributes.get("stages", []) if isinstance(stage, str)
+        ],
         run_task=run_task,
         workspace=workspace,
     )
@@ -121,7 +123,9 @@ class WorkspaceRunTasks(_Service):
         if not valid_string_id(workspace_task_id):
             raise InvalidWorkspaceRunTaskIDError()
 
-        attributes = options.model_dump(by_alias=True, exclude_none=True, exclude={"type"})
+        attributes = options.model_dump(
+            by_alias=True, exclude_none=True, exclude={"type"}
+        )
         body: dict[str, Any] = {
             "data": {
                 "type": "workspace-tasks",

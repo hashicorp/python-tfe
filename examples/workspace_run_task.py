@@ -123,7 +123,7 @@ def main():
     else:
         try:
             update_options = WorkspaceRunTaskUpdateOptions(
-                #enforcement_level="mandatory",
+                # enforcement_level="mandatory",
                 stages=["post_plan", "pre_apply"],
             )
             workspace_task = client.workspace_run_tasks.update(
