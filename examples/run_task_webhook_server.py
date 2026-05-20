@@ -84,6 +84,7 @@ async def receive_webhook(request: Request) -> dict[str, bool]:
     options = TaskResultCallbackRequestOptions(
         status=TaskResultStatus.passed,
         message="Webhook received and processed",
+        url="https://github.com/hashicorp/python-tfe",
     )
 
     print(f"Sending callback to: {callback_url}")
