@@ -9,14 +9,17 @@ agent pools, including CRUD operations and workspace assignments.
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from typing import Any, cast
 
 from ..models.agent import (
     AgentPool,
+    AgentPoolAllowedProjectsUpdateOptions,
     AgentPoolAllowedWorkspacePolicy,
+    AgentPoolAllowedWorkspacesUpdateOptions,
     AgentPoolAssignToWorkspacesOptions,
     AgentPoolCreateOptions,
+    AgentPoolExcludedWorkspacesUpdateOptions,
     AgentPoolListOptions,
     AgentPoolReadOptions,
     AgentPoolRemoveFromWorkspacesOptions,
@@ -143,6 +146,12 @@ class AgentPools(_Service):
                 params["filter[allowed_workspace_policy]"] = (
                     options.allowed_workspace_policy.value
                 )
+            if options.allowed_workspaces_name:
+                params["filter[allowed_workspaces][name]"] = (
+                    options.allowed_workspaces_name
+                )
+            if options.allowed_projects_name:
+                params["filter[allowed_projects][name]"] = options.allowed_projects_name
 
         items_iter = self._list(path, params=params)
 
@@ -212,6 +221,13 @@ class AgentPools(_Service):
                 "data": [
                     {"type": "workspaces", "id": ws_id}
                     for ws_id in options.allowed_workspace_ids
+                ]
+            }
+        if options.allowed_project_ids:
+            relationships["allowed-projects"] = {
+                "data": [
+                    {"type": "projects", "id": proj_id}
+                    for proj_id in options.allowed_project_ids
                 ]
             }
         if options.excluded_workspace_ids:
@@ -349,6 +365,13 @@ class AgentPools(_Service):
                 "data": [
                     {"type": "workspaces", "id": ws_id}
                     for ws_id in options.allowed_workspace_ids
+                ]
+            }
+        if options.allowed_project_ids:
+            relationships["allowed-projects"] = {
+                "data": [
+                    {"type": "projects", "id": proj_id}
+                    for proj_id in options.allowed_project_ids
                 ]
             }
         if options.excluded_workspace_ids:
@@ -552,3 +575,99 @@ class AgentPools(_Service):
             ),
             agent_count=_safe_int(agent_pool_data["agent_count"]),
         )
+
+    def _patch_relationship(
+        self,
+        agent_pool_id: str,
+        relationship_key: str,
+        items_data: Sequence[dict[str, Any]],
+    ) -> AgentPool:
+        """Internal helper: PATCH agent-pools/:id with a single relationship key.
+
+        Always sends the relationship array in the payload even when empty, which
+        allows callers to clear an existing relationship by passing an empty list.
+        This mirrors the Go SDK updateArrayAttribute helper.
+        """
+        if not valid_string_id(agent_pool_id):
+            raise ValueError("Agent pool ID is required and must be valid")
+
+        path = f"/api/v2/agent-pools/{agent_pool_id}"
+        payload: dict[str, Any] = {
+            "data": {
+                "type": "agent-pools",
+                "id": agent_pool_id,
+                "attributes": {},
+                "relationships": {relationship_key: {"data": items_data}},
+            }
+        }
+        response = self.t.request("PATCH", path, json_body=payload)
+        data = response.json()["data"]
+
+        attr = data.get("attributes", {}) or {}
+        return AgentPool(
+            id=_safe_str(data.get("id")) or "",
+            name=_safe_str(attr.get("name")),
+            created_at=cast(Any, attr.get("created-at")),
+            organization_scoped=_safe_bool(attr.get("organization-scoped")),
+            allowed_workspace_policy=_safe_workspace_policy(
+                attr.get("allowed-workspace-policy")
+            ),
+            agent_count=_safe_int(attr.get("agent-count", 0)),
+        )
+
+    def update_allowed_workspaces(
+        self, agent_pool_id: str, options: AgentPoolAllowedWorkspacesUpdateOptions
+    ) -> AgentPool:
+        """Update the complete allowed-workspaces list for an agent pool.
+
+        Args:
+            agent_pool_id: Agent pool ID
+            options: Options containing the new full list of workspace IDs
+
+        Returns:
+            Updated AgentPool object
+
+        Raises:
+            ValueError: If agent_pool_id is invalid
+            TFEError: If API request fails
+        """
+        items = [{"type": "workspaces", "id": ws_id} for ws_id in options.workspace_ids]
+        return self._patch_relationship(agent_pool_id, "allowed-workspaces", items)
+
+    def update_allowed_projects(
+        self, agent_pool_id: str, options: AgentPoolAllowedProjectsUpdateOptions
+    ) -> AgentPool:
+        """Update the complete allowed-projects list for an agent pool.
+
+        Args:
+            agent_pool_id: Agent pool ID
+            options: Options containing the new full list of project IDs
+
+        Returns:
+            Updated AgentPool object
+
+        Raises:
+            ValueError: If agent_pool_id is invalid
+            TFEError: If API request fails
+        """
+        items = [{"type": "projects", "id": proj_id} for proj_id in options.project_ids]
+        return self._patch_relationship(agent_pool_id, "allowed-projects", items)
+
+    def update_excluded_workspaces(
+        self, agent_pool_id: str, options: AgentPoolExcludedWorkspacesUpdateOptions
+    ) -> AgentPool:
+        """Update the complete excluded-workspaces list for an agent pool.
+
+        Args:
+            agent_pool_id: Agent pool ID
+            options: Options containing the new full list of workspace IDs to exclude
+
+        Returns:
+            Updated AgentPool object
+
+        Raises:
+            ValueError: If agent_pool_id is invalid
+            TFEError: If API request fails
+        """
+        items = [{"type": "workspaces", "id": ws_id} for ws_id in options.workspace_ids]
+        return self._patch_relationship(agent_pool_id, "excluded-workspaces", items)

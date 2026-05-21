@@ -22,9 +22,12 @@ import pytest
 from pytfe.errors import AuthError, NotFound, ValidationError
 from pytfe.models.agent import (
     AgentPool,
+    AgentPoolAllowedProjectsUpdateOptions,
     AgentPoolAllowedWorkspacePolicy,
+    AgentPoolAllowedWorkspacesUpdateOptions,
     AgentPoolAssignToWorkspacesOptions,
     AgentPoolCreateOptions,
+    AgentPoolExcludedWorkspacesUpdateOptions,
     AgentPoolListOptions,
     AgentPoolRemoveFromWorkspacesOptions,
     AgentPoolUpdateOptions,
@@ -102,6 +105,15 @@ class TestAgentPoolModels:
         assert options.allowed_workspace_ids == ["ws-aaa", "ws-bbb"]
         assert options.excluded_workspace_ids == ["ws-ccc"]
 
+    def test_agent_pool_create_options_project_ids(self):
+        """Test AgentPoolCreateOptions with allowed_project_ids"""
+        options = AgentPoolCreateOptions(
+            name="scoped-pool",
+            organization_scoped=False,
+            allowed_project_ids=["prj-aaa", "prj-bbb"],
+        )
+        assert options.allowed_project_ids == ["prj-aaa", "prj-bbb"]
+
     def test_agent_pool_update_options_workspace_ids(self):
         """Test AgentPoolUpdateOptions with allowed/excluded workspace IDs (bug fix)"""
         options = AgentPoolUpdateOptions(
@@ -110,6 +122,37 @@ class TestAgentPoolModels:
         )
         assert options.allowed_workspace_ids == ["ws-aaa"]
         assert options.excluded_workspace_ids == ["ws-bbb"]
+
+    def test_agent_pool_update_options_project_ids(self):
+        """Test AgentPoolUpdateOptions with allowed_project_ids"""
+        options = AgentPoolUpdateOptions(
+            allowed_project_ids=["prj-aaa"],
+        )
+        assert options.allowed_project_ids == ["prj-aaa"]
+
+    def test_agent_pool_allowed_workspaces_update_options(self):
+        """Test AgentPoolAllowedWorkspacesUpdateOptions model"""
+        options = AgentPoolAllowedWorkspacesUpdateOptions(
+            workspace_ids=["ws-aaa", "ws-bbb"]
+        )
+        assert options.workspace_ids == ["ws-aaa", "ws-bbb"]
+
+    def test_agent_pool_allowed_projects_update_options(self):
+        """Test AgentPoolAllowedProjectsUpdateOptions model"""
+        options = AgentPoolAllowedProjectsUpdateOptions(
+            project_ids=["prj-aaa", "prj-bbb"]
+        )
+        assert options.project_ids == ["prj-aaa", "prj-bbb"]
+
+    def test_agent_pool_excluded_workspaces_update_options(self):
+        """Test AgentPoolExcludedWorkspacesUpdateOptions model"""
+        options = AgentPoolExcludedWorkspacesUpdateOptions(workspace_ids=["ws-aaa"])
+        assert options.workspace_ids == ["ws-aaa"]
+
+    def test_agent_pool_list_options_project_filter(self):
+        """Test AgentPoolListOptions now has allowed_projects_name filter"""
+        options = AgentPoolListOptions(allowed_projects_name="my-project")
+        assert options.allowed_projects_name == "my-project"
 
 
 class TestAgentPoolOperations:
@@ -372,6 +415,274 @@ class TestAgentPoolOperations:
         ws_data = body["relationships"]["excluded-workspaces"]["data"]
         assert ws_data[0]["id"] == ws_id
         assert ws_data[0]["type"] == "workspaces"
+
+    def test_create_agent_pool_with_project_ids(
+        self, agent_pools_service, mock_transport
+    ):
+        """Test creating an agent pool with allowed_project_ids serializes allowed-projects relationship"""
+        mock_response = {
+            "data": {
+                "id": "apool-123456789abcdef0",
+                "type": "agent-pools",
+                "attributes": {
+                    "name": "scoped-pool",
+                    "created-at": "2023-01-01T00:00:00Z",
+                    "organization-scoped": False,
+                    "allowed-workspace-policy": "specific-workspaces",
+                    "agent-count": 0,
+                },
+            }
+        }
+        mock_transport.request.return_value.json.return_value = mock_response
+        options = AgentPoolCreateOptions(
+            name="scoped-pool",
+            organization_scoped=False,
+            allowed_project_ids=["prj-aaa", "prj-bbb"],
+        )
+
+        agent_pools_service.create("test-org", options)
+
+        call_args = mock_transport.request.call_args
+        assert call_args[0][0] == "POST"
+        body = call_args[1]["json_body"]["data"]
+        proj_data = body["relationships"]["allowed-projects"]["data"]
+        assert len(proj_data) == 2
+        assert proj_data[0] == {"type": "projects", "id": "prj-aaa"}
+        assert proj_data[1] == {"type": "projects", "id": "prj-bbb"}
+
+    def test_update_agent_pool_with_project_ids(
+        self, agent_pools_service, mock_transport
+    ):
+        """Test updating an agent pool with allowed_project_ids serializes allowed-projects relationship"""
+        pool_id = "apool-123456789abcdef0"
+        mock_response = {
+            "data": {
+                "id": pool_id,
+                "type": "agent-pools",
+                "attributes": {
+                    "name": "test-pool",
+                    "created-at": "2023-01-01T00:00:00Z",
+                    "organization-scoped": False,
+                    "allowed-workspace-policy": "specific-workspaces",
+                    "agent-count": 0,
+                },
+            }
+        }
+        mock_transport.request.return_value.json.return_value = mock_response
+        options = AgentPoolUpdateOptions(allowed_project_ids=["prj-aaa"])
+
+        agent_pools_service.update(pool_id, options)
+
+        call_args = mock_transport.request.call_args
+        assert call_args[0][0] == "PATCH"
+        body = call_args[1]["json_body"]["data"]
+        proj_data = body["relationships"]["allowed-projects"]["data"]
+        assert proj_data == [{"type": "projects", "id": "prj-aaa"}]
+
+
+class TestDedicatedRelationshipUpdateMethods:
+    """Test the Go SDK-parity dedicated update methods for relationships."""
+
+    @pytest.fixture
+    def mock_transport(self):
+        transport = Mock()
+        return transport
+
+    @pytest.fixture
+    def agent_pools_service(self, mock_transport):
+        from pytfe.resources.agent_pools import AgentPools
+
+        return AgentPools(mock_transport)
+
+    def _pool_response(self, pool_id: str = "apool-123456789abcdef0") -> dict:
+        return {
+            "data": {
+                "id": pool_id,
+                "type": "agent-pools",
+                "attributes": {
+                    "name": "test-pool",
+                    "created-at": "2023-01-01T00:00:00Z",
+                    "organization-scoped": True,
+                    "allowed-workspace-policy": "all-workspaces",
+                    "agent-count": 0,
+                },
+            }
+        }
+
+    def test_update_allowed_workspaces(self, agent_pools_service, mock_transport):
+        """update_allowed_workspaces PATCHes allowed-workspaces relationship."""
+        pool_id = "apool-123456789abcdef0"
+        ws_id = "ws-aaaaaaaaaaaaaaa1"
+        mock_transport.request.return_value.json.return_value = self._pool_response(
+            pool_id
+        )
+
+        result = agent_pools_service.update_allowed_workspaces(
+            pool_id,
+            AgentPoolAllowedWorkspacesUpdateOptions(workspace_ids=[ws_id]),
+        )
+
+        assert result.id == pool_id
+        call_args = mock_transport.request.call_args
+        assert call_args[0][0] == "PATCH"
+        assert call_args[0][1] == f"/api/v2/agent-pools/{pool_id}"
+        body = call_args[1]["json_body"]["data"]
+        assert body["type"] == "agent-pools"
+        assert body["id"] == pool_id
+        ws_data = body["relationships"]["allowed-workspaces"]["data"]
+        assert ws_data == [{"type": "workspaces", "id": ws_id}]
+
+    def test_update_allowed_workspaces_empty_clears(
+        self, agent_pools_service, mock_transport
+    ):
+        """update_allowed_workspaces with empty list sends empty array to clear the relationship."""
+        pool_id = "apool-123456789abcdef0"
+        mock_transport.request.return_value.json.return_value = self._pool_response(
+            pool_id
+        )
+
+        agent_pools_service.update_allowed_workspaces(
+            pool_id,
+            AgentPoolAllowedWorkspacesUpdateOptions(workspace_ids=[]),
+        )
+
+        call_args = mock_transport.request.call_args
+        body = call_args[1]["json_body"]["data"]
+        assert "allowed-workspaces" in body["relationships"]
+        assert body["relationships"]["allowed-workspaces"]["data"] == []
+
+    def test_update_allowed_projects(self, agent_pools_service, mock_transport):
+        """update_allowed_projects PATCHes allowed-projects relationship."""
+        pool_id = "apool-123456789abcdef0"
+        proj_id = "prj-aaaaaaaaaaaaaaa1"
+        mock_transport.request.return_value.json.return_value = self._pool_response(
+            pool_id
+        )
+
+        result = agent_pools_service.update_allowed_projects(
+            pool_id,
+            AgentPoolAllowedProjectsUpdateOptions(project_ids=[proj_id]),
+        )
+
+        assert result.id == pool_id
+        call_args = mock_transport.request.call_args
+        assert call_args[0][0] == "PATCH"
+        assert call_args[0][1] == f"/api/v2/agent-pools/{pool_id}"
+        body = call_args[1]["json_body"]["data"]
+        assert body["type"] == "agent-pools"
+        assert body["id"] == pool_id
+        proj_data = body["relationships"]["allowed-projects"]["data"]
+        assert proj_data == [{"type": "projects", "id": proj_id}]
+
+    def test_update_allowed_projects_multiple(
+        self, agent_pools_service, mock_transport
+    ):
+        """update_allowed_projects can assign multiple projects at once."""
+        pool_id = "apool-123456789abcdef0"
+        mock_transport.request.return_value.json.return_value = self._pool_response(
+            pool_id
+        )
+
+        agent_pools_service.update_allowed_projects(
+            pool_id,
+            AgentPoolAllowedProjectsUpdateOptions(project_ids=["prj-aaa", "prj-bbb"]),
+        )
+
+        call_args = mock_transport.request.call_args
+        body = call_args[1]["json_body"]["data"]
+        proj_data = body["relationships"]["allowed-projects"]["data"]
+        assert len(proj_data) == 2
+        assert proj_data[0] == {"type": "projects", "id": "prj-aaa"}
+        assert proj_data[1] == {"type": "projects", "id": "prj-bbb"}
+
+    def test_update_allowed_projects_empty_clears(
+        self, agent_pools_service, mock_transport
+    ):
+        """update_allowed_projects with empty list sends empty array to clear the relationship."""
+        pool_id = "apool-123456789abcdef0"
+        mock_transport.request.return_value.json.return_value = self._pool_response(
+            pool_id
+        )
+
+        agent_pools_service.update_allowed_projects(
+            pool_id,
+            AgentPoolAllowedProjectsUpdateOptions(project_ids=[]),
+        )
+
+        call_args = mock_transport.request.call_args
+        body = call_args[1]["json_body"]["data"]
+        assert "allowed-projects" in body["relationships"]
+        assert body["relationships"]["allowed-projects"]["data"] == []
+
+    def test_update_excluded_workspaces(self, agent_pools_service, mock_transport):
+        """update_excluded_workspaces PATCHes excluded-workspaces relationship."""
+        pool_id = "apool-123456789abcdef0"
+        ws_id = "ws-aaaaaaaaaaaaaaa1"
+        mock_transport.request.return_value.json.return_value = self._pool_response(
+            pool_id
+        )
+
+        result = agent_pools_service.update_excluded_workspaces(
+            pool_id,
+            AgentPoolExcludedWorkspacesUpdateOptions(workspace_ids=[ws_id]),
+        )
+
+        assert result.id == pool_id
+        call_args = mock_transport.request.call_args
+        assert call_args[0][0] == "PATCH"
+        assert call_args[0][1] == f"/api/v2/agent-pools/{pool_id}"
+        body = call_args[1]["json_body"]["data"]
+        ws_data = body["relationships"]["excluded-workspaces"]["data"]
+        assert ws_data == [{"type": "workspaces", "id": ws_id}]
+
+    def test_update_excluded_workspaces_empty_clears(
+        self, agent_pools_service, mock_transport
+    ):
+        """update_excluded_workspaces with empty list sends empty array to clear the relationship."""
+        pool_id = "apool-123456789abcdef0"
+        mock_transport.request.return_value.json.return_value = self._pool_response(
+            pool_id
+        )
+
+        agent_pools_service.update_excluded_workspaces(
+            pool_id,
+            AgentPoolExcludedWorkspacesUpdateOptions(workspace_ids=[]),
+        )
+
+        call_args = mock_transport.request.call_args
+        body = call_args[1]["json_body"]["data"]
+        assert "excluded-workspaces" in body["relationships"]
+        assert body["relationships"]["excluded-workspaces"]["data"] == []
+
+    def test_update_allowed_projects_invalid_pool_id(
+        self, agent_pools_service, mock_transport
+    ):
+        """update_allowed_projects raises ValueError for invalid pool ID."""
+        with pytest.raises(ValueError, match="Agent pool ID"):
+            agent_pools_service.update_allowed_projects(
+                "",
+                AgentPoolAllowedProjectsUpdateOptions(project_ids=["prj-aaa"]),
+            )
+
+    def test_update_allowed_workspaces_invalid_pool_id(
+        self, agent_pools_service, mock_transport
+    ):
+        """update_allowed_workspaces raises ValueError for invalid pool ID."""
+        with pytest.raises(ValueError, match="Agent pool ID"):
+            agent_pools_service.update_allowed_workspaces(
+                "",
+                AgentPoolAllowedWorkspacesUpdateOptions(workspace_ids=["ws-aaa"]),
+            )
+
+    def test_update_excluded_workspaces_invalid_pool_id(
+        self, agent_pools_service, mock_transport
+    ):
+        """update_excluded_workspaces raises ValueError for invalid pool ID."""
+        with pytest.raises(ValueError, match="Agent pool ID"):
+            agent_pools_service.update_excluded_workspaces(
+                "",
+                AgentPoolExcludedWorkspacesUpdateOptions(workspace_ids=["ws-aaa"]),
+            )
 
 
 class TestAgentTokenOperations:

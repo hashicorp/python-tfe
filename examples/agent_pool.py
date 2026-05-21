@@ -7,13 +7,17 @@ This example demonstrates:
 1. Agent Pool CRUD operations (Create, Read, Update, Delete)
 2. Agent token creation and management
 3. Workspace assignment using assign_to_workspaces and remove_from_workspaces
-4. Proper error handling
+4. Project assignment using update_allowed_projects (Go SDK parity)
+5. Dedicated relationship update methods: update_allowed_workspaces,
+   update_allowed_projects, update_excluded_workspaces
+6. Proper error handling
 
 Make sure to set the following environment variables:
 - TFE_TOKEN: Your Terraform Cloud/Enterprise API token
 - TFE_ADDRESS: Your Terraform Cloud/Enterprise URL (optional, defaults to https://app.terraform.io)
 - TFE_ORG: Your organization name
 - TFE_WORKSPACE_ID: A workspace ID for testing workspace assignment (optional)
+- TFE_PROJECT_ID: A project ID for testing project assignment (optional)
 
 Usage:
     export TFE_TOKEN="your-token-here"
@@ -27,9 +31,12 @@ import uuid
 from pytfe import TFEClient, TFEConfig
 from pytfe.errors import NotFound
 from pytfe.models import (
+    AgentPoolAllowedProjectsUpdateOptions,
     AgentPoolAllowedWorkspacePolicy,
+    AgentPoolAllowedWorkspacesUpdateOptions,
     AgentPoolAssignToWorkspacesOptions,
     AgentPoolCreateOptions,
+    AgentPoolExcludedWorkspacesUpdateOptions,
     AgentPoolListOptions,
     AgentPoolRemoveFromWorkspacesOptions,
     AgentPoolUpdateOptions,
@@ -46,6 +53,7 @@ def main():
     workspace_id = os.environ.get(
         "TFE_WORKSPACE_ID"
     )  # optional, for workspace assignment
+    project_id = os.environ.get("TFE_PROJECT_ID")  # optional, for project assignment
 
     if not token:
         print("TFE_TOKEN environment variable is required")
@@ -122,8 +130,61 @@ def main():
                 AgentPoolRemoveFromWorkspacesOptions(workspace_ids=[workspace_id]),
             )
             print(f"  Removed workspace {workspace_id} from pool {updated_pool.name}")
+
+            # Example 5b: Dedicated update methods
+            # update_allowed_workspaces / update_excluded_workspaces send the
+            # relationship array unconditionally — even an empty list — so they can
+            # also CLEAR the relationship.
+            print(
+                "\n Using update_allowed_workspaces (dedicated, supports clearing)..."
+            )
+            updated_pool = client.agent_pools.update_allowed_workspaces(
+                new_pool.id,
+                AgentPoolAllowedWorkspacesUpdateOptions(workspace_ids=[workspace_id]),
+            )
+            print(
+                f"  Set allowed-workspaces to [{workspace_id}] on pool {updated_pool.name}"
+            )
+
+            print("\n Clearing allowed-workspaces via update_allowed_workspaces...")
+            updated_pool = client.agent_pools.update_allowed_workspaces(
+                new_pool.id,
+                AgentPoolAllowedWorkspacesUpdateOptions(workspace_ids=[]),
+            )
+            print(f"  Cleared allowed-workspaces on pool {updated_pool.name}")
+
+            print(
+                "\n Using update_excluded_workspaces (dedicated, supports clearing)..."
+            )
+            updated_pool = client.agent_pools.update_excluded_workspaces(
+                new_pool.id,
+                AgentPoolExcludedWorkspacesUpdateOptions(workspace_ids=[workspace_id]),
+            )
+            print(
+                f"  Set excluded-workspaces to [{workspace_id}] on pool {updated_pool.name}"
+            )
         else:
             print("\n Skipping workspace assignment (set TFE_WORKSPACE_ID to test)")
+
+        # Example 5c: Project assignment (parity — AllowedProjects relationship)
+        if project_id:
+            print("\n Assigning project to agent pool (update_allowed_projects)...")
+            updated_pool = client.agent_pools.update_allowed_projects(
+                new_pool.id,
+                AgentPoolAllowedProjectsUpdateOptions(project_ids=[project_id]),
+            )
+            print(
+                f"  Set allowed-projects to [{project_id}] on pool {updated_pool.name}"
+            )
+
+            print("\n Clearing allowed-projects via update_allowed_projects...")
+            updated_pool = client.agent_pools.update_allowed_projects(
+                new_pool.id,
+                AgentPoolAllowedProjectsUpdateOptions(project_ids=[]),
+            )
+            print(f"  Cleared allowed-projects on pool {updated_pool.name}")
+        else:
+            print("\n Skipping project assignment (set TFE_PROJECT_ID to test)")
 
         # Example 6: Create an agent token
         print("\n Creating agent token...")

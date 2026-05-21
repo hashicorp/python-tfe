@@ -74,6 +74,10 @@ class AgentPoolListOptions(BaseModel):
     include: list[str] | None = None
     # Optional: Filter by allowed workspace policy
     allowed_workspace_policy: AgentPoolAllowedWorkspacePolicy | None = None
+    # Optional: String (workspace name) used to filter the results
+    allowed_workspaces_name: str | None = None
+    # Optional: String (project name) used to filter the results
+    allowed_projects_name: str | None = None
 
 
 class AgentPoolCreateOptions(BaseModel):
@@ -87,6 +91,8 @@ class AgentPoolCreateOptions(BaseModel):
     allowed_workspace_policy: AgentPoolAllowedWorkspacePolicy | None = None
     # Optional: IDs of workspaces allowed to use this pool (sent as relationships.allowed-workspaces)
     allowed_workspace_ids: list[str] = Field(default_factory=list)
+    # Optional: IDs of projects allowed to use this pool (sent as relationships.allowed-projects)
+    allowed_project_ids: list[str] = Field(default_factory=list)
     # Optional: IDs of workspaces excluded from this pool (sent as relationships.excluded-workspaces)
     excluded_workspace_ids: list[str] = Field(default_factory=list)
 
@@ -102,6 +108,8 @@ class AgentPoolUpdateOptions(BaseModel):
     allowed_workspace_policy: AgentPoolAllowedWorkspacePolicy | None = None
     # Optional: Full replacement list of workspace IDs allowed to use this pool
     allowed_workspace_ids: list[str] = Field(default_factory=list)
+    # Optional: Full replacement list of project IDs allowed to use this pool
+    allowed_project_ids: list[str] = Field(default_factory=list)
     # Optional: Full replacement list of workspace IDs excluded from this pool
     excluded_workspace_ids: list[str] = Field(default_factory=list)
 
@@ -124,6 +132,38 @@ class AgentPoolAssignToWorkspacesOptions(BaseModel):
 
 class AgentPoolRemoveFromWorkspacesOptions(BaseModel):
     """Options for removing an agent pool from workspaces."""
+
+    workspace_ids: list[str] = Field(default_factory=list)
+
+
+# Dedicated relationship-update options.
+# Unlike the main create/update options, these always send their relationship array in the
+# payload — even when empty — so that the caller can clear existing relationships.
+
+
+class AgentPoolAllowedWorkspacesUpdateOptions(BaseModel):
+    """Options for updating the allowed-workspaces relationship on an agent pool.
+
+    Supports full replacement including clearing (pass an empty list).
+    """
+
+    workspace_ids: list[str] = Field(default_factory=list)
+
+
+class AgentPoolAllowedProjectsUpdateOptions(BaseModel):
+    """Options for updating the allowed-projects relationship on an agent pool.
+
+    Supports full replacement including clearing (pass an empty list).
+    """
+
+    project_ids: list[str] = Field(default_factory=list)
+
+
+class AgentPoolExcludedWorkspacesUpdateOptions(BaseModel):
+    """Options for updating the excluded-workspaces relationship on an agent pool.
+
+    Supports full replacement including clearing (pass an empty list).
+    """
 
     workspace_ids: list[str] = Field(default_factory=list)
 
