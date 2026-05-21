@@ -7,7 +7,9 @@ from collections.abc import Iterator
 from typing import Any
 from urllib.parse import urlencode
 
+from ..errors import ErrStateVersionUploadNotSupported
 from ..errors import NotFound
+from ..errors import TFEError
 
 # Pydantic models for this feature
 from ..models.state_version import (
@@ -193,18 +195,66 @@ class StateVersions(_Service):
             **{k.replace("-", "_"): v for k, v in attr.items()},
         )
 
-    """
     def upload(
         self,
         workspace: str,
         *,
-        raw_state: bytes | None = None,
+        raw_state: bytes | None,
         raw_json_state: bytes | None = None,
-        options: Optional[StateVersionCreateOptions] = None,
-        organization: Optional[str] = None,
+        options: StateVersionCreateOptions,
+        organization: str | None = None,
     ) -> StateVersion:
-    # TBD: Implements Upload State Functionality
-    """
+        """
+        Create a state version and upload state bytes to signed Archivist URLs.
+
+        This mirrors Terraform's recommended workflow:
+          1. POST /workspaces/:id/state-versions with serial+md5 and no inline state
+          2. PUT raw state bytes to hosted-state-upload-url
+          3. Optional PUT JSON state bytes to hosted-json-state-upload-url
+          4. Read the state version again and return the refreshed object
+        """
+        if raw_state is None:
+            raise ValueError("raw_state is required")
+        if options.state is not None or options.json_state is not None:
+            raise ValueError(
+                "options.state and options.json_state must be omitted when using upload"
+            )
+
+        try:
+            sv = self.create(workspace, options, organization=organization)
+        except TFEError as exc:
+            # Older servers can reject the create-without-inline-state flow.
+            if "param is missing or the value is empty: state" in str(exc):
+                raise ErrStateVersionUploadNotSupported(
+                    "state version upload is not supported by this server"
+                ) from exc
+            raise
+
+        if not sv.hosted_state_upload_url:
+            raise ErrStateVersionUploadNotSupported(
+                "hosted-state-upload-url not returned by server"
+            )
+
+        self.t.request(
+            "PUT",
+            sv.hosted_state_upload_url,
+            data=raw_state,
+            headers={"Content-Type": "application/octet-stream"},
+        )
+
+        if raw_json_state is not None:
+            if not sv.hosted_json_state_upload_url:
+                raise ErrStateVersionUploadNotSupported(
+                    "hosted-json-state-upload-url not returned by server"
+                )
+            self.t.request(
+                "PUT",
+                sv.hosted_json_state_upload_url,
+                data=raw_json_state,
+                headers={"Content-Type": "application/octet-stream"},
+            )
+
+        return self.read(sv.id)
 
     def download(self, state_version_id: str) -> bytes:
         """
@@ -226,9 +276,12 @@ class StateVersions(_Service):
             raise NotFound("download url not available for this state version")
 
         # Download the bytes from the signed Archivist URL (follow redirects).
-        # Avoid JSON:API headers here; Accept */* is fine.
+        # Avoid API default headers here; Accept */* is fine.
         resp = self.t.request(
-            "GET", url, allow_redirects=True, headers={"Accept": "application/json"}
+            "GET",
+            url,
+            allow_redirects=True,
+            headers={"Accept": "*/*"},
         )
         return resp.content
 
@@ -244,7 +297,10 @@ class StateVersions(_Service):
 
             raise NotFound("download url not available for current state")
         resp = self.t.request(
-            "GET", url, allow_redirects=True, headers={"Accept": "*/*"}
+            "GET",
+            url,
+            allow_redirects=True,
+            headers={"Accept": "*/*"},
         )
         return resp.content
 
