@@ -7,11 +7,7 @@ from collections.abc import Iterator
 from typing import Any
 from urllib.parse import urlencode
 
-from ..errors import ErrStateVersionUploadNotSupported
-from ..errors import NotFound
-from ..errors import TFEError
-
-# Pydantic models for this feature
+from ..errors import ErrStateVersionUploadNotSupported, NotFound, TFEError
 from ..models.state_version import (
     StateVersion,
     StateVersionCreateOptions,
