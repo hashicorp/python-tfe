@@ -14,6 +14,7 @@ from .resources.explorer import Explorer
 from .resources.notification_configuration import NotificationConfigurations
 from .resources.oauth_client import OAuthClients
 from .resources.oauth_token import OAuthTokens
+from .resources.organization_audit_configuration import OrganizationAuditConfigurations
 from .resources.organization_membership import OrganizationMemberships
 from .resources.organization_tags import OrganizationTags
 from .resources.organization_token import OrganizationTokens
@@ -83,6 +84,9 @@ class TFEClient:
         self.plans = Plans(self._transport)
         self.organizations = Organizations(self._transport)
         self.organization_memberships = OrganizationMemberships(self._transport)
+        self.organization_audit_configurations = OrganizationAuditConfigurations(
+            self._transport
+        )
         self.explorer = Explorer(
             self._transport
         )  # org Explorer queries and saved views

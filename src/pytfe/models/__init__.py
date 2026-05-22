@@ -116,6 +116,15 @@ from .organization import (
     ReadRunQueueOptions,
     RunQueue,
 )
+from .organization_audit_configuration import (
+    OrganizationAuditConfigAuditStreaming,
+    OrganizationAuditConfigAuditTrails,
+    OrganizationAuditConfigPermissions,
+    OrganizationAuditConfigTimestamps,
+    OrganizationAuditConfiguration,
+    OrganizationAuditConfigurationOptions,
+    OrganizationAuditConfigurationTest,
+)
 from .organization_membership import (
     OrganizationMembership,
     OrganizationMembershipCreateOptions,
@@ -581,6 +590,13 @@ __all__ = [
     "Organization",
     "OrganizationCreateOptions",
     "OrganizationUpdateOptions",
+    "OrganizationAuditConfigAuditStreaming",
+    "OrganizationAuditConfigAuditTrails",
+    "OrganizationAuditConfigPermissions",
+    "OrganizationAuditConfigTimestamps",
+    "OrganizationAuditConfiguration",
+    "OrganizationAuditConfigurationOptions",
+    "OrganizationAuditConfigurationTest",
     "OrganizationMembership",
     "OrganizationMembershipCreateOptions",
     "OrganizationMembershipListOptions",
