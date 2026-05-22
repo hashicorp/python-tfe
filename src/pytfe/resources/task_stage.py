@@ -6,7 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
-from ..errors import InvalidRunIDError
+from ..errors import InvalidRunIDError, InvalidTaskStageIDError
 from ..models.policy_evaluation import PolicyEvaluation
 from ..models.run import Run
 from ..models.task_result import TaskResult
@@ -21,7 +21,11 @@ class TaskStages(_Service):
     def _parse_task_stage(self, data: dict[str, Any]) -> TaskStage:
         TaskStage.model_rebuild(
             raise_errors=False,
-            _types_namespace={"Run": Run},
+            _types_namespace={
+                "Run": Run,
+                "TaskResult": TaskResult,
+                "PolicyEvaluation": PolicyEvaluation,
+            },
         )
 
         attributes = data.get("attributes", {})
@@ -61,7 +65,7 @@ class TaskStages(_Service):
     # Read
     def read(self, task_stage_id: str) -> TaskStage:
         if not valid_string_id(task_stage_id):
-            raise ValueError("Invalid task_stage_id")
+            raise InvalidTaskStageIDError()
 
         response = self.t.request(
             "GET",
@@ -89,7 +93,7 @@ class TaskStages(_Service):
         comment: str | None = None,
     ) -> TaskStage:
         if not valid_string_id(task_stage_id):
-            raise ValueError("Invalid task_stage_id")
+            raise InvalidTaskStageIDError()
 
         body: dict[str, Any] | None = {"comment": comment} if comment else None
 
