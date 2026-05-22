@@ -82,13 +82,19 @@ class TaskStage(BaseModel):
 
 
 def _rebuild_task_stage_model() -> None:
-    TaskStage.model_rebuild(
-        raise_errors=False,
-        _types_namespace={
-            "TaskResult": TaskResult,
-            "PolicyEvaluation": PolicyEvaluation,
-        },
-    )
+    try:
+        from pytfe.models.run import Run
+
+        TaskStage.model_rebuild(
+            raise_errors=False,
+            _types_namespace={
+                "Run": Run,
+                "TaskResult": TaskResult,
+                "PolicyEvaluation": PolicyEvaluation,
+            },
+        )
+    except Exception:
+        pass
 
 
 _rebuild_task_stage_model()

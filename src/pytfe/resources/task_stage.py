@@ -19,15 +19,6 @@ class TaskStages(_Service):
     """TaskStages provides access to task stage endpoints."""
 
     def _parse_task_stage(self, data: dict[str, Any]) -> TaskStage:
-        TaskStage.model_rebuild(
-            raise_errors=False,
-            _types_namespace={
-                "Run": Run,
-                "TaskResult": TaskResult,
-                "PolicyEvaluation": PolicyEvaluation,
-            },
-        )
-
         attributes = data.get("attributes", {})
 
         attributes["id"] = _safe_str(data.get("id"))
