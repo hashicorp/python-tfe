@@ -272,12 +272,9 @@ class StateVersions(_Service):
             raise NotFound("download url not available for this state version")
 
         # Download the bytes from the signed Archivist URL (follow redirects).
-        # Avoid API default headers here; Accept */* is fine.
+        # Avoid JSON:API headers here; Accept */* is fine.
         resp = self.t.request(
-            "GET",
-            url,
-            allow_redirects=True,
-            headers={"Accept": "*/*"},
+            "GET", url, allow_redirects=True, headers={"Accept": "application/json"}
         )
         return resp.content
 
@@ -293,10 +290,7 @@ class StateVersions(_Service):
 
             raise NotFound("download url not available for current state")
         resp = self.t.request(
-            "GET",
-            url,
-            allow_redirects=True,
-            headers={"Accept": "*/*"},
+            "GET", url, allow_redirects=True, headers={"Accept": "*/*"}
         )
         return resp.content
 
