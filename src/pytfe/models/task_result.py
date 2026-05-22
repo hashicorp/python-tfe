@@ -10,9 +10,11 @@ from typing import TYPE_CHECKING, Any
 from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
-    # Imported only for type checking to avoid a circular import:
-    # task_stage.py already imports TaskResult.
+    # Imported only for type checking to avoid circular imports.
+    from pytfe.models.policy_evaluation import PolicyEvaluation
+    from pytfe.models.run import Run
     from pytfe.models.task_stage import TaskStage
+    from pytfe.models.workspace import Workspace
 
 
 class TaskResultStatus(str, Enum):
@@ -71,12 +73,14 @@ class TaskResult(BaseModel):
     agent_pool_id: str | None = Field(None, alias="agent-pool-id")
 
     # Relationships
-    # Forward-referenced to avoid circular import; resolved lazily below.
+    # Forward-referenced to avoid circular imports; resolved lazily below.
     task_stage: TaskStage | None = Field(None, alias="task-stage")
-    run: dict | None = None
-    workspace: dict | None = None
-
-    policy_evaluations: list[dict] | None = None
+    run: Run | None = Field(None, alias="run")
+    workspace: Workspace | None = Field(None, alias="workspace")
+    policy_evaluations: list[PolicyEvaluation] | None = Field(
+        None,
+        alias="policy-evaluations",
+    )
 
     @classmethod
     def model_validate(cls, *args: Any, **kwargs: Any) -> TaskResult:
@@ -89,16 +93,24 @@ class TaskResult(BaseModel):
 
 
 def _rebuild_task_result_model() -> None:
-    # Resolve the TaskStage forward reference once both modules are loaded.
+    # Resolve all forward references once all modules are loaded.
     try:
+        from pytfe.models.policy_evaluation import PolicyEvaluation
+        from pytfe.models.run import Run
         from pytfe.models.task_stage import TaskStage
+        from pytfe.models.workspace import Workspace
 
         TaskResult.model_rebuild(
             raise_errors=False,
-            _types_namespace={"TaskStage": TaskStage},
+            _types_namespace={
+                "PolicyEvaluation": PolicyEvaluation,
+                "Run": Run,
+                "TaskStage": TaskStage,
+                "Workspace": Workspace,
+            },
         )
     except Exception:
-        # TaskStage not yet importable during partial init; safe to skip.
+        # One or more models not yet importable during partial init; safe to skip.
         pass
 
 
