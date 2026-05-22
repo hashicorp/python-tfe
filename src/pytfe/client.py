@@ -44,6 +44,7 @@ from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
 from .resources.team import Teams
 from .resources.team_project_access import TeamProjectAccesses
+from .resources.team_token import TeamTokens
 from .resources.user import Users
 from .resources.variable import Variables
 from .resources.variable_sets import VariableSets, VariableSetVariables
@@ -127,6 +128,7 @@ class TFEClient:
         # Team project access
         self.teams = Teams(self._transport)
         self.team_project_accesses = TeamProjectAccesses(self._transport)
+        self.team_tokens = TeamTokens(self._transport)
 
         # Reserved Tag Key
         self.reserved_tag_key = ReservedTagKeys(self._transport)
