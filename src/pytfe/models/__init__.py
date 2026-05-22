@@ -116,6 +116,15 @@ from .organization import (
     ReadRunQueueOptions,
     RunQueue,
 )
+from .organization_audit_configuration import (
+    OrganizationAuditConfigAuditStreaming,
+    OrganizationAuditConfigAuditTrails,
+    OrganizationAuditConfigPermissions,
+    OrganizationAuditConfigTimestamps,
+    OrganizationAuditConfiguration,
+    OrganizationAuditConfigurationOptions,
+    OrganizationAuditConfigurationTest,
+)
 from .organization_membership import (
     OrganizationMembership,
     OrganizationMembershipCreateOptions,
@@ -310,6 +319,14 @@ from .run_task import (
     RunTaskUpdateOptions,
     Stage,
     TaskEnforcementLevel,
+)
+from .run_task_integration import (
+    TaskResultCallbackRequestOptions,
+    TaskResultOutcome,
+    TaskResultTag,
+)
+from .run_task_integration import (
+    TaskResultStatus as TaskResultCallbackStatus,
 )
 from .run_trigger import (
     RunTrigger,
@@ -592,6 +609,13 @@ __all__ = [
     "Organization",
     "OrganizationCreateOptions",
     "OrganizationUpdateOptions",
+    "OrganizationAuditConfigAuditStreaming",
+    "OrganizationAuditConfigAuditTrails",
+    "OrganizationAuditConfigPermissions",
+    "OrganizationAuditConfigTimestamps",
+    "OrganizationAuditConfiguration",
+    "OrganizationAuditConfigurationOptions",
+    "OrganizationAuditConfigurationTest",
     "OrganizationMembership",
     "OrganizationMembershipCreateOptions",
     "OrganizationMembershipListOptions",
@@ -710,6 +734,11 @@ __all__ = [
     "TaskResultStatus",
     "TaskResultStatusTimestamps",
     "TaskStage",
+    # Run task integration (callback)
+    "TaskResultCallbackRequestOptions",
+    "TaskResultCallbackStatus",
+    "TaskResultOutcome",
+    "TaskResultTag",
     # Run triggers
     "RunTrigger",
     "RunTriggerCreateOptions",

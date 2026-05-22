@@ -58,6 +58,24 @@ class RequiredFieldMissing(TFEError): ...
 class ErrStateVersionUploadNotSupported(TFEError): ...
 
 
+class InvalidCallbackURLError(TFEError):
+    def __init__(self, message: str = "Invalid callback URL") -> None:
+        super().__init__(message)
+
+
+class InvalidAccessTokenError(TFEError):
+    def __init__(self, message: str = "Invalid access token") -> None:
+        super().__init__(message)
+
+
+class InvalidTaskResultsCallbackStatusError(TFEError):
+    def __init__(
+        self,
+        message: str = "Invalid task result callback status; must be one of: passed, failed, running",
+    ) -> None:
+        super().__init__(message)
+
+
 # Generic error constants
 ERR_UNAUTHORIZED = "unauthorized"
 ERR_RESOURCE_NOT_FOUND = "resource not found"

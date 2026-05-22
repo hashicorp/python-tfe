@@ -14,6 +14,7 @@ from .resources.explorer import Explorer
 from .resources.notification_configuration import NotificationConfigurations
 from .resources.oauth_client import OAuthClients
 from .resources.oauth_token import OAuthTokens
+from .resources.organization_audit_configuration import OrganizationAuditConfigurations
 from .resources.organization_membership import OrganizationMemberships
 from .resources.organization_tags import OrganizationTags
 from .resources.organization_token import OrganizationTokens
@@ -36,6 +37,7 @@ from .resources.reserved_tag_key import ReservedTagKeys
 from .resources.run import Runs
 from .resources.run_event import RunEvents
 from .resources.run_task import RunTasks
+from .resources.run_task_integration import RunTaskIntegrations
 from .resources.run_trigger import RunTriggers
 from .resources.ssh_keys import SSHKeys
 from .resources.stack import Stacks
@@ -84,6 +86,9 @@ class TFEClient:
         self.plans = Plans(self._transport)
         self.organizations = Organizations(self._transport)
         self.organization_memberships = OrganizationMemberships(self._transport)
+        self.organization_audit_configurations = OrganizationAuditConfigurations(
+            self._transport
+        )
         self.explorer = Explorer(
             self._transport
         )  # org Explorer queries and saved views
@@ -111,6 +116,7 @@ class TFEClient:
         self.state_versions = StateVersions(self._transport)
         self.state_version_outputs = StateVersionOutputs(self._transport)
         self.run_tasks = RunTasks(self._transport)
+        self.run_task_integrations = RunTaskIntegrations(self._transport)
         self.run_triggers = RunTriggers(self._transport)
         self.runs = Runs(self._transport)
         self.query_runs = QueryRuns(self._transport)
