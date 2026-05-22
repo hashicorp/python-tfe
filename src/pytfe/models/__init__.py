@@ -334,6 +334,10 @@ from .state_version_output import (
     StateVersionOutput,
     StateVersionOutputsListOptions,
 )
+
+# ── Task Stage & Task Result ─────────────────────────────────────────────────
+from .task_result import TaskResult
+from .task_stage import TaskStage
 from .team import (
     OrganizationAccess,
     Team,
@@ -642,6 +646,9 @@ __all__ = [
     "RunEventList",
     "RunEventListOptions",
     "RunEventReadOptions",
+    # Task Stage & Task Result
+    "TaskStage",
+    "TaskResult",
     # Run tasks
     "RunTask",
     "RunTaskIncludeOptions",
