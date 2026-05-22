@@ -7,7 +7,7 @@ This example demonstrates:
 1. Agent Pool CRUD operations (Create, Read, Update, Delete)
 2. Agent token creation and management
 3. Workspace assignment using assign_to_workspaces and remove_from_workspaces
-4. Project assignment using update_allowed_projects (Go SDK parity)
+4. Project assignment using update_allowed_projects
 5. Dedicated relationship update methods: update_allowed_workspaces,
    update_allowed_projects, update_excluded_workspaces
 6. Proper error handling

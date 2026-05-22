@@ -142,19 +142,13 @@ class AgentPoolRemoveFromWorkspacesOptions(BaseModel):
 
 
 class AgentPoolAllowedWorkspacesUpdateOptions(BaseModel):
-    """Options for updating the allowed-workspaces relationship on an agent pool.
-
-    Supports full replacement including clearing (pass an empty list).
-    """
+    """Options for updating the allowed-workspaces relationship on an agent pool."""
 
     workspace_ids: list[str] = Field(default_factory=list)
 
 
 class AgentPoolAllowedProjectsUpdateOptions(BaseModel):
-    """Options for updating the allowed-projects relationship on an agent pool.
-
-    Supports full replacement including clearing (pass an empty list).
-    """
+    """Options for updating the allowed-projects relationship on an agent pool."""
 
     project_ids: list[str] = Field(default_factory=list)
 

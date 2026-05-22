@@ -10,9 +10,6 @@ These tests mock the TFE API responses and focus on:
 4. Request building and parameter handling
 5. Response parsing and error handling
 6. Workspace assignment (assign_to_workspaces / remove_from_workspaces bug fix)
-
-Run with:
-    pytest tests/units/test_agent_pools.py -v
 """
 
 from unittest.mock import Mock
@@ -95,7 +92,7 @@ class TestAgentPoolModels:
         )
 
     def test_agent_pool_create_options_workspace_ids(self):
-        """Test AgentPoolCreateOptions with allowed/excluded workspace IDs (bug fix)"""
+        """Test AgentPoolCreateOptions with allowed/excluded workspace IDs"""
         options = AgentPoolCreateOptions(
             name="scoped-pool",
             organization_scoped=False,
@@ -115,7 +112,7 @@ class TestAgentPoolModels:
         assert options.allowed_project_ids == ["prj-aaa", "prj-bbb"]
 
     def test_agent_pool_update_options_workspace_ids(self):
-        """Test AgentPoolUpdateOptions with allowed/excluded workspace IDs (bug fix)"""
+        """Test AgentPoolUpdateOptions with allowed/excluded workspace IDs"""
         options = AgentPoolUpdateOptions(
             allowed_workspace_ids=["ws-aaa"],
             excluded_workspace_ids=["ws-bbb"],
@@ -196,7 +193,6 @@ class TestAgentPoolOperations:
         assert agent_pools[0].name == "test-pool-1"
         assert agent_pools[0].agent_count == 2
 
-        # Verify API call
         mock_transport.request.assert_called_once()
         call_args = mock_transport.request.call_args
         assert "organizations/test-org/agent-pools" in call_args[0][1]
@@ -250,7 +246,6 @@ class TestAgentPoolOperations:
         assert agent_pool.name == "new-pool"
         assert agent_pool.organization_scoped is True
 
-        # Verify API call
         mock_transport.request.assert_called_once()
         call_args = mock_transport.request.call_args
         assert call_args[0][0] == "POST"
@@ -280,7 +275,6 @@ class TestAgentPoolOperations:
         assert agent_pool.organization_scoped is False
         assert agent_pool.agent_count == 3
 
-        # Verify API call
         mock_transport.request.assert_called_once()
         call_args = mock_transport.request.call_args
         assert call_args[0][0] == "GET"
@@ -310,7 +304,6 @@ class TestAgentPoolOperations:
         assert agent_pool.name == "updated-pool"
         assert agent_pool.organization_scoped is False
 
-        # Verify API call
         mock_transport.request.assert_called_once()
         call_args = mock_transport.request.call_args
         assert call_args[0][0] == "PATCH"
@@ -320,7 +313,6 @@ class TestAgentPoolOperations:
         """Test deleting an agent pool"""
         agent_pools_service.delete("apool-123456789abcdef0")
 
-        # Verify API call
         mock_transport.request.assert_called_once()
         call_args = mock_transport.request.call_args
         assert call_args[0][0] == "DELETE"
@@ -359,11 +351,8 @@ class TestAgentPoolOperations:
         assert agent_pool.name == "test-pool"
 
         call_args = mock_transport.request.call_args
-        # Must be PATCH, not POST
         assert call_args[0][0] == "PATCH"
-        # Must target the pool URL, not a /relationships/workspaces sub-resource
         assert call_args[0][1] == f"/api/v2/agent-pools/{pool_id}"
-        # Payload must use relationships.allowed-workspaces
         body = call_args[1]["json_body"]["data"]
         assert body["type"] == "agent-pools"
         assert body["id"] == pool_id
@@ -374,7 +363,6 @@ class TestAgentPoolOperations:
     def test_remove_from_workspaces(self, agent_pools_service, mock_transport):
         """remove_from_workspaces must PATCH /agent-pools/:id with relationships.excluded-workspaces.
 
-        Previously (broken): DELETE /agent-pools/:id/relationships/workspaces -> 404
         Fixed: PATCH /agent-pools/:id with relationships.excluded-workspaces body
         """
         pool_id = "apool-123456789abcdef0"
@@ -404,11 +392,8 @@ class TestAgentPoolOperations:
         assert agent_pool.name == "test-pool"
 
         call_args = mock_transport.request.call_args
-        # Must be PATCH, not DELETE
         assert call_args[0][0] == "PATCH"
-        # Must target the pool URL, not a /relationships/workspaces sub-resource
         assert call_args[0][1] == f"/api/v2/agent-pools/{pool_id}"
-        # Payload must use relationships.excluded-workspaces
         body = call_args[1]["json_body"]["data"]
         assert body["type"] == "agent-pools"
         assert body["id"] == pool_id
@@ -481,7 +466,7 @@ class TestAgentPoolOperations:
 
 
 class TestDedicatedRelationshipUpdateMethods:
-    """Test the Go SDK-parity dedicated update methods for relationships."""
+    """Test the dedicated update methods for relationships."""
 
     @pytest.fixture
     def mock_transport(self):
@@ -785,7 +770,6 @@ class TestAgentTokenOperations:
         assert token.id == "at-123456789abcdef0"
         assert token.description == "Existing token"
 
-        # Verify API call
         mock_transport.request.assert_called_once()
         call_args = mock_transport.request.call_args
         assert call_args[0][0] == "GET"
@@ -795,7 +779,6 @@ class TestAgentTokenOperations:
         """Test deleting an agent token"""
         agent_tokens_service.delete("at-123456789abcdef0")
 
-        # Verify API call
         mock_transport.request.assert_called_once()
         call_args = mock_transport.request.call_args
         assert call_args[0][0] == "DELETE"
@@ -829,9 +812,7 @@ class TestAgentPoolErrorHandling:
         """Test handling of ValidationError errors"""
         mock_transport.request.side_effect = ValidationError("Invalid agent pool name")
 
-        options = AgentPoolCreateOptions(
-            name="valid-name"
-        )  # Use valid name to avoid ValueError
+        options = AgentPoolCreateOptions(name="valid-name")
 
         with pytest.raises(ValidationError):
             agent_pools_service.create("test-org", options)

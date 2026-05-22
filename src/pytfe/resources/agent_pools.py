@@ -586,7 +586,6 @@ class AgentPools(_Service):
 
         Always sends the relationship array in the payload even when empty, which
         allows callers to clear an existing relationship by passing an empty list.
-        This mirrors the Go SDK updateArrayAttribute helper.
         """
         if not valid_string_id(agent_pool_id):
             raise ValueError("Agent pool ID is required and must be valid")
