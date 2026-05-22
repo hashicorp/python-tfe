@@ -11,7 +11,7 @@ import os
 
 from pytfe import TFEClient, TFEConfig
 from pytfe.errors import TFEError
-from pytfe.models.organization_audit_configuration import (
+from pytfe.models import (
     OrganizationAuditConfigAuditTrails,
     OrganizationAuditConfigurationOptions,
 )

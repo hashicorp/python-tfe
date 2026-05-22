@@ -16,6 +16,7 @@ from .resources.oauth_client import OAuthClients
 from .resources.oauth_token import OAuthTokens
 from .resources.organization_audit_configuration import OrganizationAuditConfigurations
 from .resources.organization_membership import OrganizationMemberships
+from .resources.organization_tags import OrganizationTags
 from .resources.organization_token import OrganizationTokens
 from .resources.organizations import Organizations
 from .resources.plan import Plans
@@ -44,6 +45,7 @@ from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
 from .resources.team import Teams
 from .resources.team_project_access import TeamProjectAccesses
+from .resources.team_token import TeamTokens
 from .resources.user import Users
 from .resources.variable import Variables
 from .resources.variable_sets import VariableSets, VariableSetVariables
@@ -90,6 +92,7 @@ class TFEClient:
         )  # org Explorer queries and saved views
 
         self.users = Users(self._transport)
+        self.organization_tags = OrganizationTags(self._transport)
         self.organization_tokens = OrganizationTokens(self._transport)
         self.projects = Projects(self._transport)
         self.variables = Variables(self._transport)
@@ -129,6 +132,7 @@ class TFEClient:
         # Team project access
         self.teams = Teams(self._transport)
         self.team_project_accesses = TeamProjectAccesses(self._transport)
+        self.team_tokens = TeamTokens(self._transport)
 
         # Reserved Tag Key
         self.reserved_tag_key = ReservedTagKeys(self._transport)
