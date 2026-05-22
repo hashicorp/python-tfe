@@ -44,6 +44,7 @@ from .resources.stack import Stacks
 from .resources.stack_configuration import StackConfigurations
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
+from .resources.task_result import TaskResults
 from .resources.team import Teams
 from .resources.team_project_access import TeamProjectAccesses
 from .resources.team_token import TeamTokens
@@ -93,6 +94,7 @@ class TFEClient:
         )  # org Explorer queries and saved views
 
         self.users = Users(self._transport)
+        self.task_results = TaskResults(self._transport)
         self.organization_tags = OrganizationTags(self._transport)
         self.organization_tokens = OrganizationTokens(self._transport)
         self.projects = Projects(self._transport)

@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict
 
 # TaskStage represents a HCP Terraform or Terraform Enterprise run's stage where run tasks can occur
 class TaskStage(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     id: str
     # stage: Stage = Field(..., alias="stage")

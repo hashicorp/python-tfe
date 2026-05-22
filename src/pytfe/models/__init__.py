@@ -366,6 +366,17 @@ from .state_version_output import (
     StateVersionOutput,
     StateVersionOutputsListOptions,
 )
+
+# ── Task Result ───────────────────────────────────────────────────────────────
+from .task_result import (
+    TaskEnforcementLevel as TaskResultEnforcementLevel,
+)
+from .task_result import (
+    TaskResult,
+    TaskResultStatus,
+    TaskResultStatusTimestamps,
+)
+from .task_stage import TaskStage
 from .team import (
     OrganizationAccess,
     Team,
@@ -717,6 +728,12 @@ __all__ = [
     "RunTaskCreateOptions",
     "RunTaskUpdateOptions",
     "RunTaskReadOptions",
+    # Task Result
+    "TaskResult",
+    "TaskResultEnforcementLevel",
+    "TaskResultStatus",
+    "TaskResultStatusTimestamps",
+    "TaskStage",
     # Run task integration (callback)
     "TaskResultCallbackRequestOptions",
     "TaskResultCallbackStatus",
@@ -809,3 +826,14 @@ PolicyCheck.model_rebuild()
 RegistryProvider.model_rebuild()
 RegistryProviderVersion.model_rebuild()
 RegistryProviderPlatform.model_rebuild()
+
+# Rebuild TaskResult to resolve Run, Workspace, PolicyEvaluation, TaskStage refs
+TaskResult.model_rebuild(
+    raise_errors=False,
+    _types_namespace={
+        "PolicyEvaluation": PolicyEvaluation,
+        "Run": Run,
+        "TaskStage": TaskStage,
+        "Workspace": Workspace,
+    },
+)
