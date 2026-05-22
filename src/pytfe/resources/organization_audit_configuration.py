@@ -39,19 +39,10 @@ class OrganizationAuditConfigurations(_Service):
         path = f"/api/v2/organizations/{quote(organization)}/audit-configuration/test"
         response = self.t.request("POST", path)
         payload = response.json() or {}
+        if not isinstance(payload, dict):
+            raise ValueError("Invalid response format")
 
-        if isinstance(payload, dict) and "request-id" in payload:
-            return OrganizationAuditConfigurationTest.model_validate(payload)
-
-        data = payload.get("data") if isinstance(payload, dict) else None
-        if isinstance(data, dict):
-            if "request-id" in data:
-                return OrganizationAuditConfigurationTest.model_validate(data)
-            attrs = data.get("attributes")
-            if isinstance(attrs, dict) and "request-id" in attrs:
-                return OrganizationAuditConfigurationTest.model_validate(attrs)
-
-        return OrganizationAuditConfigurationTest.model_validate({})
+        return OrganizationAuditConfigurationTest.model_validate(payload)
 
     def update(
         self,
