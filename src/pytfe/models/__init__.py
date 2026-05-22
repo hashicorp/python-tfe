@@ -320,6 +320,14 @@ from .run_task import (
     Stage,
     TaskEnforcementLevel,
 )
+from .run_task_integration import (
+    TaskResultCallbackRequestOptions,
+    TaskResultOutcome,
+    TaskResultTag,
+)
+from .run_task_integration import (
+    TaskResultStatus as TaskResultCallbackStatus,
+)
 from .run_trigger import (
     RunTrigger,
     RunTriggerCreateOptions,
@@ -709,6 +717,11 @@ __all__ = [
     "RunTaskCreateOptions",
     "RunTaskUpdateOptions",
     "RunTaskReadOptions",
+    # Run task integration (callback)
+    "TaskResultCallbackRequestOptions",
+    "TaskResultCallbackStatus",
+    "TaskResultOutcome",
+    "TaskResultTag",
     # Run triggers
     "RunTrigger",
     "RunTriggerCreateOptions",
