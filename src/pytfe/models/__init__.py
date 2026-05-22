@@ -21,6 +21,10 @@ from .agent import (
     AgentTokenCreateOptions,
     AgentTokenListOptions,
 )
+from .comment import (
+    Comment,
+    CommentCreateOptions,
+)
 
 # ── Core models split out of old types.py ─────────────────────────────────────
 # Adjust these imports to match where you placed them during the split.
@@ -57,6 +61,17 @@ from .data_retention_policy import (
     DataRetentionPolicyDontDelete,
     DataRetentionPolicyDontDeleteSetOptions,
     DataRetentionPolicySetOptions,
+)
+from .explorer import (
+    ExplorerQueryOptions,
+    ExplorerRow,
+    ExplorerSavedQuery,
+    ExplorerSavedQueryFilter,
+    ExplorerSavedView,
+    ExplorerSavedViewCreateOptions,
+    ExplorerSavedViewUpdateOptions,
+    ExplorerUrlFilter,
+    ExplorerViewType,
 )
 
 # ── Notification Configurations ───────────────────────────────────────────────
@@ -354,6 +369,12 @@ from .team import (
     TeamPermissions,
     TeamUpdateOptions,
 )
+from .team_token import (
+    CreatedByChoice,
+    TeamToken,
+    TeamTokenCreateOptions,
+    TeamTokenListOptions,
+)
 
 # Variables
 from .variable import (
@@ -554,6 +575,16 @@ __all__ = [
     "QueryRunStatus",
     "QueryRunStatusTimestamps",
     "QueryRunVariable",
+    # Explorer
+    "ExplorerQueryOptions",
+    "ExplorerRow",
+    "ExplorerSavedQuery",
+    "ExplorerSavedQueryFilter",
+    "ExplorerSavedView",
+    "ExplorerSavedViewCreateOptions",
+    "ExplorerSavedViewUpdateOptions",
+    "ExplorerUrlFilter",
+    "ExplorerViewType",
     # Core (from old types.py, now split)
     "Entitlements",
     "ExecutionMode",
@@ -574,6 +605,11 @@ __all__ = [
     "TeamIncludeOpt",
     "TeamListOptions",
     "TeamUpdateOptions",
+    # Team Tokens
+    "CreatedByChoice",
+    "TeamToken",
+    "TeamTokenCreateOptions",
+    "TeamTokenListOptions",
     "Project",
     "ProjectAddTagBindingsOptions",
     "ProjectCreateOptions",
@@ -653,6 +689,9 @@ __all__ = [
     "RunEventList",
     "RunEventListOptions",
     "RunEventReadOptions",
+    # Comments
+    "Comment",
+    "CommentCreateOptions",
     # Run tasks
     "RunTask",
     "RunTaskIncludeOptions",

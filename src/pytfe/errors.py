@@ -121,6 +121,11 @@ ERR_INVALID_RESERVED_TAG_KEY_ID = "invalid reserved tag key ID"
 ERR_REQUIRED_TAG_KEY = "tag key is required"
 ERR_INVALID_TAG_KEY = "invalid tag key"
 
+# Organization Tag Error Constants
+ERR_INVALID_TAG = "invalid value for tag"
+ERR_REQUIRED_TAG_ID = "tag ID is required"
+ERR_REQUIRED_TAG_WORKSPACE_ID = "workspace ID is required"
+
 
 class WorkspaceNotFound(NotFound): ...
 
@@ -369,6 +374,13 @@ class InvalidQueryRunIDError(InvalidValues):
     """Raised when an invalid query run ID is provided."""
 
     def __init__(self, message: str = "invalid value for query run ID"):
+        super().__init__(message)
+
+
+class InvalidExplorerSavedViewIDError(InvalidValues):
+    """Raised when a saved view id is missing or blank (Explorer view-scoped routes)."""
+
+    def __init__(self, message: str = "invalid value for explorer saved view ID"):
         super().__init__(message)
 
 
@@ -641,4 +653,27 @@ class InvalidStackConfigurationIDError(InvalidValues):
     """Raised when an invalid stack configuration ID is provided."""
 
     def __init__(self, message: str = "invalid value for stack configuration ID"):
+        super().__init__(message)
+
+
+# Comment errors
+class InvalidCommentIDError(InvalidValues):
+    """Raised when an invalid comment ID is provided."""
+
+    def __init__(self, message: str = "invalid value for comment ID"):
+        super().__init__(message)
+
+
+class RequiredCommentBodyError(TFEError):
+    """Raised when comment body is empty or missing."""
+
+    def __init__(self, message: str = "comment body is required"):
+        super().__init__(message)
+
+
+# Team Token errors
+class InvalidTokenIDError(InvalidValues):
+    """Raised when an invalid authentication token ID is provided."""
+
+    def __init__(self, message: str = "invalid value for token ID"):
         super().__init__(message)
