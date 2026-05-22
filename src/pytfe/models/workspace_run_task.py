@@ -48,12 +48,8 @@ class WorkspaceRunTask(BaseModel):
     stages: list[WorkspaceRunTaskStage] = Field(
         default_factory=list, validation_alias="stages"
     )
-    run_task: RunTaskReference | None = Field(
-        default=None, validation_alias="run-task"
-    )
-    workspace: Workspace | None = Field(
-        default=None, validation_alias="workspace"
-    )
+    run_task: RunTaskReference | None = Field(default=None, validation_alias="run-task")
+    workspace: Workspace | None = Field(default=None, validation_alias="workspace")
 
     @field_validator("stages", mode="before")
     @classmethod
@@ -63,7 +59,9 @@ class WorkspaceRunTask(BaseModel):
         if value is None:
             return []
         return [
-            _normalize_stage_value(item.value if isinstance(item, WorkspaceRunTaskStage) else item)
+            _normalize_stage_value(
+                item.value if isinstance(item, WorkspaceRunTaskStage) else item
+            )
             for item in value
         ]
 
@@ -114,7 +112,9 @@ class WorkspaceRunTaskCreateOptions(BaseModel):
         if value is None:
             return None
         return [
-            _normalize_stage_value(item.value if isinstance(item, WorkspaceRunTaskStage) else item)
+            _normalize_stage_value(
+                item.value if isinstance(item, WorkspaceRunTaskStage) else item
+            )
             for item in value
         ]
 
@@ -143,4 +143,3 @@ class WorkspaceRunTaskUpdateOptions(BaseModel):
             )
             for item in value
         ]
-
