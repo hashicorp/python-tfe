@@ -412,12 +412,13 @@ from .workspace_resource import (
     WorkspaceResourceListOptions,
 )
 from .workspace_run_task import (
+    RunTaskReference,
     WorkspaceRunTask,
     WorkspaceRunTaskCreateOptions,
+    WorkspaceRunTaskEnforcementLevel,
     WorkspaceRunTaskListOptions,
-    WorkspaceRunTaskRunTask,
+    WorkspaceRunTaskStage,
     WorkspaceRunTaskUpdateOptions,
-    WorkspaceRunTaskWorkspace,
 )
 
 # ── Public surface ────────────────────────────────────────────────────────────
@@ -626,9 +627,10 @@ __all__ = [
     "WorkspaceResource",
     "WorkspaceResourceListOptions",
     # Workspace Run Tasks
+    "RunTaskReference",
     "WorkspaceRunTask",
-    "WorkspaceRunTaskRunTask",
-    "WorkspaceRunTaskWorkspace",
+    "WorkspaceRunTaskEnforcementLevel",
+    "WorkspaceRunTaskStage",
     "WorkspaceRunTaskListOptions",
     "WorkspaceRunTaskCreateOptions",
     "WorkspaceRunTaskUpdateOptions",

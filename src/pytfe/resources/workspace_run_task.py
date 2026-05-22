@@ -12,13 +12,13 @@ from ..errors import (
     InvalidWorkspaceIDError,
     InvalidWorkspaceRunTaskIDError,
 )
+from ..models.workspace import Workspace
 from ..models.workspace_run_task import (
+    RunTaskReference,
     WorkspaceRunTask,
     WorkspaceRunTaskCreateOptions,
     WorkspaceRunTaskListOptions,
-    WorkspaceRunTaskRunTask,
     WorkspaceRunTaskUpdateOptions,
-    WorkspaceRunTaskWorkspace,
 )
 from ..utils import _safe_str, valid_string_id
 from ._base import _Service
@@ -32,17 +32,16 @@ def _workspace_run_task_from(data: dict[str, Any]) -> WorkspaceRunTask:
     run_task = None
     run_task_data = relationships.get("task", {}).get("data")
     if isinstance(run_task_data, dict) and run_task_data.get("id"):
-        run_task = WorkspaceRunTaskRunTask(id=_safe_str(run_task_data.get("id")))
+        run_task = RunTaskReference(id=_safe_str(run_task_data.get("id")))
 
     workspace = None
     workspace_data = relationships.get("workspace", {}).get("data")
     if isinstance(workspace_data, dict) and workspace_data.get("id"):
-        workspace = WorkspaceRunTaskWorkspace(id=_safe_str(workspace_data.get("id")))
+        workspace = Workspace.model_construct(id=_safe_str(workspace_data.get("id")))
 
     return WorkspaceRunTask(
         id=_safe_str(data.get("id")),
         enforcement_level=_safe_str(attributes.get("enforcement-level")) or None,
-        stage=_safe_str(attributes.get("stage")) or None,
         stages=[
             stage for stage in attributes.get("stages", []) if isinstance(stage, str)
         ],
@@ -75,8 +74,6 @@ class WorkspaceRunTasks(_Service):
             }
         }
 
-        if options.stage is not None:
-            body["data"]["attributes"]["stage"] = options.stage
         if options.stages is not None:
             body["data"]["attributes"]["stages"] = options.stages
 

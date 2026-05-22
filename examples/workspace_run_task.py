@@ -19,7 +19,6 @@ import argparse
 from pytfe import TFEClient, TFEConfig
 from pytfe.models import (
     WorkspaceRunTaskCreateOptions,
-    WorkspaceRunTaskRunTask,
     WorkspaceRunTaskUpdateOptions,
 )
 
@@ -76,7 +75,7 @@ def main():
     try:
         create_options = WorkspaceRunTaskCreateOptions(
             enforcement_level="advisory",
-            run_task=WorkspaceRunTaskRunTask(id=run_task_id),
+            run_task={"id": run_task_id},
             stages=["post_plan"],
         )
         workspace_task = client.workspace_run_tasks.create(workspace_id, create_options)

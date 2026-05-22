@@ -13,7 +13,6 @@ from pytfe.models.workspace_run_task import (
     WorkspaceRunTask,
     WorkspaceRunTaskCreateOptions,
     WorkspaceRunTaskListOptions,
-    WorkspaceRunTaskRunTask,
     WorkspaceRunTaskUpdateOptions,
 )
 from pytfe.resources.workspace_run_task import (
@@ -42,7 +41,6 @@ class TestWorkspaceRunTaskFrom:
         assert isinstance(result, WorkspaceRunTask)
         assert result.id == "wst-123"
         assert result.enforcement_level == "mandatory"
-        assert result.stage == "post_plan"
         assert result.stages == ["post_plan", "pre_apply"]
         assert result.run_task is not None
         assert result.run_task.id == "task-123"
@@ -78,7 +76,7 @@ class TestWorkspaceRunTasks:
 
         options = WorkspaceRunTaskCreateOptions(
             enforcement_level="advisory",
-            run_task=WorkspaceRunTaskRunTask(id="task-1"),
+            run_task={"id": "task-1"},
             stages=["post_plan"],
         )
 
@@ -93,7 +91,7 @@ class TestWorkspaceRunTasks:
     def test_create_validation_errors(self, workspace_run_tasks_service):
         options = WorkspaceRunTaskCreateOptions(
             enforcement_level="advisory",
-            run_task=WorkspaceRunTaskRunTask(id="task-1"),
+            run_task={"id": "task-1"},
         )
 
         with pytest.raises(InvalidWorkspaceIDError):
@@ -118,12 +116,12 @@ class TestWorkspaceRunTasks:
             ]
         )
 
-        options = WorkspaceRunTaskListOptions(page_size=10, page_number=2)
+        options = WorkspaceRunTaskListOptions(page_size=10)
         items = list(workspace_run_tasks_service.list("ws-1", options))
 
         workspace_run_tasks_service._list.assert_called_once_with(
             "/api/v2/workspaces/ws-1/tasks",
-            params={"page[size]": 10, "page[number]": 2},
+            params={"page[size]": 10},
         )
         assert len(items) == 2
         assert items[0].id == "wst-1"
