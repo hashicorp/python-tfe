@@ -124,7 +124,9 @@ def main():
             try:
                 client.workspaces.lock(
                     args.workspace_id,
-                    WorkspaceLockOptions(reason="python-tfe state_versions upload example"),
+                    WorkspaceLockOptions(
+                        reason="python-tfe state_versions upload example"
+                    ),
                 )
                 locked_workspace = True
             except Exception:
