@@ -472,7 +472,7 @@ class InvalidPoliciesError(InvalidValues):
 
 # Policy Evaluation errors
 class InvalidTaskStageIDError(InvalidValues):
-    """Raised when an invalid task stage ID is provided."""
+    """Raised when a task stage ID is invalid."""
 
     def __init__(self, message: str = "invalid value for task stage ID"):
         super().__init__(message)
