@@ -21,6 +21,10 @@ from .agent import (
     AgentTokenCreateOptions,
     AgentTokenListOptions,
 )
+from .comment import (
+    Comment,
+    CommentCreateOptions,
+)
 
 # ── Core models split out of old types.py ─────────────────────────────────────
 # Adjust these imports to match where you placed them during the split.
@@ -57,6 +61,17 @@ from .data_retention_policy import (
     DataRetentionPolicyDontDelete,
     DataRetentionPolicyDontDeleteSetOptions,
     DataRetentionPolicySetOptions,
+)
+from .explorer import (
+    ExplorerQueryOptions,
+    ExplorerRow,
+    ExplorerSavedQuery,
+    ExplorerSavedQueryFilter,
+    ExplorerSavedView,
+    ExplorerSavedViewCreateOptions,
+    ExplorerSavedViewUpdateOptions,
+    ExplorerUrlFilter,
+    ExplorerViewType,
 )
 
 # ── Notification Configurations ───────────────────────────────────────────────
@@ -547,6 +562,16 @@ __all__ = [
     "QueryRunStatus",
     "QueryRunStatusTimestamps",
     "QueryRunVariable",
+    # Explorer
+    "ExplorerQueryOptions",
+    "ExplorerRow",
+    "ExplorerSavedQuery",
+    "ExplorerSavedQueryFilter",
+    "ExplorerSavedView",
+    "ExplorerSavedViewCreateOptions",
+    "ExplorerSavedViewUpdateOptions",
+    "ExplorerUrlFilter",
+    "ExplorerViewType",
     # Core (from old types.py, now split)
     "Entitlements",
     "ExecutionMode",
@@ -649,6 +674,9 @@ __all__ = [
     # Task Stage & Task Result
     "TaskStage",
     "TaskResult",
+    # Comments
+    "Comment",
+    "CommentCreateOptions",
     # Run tasks
     "RunTask",
     "RunTaskIncludeOptions",
