@@ -58,6 +58,24 @@ class RequiredFieldMissing(TFEError): ...
 class ErrStateVersionUploadNotSupported(TFEError): ...
 
 
+class InvalidCallbackURLError(TFEError):
+    def __init__(self, message: str = "Invalid callback URL") -> None:
+        super().__init__(message)
+
+
+class InvalidAccessTokenError(TFEError):
+    def __init__(self, message: str = "Invalid access token") -> None:
+        super().__init__(message)
+
+
+class InvalidTaskResultsCallbackStatusError(TFEError):
+    def __init__(
+        self,
+        message: str = "Invalid task result callback status; must be one of: passed, failed, running",
+    ) -> None:
+        super().__init__(message)
+
+
 # Generic error constants
 ERR_UNAUTHORIZED = "unauthorized"
 ERR_RESOURCE_NOT_FOUND = "resource not found"
@@ -668,4 +686,12 @@ class RequiredCommentBodyError(TFEError):
     """Raised when comment body is empty or missing."""
 
     def __init__(self, message: str = "comment body is required"):
+        super().__init__(message)
+
+
+# Team Token errors
+class InvalidTokenIDError(InvalidValues):
+    """Raised when an invalid authentication token ID is provided."""
+
+    def __init__(self, message: str = "invalid value for token ID"):
         super().__init__(message)

@@ -11,6 +11,11 @@ from pydantic import BaseModel, ConfigDict, Field
 
 if TYPE_CHECKING:
     from pytfe.models.task_stage import TaskStage
+    # Imported only for type checking to avoid circular imports.
+    from pytfe.models.policy_evaluation import PolicyEvaluation
+    from pytfe.models.run import Run
+    from pytfe.models.task_stage import TaskStage
+    from pytfe.models.workspace import Workspace
 
 
 class TaskResultStatus(str, Enum):
@@ -29,7 +34,7 @@ class TaskEnforcementLevel(str, Enum):
 
 class TaskResultStatusTimestamps(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
-
+    model_config = ConfigDict(populate_by_name=True)
     errored_at: datetime | None = Field(None, alias="errored-at")
     running_at: datetime | None = Field(None, alias="running-at")
     canceled_at: datetime | None = Field(None, alias="canceled-at")
@@ -41,11 +46,18 @@ class TaskResult(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     id: str
+    model_config = ConfigDict(populate_by_name=True)
+
+    id: str
+
     status: TaskResultStatus | None = Field(None, alias="status")
     message: str | None = Field(None, alias="message")
 
     status_timestamps: TaskResultStatusTimestamps | None = Field(
         None, alias="status-timestamps"
+
+        None,
+        alias="status-timestamps",
     )
 
     url: str | None = Field(None, alias="url")
@@ -67,6 +79,29 @@ class TaskResult(BaseModel):
 
     @classmethod
     def model_validate(cls, *args: Any, **kwargs: Any) -> TaskResult:
+
+    workspace_task_enforcement_level: TaskEnforcementLevel | None = Field(
+        None,
+        alias="workspace-task-enforcement-level",
+    )
+
+    agent_pool_id: str | None = Field(None, alias="agent-pool-id")
+
+    # Relationships
+    # Forward-referenced to avoid circular imports; resolved lazily below.
+    task_stage: TaskStage | None = Field(None, alias="task-stage")
+    run: Run | None = Field(None, alias="run")
+    workspace: Workspace | None = Field(None, alias="workspace")
+    policy_evaluations: list[PolicyEvaluation] | None = Field(
+        None,
+        alias="policy-evaluations",
+    )
+
+    @classmethod
+    def model_validate(cls, *args: Any, **kwargs: Any) -> TaskResult:
+        # Ensure the TaskStage forward reference is resolved before validating.
+        # The import-time rebuild may run while task_stage.py is still
+        # partially loaded (circular import), in which case we retry here.
         if not getattr(cls, "__pydantic_complete__", True):
             _rebuild_task_result_model()
         return super().model_validate(*args, **kwargs)
@@ -79,6 +114,22 @@ def _rebuild_task_result_model() -> None:
         TaskResult.model_rebuild(
             raise_errors=False,
             _types_namespace={"TaskStage": TaskStage},
+        )
+    except Exception:
+    try:
+        from pytfe.models.policy_evaluation import PolicyEvaluation
+        from pytfe.models.run import Run
+        from pytfe.models.task_stage import TaskStage
+        from pytfe.models.workspace import Workspace
+
+        TaskResult.model_rebuild(
+            raise_errors=False,
+            _types_namespace={
+                "PolicyEvaluation": PolicyEvaluation,
+                "Run": Run,
+                "TaskStage": TaskStage,
+                "Workspace": Workspace,
+            },
         )
     except Exception:
         pass

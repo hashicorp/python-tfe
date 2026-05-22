@@ -116,6 +116,15 @@ from .organization import (
     ReadRunQueueOptions,
     RunQueue,
 )
+from .organization_audit_configuration import (
+    OrganizationAuditConfigAuditStreaming,
+    OrganizationAuditConfigAuditTrails,
+    OrganizationAuditConfigPermissions,
+    OrganizationAuditConfigTimestamps,
+    OrganizationAuditConfiguration,
+    OrganizationAuditConfigurationOptions,
+    OrganizationAuditConfigurationTest,
+)
 from .organization_membership import (
     OrganizationMembership,
     OrganizationMembershipCreateOptions,
@@ -311,6 +320,14 @@ from .run_task import (
     Stage,
     TaskEnforcementLevel,
 )
+from .run_task_integration import (
+    TaskResultCallbackRequestOptions,
+    TaskResultOutcome,
+    TaskResultTag,
+)
+from .run_task_integration import (
+    TaskResultStatus as TaskResultCallbackStatus,
+)
 from .run_trigger import (
     RunTrigger,
     RunTriggerCreateOptions,
@@ -352,6 +369,15 @@ from .state_version_output import (
 
 # ── Task Stage & Task Result ─────────────────────────────────────────────────
 from .task_result import TaskResult
+# ── Task Result ───────────────────────────────────────────────────────────────
+from .task_result import (
+    TaskEnforcementLevel as TaskResultEnforcementLevel,
+)
+from .task_result import (
+    TaskResult,
+    TaskResultStatus,
+    TaskResultStatusTimestamps,
+)
 from .task_stage import TaskStage
 from .team import (
     OrganizationAccess,
@@ -361,6 +387,12 @@ from .team import (
     TeamListOptions,
     TeamPermissions,
     TeamUpdateOptions,
+)
+from .team_token import (
+    CreatedByChoice,
+    TeamToken,
+    TeamTokenCreateOptions,
+    TeamTokenListOptions,
 )
 
 # Variables
@@ -579,6 +611,13 @@ __all__ = [
     "Organization",
     "OrganizationCreateOptions",
     "OrganizationUpdateOptions",
+    "OrganizationAuditConfigAuditStreaming",
+    "OrganizationAuditConfigAuditTrails",
+    "OrganizationAuditConfigPermissions",
+    "OrganizationAuditConfigTimestamps",
+    "OrganizationAuditConfiguration",
+    "OrganizationAuditConfigurationOptions",
+    "OrganizationAuditConfigurationTest",
     "OrganizationMembership",
     "OrganizationMembershipCreateOptions",
     "OrganizationMembershipListOptions",
@@ -592,6 +631,11 @@ __all__ = [
     "TeamIncludeOpt",
     "TeamListOptions",
     "TeamUpdateOptions",
+    # Team Tokens
+    "CreatedByChoice",
+    "TeamToken",
+    "TeamTokenCreateOptions",
+    "TeamTokenListOptions",
     "Project",
     "ProjectAddTagBindingsOptions",
     "ProjectCreateOptions",
@@ -689,6 +733,17 @@ __all__ = [
     "RunTaskCreateOptions",
     "RunTaskUpdateOptions",
     "RunTaskReadOptions",
+    # Task Result
+    "TaskResult",
+    "TaskResultEnforcementLevel",
+    "TaskResultStatus",
+    "TaskResultStatusTimestamps",
+    "TaskStage",
+    # Run task integration (callback)
+    "TaskResultCallbackRequestOptions",
+    "TaskResultCallbackStatus",
+    "TaskResultOutcome",
+    "TaskResultTag",
     # Run triggers
     "RunTrigger",
     "RunTriggerCreateOptions",
@@ -782,5 +837,16 @@ TaskStage.model_rebuild(
         "Run": Run,
         "TaskResult": TaskResult,
         "PolicyEvaluation": PolicyEvaluation,
+
+
+# Rebuild TaskResult to resolve Run, Workspace, PolicyEvaluation, TaskStage refs
+TaskResult.model_rebuild(
+    raise_errors=False,
+    _types_namespace={
+        "PolicyEvaluation": PolicyEvaluation,
+        "Run": Run,
+        "TaskStage": TaskStage,
+        "Workspace": Workspace,
+
     },
 )

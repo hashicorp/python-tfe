@@ -59,7 +59,7 @@ class Actions(BaseModel):
 
 
 class TaskStage(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True)
 
     id: str
 
