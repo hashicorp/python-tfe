@@ -17,7 +17,9 @@ from ..models.workspace_run_task import (
     RunTaskReference,
     WorkspaceRunTask,
     WorkspaceRunTaskCreateOptions,
+    WorkspaceRunTaskEnforcementLevel,
     WorkspaceRunTaskListOptions,
+    WorkspaceRunTaskStage,
     WorkspaceRunTaskUpdateOptions,
 )
 from ..utils import _safe_str, valid_string_id
@@ -39,12 +41,27 @@ def _workspace_run_task_from(data: dict[str, Any]) -> WorkspaceRunTask:
     if isinstance(workspace_data, dict) and workspace_data.get("id"):
         workspace = Workspace.model_construct(id=_safe_str(workspace_data.get("id")))
 
+    enforcement_level = None
+    raw_enforcement = attributes.get("enforcement-level")
+    if isinstance(raw_enforcement, str):
+        try:
+            enforcement_level = WorkspaceRunTaskEnforcementLevel(raw_enforcement)
+        except ValueError:
+            enforcement_level = None
+
+    stages: list[WorkspaceRunTaskStage] = []
+    for raw_stage in attributes.get("stages", []):
+        if not isinstance(raw_stage, str):
+            continue
+        try:
+            stages.append(WorkspaceRunTaskStage(raw_stage))
+        except ValueError:
+            continue
+
     return WorkspaceRunTask(
         id=_safe_str(data.get("id")),
-        enforcement_level=_safe_str(attributes.get("enforcement-level")) or None,
-        stages=[
-            stage for stage in attributes.get("stages", []) if isinstance(stage, str)
-        ],
+        enforcement_level=enforcement_level,
+        stages=stages,
         run_task=run_task,
         workspace=workspace,
     )
