@@ -3,11 +3,15 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from pydantic import BaseModel, ConfigDict, Field
 
-from .agent import AgentPool
 from .common import TagBinding
 from .organization import Organization
+
+if TYPE_CHECKING:
+    from .agent import AgentPool
 
 
 class Project(BaseModel):
