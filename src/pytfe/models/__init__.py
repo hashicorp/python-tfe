@@ -320,10 +320,6 @@ from .run_task import (
     Stage,
     TaskEnforcementLevel,
 )
-from .run_task_request import (
-    RunTaskRequest,
-    RunTaskRequestCapabilitites,
-)
 from .run_task_integration import (
     TaskResultCallbackRequestOptions,
     TaskResultOutcome,
@@ -331,6 +327,10 @@ from .run_task_integration import (
 )
 from .run_task_integration import (
     TaskResultStatus as TaskResultCallbackStatus,
+)
+from .run_task_request import (
+    RunTaskRequest,
+    RunTaskRequestCapabilitites,
 )
 from .run_trigger import (
     RunTrigger,
