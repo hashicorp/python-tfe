@@ -78,9 +78,12 @@ class HTTPTransport:
         data: bytes | None = None,
         headers: dict[str, str] | None = None,
         allow_redirects: bool = True,
+        include_auth: bool = True,
     ) -> httpx.Response:
         url = self._build_url(path)
         hdrs = dict(self.headers)
+        if not include_auth:
+            hdrs.pop("Authorization", None)
         if headers:
             hdrs.update(headers)
         attempt = 0
