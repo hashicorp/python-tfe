@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from pytfe._http import HTTPTransport
-from pytfe.errors import NotFound
+from pytfe.errors import ErrStateVersionUploadNotSupported, NotFound, TFEError
 from pytfe.models.state_version import (
     StateVersion,
     StateVersionCreateOptions,
@@ -131,6 +131,7 @@ class TestStateVersions:
         )
         assert result.id == "sv-read-1"
         assert result.status == StateVersionStatus.FINALIZED
+        assert result.serial == 9
         assert result.hosted_state_download_url == "https://example.com/download"
 
     def test_read_with_options_success(self, state_versions_service, mock_transport):
@@ -204,6 +205,7 @@ class TestStateVersions:
             params={"include": "created_by"},
         )
         assert result.id == "sv-current-1"
+        assert result.serial == 9
 
     def test_create_state_version_success(self, state_versions_service, mock_transport):
         """Test successful create() operation."""
@@ -246,6 +248,86 @@ class TestStateVersions:
         )
         assert result.id == "sv-new-1"
         assert result.status == StateVersionStatus.PENDING
+
+    def test_upload_state_version_success(self, state_versions_service, mock_transport):
+        """Test upload() creates, uploads raw bytes, and re-reads state version."""
+        created_sv = StateVersion(
+            id="sv-upload-1",
+            created_at="2024-01-01T00:00:00Z",
+            status=StateVersionStatus.PENDING,
+            hosted_state_upload_url="https://example.com/upload-raw",
+            hosted_json_state_upload_url="https://example.com/upload-json",
+        )
+        final_sv = StateVersion(
+            id="sv-upload-1",
+            created_at="2024-01-01T00:00:00Z",
+            status=StateVersionStatus.FINALIZED,
+            hosted_state_download_url="https://example.com/download-raw",
+        )
+        options = StateVersionCreateOptions(serial=10, md5="abc123")
+
+        with patch.object(state_versions_service, "create", return_value=created_sv):
+            with patch.object(state_versions_service, "read", return_value=final_sv):
+                result = state_versions_service.upload(
+                    "ws-123",
+                    raw_state=b"raw-state",
+                    raw_json_state=b"json-state",
+                    options=options,
+                )
+
+        assert result.id == "sv-upload-1"
+        assert result.status == StateVersionStatus.FINALIZED
+        assert mock_transport.request.call_count == 2
+        mock_transport.request.assert_any_call(
+            "PUT",
+            "https://example.com/upload-raw",
+            data=b"raw-state",
+            headers={"Content-Type": "application/octet-stream"},
+        )
+        mock_transport.request.assert_any_call(
+            "PUT",
+            "https://example.com/upload-json",
+            data=b"json-state",
+            headers={"Content-Type": "application/octet-stream"},
+        )
+
+    def test_upload_state_version_unsupported_on_create_error(
+        self, state_versions_service
+    ):
+        """Test upload() maps legacy create error text to typed unsupported error."""
+        options = StateVersionCreateOptions(serial=10, md5="abc123")
+        legacy_err = TFEError("param is missing or the value is empty: state")
+
+        with patch.object(state_versions_service, "create", side_effect=legacy_err):
+            with pytest.raises(ErrStateVersionUploadNotSupported):
+                state_versions_service.upload(
+                    "ws-123", raw_state=b"raw-state", options=options
+                )
+
+    def test_upload_state_version_requires_signed_url(self, state_versions_service):
+        """Test upload() raises when server does not return hosted-state-upload-url."""
+        created_sv = StateVersion(
+            id="sv-upload-2",
+            created_at="2024-01-01T00:00:00Z",
+            status=StateVersionStatus.PENDING,
+            hosted_state_upload_url=None,
+        )
+        options = StateVersionCreateOptions(serial=10, md5="abc123")
+
+        with patch.object(state_versions_service, "create", return_value=created_sv):
+            with pytest.raises(ErrStateVersionUploadNotSupported):
+                state_versions_service.upload(
+                    "ws-123", raw_state=b"raw-state", options=options
+                )
+
+    def test_upload_state_version_rejects_inline_state(self, state_versions_service):
+        """Test upload() enforces omission of inline state/json-state in options."""
+        options = StateVersionCreateOptions(serial=10, md5="abc123", state="abc")
+
+        with pytest.raises(ValueError, match="must be omitted"):
+            state_versions_service.upload(
+                "ws-123", raw_state=b"raw-state", options=options
+            )
 
     def test_download_state_version_not_found_when_url_missing(
         self, state_versions_service

@@ -36,8 +36,18 @@ class StateVersion(BaseModel):
     hosted_state_download_url: str | None = Field(
         None, alias="hosted-state-download-url"
     )
+    hosted_json_state_download_url: str | None = Field(
+        None, alias="hosted-json-state-download-url"
+    )
     hosted_state_upload_url: str | None = Field(None, alias="hosted-state-upload-url")
+    hosted_json_state_upload_url: str | None = Field(
+        None, alias="hosted-json-state-upload-url"
+    )
     status: StateVersionStatus | None = Field(None, alias="status")
+    serial: int | None = Field(None, alias="serial")
+    size: int | None = Field(None, alias="size")
+    terraform_version: str | None = Field(None, alias="terraform-version")
+    state_version: int | None = Field(None, alias="state-version")
 
     # Optional/advanced fields (present on newer servers; keep loose)
     resources_processed: bool | None = Field(None, alias="resources-processed")

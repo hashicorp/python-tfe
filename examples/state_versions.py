@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 from pathlib import Path
 
@@ -15,6 +17,7 @@ from pytfe.models import (
     StateVersionListOptions,
     StateVersionOutputsListOptions,
 )
+from pytfe.models.workspace import WorkspaceLockOptions
 
 
 def _print_header(title: str):
@@ -110,18 +113,50 @@ def main():
     # 5) (Optional) Upload a new state file
     if args.upload:
         _print_header(f"Uploading new state from: {args.upload}")
-        payload = Path(args.upload).read_bytes()
         try:
+            payload = Path(args.upload).read_bytes()
+            state_obj = json.loads(payload.decode("utf-8"))
+            serial = int(state_obj["serial"])
+            lineage = state_obj.get("lineage")
+            md5 = hashlib.md5(payload).hexdigest()  # nosec B324
+            locked_workspace = False
+
+            try:
+                client.workspaces.lock(
+                    args.workspace_id,
+                    WorkspaceLockOptions(
+                        reason="python-tfe state_versions upload example"
+                    ),
+                )
+                locked_workspace = True
+            except Exception:
+                # Continue in case the workspace is already locked by the caller.
+                pass
+
             # If your server supports signed uploads, this will:
             #   a) create SV (to get upload URL)
             #   b) PUT bytes to the signed URL
             #   c) read back the SV to return a hydrated object
-            new_sv = client.state_versions.upload(
-                args.workspace_id,
-                raw_state=payload,
-                options=StateVersionCreateOptions(),
-            )
+            try:
+                new_sv = client.state_versions.upload(
+                    args.workspace_id,
+                    raw_state=payload,
+                    options=StateVersionCreateOptions(
+                        serial=serial,
+                        md5=md5,
+                        lineage=lineage,
+                    ),
+                )
+            finally:
+                if locked_workspace:
+                    client.workspaces.unlock(args.workspace_id)
             print(f"Uploaded new SV: {new_sv.id} status={new_sv.status}")
+        except FileNotFoundError:
+            print(f"Upload file not found: {args.upload}")
+        except (KeyError, ValueError, json.JSONDecodeError):
+            print(
+                "Upload input must be a valid Terraform state JSON containing at least a serial value."
+            )
         except ErrStateVersionUploadNotSupported as e:
             # Some older/self-hosted versions don’t support direct upload
             print(f"Upload not supported on this server: {e}")
