@@ -262,28 +262,3 @@ class RunTasks(_Service):
         if not valid_string_id(run_task_id):
             raise InvalidRunTaskIDError()
         self.t.request("DELETE", f"/api/v2/tasks/{run_task_id}")
-
-    def attach_to_workspace(
-        self,
-        workspace_id: str,
-        run_task_id: str,
-        enforcement_level: TaskEnforcementLevel,
-    ) -> WorkspaceRunTask:
-        """
-        Attach a run task to a workspace.
-
-        This is a convenience method that creates a workspace run task relationship.
-        """
-        # This would typically delegate to workspace_run_tasks.create()
-        # For now, we'll create a placeholder implementation
-        # In a real implementation, this would call:
-        """
-        create_options = WorkspaceRunTaskCreateOptions(
-            enforcement_level=enforcement_level,
-            run_task=RunTask(id=run_task_id, name="", url="", category="task", enabled=True)
-        )
-        return workspace_run_tasks.create(workspace_id, create_options)
-        """
-
-        # TODO: Implement actual workspace run task creation
-        raise NotImplementedError("attach_to_workspace method needs to be implemented")
