@@ -8,11 +8,15 @@ from .config import TFEConfig
 from .resources.agent_pools import AgentPools
 from .resources.agents import Agents, AgentTokens
 from .resources.apply import Applies
+from .resources.comment import Comments
 from .resources.configuration_version import ConfigurationVersions
+from .resources.explorer import Explorer
 from .resources.notification_configuration import NotificationConfigurations
 from .resources.oauth_client import OAuthClients
 from .resources.oauth_token import OAuthTokens
+from .resources.organization_audit_configuration import OrganizationAuditConfigurations
 from .resources.organization_membership import OrganizationMemberships
+from .resources.organization_tags import OrganizationTags
 from .resources.organization_token import OrganizationTokens
 from .resources.organizations import Organizations
 from .resources.plan import Plans
@@ -33,14 +37,17 @@ from .resources.reserved_tag_key import ReservedTagKeys
 from .resources.run import Runs
 from .resources.run_event import RunEvents
 from .resources.run_task import RunTasks
+from .resources.run_task_integration import RunTaskIntegrations
 from .resources.run_trigger import RunTriggers
 from .resources.ssh_keys import SSHKeys
 from .resources.stack import Stacks
 from .resources.stack_configuration import StackConfigurations
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
+from .resources.task_result import TaskResults
 from .resources.team import Teams
 from .resources.team_project_access import TeamProjectAccesses
+from .resources.team_token import TeamTokens
 from .resources.user import Users
 from .resources.variable import Variables
 from .resources.variable_sets import VariableSets, VariableSetVariables
@@ -80,7 +87,16 @@ class TFEClient:
         self.plans = Plans(self._transport)
         self.organizations = Organizations(self._transport)
         self.organization_memberships = OrganizationMemberships(self._transport)
+        self.organization_audit_configurations = OrganizationAuditConfigurations(
+            self._transport
+        )
+        self.explorer = Explorer(
+            self._transport
+        )  # org Explorer queries and saved views
+
         self.users = Users(self._transport)
+        self.task_results = TaskResults(self._transport)
+        self.organization_tags = OrganizationTags(self._transport)
         self.organization_tokens = OrganizationTokens(self._transport)
         self.projects = Projects(self._transport)
         self.variables = Variables(self._transport)
@@ -102,10 +118,12 @@ class TFEClient:
         self.state_versions = StateVersions(self._transport)
         self.state_version_outputs = StateVersionOutputs(self._transport)
         self.run_tasks = RunTasks(self._transport)
+        self.run_task_integrations = RunTaskIntegrations(self._transport)
         self.run_triggers = RunTriggers(self._transport)
         self.runs = Runs(self._transport)
         self.query_runs = QueryRuns(self._transport)
         self.run_events = RunEvents(self._transport)
+        self.comments = Comments(self._transport)
         self.policies = Policies(self._transport)
         self.policy_evaluations = PolicyEvaluations(self._transport)
         self.policy_checks = PolicyChecks(self._transport)
@@ -120,6 +138,7 @@ class TFEClient:
         # Team project access
         self.teams = Teams(self._transport)
         self.team_project_accesses = TeamProjectAccesses(self._transport)
+        self.team_tokens = TeamTokens(self._transport)
 
         # Reserved Tag Key
         self.reserved_tag_key = ReservedTagKeys(self._transport)

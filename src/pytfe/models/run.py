@@ -125,6 +125,7 @@ class Run(BaseModel):
     terraform_version: str | None = Field(None, alias="terraform-version")
     trigger_reason: str | None = Field(None, alias="trigger-reason")
     variables: list[RunVariableAttr] | None = Field(None, alias="variables")
+    invoke_action_addrs: list[str] | None = Field(None, alias="invoke-action-addrs")
 
     # Relations
     apply: Apply | None = Field(None, alias="apply")
@@ -292,6 +293,7 @@ class RunCreateOptions(BaseModel):
     policy_paths: list[str] | None = Field(None, alias="policy-paths")
     auto_apply: bool | None = Field(None, alias="auto-apply")
     variables: list[RunVariable] | None = Field(None, alias="variables")
+    invoke_action_addrs: list[str] | None = Field(None, alias="invoke-action-addrs")
 
 
 class RunReadOptions(BaseModel):

@@ -21,6 +21,10 @@ from .agent import (
     AgentTokenCreateOptions,
     AgentTokenListOptions,
 )
+from .comment import (
+    Comment,
+    CommentCreateOptions,
+)
 
 # ── Core models split out of old types.py ─────────────────────────────────────
 # Adjust these imports to match where you placed them during the split.
@@ -57,6 +61,17 @@ from .data_retention_policy import (
     DataRetentionPolicyDontDelete,
     DataRetentionPolicyDontDeleteSetOptions,
     DataRetentionPolicySetOptions,
+)
+from .explorer import (
+    ExplorerQueryOptions,
+    ExplorerRow,
+    ExplorerSavedQuery,
+    ExplorerSavedQueryFilter,
+    ExplorerSavedView,
+    ExplorerSavedViewCreateOptions,
+    ExplorerSavedViewUpdateOptions,
+    ExplorerUrlFilter,
+    ExplorerViewType,
 )
 
 # ── Notification Configurations ───────────────────────────────────────────────
@@ -100,6 +115,15 @@ from .organization import (
     OrganizationUpdateOptions,
     ReadRunQueueOptions,
     RunQueue,
+)
+from .organization_audit_configuration import (
+    OrganizationAuditConfigAuditStreaming,
+    OrganizationAuditConfigAuditTrails,
+    OrganizationAuditConfigPermissions,
+    OrganizationAuditConfigTimestamps,
+    OrganizationAuditConfiguration,
+    OrganizationAuditConfigurationOptions,
+    OrganizationAuditConfigurationTest,
 )
 from .organization_membership import (
     OrganizationMembership,
@@ -300,6 +324,14 @@ from .run_task_request import (
     RunTaskRequest,
     RunTaskRequestCapabilitites,
 )
+from .run_task_integration import (
+    TaskResultCallbackRequestOptions,
+    TaskResultOutcome,
+    TaskResultTag,
+)
+from .run_task_integration import (
+    TaskResultStatus as TaskResultCallbackStatus,
+)
 from .run_trigger import (
     RunTrigger,
     RunTriggerCreateOptions,
@@ -338,6 +370,17 @@ from .state_version_output import (
     StateVersionOutput,
     StateVersionOutputsListOptions,
 )
+
+# ── Task Result ───────────────────────────────────────────────────────────────
+from .task_result import (
+    TaskEnforcementLevel as TaskResultEnforcementLevel,
+)
+from .task_result import (
+    TaskResult,
+    TaskResultStatus,
+    TaskResultStatusTimestamps,
+)
+from .task_stage import TaskStage
 from .team import (
     OrganizationAccess,
     Team,
@@ -346,6 +389,12 @@ from .team import (
     TeamListOptions,
     TeamPermissions,
     TeamUpdateOptions,
+)
+from .team_token import (
+    CreatedByChoice,
+    TeamToken,
+    TeamTokenCreateOptions,
+    TeamTokenListOptions,
 )
 
 # Variables
@@ -556,6 +605,16 @@ __all__ = [
     "QueryRunStatus",
     "QueryRunStatusTimestamps",
     "QueryRunVariable",
+    # Explorer
+    "ExplorerQueryOptions",
+    "ExplorerRow",
+    "ExplorerSavedQuery",
+    "ExplorerSavedQueryFilter",
+    "ExplorerSavedView",
+    "ExplorerSavedViewCreateOptions",
+    "ExplorerSavedViewUpdateOptions",
+    "ExplorerUrlFilter",
+    "ExplorerViewType",
     # Core (from old types.py, now split)
     "Entitlements",
     "ExecutionMode",
@@ -563,6 +622,13 @@ __all__ = [
     "Organization",
     "OrganizationCreateOptions",
     "OrganizationUpdateOptions",
+    "OrganizationAuditConfigAuditStreaming",
+    "OrganizationAuditConfigAuditTrails",
+    "OrganizationAuditConfigPermissions",
+    "OrganizationAuditConfigTimestamps",
+    "OrganizationAuditConfiguration",
+    "OrganizationAuditConfigurationOptions",
+    "OrganizationAuditConfigurationTest",
     "OrganizationMembership",
     "OrganizationMembershipCreateOptions",
     "OrganizationMembershipListOptions",
@@ -576,6 +642,11 @@ __all__ = [
     "TeamIncludeOpt",
     "TeamListOptions",
     "TeamUpdateOptions",
+    # Team Tokens
+    "CreatedByChoice",
+    "TeamToken",
+    "TeamTokenCreateOptions",
+    "TeamTokenListOptions",
     "Project",
     "ProjectAddTagBindingsOptions",
     "ProjectCreateOptions",
@@ -663,6 +734,9 @@ __all__ = [
     "RunEventList",
     "RunEventListOptions",
     "RunEventReadOptions",
+    # Comments
+    "Comment",
+    "CommentCreateOptions",
     # Run tasks
     "RunTask",
     "RunTaskIncludeOptions",
@@ -675,8 +749,20 @@ __all__ = [
     "RunTaskCreateOptions",
     "RunTaskUpdateOptions",
     "RunTaskReadOptions",
+    # Run Task Request
     "RunTaskRequest",
     "RunTaskRequestCapabilitites",
+    # Task Result
+    "TaskResult",
+    "TaskResultEnforcementLevel",
+    "TaskResultStatus",
+    "TaskResultStatusTimestamps",
+    "TaskStage",
+    # Run task integration (callback)
+    "TaskResultCallbackRequestOptions",
+    "TaskResultCallbackStatus",
+    "TaskResultOutcome",
+    "TaskResultTag",
     # Run triggers
     "RunTrigger",
     "RunTriggerCreateOptions",
@@ -764,3 +850,14 @@ PolicyCheck.model_rebuild()
 RegistryProvider.model_rebuild()
 RegistryProviderVersion.model_rebuild()
 RegistryProviderPlatform.model_rebuild()
+
+# Rebuild TaskResult to resolve Run, Workspace, PolicyEvaluation, TaskStage refs
+TaskResult.model_rebuild(
+    raise_errors=False,
+    _types_namespace={
+        "PolicyEvaluation": PolicyEvaluation,
+        "Run": Run,
+        "TaskStage": TaskStage,
+        "Workspace": Workspace,
+    },
+)
