@@ -702,3 +702,18 @@ class InvalidTokenIDError(InvalidValues):
 
     def __init__(self, message: str = "invalid value for token ID"):
         super().__init__(message)
+
+
+# Agent Pool errors
+class InvalidAgentPoolIDError(InvalidValues):
+    """Raised when an invalid agent pool ID is provided."""
+
+    def __init__(self, message: str = "invalid value for agent pool ID"):
+        super().__init__(message)
+
+
+class RequiredProjectError(RequiredFieldMissing):
+    """Raised when a required project field is missing."""
+
+    def __init__(self, message: str = "project is required"):
+        super().__init__(message)

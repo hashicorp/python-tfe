@@ -68,4 +68,4 @@ class WorkspaceRunTaskUpdateOptions(BaseModel):
 
 # WorkspaceRunTask is now fully defined; rebuild RunTask so Pydantic can
 # resolve the forward reference in RunTask.workspace_run_tasks.
-RunTask.model_rebuild()
+RunTask.model_rebuild(raise_errors=False)

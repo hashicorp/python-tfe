@@ -10,11 +10,24 @@ agent pools, including CRUD operations and workspace assignments.
 from __future__ import annotations
 
 from collections.abc import Iterator
-from typing import Any, cast
+from typing import Any
 
+from pytfe.models.organization import Organization
+from pytfe.models.project import Project
+from pytfe.models.workspace import Workspace
+
+from ..errors import (
+    InvalidAgentPoolIDError,
+    InvalidOrgError,
+    InvalidProjectIDError,
+    InvalidWorkspaceIDError,
+    RequiredProjectError,
+    RequiredWorkspaceError,
+)
 from ..models.agent import (
+    Agent,
     AgentPool,
-    AgentPoolAllowedWorkspacePolicy,
+    AgentPoolAssignToProjectsOptions,
     AgentPoolAssignToWorkspacesOptions,
     AgentPoolCreateOptions,
     AgentPoolListOptions,
@@ -22,89 +35,8 @@ from ..models.agent import (
     AgentPoolRemoveFromWorkspacesOptions,
     AgentPoolUpdateOptions,
 )
-from ..utils import valid_string, valid_string_id
+from ..utils import valid_string_id
 from ._base import _Service
-
-
-def valid_agent_pool_name(name: str) -> bool:
-    """Validate agent pool name format."""
-    if not valid_string(name):
-        return False
-    # Agent pool names must be between 1 and 90 characters
-    # and can contain letters, numbers, spaces, hyphens, and underscores
-    if len(name) > 90:
-        return False
-    return True
-
-
-def validate_agent_pool_create_options(organization: str, name: str) -> None:
-    """Validate agent pool creation parameters."""
-    if not valid_string(organization):
-        raise ValueError("Organization name is required and must be valid")
-
-    if not valid_string(name):
-        raise ValueError("Agent pool name is required")
-
-    if not valid_agent_pool_name(name):
-        raise ValueError("Agent pool name contains invalid characters or is too long")
-
-
-def validate_agent_pool_update_options(
-    agent_pool_id: str, name: str | None = None
-) -> None:
-    """Validate agent pool update parameters."""
-    if not valid_string_id(agent_pool_id):
-        raise ValueError("Agent pool ID is required and must be valid")
-
-    if name is not None:
-        if not valid_string(name):
-            raise ValueError("Agent pool name must be a valid string")
-        if not valid_agent_pool_name(name):
-            raise ValueError(
-                "Agent pool name contains invalid characters or is too long"
-            )
-
-
-def _safe_str(value: Any, default: str = "") -> str:
-    """Safely convert a value to string with optional default."""
-    if value is None:
-        return default
-    return str(value)
-
-
-def _safe_int(value: Any, default: int = 0) -> int:
-    """Safely convert a value to an integer."""
-    if value is None:
-        return default
-    if isinstance(value, int):
-        return value
-    try:
-        return int(value)
-    except (ValueError, TypeError):
-        return default
-
-
-def _safe_bool(value: Any) -> bool | None:
-    """Safely convert a value to a boolean."""
-    if value is None:
-        return None
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        return value.lower() in ("true", "1", "yes", "on")
-    return bool(value)
-
-
-def _safe_workspace_policy(value: Any) -> AgentPoolAllowedWorkspacePolicy | None:
-    """Safely convert a value to an AgentPoolAllowedWorkspacePolicy enum."""
-    if value is None:
-        return None
-    if isinstance(value, AgentPoolAllowedWorkspacePolicy):
-        return value
-    try:
-        return AgentPoolAllowedWorkspacePolicy(str(value))
-    except (ValueError, TypeError):
-        return None
 
 
 class AgentPools(_Service):
@@ -126,58 +58,29 @@ class AgentPools(_Service):
             ValueError: If organization name is invalid
             TFEError: If API request fails
         """
-        if not valid_string(organization):
-            raise ValueError("Organization name is required and must be valid")
+        if not valid_string_id(organization):
+            raise InvalidOrgError()
 
         path = f"/api/v2/organizations/{organization}/agent-pools"
         params: dict[str, str | int] = {}
 
         if options:
-            if options.page_number is not None:
-                params["page[number]"] = options.page_number
             if options.page_size is not None:
                 params["page[size]"] = options.page_size
             if options.include:
                 params["include"] = ",".join(options.include)
-            if options.allowed_workspace_policy:
-                params["filter[allowed_workspace_policy]"] = (
-                    options.allowed_workspace_policy.value
+            if options.query:
+                params["q"] = options.query
+            if options.allowed_workspace_name:
+                params["filter[allowed_workspaces][name]"] = (
+                    options.allowed_workspace_name
                 )
-
-        items_iter = self._list(path, params=params)
-
-        for item in items_iter:
-            # Extract agent pool data from API response
-            attr = item.get("attributes", {}) or {}
-            relationships = item.get("relationships", {}) or {}
-
-            # Note: organization and workspace relationships available but not currently used
-
-            # Extract agents from relationships
-            agents_data = relationships.get("agents", {}).get("data", [])
-            agent_count = (
-                len(agents_data) if agents_data else attr.get("agent-count", 0)
-            )
-
-            agent_pool_data = {
-                "id": _safe_str(item.get("id")),
-                "name": _safe_str(attr.get("name")),
-                "created_at": attr.get("created-at"),
-                "organization_scoped": attr.get("organization-scoped"),
-                "allowed_workspace_policy": attr.get("allowed-workspace-policy"),
-                "agent_count": agent_count,
-            }
-
-            yield AgentPool(
-                id=_safe_str(agent_pool_data["id"]) or "",
-                name=_safe_str(agent_pool_data["name"]),
-                created_at=cast(Any, agent_pool_data["created_at"]),
-                organization_scoped=_safe_bool(agent_pool_data["organization_scoped"]),
-                allowed_workspace_policy=_safe_workspace_policy(
-                    agent_pool_data["allowed_workspace_policy"]
-                ),
-                agent_count=_safe_int(agent_pool_data["agent_count"]),
-            )
+            if options.allowed_project_name:
+                params["filter[allowed_projects][name]"] = options.allowed_project_name
+            if options.sort:
+                params["sort"] = options.sort
+        for item in self._list(path, params=params):
+            yield self._parse_agent_pool_from(item)
 
     def create(self, organization: str, options: AgentPoolCreateOptions) -> AgentPool:
         """Create a new agent pool in an organization.
@@ -193,18 +96,14 @@ class AgentPools(_Service):
             ValueError: If parameters are invalid
             TFEError: If API request fails
         """
-        validate_agent_pool_create_options(organization, options.name)
+        if not valid_string_id(organization):
+            raise InvalidOrgError()
 
         path = f"/api/v2/organizations/{organization}/agent-pools"
         attributes: dict[str, Any] = {"name": options.name}
 
         if options.organization_scoped is not None:
             attributes["organization-scoped"] = options.organization_scoped
-
-        if options.allowed_workspace_policy is not None:
-            attributes["allowed-workspace-policy"] = (
-                options.allowed_workspace_policy.value
-            )
 
         relationships: dict[str, Any] = {}
         if options.allowed_workspace_ids:
@@ -221,6 +120,13 @@ class AgentPools(_Service):
                     for ws_id in options.excluded_workspace_ids
                 ]
             }
+        if options.allowed_project_ids:
+            relationships["allowed-projects"] = {
+                "data": [
+                    {"type": "projects", "id": proj_id}
+                    for proj_id in options.allowed_project_ids
+                ]
+            }
 
         payload: dict[str, Any] = {
             "data": {"type": "agent-pools", "attributes": attributes}
@@ -231,27 +137,7 @@ class AgentPools(_Service):
         response = self.t.request("POST", path, json_body=payload)
         data = response.json()["data"]
 
-        # Extract agent pool data from response
-        attr = data.get("attributes", {}) or {}
-        agent_pool_data = {
-            "id": _safe_str(data.get("id")),
-            "name": _safe_str(attr.get("name")),
-            "created_at": attr.get("created-at"),
-            "organization_scoped": attr.get("organization-scoped"),
-            "allowed_workspace_policy": attr.get("allowed-workspace-policy"),
-            "agent_count": attr.get("agent-count", 0),
-        }
-
-        return AgentPool(
-            id=_safe_str(agent_pool_data["id"]) or "",
-            name=_safe_str(agent_pool_data["name"]),
-            created_at=cast(Any, agent_pool_data["created_at"]),
-            organization_scoped=_safe_bool(agent_pool_data["organization_scoped"]),
-            allowed_workspace_policy=_safe_workspace_policy(
-                agent_pool_data["allowed_workspace_policy"]
-            ),
-            agent_count=_safe_int(agent_pool_data["agent_count"]),
-        )
+        return self._parse_agent_pool_from(data)
 
     def read(
         self, agent_pool_id: str, options: AgentPoolReadOptions | None = None
@@ -270,7 +156,7 @@ class AgentPools(_Service):
             TFEError: If API request fails
         """
         if not valid_string_id(agent_pool_id):
-            raise ValueError("Agent pool ID is required and must be valid")
+            raise InvalidAgentPoolIDError()
 
         path = f"/api/v2/agent-pools/{agent_pool_id}"
         params: dict[str, str] = {}
@@ -285,33 +171,7 @@ class AgentPools(_Service):
 
         data = response.json()["data"]
 
-        # Extract agent pool data from response
-        attr = data.get("attributes", {}) or {}
-        relationships = data.get("relationships", {}) or {}
-
-        # Extract agents count
-        agents_data = relationships.get("agents", {}).get("data", [])
-        agent_count = len(agents_data) if agents_data else attr.get("agent-count", 0)
-
-        agent_pool_data = {
-            "id": _safe_str(data.get("id")),
-            "name": _safe_str(attr.get("name")),
-            "created_at": attr.get("created-at"),
-            "organization_scoped": attr.get("organization-scoped"),
-            "allowed_workspace_policy": attr.get("allowed-workspace-policy"),
-            "agent_count": agent_count,
-        }
-
-        return AgentPool(
-            id=_safe_str(agent_pool_data["id"]) or "",
-            name=_safe_str(agent_pool_data["name"]),
-            created_at=cast(Any, agent_pool_data["created_at"]),
-            organization_scoped=_safe_bool(agent_pool_data["organization_scoped"]),
-            allowed_workspace_policy=_safe_workspace_policy(
-                agent_pool_data["allowed_workspace_policy"]
-            ),
-            agent_count=_safe_int(agent_pool_data["agent_count"]),
-        )
+        return self._parse_agent_pool_from(data)
 
     def update(self, agent_pool_id: str, options: AgentPoolUpdateOptions) -> AgentPool:
         """Update an agent pool's properties.
@@ -327,7 +187,9 @@ class AgentPools(_Service):
             ValueError: If parameters are invalid
             TFEError: If API request fails
         """
-        validate_agent_pool_update_options(agent_pool_id, options.name)
+
+        if not valid_string_id(agent_pool_id):
+            raise InvalidAgentPoolIDError()
 
         path = f"/api/v2/agent-pools/{agent_pool_id}"
         attributes: dict[str, Any] = {}
@@ -337,11 +199,6 @@ class AgentPools(_Service):
 
         if options.organization_scoped is not None:
             attributes["organization-scoped"] = options.organization_scoped
-
-        if options.allowed_workspace_policy is not None:
-            attributes["allowed-workspace-policy"] = (
-                options.allowed_workspace_policy.value
-            )
 
         relationships: dict[str, Any] = {}
         if options.allowed_workspace_ids:
@@ -358,6 +215,13 @@ class AgentPools(_Service):
                     for ws_id in options.excluded_workspace_ids
                 ]
             }
+        if options.allowed_project_ids:
+            relationships["allowed-projects"] = {
+                "data": [
+                    {"type": "projects", "id": proj_id}
+                    for proj_id in options.allowed_project_ids
+                ]
+            }
 
         payload: dict[str, Any] = {
             "data": {
@@ -372,27 +236,7 @@ class AgentPools(_Service):
         response = self.t.request("PATCH", path, json_body=payload)
         data = response.json()["data"]
 
-        # Extract agent pool data from response
-        attr = data.get("attributes", {}) or {}
-        agent_pool_data = {
-            "id": _safe_str(data.get("id")),
-            "name": _safe_str(attr.get("name")),
-            "created_at": attr.get("created-at"),
-            "organization_scoped": attr.get("organization-scoped"),
-            "allowed_workspace_policy": attr.get("allowed-workspace-policy"),
-            "agent_count": attr.get("agent-count", 0),
-        }
-
-        return AgentPool(
-            id=_safe_str(agent_pool_data["id"]) or "",
-            name=_safe_str(agent_pool_data["name"]),
-            created_at=cast(Any, agent_pool_data["created_at"]),
-            organization_scoped=_safe_bool(agent_pool_data["organization_scoped"]),
-            allowed_workspace_policy=_safe_workspace_policy(
-                agent_pool_data["allowed_workspace_policy"]
-            ),
-            agent_count=_safe_int(agent_pool_data["agent_count"]),
-        )
+        return self._parse_agent_pool_from(data)
 
     def delete(self, agent_pool_id: str) -> None:
         """Delete an agent pool.
@@ -405,7 +249,7 @@ class AgentPools(_Service):
             TFEError: If API request fails
         """
         if not valid_string_id(agent_pool_id):
-            raise ValueError("Agent pool ID is required and must be valid")
+            raise InvalidAgentPoolIDError()
 
         path = f"/api/v2/agent-pools/{agent_pool_id}"
         self.t.request("DELETE", path)
@@ -431,14 +275,14 @@ class AgentPools(_Service):
             TFEError: If API request fails
         """
         if not valid_string_id(agent_pool_id):
-            raise ValueError("Agent pool ID is required and must be valid")
+            raise InvalidAgentPoolIDError()
 
         if not options.workspace_ids:
-            raise ValueError("At least one workspace ID is required")
+            raise RequiredWorkspaceError()
 
         for workspace_id in options.workspace_ids:
             if not valid_string_id(workspace_id):
-                raise ValueError(f"Invalid workspace ID: {workspace_id}")
+                raise InvalidWorkspaceIDError(f"Invalid workspace ID: {workspace_id}")
 
         path = f"/api/v2/agent-pools/{agent_pool_id}"
         payload: dict[str, Any] = {
@@ -459,27 +303,7 @@ class AgentPools(_Service):
         response = self.t.request("PATCH", path, json_body=payload)
         data = response.json()["data"]
 
-        # Extract agent pool data from response
-        attr = data.get("attributes", {}) or {}
-        agent_pool_data = {
-            "id": _safe_str(data.get("id")),
-            "name": _safe_str(attr.get("name")),
-            "created_at": attr.get("created-at"),
-            "organization_scoped": attr.get("organization-scoped"),
-            "allowed_workspace_policy": attr.get("allowed-workspace-policy"),
-            "agent_count": attr.get("agent-count", 0),
-        }
-
-        return AgentPool(
-            id=_safe_str(agent_pool_data["id"]) or "",
-            name=_safe_str(agent_pool_data["name"]),
-            created_at=cast(Any, agent_pool_data["created_at"]),
-            organization_scoped=_safe_bool(agent_pool_data["organization_scoped"]),
-            allowed_workspace_policy=_safe_workspace_policy(
-                agent_pool_data["allowed_workspace_policy"]
-            ),
-            agent_count=_safe_int(agent_pool_data["agent_count"]),
-        )
+        return self._parse_agent_pool_from(data)
 
     def remove_from_workspaces(
         self, agent_pool_id: str, options: AgentPoolRemoveFromWorkspacesOptions
@@ -503,14 +327,14 @@ class AgentPools(_Service):
             TFEError: If API request fails
         """
         if not valid_string_id(agent_pool_id):
-            raise ValueError("Agent pool ID is required and must be valid")
+            raise InvalidAgentPoolIDError()
 
         if not options.workspace_ids:
-            raise ValueError("At least one workspace ID is required")
+            raise RequiredWorkspaceError()
 
         for workspace_id in options.workspace_ids:
             if not valid_string_id(workspace_id):
-                raise ValueError(f"Invalid workspace ID: {workspace_id}")
+                raise InvalidWorkspaceIDError(f"Invalid workspace ID: {workspace_id}")
 
         path = f"/api/v2/agent-pools/{agent_pool_id}"
         payload: dict[str, Any] = {
@@ -531,24 +355,90 @@ class AgentPools(_Service):
         response = self.t.request("PATCH", path, json_body=payload)
         data = response.json()["data"]
 
-        # Extract agent pool data from response
-        attr = data.get("attributes", {}) or {}
-        agent_pool_data = {
-            "id": _safe_str(data.get("id")),
-            "name": _safe_str(attr.get("name")),
-            "created_at": attr.get("created-at"),
-            "organization_scoped": attr.get("organization-scoped"),
-            "allowed_workspace_policy": attr.get("allowed-workspace-policy"),
-            "agent_count": attr.get("agent-count", 0),
-        }
+        return self._parse_agent_pool_from(data)
 
-        return AgentPool(
-            id=_safe_str(agent_pool_data["id"]) or "",
-            name=_safe_str(agent_pool_data["name"]),
-            created_at=cast(Any, agent_pool_data["created_at"]),
-            organization_scoped=_safe_bool(agent_pool_data["organization_scoped"]),
-            allowed_workspace_policy=_safe_workspace_policy(
-                agent_pool_data["allowed_workspace_policy"]
-            ),
-            agent_count=_safe_int(agent_pool_data["agent_count"]),
+    def assign_to_projects(
+        self, agent_pool_id: str, options: AgentPoolAssignToProjectsOptions
+    ) -> AgentPool:
+        """Assign an agent pool to projects by updating the allowed-projects
+        relationship via PATCH /agent-pools/:id.
+
+        The provided project IDs become the new complete list of allowed
+        projects for this pool (full replacement, not append).
+
+        Args:
+            agent_pool_id: Agent pool ID
+            options: Assignment options containing project IDs
+        """
+        if not valid_string_id(agent_pool_id):
+            raise InvalidAgentPoolIDError()
+
+        if not options.project_ids:
+            raise RequiredProjectError()
+
+        for project_id in options.project_ids:
+            if not valid_string_id(project_id):
+                raise InvalidProjectIDError(f"Invalid project ID: {project_id}")
+
+        path = f"/api/v2/agent-pools/{agent_pool_id}"
+        payload: dict[str, Any] = {
+            "data": {
+                "type": "agent-pools",
+                "id": agent_pool_id,
+                "attributes": {},
+                "relationships": {
+                    "allowed-projects": {
+                        "data": [
+                            {"type": "projects", "id": project_id}
+                            for project_id in options.project_ids
+                        ]
+                    }
+                },
+            }
+        }
+        response = self.t.request("PATCH", path, json_body=payload)
+        data = response.json()["data"]
+
+        return self._parse_agent_pool_from(data)
+
+    def _parse_agent_pool_from(self, data: dict[str, Any]) -> AgentPool:
+        """Helper method to parse agent pool data from API response."""
+        attr = data.get("attributes", {})
+        relationships = data.get("relationships", {})
+        attr["id"] = data.get("id")
+
+        # Extract agents count
+        agents_data = relationships.get("agents", {}).get("data", [])
+        attr["agents"] = [Agent(id=agent["id"]) for agent in agents_data]
+
+        org_data = relationships.get("organization", {}).get("data")
+        attr["organization"] = Organization(id=org_data["id"]) if org_data else None
+
+        workspaces_data = relationships.get("workspaces", {}).get("data", [])
+        attr["workspaces"] = [
+            Workspace.model_validate({"id": ws["id"]}) for ws in workspaces_data
+        ]
+
+        allowed_workspaces_data = relationships.get("allowed-workspaces", {}).get(
+            "data", []
         )
+        attr["allowed_workspaces"] = [
+            Workspace.model_validate({"id": ws["id"]}) for ws in allowed_workspaces_data
+        ]
+
+        excluded_workspaces_data = relationships.get("excluded-workspaces", {}).get(
+            "data", []
+        )
+        attr["excluded_workspaces"] = [
+            Workspace.model_validate({"id": ws["id"]})
+            for ws in excluded_workspaces_data
+        ]
+
+        allowed_projects_data = relationships.get("allowed-projects", {}).get(
+            "data", []
+        )
+        attr["allowed_projects"] = [
+            Project.model_validate({"id": proj["id"]}) for proj in allowed_projects_data
+        ]
+
+        return AgentPool.model_validate(attr)

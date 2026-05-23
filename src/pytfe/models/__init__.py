@@ -8,7 +8,7 @@ from .agent import (
     Agent,
     AgentListOptions,
     AgentPool,
-    AgentPoolAllowedWorkspacePolicy,
+    AgentPoolAssignToProjectsOptions,
     AgentPoolAssignToWorkspacesOptions,
     AgentPoolCreateOptions,
     AgentPoolListOptions,
@@ -509,8 +509,8 @@ __all__ = [
     # Agent & pools
     "Agent",
     "AgentPool",
-    "AgentPoolAllowedWorkspacePolicy",
     "AgentPoolAssignToWorkspacesOptions",
+    "AgentPoolAssignToProjectsOptions",
     "AgentPoolCreateOptions",
     "AgentPoolListOptions",
     "AgentPoolReadOptions",
@@ -866,4 +866,20 @@ TaskResult.model_rebuild(
     _types_namespace={
         "TaskStage": TaskStage,
     },
+)
+AgentPool.model_rebuild(
+    raise_errors=False,
+    _types_namespace={"Project": Project},
+)
+Project.model_rebuild(
+    raise_errors=False,
+    _types_namespace={"AgentPool": AgentPool},
+)
+RunTask.model_rebuild(
+    raise_errors=False,
+    _types_namespace={"WorkspaceRunTask": WorkspaceRunTask, "AgentPool": AgentPool},
+)
+Workspace.model_rebuild(
+    raise_errors=False,
+    _types_namespace={"AgentPool": AgentPool, "Run": Run, "TaskStage": TaskStage},
 )
