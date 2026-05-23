@@ -375,6 +375,8 @@ from .state_version_output import (
 from .task_result import (
     TaskEnforcementLevel as TaskResultEnforcementLevel,
 )
+
+# ── Task Stage & Task Result ─────────────────────────────────────────────────
 from .task_result import (
     TaskResult,
     TaskResultStatus,
@@ -728,6 +730,9 @@ __all__ = [
     "RunEventList",
     "RunEventListOptions",
     "RunEventReadOptions",
+    # Task Stage & Task Result
+    "TaskStage",
+    "TaskResult",
     # Comments
     "Comment",
     "CommentCreateOptions",
@@ -844,14 +849,21 @@ PolicyCheck.model_rebuild()
 RegistryProvider.model_rebuild()
 RegistryProviderVersion.model_rebuild()
 RegistryProviderPlatform.model_rebuild()
-
-# Rebuild TaskResult to resolve Run, Workspace, PolicyEvaluation, TaskStage refs
+Run.model_rebuild(
+    raise_errors=False,
+    _types_namespace={"TaskStage": TaskStage},
+)
+TaskStage.model_rebuild(
+    raise_errors=False,
+    _types_namespace={
+        "Run": Run,
+        "TaskResult": TaskResult,
+        "PolicyEvaluation": PolicyEvaluation,
+    },
+)
 TaskResult.model_rebuild(
     raise_errors=False,
     _types_namespace={
-        "PolicyEvaluation": PolicyEvaluation,
-        "Run": Run,
         "TaskStage": TaskStage,
-        "Workspace": Workspace,
     },
 )

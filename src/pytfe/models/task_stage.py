@@ -3,23 +3,82 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from datetime import datetime
+from enum import Enum
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from pytfe.models.policy_evaluation import PolicyEvaluation
+from pytfe.models.run import Run
+from pytfe.models.task_result import TaskResult
 
 
-# TaskStage represents a HCP Terraform or Terraform Enterprise run's stage where run tasks can occur
+class Stage(str, Enum):
+    pre_plan = "pre_plan"
+    post_plan = "post_plan"
+    pre_apply = "pre_apply"
+    post_apply = "post_apply"
+
+
+class TaskStageStatus(str, Enum):
+    pending = "pending"
+    running = "running"
+    passed = "passed"
+    failed = "failed"
+    awaiting_override = "awaiting_override"
+    canceled = "canceled"
+    errored = "errored"
+    unreachable = "unreachable"
+
+
+class TaskStageStatusTimestamps(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    errored_at: datetime | None = Field(None, alias="errored-at")
+    running_at: datetime | None = Field(None, alias="running-at")
+    canceled_at: datetime | None = Field(None, alias="canceled-at")
+    failed_at: datetime | None = Field(None, alias="failed-at")
+    passed_at: datetime | None = Field(None, alias="passed-at")
+
+
+class Permissions(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    can_override_policy: bool | None = Field(None, alias="can-override-policy")
+    can_override_tasks: bool | None = Field(None, alias="can-override-tasks")
+    can_override: bool | None = Field(None, alias="can-override")
+
+
+class Actions(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    is_overridable: bool | None = Field(None, alias="is-overridable")
+
+
 class TaskStage(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     id: str
-    # stage: Stage = Field(..., alias="stage")
-    # status: TaskStageStatus = Field(..., alias="status")
-    # status_timestamps: TaskStageStatusTimestamps = Field(..., alias="status-timestamps")
-    # created_at: datetime = Field(..., alias="created-at")
-    # updated_at: datetime = Field(..., alias="updated-at")
-    # permissions: Permissions = Field(..., alias="permissions")
-    # actions: Actions = Field(..., alias="actions")
 
-    # # Relations
-    # run: Run = Field(..., alias="run")
-    # task_results: list[TaskResult] = Field(..., alias="task-results")
-    # policy_evaluations: list[PolicyEvaluation] = Field(..., alias="policy-evaluations")
+    stage: Stage | None = Field(None, alias="stage")
+    status: TaskStageStatus | None = Field(None, alias="status")
+    status_timestamps: TaskStageStatusTimestamps | None = Field(
+        None, alias="status-timestamps"
+    )
+    created_at: datetime | None = Field(None, alias="created-at")
+    updated_at: datetime | None = Field(None, alias="updated-at")
+    permissions: Permissions | None = Field(None, alias="permissions")
+    actions: Actions | None = Field(None, alias="actions")
+
+    # Relationships
+    run: Run | None = Field(None, alias="run")
+    task_results: list[TaskResult] | None = Field(None, alias="task-results")
+    policy_evaluations: list[PolicyEvaluation] | None = Field(
+        None, alias="policy-evaluations"
+    )
+
+
+class TaskStageListOptions(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    page_size: int | None = Field(None, alias="page[size]")

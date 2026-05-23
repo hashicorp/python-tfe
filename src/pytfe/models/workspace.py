@@ -526,6 +526,7 @@ def _rebuild_workspace_model() -> None:
     """Rebuild Workspace model to resolve forward references."""
     try:
         from .run import Run  # noqa: F401
+        from .task_stage import TaskStage  # noqa: F401
 
         Workspace.model_rebuild()
     except ImportError:
