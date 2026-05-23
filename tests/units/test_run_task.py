@@ -45,7 +45,7 @@ class TestRunTaskFrom:
                 "enabled": True,
                 "global-configuration": {
                     "enabled": True,
-                    "stages": ["pre-plan", "post-apply"],
+                    "stages": ["pre_plan", "post_apply"],
                     "enforcement-level": "mandatory",
                 },
             },
@@ -224,7 +224,7 @@ class TestRunTasks:
                 "hmac_key": "secret-key-123",
                 "global-configuration": {
                     "enabled": True,
-                    "stages": ["pre-plan", "post-plan"],
+                    "stages": ["pre_plan", "post_plan"],
                     "enforcement-level": "mandatory",
                 },
             },

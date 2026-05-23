@@ -328,6 +328,10 @@ from .run_task_integration import (
 from .run_task_integration import (
     TaskResultStatus as TaskResultCallbackStatus,
 )
+from .run_task_request import (
+    RunTaskRequest,
+    RunTaskRequestCapabilitites,
+)
 from .run_trigger import (
     RunTrigger,
     RunTriggerCreateOptions,
@@ -455,6 +459,12 @@ from .workspace import (
 from .workspace_resource import (
     WorkspaceResource,
     WorkspaceResourceListOptions,
+)
+from .workspace_run_task import (
+    WorkspaceRunTask,
+    WorkspaceRunTaskCreateOptions,
+    WorkspaceRunTaskListOptions,
+    WorkspaceRunTaskUpdateOptions,
 )
 
 # ── Public surface ────────────────────────────────────────────────────────────
@@ -684,6 +694,11 @@ __all__ = [
     # Workspace Resources
     "WorkspaceResource",
     "WorkspaceResourceListOptions",
+    # Workspace Run Tasks
+    "WorkspaceRunTask",
+    "WorkspaceRunTaskListOptions",
+    "WorkspaceRunTaskCreateOptions",
+    "WorkspaceRunTaskUpdateOptions",
     "RunQueue",
     "ReadRunQueueOptions",
     # Runs
@@ -728,6 +743,9 @@ __all__ = [
     "RunTaskCreateOptions",
     "RunTaskUpdateOptions",
     "RunTaskReadOptions",
+    # Run Task Request
+    "RunTaskRequest",
+    "RunTaskRequestCapabilitites",
     # Task Result
     "TaskResult",
     "TaskResultEnforcementLevel",
