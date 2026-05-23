@@ -27,13 +27,13 @@ import uuid
 from pytfe import TFEClient, TFEConfig
 from pytfe.errors import NotFound
 from pytfe.models import (
+    AgentPoolAssignToProjectsOptions,
     AgentPoolAssignToWorkspacesOptions,
     AgentPoolCreateOptions,
     AgentPoolListOptions,
     AgentPoolRemoveFromWorkspacesOptions,
     AgentPoolUpdateOptions,
     AgentTokenCreateOptions,
-    AgentPoolAssignToProjectsOptions,
 )
 
 
@@ -46,9 +46,7 @@ def main():
     workspace_id = os.environ.get(
         "TFE_WORKSPACE_ID"
     )  # optional, for workspace assignment
-    project_id = os.environ.get(
-        "TFE_PROJECT_ID"
-    )  # optional, for project assignment
+    project_id = os.environ.get("TFE_PROJECT_ID")  # optional, for project assignment
 
     if not token:
         print("TFE_TOKEN environment variable is required")
