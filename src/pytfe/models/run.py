@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -15,9 +16,11 @@ from .cost_estimate import CostEstimate
 from .plan import Plan
 from .policy_check import PolicyCheck
 from .run_event import RunEvent
-from .task_stage import TaskStage
 from .user import User
 from .workspace import Workspace
+
+if TYPE_CHECKING:
+    from .task_stage import TaskStage
 
 
 class RunSource(str, Enum):
@@ -327,6 +330,6 @@ class RunDiscardOptions(BaseModel):
 
 
 # Rebuild models to resolve forward references
-Run.model_rebuild()
-RunList.model_rebuild()
-OrganizationRunList.model_rebuild()
+Run.model_rebuild(raise_errors=False)
+RunList.model_rebuild(raise_errors=False)
+OrganizationRunList.model_rebuild(raise_errors=False)

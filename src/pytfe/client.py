@@ -45,6 +45,7 @@ from .resources.stack_configuration import StackConfigurations
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
 from .resources.task_result import TaskResults
+from .resources.task_stage import TaskStages
 from .resources.team import Teams
 from .resources.team_project_access import TeamProjectAccesses
 from .resources.team_token import TeamTokens
@@ -119,6 +120,7 @@ class TFEClient:
         self.run_task_integrations = RunTaskIntegrations(self._transport)
         self.run_triggers = RunTriggers(self._transport)
         self.runs = Runs(self._transport)
+        self.task_stages = TaskStages(self._transport)
         self.query_runs = QueryRuns(self._transport)
         self.run_events = RunEvents(self._transport)
         self.comments = Comments(self._transport)
