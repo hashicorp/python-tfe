@@ -81,7 +81,7 @@ class Applies(_Service):
                 raise TFEError(
                     "errored-state redirect did not include a Location header"
                 )
-            blob = self.t.request("GET", location, include_auth=False)
+            blob = self.t.request("GET", location)
             return blob.content
         # 2xx body case (some servers may return inline); honour it
         return resp.content

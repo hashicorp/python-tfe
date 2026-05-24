@@ -84,7 +84,7 @@ class Plans(_Service):
                 from ..errors import TFEError
 
                 raise TFEError("json-output redirect did not include a Location header")
-            blob = self.t.request("GET", location, include_auth=False)
+            blob = self.t.request("GET", location)
             data = blob.json()
         else:
             # Defensive: 2xx body case (some servers may return inline)

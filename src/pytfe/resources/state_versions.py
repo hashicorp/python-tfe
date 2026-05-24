@@ -236,7 +236,6 @@ class StateVersions(_Service):
             sv.hosted_state_upload_url,
             data=raw_state,
             headers={"Content-Type": "application/octet-stream"},
-            include_auth=False,
         )
 
         if raw_json_state is not None:
@@ -249,7 +248,6 @@ class StateVersions(_Service):
                 sv.hosted_json_state_upload_url,
                 data=raw_json_state,
                 headers={"Content-Type": "application/octet-stream"},
-                include_auth=False,
             )
 
         return self.read(sv.id)
@@ -281,7 +279,6 @@ class StateVersions(_Service):
             url,
             allow_redirects=True,
             headers={"Accept": "*/*"},
-            include_auth=False,
         )
         return resp.content
 
@@ -301,7 +298,6 @@ class StateVersions(_Service):
             url,
             allow_redirects=True,
             headers={"Accept": "*/*"},
-            include_auth=False,
         )
         return resp.content
 
