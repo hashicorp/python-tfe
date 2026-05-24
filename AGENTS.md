@@ -33,6 +33,7 @@ These three documents define the patterns this codebase already uses. Generating
 | `list_*` methods, pagination, iterator vs list, the `_list` helper | [`docs/ITERATORS.md`](docs/ITERATORS.md) |
 | Pydantic model conventions: `ConfigDict`, aliases, validators, relationships, exporting | [`docs/MODELS.md`](docs/MODELS.md) |
 | Resource service patterns: method shape, JSON:API envelopes, client wiring, examples | [`docs/RESOURCE.md`](docs/RESOURCE.md) |
+| Logging: namespace, redaction, env-var setup, debug round-trip traces | [`docs/LOGGING.md`](docs/LOGGING.md) |
 
 Each doc ends with a checklist. Use those checklists; they encode the rules a reviewer will look for.
 
@@ -75,6 +76,7 @@ These are mistakes a competent Python developer would make if they hadn't read t
 - **Don't add features beyond what was asked.** This codebase is approaching v1.0.0. Adding "while I'm here" refactors or speculative abstractions slows reviews and risks breaking the Ansible collection.
 - **Don't assume every successful response is `{"data": ...}`.** Check the docs/go-tfe/spec for each endpoint: some return a JSON:API envelope, some return a bare resource object, `204 No Content`, `null`, raw bytes, or a redirect to a blob URL. Add tests for non-standard shapes.
 - **Don't use bare `list[...]` annotations inside a resource class after defining `def list(...)`.** In class scope, mypy can resolve `list` to the method instead of the builtin. Use `builtins.list[...]`, `Sequence[...]`, or another unshadowed type.
+- **Don't `print()` or use ad-hoc `logging.getLogger(__name__)` calls in library code.** The SDK has a structured logging framework — use `pytfe._logging.transport_logger` for HTTP traffic, or `pytfe._logging.logger` (the `pytfe` root) for higher-level events. Everything from that namespace is silent by default (NullHandler) and respects the user's `setup_logging()` or stdlib configuration. See [LOGGING.md](docs/LOGGING.md) for redaction rules — bearer tokens and `token`/`secret`/`password` keys are auto-redacted by `RoundTrip`, but only inside that formatter. Never `log.info(token)` directly.
 
 ## Known cross-dependencies you should not break
 

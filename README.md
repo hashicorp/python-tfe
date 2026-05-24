@@ -93,10 +93,73 @@ A couple of things worth knowing:
 - The iterator is **single-use**. Once you've walked it, iterating again gives you nothing. Capture it with `list(...)` first if you need to reuse the result.
 - Filters and page size live on the `*ListOptions` model for each resource — e.g. `WorkspaceListOptions(search="prod", page_size=50)`. Pagination still happens transparently; `page_size` only controls how big each underlying API page is.
 
+## Logging
+
+pyTFE integrates with Python's standard `logging` module and is **silent by default** — nothing is emitted unless you opt in. The library publishes two loggers:
+
+- `pytfe`           — root namespace; rarely emits directly
+- `pytfe.transport` — HTTP request/response and retry trace
+
+### Turn it on with an environment variable
+
+The quickest way is to set `PYTFE_LOG`:
+
+```bash
+PYTFE_LOG=debug python my_script.py
+```
+
+`setup_logging()` is invoked automatically on package import, so the env var alone is enough — no code change required. Use the programmatic call only when you need to (re)apply env vars set after import (e.g. in a REPL or test):
+
+```python
+import pytfe
+pytfe.setup_logging()
+```
+
+Levels: `debug` shows every request/response, `info` shows retry decisions only.
+
+### Sample output
+
+```
+[2026-05-25 14:12:26 pytfe.transport DEBUG]
+> GET /api/v2/organizations/acme/workspaces?page[number]=1&page[size]=100
+< 200 OK
+< {
+<   "data": [
+<     { "id": "ws-...", "type": "workspaces", ... }
+<   ]
+< }
+```
+
+### Safe by default
+
+Bearer tokens and other credentials are redacted **before** they reach the logger:
+
+- Sensitive headers (`Authorization`, `Cookie`, anything containing `token` / `secret` / `password` / `api-key`) are replaced with `**REDACTED**`. Headers are off by default; even when you turn them on with `PYTFE_LOG_HEADERS=true`, redaction still applies.
+- JSON bodies have sensitive keys (`token`, `access_token`, `refresh_token`, `secret`, `password`, `private_key`, `client_secret`) replaced recursively.
+- Large bodies are truncated to `PYTFE_LOG_TRUNCATE_BYTES` (default `1024`). Long arrays are clipped with `"... (N additional elements)"`.
+- Binary responses (state-version downloads, configuration-version tarballs, etc.) render as `[raw stream]` — the bytes are never decoded into the log.
+
+### Compose with your existing logging
+
+Because pyTFE uses stdlib `logging`, all the standard knobs work:
+
+```python
+import logging
+
+# Just the HTTP traffic, at DEBUG
+logging.getLogger("pytfe.transport").setLevel(logging.DEBUG)
+
+# Send pyTFE logs to your existing handler instead of stderr
+logging.getLogger("pytfe").addHandler(my_json_handler)
+```
+
+For full details — environment variables, redaction guarantees, and how to add log statements to new SDK code — see [`docs/LOGGING.md`](./docs/LOGGING.md).
+
 ## Documentation
 
 - API reference and guides (SDK): **coming soon**  
 - Terraform Enterprise API: https://developer.hashicorp.com/terraform/enterprise/api-docs
+- Internal reference: [`docs/ITERATORS.md`](./docs/ITERATORS.md), [`docs/MODELS.md`](./docs/MODELS.md), [`docs/RESOURCE.md`](./docs/RESOURCE.md), [`docs/LOGGING.md`](./docs/LOGGING.md)
 
 ## Examples
 
