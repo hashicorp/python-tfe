@@ -214,23 +214,33 @@ class Teams(_Service):
         return users
 
     def list_organization_memberships(
-        self, team_id: str
-    ) -> list[OrganizationMembership]:
-        """List the organization memberships that belong to a team."""
+        self,
+        team_id: str,
+        *,
+        status: str | None = None,
+        is_service_account: bool | None = None,
+        sort: str | None = None,
+    ) -> Iterator[OrganizationMembership]:
+        """List the organization memberships that belong to a team.
+
+        Uses the dedicated paginated endpoint
+        ``GET /teams/{id}/relationships/organization-memberships`` so
+        callers get server-side pagination, filtering by status /
+        service-account flag, and sort.
+        """
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
-        r = self.t.request(
-            "GET",
-            path=f"/api/v2/teams/{team_id}",
-            params={"include": "organization-memberships"},
-        )
-        payload = r.json() or {}
-        included = payload.get("included") or []
-        memberships: list[OrganizationMembership] = []
-        for inc in included:
-            if inc.get("type") != "organization-memberships":
-                continue
-            attrs = dict(inc.get("attributes") or {})
-            attrs["id"] = inc.get("id")
-            memberships.append(OrganizationMembership.model_validate(attrs))
-        return memberships
+        params: dict[str, str] = {}
+        if status is not None:
+            params["filter[status]"] = status
+        if is_service_account is not None:
+            params["filter[is_service_account]"] = (
+                "true" if is_service_account else "false"
+            )
+        if sort is not None:
+            params["sort"] = sort
+        path = f"/api/v2/teams/{team_id}/relationships/organization-memberships"
+        for item in self._list(path, params=params):
+            attrs = dict(item.get("attributes") or {})
+            attrs["id"] = item.get("id")
+            yield OrganizationMembership.model_validate(attrs)

@@ -273,10 +273,15 @@ class StateVersions(_Service):
 
             raise NotFound("download url not available for this state version")
 
-        # Download the bytes from the signed Archivist URL (follow redirects).
-        # Avoid JSON:API headers here; Accept */* is fine.
+        # Download the bytes from the signed Archivist URL. The presigned URL
+        # already carries its own credentials, so the TFE bearer token must
+        # NOT be forwarded.
         resp = self.t.request(
-            "GET", url, allow_redirects=True, headers={"Accept": "application/json"}
+            "GET",
+            url,
+            allow_redirects=True,
+            headers={"Accept": "*/*"},
+            include_auth=False,
         )
         return resp.content
 
@@ -292,7 +297,11 @@ class StateVersions(_Service):
 
             raise NotFound("download url not available for current state")
         resp = self.t.request(
-            "GET", url, allow_redirects=True, headers={"Accept": "*/*"}
+            "GET",
+            url,
+            allow_redirects=True,
+            headers={"Accept": "*/*"},
+            include_auth=False,
         )
         return resp.content
 

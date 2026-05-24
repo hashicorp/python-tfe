@@ -15,6 +15,7 @@ from pytfe.models import (
     ProjectSettingOverwrites,
     ProjectUpdateOptions,
     TagBinding,
+    WorkspaceCreateOptions,
 )
 
 
@@ -124,6 +125,19 @@ def main() -> None:
         "--create-random",
         action="store_true",
         help="Append a short random suffix to --name for create",
+    )
+    parser.add_argument(
+        "--move-workspace-id",
+        action="append",
+        default=[],
+        help="Workspace id to move into --project-id (repeatable). Requires "
+        "--project-id.",
+    )
+    parser.add_argument(
+        "--demo-move",
+        action="store_true",
+        help="End-to-end demo: create scratch projects + workspace, move the "
+        "workspace between projects, clean up.",
     )
 
     args = parser.parse_args()
@@ -307,6 +321,66 @@ def main() -> None:
         _print_header(f"Deleting all tag bindings from project: {args.project_id}")
         client.projects.delete_tag_bindings(args.project_id)
         print("Deleted all project tag bindings")
+
+    # 10) Move workspaces into the given project (additive, not destructive)
+    if args.move_workspace_id:
+        if not args.project_id:
+            raise SystemExit("--project-id is required for --move-workspace-id")
+        _print_header(
+            f"Moving {len(args.move_workspace_id)} workspace(s) into "
+            f"project {args.project_id}"
+        )
+        client.projects.move_workspaces(args.project_id, args.move_workspace_id)
+        print("done")
+
+    # 11) End-to-end demo: create scratch resources, move, cleanup
+    if args.demo_move:
+        import time
+
+        _print_header("project.move_workspaces end-to-end demo (scratch resources)")
+        stamp = int(time.time())
+        created: dict[str, str] = {}
+        try:
+            src = client.projects.create(
+                args.organization,
+                ProjectCreateOptions(name=f"pytfe-move-src-{stamp}"),
+            )
+            created["src_project"] = src.id
+            print(f"created source project: {src.id} ({src.name})")
+            dst = client.projects.create(
+                args.organization,
+                ProjectCreateOptions(name=f"pytfe-move-dst-{stamp}"),
+            )
+            created["dst_project"] = dst.id
+            print(f"created target project: {dst.id} ({dst.name})")
+            ws = client.workspaces.create(
+                args.organization,
+                WorkspaceCreateOptions(
+                    name=f"pytfe-move-ws-{stamp}", project={"id": src.id}
+                ),
+            )
+            created["workspace"] = ws.id
+            print(f"created workspace:      {ws.id} in {src.id}")
+            client.projects.move_workspaces(dst.id, [ws.id])
+            ws2 = client.workspaces.read_by_id(ws.id)
+            moved = ws2.project.id if ws2.project else "?"
+            print(f"workspace now belongs to: {moved}")
+            assert moved == dst.id
+            print("OK")
+        finally:
+            if "workspace" in created:
+                try:
+                    client.workspaces.delete_by_id(created["workspace"])
+                    print(f"cleaned up workspace {created['workspace']}")
+                except Exception as e:
+                    print(f"WARN: workspace cleanup failed: {e}")
+            for key in ("dst_project", "src_project"):
+                if key in created:
+                    try:
+                        client.projects.delete(created[key])
+                        print(f"cleaned up project {created[key]}")
+                    except Exception as e:
+                        print(f"WARN: project {key} cleanup failed: {e}")
 
 
 if __name__ == "__main__":

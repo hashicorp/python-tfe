@@ -59,6 +59,10 @@ class TeamWorkspaceAccess(BaseModel):
     run_tasks: bool | None = Field(default=None, alias="run-tasks")
     policy_overrides: bool | None = Field(default=None, alias="policy-overrides")
 
+    # Relationships (populated from the JSON:API ``relationships`` block).
+    team_id: str | None = Field(default=None, alias="team-id")
+    workspace_id: str | None = Field(default=None, alias="workspace-id")
+
 
 class TeamWorkspaceAccessAddOptions(BaseModel):
     """Options for adding a team access grant on a workspace."""

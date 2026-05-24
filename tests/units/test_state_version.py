@@ -406,7 +406,8 @@ class TestStateVersions:
             "GET",
             "https://example.com/signed-download",
             allow_redirects=True,
-            headers={"Accept": "application/json"},
+            headers={"Accept": "*/*"},
+            include_auth=False,
         )
         assert result == b"{}"
 

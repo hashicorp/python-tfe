@@ -131,6 +131,12 @@ def main():
     )
     parser.add_argument("--wildcard-name", help="Filter by wildcard name matching")
     parser.add_argument("--project-id", help="Filter by project ID")
+    parser.add_argument(
+        "--show-assessment",
+        action="store_true",
+        help="Show the workspace's current health-assessment result and the "
+        "variable sets applicable to it",
+    )
     args = parser.parse_args()
 
     cfg = TFEConfig(address=args.address, token=args.token)
@@ -497,7 +503,53 @@ def main():
             print(f"readme result: {e}")
             print("(Expected if workspace has no README)")
 
-    # 16) Delete workspace if requested (should be last operation)
+    # 16) Show health assessment + applicable variable sets (read-only)
+    if args.show_assessment:
+        if not args.workspace_id:
+            print(
+                "--show-assessment requires --workspace-id (uses workspace-id "
+                "based endpoints)"
+            )
+        else:
+            _print_header(f"Current assessment result for {args.workspace_id}")
+            result = client.workspaces.current_assessment_result(args.workspace_id)
+            if result is None:
+                print(
+                    "no assessment result yet — assessments may be disabled, "
+                    "or none have run."
+                )
+            else:
+                for field in (
+                    "id",
+                    "succeeded",
+                    "all_checks_succeeded",
+                    "drifted",
+                    "resources_drifted",
+                    "resources_undrifted",
+                    "checks_passed",
+                    "checks_failed",
+                    "checks_errored",
+                    "created_at",
+                    "error_message",
+                ):
+                    value = getattr(result, field, None)
+                    if value is not None:
+                        print(f"  {field}: {value}")
+
+            _print_header(
+                f"Applicable variable sets for {args.workspace_id}"
+            )
+            count = 0
+            for vs in client.workspaces.list_applicable_varsets(args.workspace_id):
+                count += 1
+                print(
+                    f"  - {vs.get('id'):<24} {vs.get('name'):<30} "
+                    f"global={vs.get('global')} vars={vs.get('var-count')}"
+                )
+            if count == 0:
+                print("  (none)")
+
+    # 17) Delete workspace if requested (should be last operation)
     if args.delete and args.workspace:
         _print_header(f"Deleting workspace: {args.workspace}")
 

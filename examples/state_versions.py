@@ -40,6 +40,16 @@ def main():
     parser.add_argument("--download", help="Path to save downloaded current state")
     parser.add_argument("--upload", help="Path to a .tfstate (or JSON state) to upload")
     parser.add_argument("--page-size", type=int, default=10)
+    parser.add_argument(
+        "--rollback-to",
+        help="State version id to roll the workspace back to. The workspace "
+        "will be locked, rolled back, then unlocked.",
+    )
+    parser.add_argument(
+        "--rollback-dry-run",
+        action="store_true",
+        help="With --rollback-to, print the plan without performing the rollback.",
+    )
     args = parser.parse_args()
 
     cfg = TFEConfig(address=args.address, token=args.token)
@@ -160,6 +170,31 @@ def main():
         except ErrStateVersionUploadNotSupported as e:
             # Some older/self-hosted versions don’t support direct upload
             print(f"Upload not supported on this server: {e}")
+
+    # 6) (Optional) Roll back to a previous state version
+    if args.rollback_to:
+        _print_header(
+            f"Rolling {args.workspace_id} back to state version {args.rollback_to}"
+        )
+        if args.rollback_dry_run:
+            print("--rollback-dry-run set; not locking or rolling back")
+        else:
+            print("locking workspace ...")
+            client.workspaces.lock(
+                args.workspace_id,
+                WorkspaceLockOptions(reason="python-tfe rollback demo"),
+            )
+            try:
+                new_sv = client.state_versions.rollback(
+                    args.workspace_id, args.rollback_to
+                )
+                print(
+                    f"rollback succeeded — new state version: {new_sv.id} "
+                    f"(serial={new_sv.serial})"
+                )
+            finally:
+                print("unlocking workspace ...")
+                client.workspaces.unlock(args.workspace_id)
 
 
 if __name__ == "__main__":

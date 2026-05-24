@@ -219,10 +219,17 @@ class ConfigurationVersions(_Service):
         body = response.json()
         if body is None:
             return None
-        data = body.get("data") if isinstance(body, dict) else None
-        if not data:
+        if not isinstance(body, dict):
             return None
-        attributes = dict(data.get("attributes") or {})
+        # The OpenAPI spec describes the response as the bare
+        # `ingress-attributes` resource, but the live API wraps it in the
+        # standard JSON:API envelope. Accept both shapes.
+        data = body.get("data", body)
+        if not isinstance(data, dict) or not data:
+            return None
+        attributes = data.get("attributes")
+        if not isinstance(attributes, dict):
+            return None
         return IngressAttributes.model_validate(attributes)
 
     def soft_delete_backing_data(self, cv_id: str) -> None:

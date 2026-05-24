@@ -26,6 +26,13 @@ class InvalidTeamWorkspaceAccessIDError(TFEError):
 def _parse(data: dict[str, Any]) -> TeamWorkspaceAccess:
     attributes = dict(data.get("attributes") or {})
     attributes["id"] = data.get("id", "")
+    relationships = data.get("relationships") or {}
+    team_data = (relationships.get("team") or {}).get("data") or {}
+    workspace_data = (relationships.get("workspace") or {}).get("data") or {}
+    if team_data.get("id"):
+        attributes["team-id"] = team_data["id"]
+    if workspace_data.get("id"):
+        attributes["workspace-id"] = workspace_data["id"]
     return TeamWorkspaceAccess.model_validate(attributes)
 
 

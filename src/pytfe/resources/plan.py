@@ -64,13 +64,19 @@ class Plans(_Service):
         # Placeholder implementation - in future this would stream logs
         return ""
 
-    def _follow_json_output_redirect(self, path: str) -> dict[str, Any]:
+    def _follow_json_output_redirect(self, path: str) -> dict[str, Any] | None:
         """Fetch a json-output endpoint that returns 307 → presigned blob URL.
 
         The redirect target is a presigned object-storage URL; the API bearer
         token must not be forwarded to it.
+
+        Returns ``None`` if the API responds with 204 ("plan JSON supported,
+        but plan has not yet completed"). Callers should check the plan's
+        ``status`` before retrying.
         """
         resp = self.t.request("GET", path, allow_redirects=False)
+        if resp.status_code == 204:
+            return None
         if resp.status_code in (301, 302, 303, 307, 308):
             location = resp.headers.get("Location") or resp.headers.get("location")
             if not location:
@@ -82,16 +88,22 @@ class Plans(_Service):
             blob = self.t.request("GET", location, include_auth=False)
             data = blob.json()
         else:
-            data = resp.json()
+            # Defensive: 2xx body case (some servers may return inline)
+            try:
+                data = resp.json()
+            except Exception:
+                return None
+        if data is None:
+            return None
         if isinstance(data, dict):
             return data
         return {"data": data}
 
-    def read_json_output(self, plan_id: str) -> dict[str, Any]:
+    def read_json_output(self, plan_id: str) -> dict[str, Any] | None:
         """Get the JSON execution plan for a specific plan by its ID.
 
         Returns the JSON representation of the Terraform execution plan,
-        which includes detailed information about planned changes.
+        or ``None`` if the plan has not yet completed (HTTP 204).
         """
         if not valid_string_id(plan_id):
             raise InvalidPlanIDError()
@@ -99,16 +111,22 @@ class Plans(_Service):
             f"/api/v2/plans/{plan_id}/json-output"
         )
 
-    def read_json_output_for_run(self, run_id: str) -> dict[str, Any]:
-        """Get the JSON execution plan for a run, via the run id."""
+    def read_json_output_for_run(self, run_id: str) -> dict[str, Any] | None:
+        """Get the JSON execution plan for a run, via the run id.
+
+        Returns ``None`` if the plan has not yet completed (HTTP 204).
+        """
         if not valid_string_id(run_id):
             raise InvalidRunIDError()
         return self._follow_json_output_redirect(
             f"/api/v2/runs/{run_id}/plan/json-output"
         )
 
-    def read_json_schema_for_run(self, run_id: str) -> dict[str, Any]:
-        """Get the provider JSON schema corresponding to a plan, via the run id."""
+    def read_json_schema_for_run(self, run_id: str) -> dict[str, Any] | None:
+        """Get the provider JSON schema corresponding to a plan, via the run id.
+
+        Returns ``None`` if the plan has not yet completed (HTTP 204).
+        """
         if not valid_string_id(run_id):
             raise InvalidRunIDError()
         return self._follow_json_output_redirect(

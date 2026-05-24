@@ -859,6 +859,42 @@ def main():
     print("Functions 10: Enterprise backing data operations")
     print("=" * 80)
 
+    # =====================================================
+    # TEST 11: INGRESS ATTRIBUTES (VCS metadata)
+    # =====================================================
+    print("\n11. Testing ingress_attributes() function:")
+    cv_for_ingress = uploadable_cv_id or created_cv_id
+    if cv_for_ingress:
+        try:
+            ingress = client.configuration_versions.ingress_attributes(cv_for_ingress)
+            if ingress is None:
+                print(
+                    f"CV {cv_for_ingress} has no ingress attributes "
+                    "(non-VCS-backed configuration version)."
+                )
+            else:
+                print(f"Ingress attributes for {cv_for_ingress}:")
+                for field in (
+                    "branch",
+                    "clone_url",
+                    "commit_sha",
+                    "commit_message",
+                    "commit_url",
+                    "identifier",
+                    "is_pull_request",
+                    "pull_request_number",
+                    "pull_request_title",
+                    "tag",
+                    "sender_username",
+                ):
+                    value = getattr(ingress, field, None)
+                    if value is not None:
+                        print(f"  {field}: {value}")
+        except Exception as e:
+            print(f"Failed to read ingress attributes: {e}")
+    else:
+        print("Skipped — no CV was created in this run.")
+
     # Close client
     client.close()
 

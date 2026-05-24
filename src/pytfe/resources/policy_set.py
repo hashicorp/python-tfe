@@ -51,8 +51,16 @@ class PolicySets(_Service):
             raise InvalidOrgError()
 
         # Build params from options but do not pass page[number] — let _list handle pagination.
-        params = options.model_dump(by_alias=True, exclude_none=True) if options else {}
+        # mode="json" ensures enums (e.g. PolicySetIncludeOpt) serialize to
+        # their string values rather than `'PolicySetIncludeOpt.FOO'` reprs.
+        params = (
+            options.model_dump(by_alias=True, exclude_none=True, mode="json")
+            if options
+            else {}
+        )
         params.pop("page[number]", None)
+        if isinstance(params.get("include"), list):
+            params["include"] = ",".join(params["include"])
 
         path = f"/api/v2/organizations/{organization}/policy-sets"
 

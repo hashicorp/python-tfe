@@ -22,12 +22,26 @@ def main():
         "--address", default=os.getenv("TFE_ADDRESS", "https://app.terraform.io")
     )
     parser.add_argument("--token", default=os.getenv("TFE_TOKEN", ""))
-    parser.add_argument("--plan-id", required=True, help="Plan ID to work with")
+    parser.add_argument("--plan-id", required=False, help="Plan ID to work with")
+    parser.add_argument(
+        "--run-id",
+        help="Run ID — fetches the plan and JSON output via the run instead "
+        "of needing the plan id",
+    )
     parser.add_argument("--save-json", help="Path to save JSON output")
     args = parser.parse_args()
+    if not args.plan_id and not args.run_id:
+        parser.error("provide --plan-id and/or --run-id")
 
     cfg = TFEConfig(address=args.address, token=args.token)
     client = TFEClient(cfg)
+
+    # If we were given only --run-id, resolve the plan via the run.
+    if not args.plan_id and args.run_id:
+        _print_header(f"Reading plan for run {args.run_id}")
+        plan_for_run = client.plans.read_for_run(args.run_id)
+        args.plan_id = plan_for_run.id
+        print(f"Resolved plan id: {args.plan_id}")
 
     # 1) Read the plan details
     _print_header("Reading Plan Details")
@@ -80,6 +94,33 @@ def main():
 
     except Exception as e:
         print(f"Error reading JSON output: {e}")
+
+    # 3) Run-id-based endpoints
+    if args.run_id:
+        _print_header(f"Reading JSON output via run id ({args.run_id})")
+        try:
+            json_for_run = client.plans.read_json_output_for_run(args.run_id)
+            if json_for_run is None:
+                print("Plan has not yet completed (HTTP 204).")
+            else:
+                print(
+                    f"JSON keys: {sorted(json_for_run.keys())[:8]} "
+                    f"(total {len(json_for_run)})"
+                )
+        except Exception as e:
+            print(f"Error: {e}")
+
+        _print_header(f"Reading provider JSON schema via run id ({args.run_id})")
+        try:
+            schema = client.plans.read_json_schema_for_run(args.run_id)
+            if schema is None:
+                print("Plan has not yet completed (HTTP 204).")
+            elif isinstance(schema, dict):
+                print(f"Schema keys: {sorted(schema.keys())[:8]}")
+            else:
+                print(f"Schema type: {type(schema).__name__}")
+        except Exception as e:
+            print(f"Error: {e}")
 
     print("\n" + "=" * 80)
     print("Plan demo completed successfully!")
