@@ -16,8 +16,9 @@ from ._base import _Service
 
 def _plan_from_jsonapi(d: dict[str, Any]) -> Plan:
     attr = d.get("attributes", {}) or {}
+    plan_id = str(d.get("id") or "")
     return Plan(
-        id=d.get("id"),
+        id=plan_id,
         **{k.replace("-", "_"): v for k, v in attr.items()},
     )
 
@@ -82,9 +83,7 @@ class Plans(_Service):
             if not location:
                 from ..errors import TFEError
 
-                raise TFEError(
-                    "json-output redirect did not include a Location header"
-                )
+                raise TFEError("json-output redirect did not include a Location header")
             blob = self.t.request("GET", location, include_auth=False)
             data = blob.json()
         else:
@@ -107,9 +106,7 @@ class Plans(_Service):
         """
         if not valid_string_id(plan_id):
             raise InvalidPlanIDError()
-        return self._follow_json_output_redirect(
-            f"/api/v2/plans/{plan_id}/json-output"
-        )
+        return self._follow_json_output_redirect(f"/api/v2/plans/{plan_id}/json-output")
 
     def read_json_output_for_run(self, run_id: str) -> dict[str, Any] | None:
         """Get the JSON execution plan for a run, via the run id.

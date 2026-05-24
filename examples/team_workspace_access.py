@@ -88,9 +88,7 @@ def main() -> int:
         for g in existing:
             print(f"  - {g.id} team-access={g.access}")
 
-        print(
-            f"\ngranting team {team_id} READ access on workspace {workspace_id}"
-        )
+        print(f"\ngranting team {team_id} READ access on workspace {workspace_id}")
         grant = client.team_workspace_accesses.add(
             TeamWorkspaceAccessAddOptions(
                 team_id=team_id,

@@ -283,9 +283,7 @@ class Projects(_Service):
         for wid in workspace_ids:
             if not valid_string_id(wid):
                 raise ValueError(f"invalid workspace id: {wid!r}")
-        payload = {
-            "data": [{"id": wid, "type": "workspaces"} for wid in workspace_ids]
-        }
+        payload = {"data": [{"id": wid, "type": "workspaces"} for wid in workspace_ids]}
         self.t.request(
             "POST",
             f"/api/v2/projects/{project_id}/relationships/workspaces",

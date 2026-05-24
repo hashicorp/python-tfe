@@ -227,17 +227,13 @@ def main():
             _print_header(f"Removing users from {args.team_id}: {args.remove_user}")
             client.teams.remove_users(args.team_id, args.remove_user)
         if args.add_ou:
-            _print_header(
-                f"Adding org memberships to {args.team_id}: {args.add_ou}"
-            )
+            _print_header(f"Adding org memberships to {args.team_id}: {args.add_ou}")
             client.teams.add_organization_memberships(args.team_id, args.add_ou)
         if args.remove_ou:
             _print_header(
                 f"Removing org memberships from {args.team_id}: {args.remove_ou}"
             )
-            client.teams.remove_organization_memberships(
-                args.team_id, args.remove_ou
-            )
+            client.teams.remove_organization_memberships(args.team_id, args.remove_ou)
         if args.list_members:
             _print_header(f"Listing members of team {args.team_id}")
             users = list(client.teams.list_users(args.team_id))

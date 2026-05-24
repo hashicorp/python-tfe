@@ -21,6 +21,7 @@ from .agent import (
     AgentTokenCreateOptions,
     AgentTokenListOptions,
 )
+from .assessment_result import AssessmentResult
 from .comment import (
     Comment,
     CommentCreateOptions,
@@ -394,6 +395,12 @@ from .team import (
     TeamPermissions,
     TeamUpdateOptions,
 )
+from .team_token import (
+    CreatedByChoice,
+    TeamToken,
+    TeamTokenCreateOptions,
+    TeamTokenListOptions,
+)
 from .team_workspace_access import (
     TeamWorkspaceAccess,
     TeamWorkspaceAccessAddOptions,
@@ -403,13 +410,6 @@ from .team_workspace_access import (
     TeamWorkspaceSentinelMocksPermission,
     TeamWorkspaceStateVersionsPermission,
     TeamWorkspaceVariablesPermission,
-)
-from .assessment_result import AssessmentResult
-from .team_token import (
-    CreatedByChoice,
-    TeamToken,
-    TeamTokenCreateOptions,
-    TeamTokenListOptions,
 )
 
 # Variables

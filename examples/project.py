@@ -292,9 +292,7 @@ def main() -> None:
     # 7) List effective tag bindings
     if args.list_effective_tag_bindings:
         _print_header(f"Listing effective tag bindings for project: {args.project_id}")
-        bindings = list(
-            client.projects.list_effective_tag_bindings(args.project_id)
-        )
+        bindings = list(client.projects.list_effective_tag_bindings(args.project_id))
 
         if not bindings:
             print("No effective tag bindings found.")

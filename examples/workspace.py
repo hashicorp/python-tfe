@@ -536,9 +536,7 @@ def main():
                     if value is not None:
                         print(f"  {field}: {value}")
 
-            _print_header(
-                f"Applicable variable sets for {args.workspace_id}"
-            )
+            _print_header(f"Applicable variable sets for {args.workspace_id}")
             count = 0
             for vs in client.workspaces.list_applicable_varsets(args.workspace_id):
                 count += 1

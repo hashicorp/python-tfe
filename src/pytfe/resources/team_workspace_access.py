@@ -42,8 +42,7 @@ def _attributes_payload(model_dict: dict[str, Any]) -> dict[str, Any]:
 
 
 class TeamWorkspaceAccesses(_Service):
-    """Manage team access grants on workspaces (`/api/v2/team-workspaces`).
-    """
+    """Manage team access grants on workspaces (`/api/v2/team-workspaces`)."""
 
     def list(self, workspace_id: str) -> Iterator[TeamWorkspaceAccess]:
         """List team access grants for a workspace."""
@@ -58,9 +57,7 @@ class TeamWorkspaceAccesses(_Service):
         """Read a single team-workspace access grant by id."""
         if not valid_string_id(team_workspace_access_id):
             raise InvalidTeamWorkspaceAccessIDError()
-        r = self.t.request(
-            "GET", f"/api/v2/team-workspaces/{team_workspace_access_id}"
-        )
+        r = self.t.request("GET", f"/api/v2/team-workspaces/{team_workspace_access_id}")
         return _parse((r.json() or {}).get("data") or {})
 
     def add(self, options: TeamWorkspaceAccessAddOptions) -> TeamWorkspaceAccess:

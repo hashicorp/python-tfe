@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import builtins
 from collections.abc import Iterator
 
 from ..errors import (
@@ -111,9 +112,8 @@ class Teams(_Service):
     # Team membership management
     # ------------------------------------------------------------------
 
-    def add_users(self, team_id: str, usernames: list[str]) -> None:
-        """Add users to a team by username.
-        """
+    def add_users(self, team_id: str, usernames: builtins.list[str]) -> None:
+        """Add users to a team by username."""
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
         if not usernames:
@@ -128,7 +128,7 @@ class Teams(_Service):
         )
         return None
 
-    def remove_users(self, team_id: str, usernames: list[str]) -> None:
+    def remove_users(self, team_id: str, usernames: builtins.list[str]) -> None:
         """Remove users from a team by username."""
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
@@ -145,7 +145,7 @@ class Teams(_Service):
         return None
 
     def add_organization_memberships(
-        self, team_id: str, organization_membership_ids: list[str]
+        self, team_id: str, organization_membership_ids: builtins.list[str]
     ) -> None:
         """Add users to a team by organization membership id."""
         if not valid_string_id(team_id):
@@ -168,7 +168,7 @@ class Teams(_Service):
         return None
 
     def remove_organization_memberships(
-        self, team_id: str, organization_membership_ids: list[str]
+        self, team_id: str, organization_membership_ids: builtins.list[str]
     ) -> None:
         """Remove users from a team by organization membership id."""
         if not valid_string_id(team_id):

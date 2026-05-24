@@ -181,9 +181,7 @@ class PolicySets(_Service):
 
         params: dict[str, Any] | None = None
         if options is not None:
-            params = options.model_dump(
-                by_alias=True, exclude_none=True, mode="json"
-            )
+            params = options.model_dump(by_alias=True, exclude_none=True, mode="json")
             if isinstance(params.get("include"), list):
                 params["include"] = ",".join(params["include"])
 

@@ -1041,9 +1041,7 @@ class Workspaces(_Service):
         attributes["id"] = data.get("id", "")
         return AssessmentResult.model_validate(attributes)
 
-    def list_applicable_varsets(
-        self, workspace_id: str
-    ) -> Iterator[dict[str, Any]]:
+    def list_applicable_varsets(self, workspace_id: str) -> Iterator[dict[str, Any]]:
         """List variable sets that apply to a workspace, including inherited ones.
 
         Returns raw varset attribute dicts (id/name/global/var-count/etc.). The
