@@ -83,9 +83,7 @@ def _single_page_response(items):
 
 
 class TestExplorerQuery:
-    def test_query_emits_expanded_filter_params(
-        self, explorer_service, mock_transport
-    ):
+    def test_query_emits_expanded_filter_params(self, explorer_service, mock_transport):
         mock_transport.request.return_value = _single_page_response(
             [_row_payload("ws-1"), _row_payload("ws-2")]
         )
@@ -113,9 +111,7 @@ class TestExplorerQuery:
         params = call.kwargs["params"]
         assert params["type"] == "workspaces"
         assert params["page[size]"] == 50
-        assert (
-            params["filter[0][workspace_name][contains][0]"] == "demo"
-        )
+        assert params["filter[0][workspace_name][contains][0]"] == "demo"
 
     def test_query_invalid_org(self, explorer_service):
         with pytest.raises(InvalidOrgError):
@@ -164,6 +160,45 @@ class TestExplorerSavedViews:
         assert flt.operator == "contains"
         assert flt.value == ["child"]
 
+    def test_read_saved_view_accepts_documented_flat_filter_shape(
+        self, explorer_service, mock_transport
+    ):
+        """Filters returned in the documented `{field, operator, value}` shape
+        must round-trip too — dropping them would silently lose criteria on
+        update. See the HCP API docs for the response shape:
+        https://developer.hashicorp.com/terraform/cloud-docs/api-docs/explorer
+        """
+        flat_view = {
+            "id": VIEW_ID,
+            "type": "explorer-saved-queries",
+            "attributes": {
+                "name": "my-view",
+                "query-type": "workspaces",
+                "query": {
+                    "type": "workspaces",
+                    "filter": [
+                        {
+                            "field": "workspace_name",
+                            "operator": "contains",
+                            "value": ["test"],
+                        }
+                    ],
+                    "fields": {"workspaces": []},
+                    "sort": [],
+                },
+            },
+        }
+        resp = Mock()
+        resp.json.return_value = {"data": flat_view}
+        mock_transport.request.return_value = resp
+
+        view = explorer_service.read_saved_view(ORG, VIEW_ID)
+        assert len(view.query.filter) == 1
+        flt = view.query.filter[0]
+        assert flt.field == "workspace_name"
+        assert flt.operator == "contains"
+        assert flt.value == ["test"]
+
     def test_create_saved_view_reshapes_filter_for_api(
         self, explorer_service, mock_transport
     ):
@@ -196,9 +231,7 @@ class TestExplorerSavedViews:
         assert attrs["name"] == "my-view"
         assert attrs["query-type"] == "workspaces"
         # Filter rows in the request body must be in the nested map shape.
-        assert attrs["query"]["filter"] == [
-            {"workspace_name": {"contains": ["child"]}}
-        ]
+        assert attrs["query"]["filter"] == [{"workspace_name": {"contains": ["child"]}}]
 
     def test_read_saved_view(self, explorer_service, mock_transport):
         resp = Mock()

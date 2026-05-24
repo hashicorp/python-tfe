@@ -40,9 +40,7 @@ def _query_params(options: ExplorerQueryOptions) -> dict[str, Any]:
     )
     if options.filters:
         for flt in options.filters:
-            key = (
-                f"filter[{flt.index}][{flt.field}][{flt.operator}][{flt.value_index}]"
-            )
+            key = f"filter[{flt.index}][{flt.field}][{flt.operator}][{flt.value_index}]"
             params[key] = flt.value
     return params
 
@@ -110,10 +108,17 @@ def _write_attributes(
 
 
 def _saved_query_from_api(raw_query: dict[str, Any]) -> dict[str, Any]:
-    """Coerce a saved query's API response shape into the flat model shape.
+    """Coerce a saved query's API response into the flat model shape.
 
-    The Explorer API stores filters as ``{field_name: {operator: [values]}}``
-    and ``fields`` as ``{view_type: [...]}``. We flatten both for the model.
+    The Explorer API can return filter rows in either of two shapes:
+
+      * Documented flat shape:  ``{"field": ..., "operator": ..., "value": [...]}``
+      * Operator-map shape:     ``{field_name: {operator: [values]}}``
+
+    We accept both. Dropping either shape silently loses filter data and
+    risks consumers overwriting saved-view criteria on an update round-trip.
+
+    ``fields`` arrives as ``{view_type: [...]}`` and is flattened to a list.
     """
     query = dict(raw_query)
 
@@ -123,6 +128,22 @@ def _saved_query_from_api(raw_query: dict[str, Any]) -> dict[str, Any]:
         for entry in raw_filter:
             if not isinstance(entry, dict):
                 continue
+            # Variant A: flat shape with explicit field/operator/value keys.
+            if "field" in entry and "operator" in entry:
+                value = entry.get("value", [])
+                if value is None:
+                    value = []
+                if not isinstance(value, list):
+                    value = [value]
+                flat.append(
+                    {
+                        "field": str(entry["field"]).replace("-", "_"),
+                        "operator": str(entry["operator"]),
+                        "value": [str(v) for v in value],
+                    }
+                )
+                continue
+            # Variant B: operator-map shape — what the live API actually returns.
             for field_name, operators in entry.items():
                 if not isinstance(operators, dict):
                     continue
@@ -273,8 +294,7 @@ class Explorer(_Service):
         if not valid_string_id(view_id):
             raise InvalidExplorerSavedViewIDError()
         path = (
-            f"/api/v2/organizations/{organization}"
-            f"/explorer/views/{view_id}/export/csv"
+            f"/api/v2/organizations/{organization}/explorer/views/{view_id}/export/csv"
         )
         resp = self.t.request("GET", path)
         return resp.text
