@@ -8,7 +8,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class RunTaskRequestCapabilitites(BaseModel):
+class RunTaskRequestCapabilities(BaseModel):
     """Defines the capabilities that the caller supports."""
 
     model_config = ConfigDict(populate_by_name=True)
@@ -27,9 +27,9 @@ class RunTaskRequest(BaseModel):
     access_token: str = Field(
         ..., alias="access_token", description="The access token for the run task"
     )
-    capabilitites: RunTaskRequestCapabilitites = Field(
-        default_factory=lambda: RunTaskRequestCapabilitites(outcomes=False),
-        alias="capabilitites",
+    capabilities: RunTaskRequestCapabilities = Field(
+        default_factory=lambda: RunTaskRequestCapabilities(outcomes=False),
+        alias="capabilities",
         description="The capabilities that the caller supports",
     )
     configuration_version_download_url: str | None = Field(

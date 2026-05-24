@@ -23,7 +23,6 @@ class TaskResults(_Service):
         return self._parse_task_result(data)
 
     def _parse_task_result(self, data: dict[str, Any]) -> TaskResult:
-
         attributes = data.get("attributes", {})
         attributes["id"] = data.get("id")
 

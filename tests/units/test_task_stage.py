@@ -2,6 +2,8 @@ import pytest
 
 from pytfe.client import TFEClient
 from pytfe.errors import InvalidTaskStageIDError
+from pytfe.models import Stage as ExportedStage
+from pytfe.models.run_task import Stage as RunTaskStage
 from pytfe.models.task_stage import (
     Stage,
     TaskStage,
@@ -23,6 +25,11 @@ def test_task_stage_methods_exist():
     assert hasattr(client.task_stages, "read")
     assert hasattr(client.task_stages, "list")
     assert hasattr(client.task_stages, "override")
+
+
+def test_task_stage_uses_canonical_stage_enum():
+    assert Stage is RunTaskStage
+    assert Stage is ExportedStage
 
 
 # InvalidTaskStageIDError tests
@@ -69,7 +76,7 @@ def test_task_stage_partial_payload():
         {"id": "ts-456", "stage": "pre_plan", "status": "pending"}
     )
     assert ts.id == "ts-456"
-    assert ts.stage == Stage.pre_plan
+    assert ts.stage == Stage.PRE_PLAN
     assert ts.status == TaskStageStatus.pending
     assert ts.status_timestamps is None
     assert ts.created_at is None
@@ -90,7 +97,7 @@ def test_task_stage_full_payload():
             "actions": {"is-overridable": False},
         }
     )
-    assert ts.stage == Stage.post_plan
+    assert ts.stage == Stage.POST_PLAN
     assert ts.status == TaskStageStatus.passed
     assert ts.permissions is not None
     assert ts.permissions.can_override is True

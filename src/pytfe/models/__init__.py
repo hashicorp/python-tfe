@@ -330,7 +330,7 @@ from .run_task_integration import (
 )
 from .run_task_request import (
     RunTaskRequest,
-    RunTaskRequestCapabilitites,
+    RunTaskRequestCapabilities,
 )
 from .run_trigger import (
     RunTrigger,
@@ -750,7 +750,7 @@ __all__ = [
     "RunTaskReadOptions",
     # Run Task Request
     "RunTaskRequest",
-    "RunTaskRequestCapabilitites",
+    "RunTaskRequestCapabilities",
     # Task Result
     "TaskResult",
     "TaskResultEnforcementLevel",
