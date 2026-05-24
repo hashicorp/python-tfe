@@ -10,14 +10,8 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from pytfe.models.policy_evaluation import PolicyEvaluation
 from pytfe.models.run import Run
+from pytfe.models.run_task import Stage
 from pytfe.models.task_result import TaskResult
-
-
-class Stage(str, Enum):
-    pre_plan = "pre_plan"
-    post_plan = "post_plan"
-    pre_apply = "pre_apply"
-    post_apply = "post_apply"
 
 
 class TaskStageStatus(str, Enum):
