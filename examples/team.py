@@ -240,7 +240,7 @@ def main():
             )
         if args.list_members:
             _print_header(f"Listing members of team {args.team_id}")
-            users = client.teams.list_users(args.team_id)
+            users = list(client.teams.list_users(args.team_id))
             print(f"users ({len(users)}):")
             for u in users:
                 print(f"  - {u.id} {getattr(u, 'username', '')}")

@@ -36,8 +36,7 @@ config = TFEConfig(
 
 client = TFEClient(config)
 
-orgs = client.organizations.list()
-for org in orgs.items:
+for org in client.organizations.list():
     print(org.name)
 ```
 
@@ -57,8 +56,7 @@ from pytfe import TFEClient, TFEConfig
 
 # Equivalent to providing no values; falls back to env vars if set.
 client = TFEClient(TFEConfig())
-orgs = client.organizations.list()
-for org in orgs.items:
+for org in client.organizations.list():
     print(org.name)
 ```
 
@@ -69,10 +67,31 @@ from pytfe import TFEClient, TFEConfig
 config = TFEConfig(address="", token="")
 client = TFEClient(config)
 
-orgs = client.organizations.list()
-for org in orgs.items:
+for org in client.organizations.list():
     print(org.name)
 ```
+
+## Listing resources
+
+Anything named `list` or `list_*` on a resource service returns an **iterator**, not a Python `list`. Pagination is handled for you under the hood — the iterator keeps fetching pages from the API until there are no more. This mirrors the underlying HCP Terraform API, where every list endpoint is paginated (`page[number]` / `page[size]`), and keeps memory flat even when an organization has thousands of workspaces or runs.
+
+You'll use it one of two ways:
+
+```python
+# Stream — handy when you might break early or when results are large
+for ws in client.workspaces.list("my-org"):
+    if ws.name.startswith("prod-"):
+        print(ws.id, ws.name)
+
+# Materialize — when you actually want a list to index, len(), or pass around
+workspaces = list(client.workspaces.list("my-org"))
+print(f"found {len(workspaces)} workspaces")
+```
+
+A couple of things worth knowing:
+
+- The iterator is **single-use**. Once you've walked it, iterating again gives you nothing. Capture it with `list(...)` first if you need to reuse the result.
+- Filters and page size live on the `*ListOptions` model for each resource — e.g. `WorkspaceListOptions(search="prod", page_size=50)`. Pagination still happens transparently; `page_size` only controls how big each underlying API page is.
 
 ## Documentation
 

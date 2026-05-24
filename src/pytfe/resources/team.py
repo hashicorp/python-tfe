@@ -190,10 +190,14 @@ class Teams(_Service):
         )
         return None
 
-    def list_users(self, team_id: str) -> list[User]:
+    def list_users(self, team_id: str) -> Iterator[User]:
         """List the users that belong to a team.
 
-        Implemented via ``GET /teams/{id}?include=users``.
+        Implemented via ``GET /teams/{id}?include=users`` — the API has no
+        dedicated paginated endpoint for team users, so all results arrive
+        in a single response. The signature still returns an iterator to
+        stay consistent with the other ``list_*`` methods in the SDK; wrap
+        the result in ``list(...)`` if you need a materialized list.
         """
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
@@ -204,14 +208,12 @@ class Teams(_Service):
         )
         payload = r.json() or {}
         included = payload.get("included") or []
-        users: list[User] = []
         for inc in included:
             if inc.get("type") != "users":
                 continue
             attrs = dict(inc.get("attributes") or {})
             attrs["id"] = inc.get("id")
-            users.append(User.model_validate(attrs))
-        return users
+            yield User.model_validate(attrs)
 
     def list_organization_memberships(
         self,
