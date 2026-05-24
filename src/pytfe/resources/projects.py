@@ -317,29 +317,21 @@ class Projects(_Service):
 
     def list_effective_tag_bindings(
         self, project_id: str
-    ) -> builtins.list[EffectiveTagBinding]:
-        """List effective tag bindings for a project"""
-        # Validate inputs
+    ) -> Iterator[EffectiveTagBinding]:
+        """List effective tag bindings for a project."""
         if not valid_string_id(project_id):
             raise ValueError("Project ID is required and must be valid")
 
         path = f"/api/v2/projects/{project_id}/effective-tag-bindings"
-        response = self.t.request("GET", path)
-        data = response.json()["data"]
-
-        effective_tag_bindings = []
-        for item in data:
+        for item in self._list(path):
             attr = item.get("attributes", {}) or {}
             links = item.get("links", {}) or {}
-            effective_tag_binding = EffectiveTagBinding(
+            yield EffectiveTagBinding(
                 id=_safe_str(item.get("id")),
                 key=_safe_str(attr.get("key")),
                 value=_safe_str(attr.get("value")),
                 links=links,
             )
-            effective_tag_bindings.append(effective_tag_binding)
-
-        return effective_tag_bindings
 
     def add_tag_bindings(
         self, project_id: str, options: ProjectAddTagBindingsOptions

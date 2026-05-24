@@ -222,9 +222,17 @@ class RegistryModules(_Service):
     ) -> Iterator[RegistryModuleVersion]:
         """List all versions of a registry module.
 
-        The endpoint returns all versions in a single response (no pagination),
-        but the signature matches the rest of the SDK — wrap in ``list(...)``
-        if you need a materialized list.
+        This method intentionally fetches eagerly and returns ``iter(list)``
+        instead of the canonical ``for x in self._list(...): yield ...``
+        pattern used elsewhere in the SDK. The reason is the fallback path:
+        if the primary ``/versions`` endpoint is unavailable, we fall back
+        to reading the module and extracting versions from
+        ``version_statuses``. A pure generator could yield items from the
+        primary endpoint, fail partway, then switch to the fallback and
+        yield duplicates. Eager materialization avoids that risk.
+
+        See ``docs/ITERATORS.md`` for the convention and when it's OK to
+        deviate from it.
         """
         if not self._validate_module_id(module_id):
             raise ValueError("Invalid module ID")
