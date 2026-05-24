@@ -4,7 +4,7 @@ This is internal reference for adding or editing resource services in `src/pytfe
 
 Companion docs you'll need alongside this one:
 
-- [models.md](models.md) — how to define the Pydantic models the resource takes and returns
+- [MODELS.md](MODELS.md) — how to define the Pydantic models the resource takes and returns
 - [ITERATORS.md](ITERATORS.md) — how `list_*` methods are shaped
 - The [examples/](../examples) directory — runnable demos for each resource
 
@@ -284,7 +284,7 @@ If you added new models (almost always yes), wire them through:
 1. Import them alphabetically in the right section block.
 2. Add their names to the `__all__` list at the bottom.
 
-If your models use forward references, add a `Model.model_rebuild(...)` call at the bottom — see [models.md](models.md).
+If your models use forward references, add a `Model.model_rebuild(...)` call at the bottom — see [MODELS.md](MODELS.md).
 
 ## Tests
 
@@ -462,7 +462,7 @@ raise InvalidWidgetIDError()                          # preferred for new APIs
 - [ ] Non-standard response shapes (`204`, `null`, bare resources, raw bytes, redirects) are verified against docs/go-tfe/spec and covered by tests
 - [ ] Presigned upload/download/blob URLs are fetched with `include_auth=False`
 - [ ] Classes with `def list(...)` avoid later bare `list[...]` annotations
-- [ ] Models added per [models.md](models.md), wired in `models/__init__.py`
+- [ ] Models added per [MODELS.md](MODELS.md), wired in `models/__init__.py`
 - [ ] Resource wired into `client.py` (import + `self.widgets = Widgets(...)`)
 - [ ] Unit tests in `tests/units/test_widget.py`, including invalid-id cases and at least one happy-path per method
 - [ ] Example in `examples/widget.py` (or extension to existing file), with env-var auth, cleanup, and `_print_header`

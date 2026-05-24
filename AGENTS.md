@@ -31,8 +31,8 @@ These three documents define the patterns this codebase already uses. Generating
 | Topic | Doc |
 |---|---|
 | `list_*` methods, pagination, iterator vs list, the `_list` helper | [`docs/ITERATORS.md`](docs/ITERATORS.md) |
-| Pydantic model conventions: `ConfigDict`, aliases, validators, relationships, exporting | [`docs/models.md`](docs/models.md) |
-| Resource service patterns: method shape, JSON:API envelopes, client wiring, examples | [`docs/resource.md`](docs/resource.md) |
+| Pydantic model conventions: `ConfigDict`, aliases, validators, relationships, exporting | [`docs/MODELS.md`](docs/MODELS.md) |
+| Resource service patterns: method shape, JSON:API envelopes, client wiring, examples | [`docs/RESOURCE.md`](docs/RESOURCE.md) |
 
 Each doc ends with a checklist. Use those checklists; they encode the rules a reviewer will look for.
 
@@ -52,7 +52,7 @@ A handful of conventions are pervasive enough that you'll regret breaking them. 
 
 1. **`list_*` methods return `Iterator[X]`.** Not `list[X]`, not `Iterable[X]`, not a custom `Pager`. Use `for item in self._list(path): yield ...` inside the method body. ([ITERATORS.md](docs/ITERATORS.md))
 
-2. **JSON:API attribute names go through `Field(alias="...")`.** The API sends `created-at`, Python uses `created_at`. Pair with `model_config = ConfigDict(populate_by_name=True, validate_by_name=True)` on the model. ([models.md](docs/models.md))
+2. **JSON:API attribute names go through `Field(alias="...")`.** The API sends `created-at`, Python uses `created_at`. Pair with `model_config = ConfigDict(populate_by_name=True, validate_by_name=True)` on the model. ([MODELS.md](docs/MODELS.md))
 
 3. **`model_dump(by_alias=True, exclude_none=True)` for write payloads.** Without `by_alias=True` you'll send snake_case to the API and it will silently drop the fields. Add `mode="json"` if the options contain enums.
 
@@ -89,7 +89,7 @@ When in doubt about whether a change is breaking: check `gh search code '<symbol
 
 This is the workflow that produces low-friction reviews. Follow it.
 
-1. **Understand the scope first.** If the task is "add resource X", read `docs/resource.md` end-to-end. If it's "fix bug in Y", read `Y`'s current implementation and tests before touching anything.
+1. **Understand the scope first.** If the task is "add resource X", read `docs/RESOURCE.md` end-to-end. If it's "fix bug in Y", read `Y`'s current implementation and tests before touching anything.
 2. **Check official API docs and go-tfe for the canonical API shape.** `pytfe` mirrors the HCP Terraform API and often follows go-tfe's surface. URL paths, method names, payload shapes, response shapes, enum values, and redirect behavior should be verified against https://developer.hashicorp.com/terraform/cloud-docs/api-docs and https://github.com/hashicorp/go-tfe before designing anything.
 3. **Add models first** (`src/pytfe/models/<resource>.py`), then the resource (`src/pytfe/resources/<resource>.py`), then wire both into the respective `__init__.py` / `client.py`.
 4. **Write tests.** Mock `HTTPTransport`. One test per method, plus an invalid-id case for every public method. See `tests/units/test_comment.py` as a small reference.
@@ -133,4 +133,4 @@ A reasonable PR includes:
 
 Open the PR with a description that explains *why* the change is needed, links to any HCP Terraform API docs or go-tfe code referenced, and notes any behavior changes a downstream consumer might see.
 
-The reviewer's checklist will be the union of the checklists in [`docs/ITERATORS.md`](docs/ITERATORS.md), [`docs/models.md`](docs/models.md), and [`docs/resource.md`](docs/resource.md). Pre-running them yourself is the fastest way to a merge.
+The reviewer's checklist will be the union of the checklists in [`docs/ITERATORS.md`](docs/ITERATORS.md), [`docs/MODELS.md`](docs/MODELS.md), and [`docs/RESOURCE.md`](docs/RESOURCE.md). Pre-running them yourself is the fastest way to a merge.
