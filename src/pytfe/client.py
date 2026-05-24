@@ -49,6 +49,7 @@ from .resources.task_stage import TaskStages
 from .resources.team import Teams
 from .resources.team_project_access import TeamProjectAccesses
 from .resources.team_token import TeamTokens
+from .resources.team_workspace_access import TeamWorkspaceAccesses
 from .resources.user import Users
 from .resources.variable import Variables
 from .resources.variable_sets import VariableSets, VariableSetVariables
@@ -141,6 +142,7 @@ class TFEClient:
         self.teams = Teams(self._transport)
         self.team_project_accesses = TeamProjectAccesses(self._transport)
         self.team_tokens = TeamTokens(self._transport)
+        self.team_workspace_accesses = TeamWorkspaceAccesses(self._transport)
 
         # Reserved Tag Key
         self.reserved_tag_key = ReservedTagKeys(self._transport)

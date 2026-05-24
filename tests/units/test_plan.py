@@ -101,7 +101,7 @@ class TestPlans:
             assert result == ""
 
     def test_read_json_output_success(self, plans_service):
-        """Test successful read_json_output operation."""
+        """Test successful read_json_output operation (200 response)."""
 
         mock_json_data = {
             "format_version": "1.1",
@@ -124,19 +124,47 @@ class TestPlans:
 
         with patch.object(plans_service, "t") as mock_transport:
             mock_response = Mock()
+            mock_response.status_code = 200
             mock_response.json.return_value = mock_json_data
             mock_transport.request.return_value = mock_response
 
             result = plans_service.read_json_output("plan-123")
 
-            # Verify request was made correctly
             mock_transport.request.assert_called_once_with(
-                "GET", "/api/v2/plans/plan-123/json-output"
+                "GET", "/api/v2/plans/plan-123/json-output", allow_redirects=False
             )
 
-            # Verify JSON data is returned
             assert result == mock_json_data
             assert result["format_version"] == "1.1"
             assert result["terraform_version"] == "1.5.0"
             assert len(result["resource_changes"]) == 1
             assert result["resource_changes"][0]["change"]["actions"] == ["create"]
+
+    def test_read_json_output_follows_redirect_without_auth(self, plans_service):
+        """The 307 redirect target must be fetched with include_auth=False."""
+        mock_json_data = {"format_version": "1.1"}
+
+        with patch.object(plans_service, "t") as mock_transport:
+            redirect_resp = Mock()
+            redirect_resp.status_code = 307
+            redirect_resp.headers = {
+                "Location": "https://archivist.example/blob?sig=abc"
+            }
+            blob_resp = Mock()
+            blob_resp.status_code = 200
+            blob_resp.json.return_value = mock_json_data
+            mock_transport.request.side_effect = [redirect_resp, blob_resp]
+
+            result = plans_service.read_json_output("plan-123")
+
+            assert result == mock_json_data
+            assert mock_transport.request.call_count == 2
+            first_call = mock_transport.request.call_args_list[0]
+            second_call = mock_transport.request.call_args_list[1]
+            assert first_call.args == ("GET", "/api/v2/plans/plan-123/json-output")
+            assert first_call.kwargs == {"allow_redirects": False}
+            assert second_call.args == (
+                "GET",
+                "https://archivist.example/blob?sig=abc",
+            )
+            assert second_call.kwargs == {"include_auth": False}

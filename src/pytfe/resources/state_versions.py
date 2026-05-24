@@ -353,3 +353,41 @@ class StateVersions(_Service):
             f"/api/v2/state-versions/{state_version_id}/actions/permanently_delete_backing_data",
         )
         return None
+
+    def rollback(
+        self,
+        workspace_id: str,
+        rollback_state_version_id: str,
+    ) -> StateVersion:
+        """Roll a workspace back to a previous state version.
+
+        Duplicates the named state version and sets the copy as the workspace's
+        current state version. The workspace must be locked by the caller
+        before invoking this operation, otherwise the API returns 409.
+        """
+        if not valid_string_id(workspace_id):
+            raise ValueError("invalid workspace id")
+        if not valid_string_id(rollback_state_version_id):
+            raise ValueError("invalid rollback state version id")
+        body = {
+            "data": {
+                "type": "state-versions",
+                "relationships": {
+                    "rollback-state-version": {
+                        "data": {
+                            "type": "state-versions",
+                            "id": rollback_state_version_id,
+                        }
+                    }
+                },
+            }
+        }
+        resp = self.t.request(
+            "PATCH",
+            f"/api/v2/workspaces/{workspace_id}/state-versions",
+            json_body=body,
+        )
+        data = (resp.json() or {}).get("data") or {}
+        attributes = dict(data.get("attributes") or {})
+        attributes["id"] = data.get("id", "")
+        return StateVersion.model_validate(attributes)

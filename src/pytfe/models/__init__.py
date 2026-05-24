@@ -164,6 +164,7 @@ from .policy_evaluation import (
 from .policy_set import (
     PolicySet,
     PolicySetAddPoliciesOptions,
+    PolicySetAddProjectExclusionsOptions,
     PolicySetAddProjectsOptions,
     PolicySetAddWorkspaceExclusionsOptions,
     PolicySetAddWorkspacesOptions,
@@ -173,6 +174,7 @@ from .policy_set import (
     PolicySetListOptions,
     PolicySetReadOptions,
     PolicySetRemovePoliciesOptions,
+    PolicySetRemoveProjectExclusionsOptions,
     PolicySetRemoveProjectsOptions,
     PolicySetRemoveWorkspaceExclusionsOptions,
     PolicySetRemoveWorkspacesOptions,
@@ -392,6 +394,17 @@ from .team import (
     TeamPermissions,
     TeamUpdateOptions,
 )
+from .team_workspace_access import (
+    TeamWorkspaceAccess,
+    TeamWorkspaceAccessAddOptions,
+    TeamWorkspaceAccessType,
+    TeamWorkspaceAccessUpdateOptions,
+    TeamWorkspaceRunsPermission,
+    TeamWorkspaceSentinelMocksPermission,
+    TeamWorkspaceStateVersionsPermission,
+    TeamWorkspaceVariablesPermission,
+)
+from .assessment_result import AssessmentResult
 from .team_token import (
     CreatedByChoice,
     TeamToken,
@@ -646,6 +659,17 @@ __all__ = [
     "TeamToken",
     "TeamTokenCreateOptions",
     "TeamTokenListOptions",
+    # Team Workspace Access
+    "TeamWorkspaceAccess",
+    "TeamWorkspaceAccessAddOptions",
+    "TeamWorkspaceAccessType",
+    "TeamWorkspaceAccessUpdateOptions",
+    "TeamWorkspaceRunsPermission",
+    "TeamWorkspaceSentinelMocksPermission",
+    "TeamWorkspaceStateVersionsPermission",
+    "TeamWorkspaceVariablesPermission",
+    # Assessment Result
+    "AssessmentResult",
     "Project",
     "ProjectAddTagBindingsOptions",
     "ProjectCreateOptions",
@@ -801,6 +825,7 @@ __all__ = [
     "PolicySetAddProjectsOptions",
     "PolicySetAddWorkspacesOptions",
     "PolicySetAddWorkspaceExclusionsOptions",
+    "PolicySetAddProjectExclusionsOptions",
     "PolicySetCreateOptions",
     "PolicySetListOptions",
     "PolicySetReadOptions",
@@ -808,6 +833,7 @@ __all__ = [
     "PolicySetRemoveWorkspacesOptions",
     "PolicySetRemoveWorkspaceExclusionsOptions",
     "PolicySetRemoveProjectsOptions",
+    "PolicySetRemoveProjectExclusionsOptions",
     "PolicySetUpdateOptions",
     # Policy Set Parameters
     "PolicySetParameter",

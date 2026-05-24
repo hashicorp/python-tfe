@@ -106,3 +106,131 @@ class Teams(_Service):
             path=f"/api/v2/teams/{team_id}",
         )
         return None
+
+    # ------------------------------------------------------------------
+    # Team membership management
+    # ------------------------------------------------------------------
+
+    def add_users(self, team_id: str, usernames: list[str]) -> None:
+        """Add users to a team by username.
+        """
+        if not valid_string_id(team_id):
+            raise InvalidTeamIDError()
+        if not usernames:
+            raise ValueError("at least one username is required")
+        if any(not isinstance(u, str) or not u.strip() for u in usernames):
+            raise ValueError("usernames must be non-empty strings")
+        payload = {"data": [{"type": "users", "id": u} for u in usernames]}
+        self.t.request(
+            "POST",
+            path=f"/api/v2/teams/{team_id}/relationships/users",
+            json_body=payload,
+        )
+        return None
+
+    def remove_users(self, team_id: str, usernames: list[str]) -> None:
+        """Remove users from a team by username."""
+        if not valid_string_id(team_id):
+            raise InvalidTeamIDError()
+        if not usernames:
+            raise ValueError("at least one username is required")
+        if any(not isinstance(u, str) or not u.strip() for u in usernames):
+            raise ValueError("usernames must be non-empty strings")
+        payload = {"data": [{"type": "users", "id": u} for u in usernames]}
+        self.t.request(
+            "DELETE",
+            path=f"/api/v2/teams/{team_id}/relationships/users",
+            json_body=payload,
+        )
+        return None
+
+    def add_organization_memberships(
+        self, team_id: str, organization_membership_ids: list[str]
+    ) -> None:
+        """Add users to a team by organization membership id."""
+        if not valid_string_id(team_id):
+            raise InvalidTeamIDError()
+        if not organization_membership_ids:
+            raise ValueError("at least one organization membership id is required")
+        if any(not valid_string_id(i) for i in organization_membership_ids):
+            raise ValueError("invalid organization membership id")
+        payload = {
+            "data": [
+                {"type": "organization-memberships", "id": i}
+                for i in organization_membership_ids
+            ]
+        }
+        self.t.request(
+            "POST",
+            path=f"/api/v2/teams/{team_id}/relationships/organization-memberships",
+            json_body=payload,
+        )
+        return None
+
+    def remove_organization_memberships(
+        self, team_id: str, organization_membership_ids: list[str]
+    ) -> None:
+        """Remove users from a team by organization membership id."""
+        if not valid_string_id(team_id):
+            raise InvalidTeamIDError()
+        if not organization_membership_ids:
+            raise ValueError("at least one organization membership id is required")
+        if any(not valid_string_id(i) for i in organization_membership_ids):
+            raise ValueError("invalid organization membership id")
+        payload = {
+            "data": [
+                {"type": "organization-memberships", "id": i}
+                for i in organization_membership_ids
+            ]
+        }
+        self.t.request(
+            "DELETE",
+            path=f"/api/v2/teams/{team_id}/relationships/organization-memberships",
+            json_body=payload,
+        )
+        return None
+
+    def list_users(self, team_id: str) -> list[User]:
+        """List the users that belong to a team.
+
+        Implemented via ``GET /teams/{id}?include=users``.
+        """
+        if not valid_string_id(team_id):
+            raise InvalidTeamIDError()
+        r = self.t.request(
+            "GET",
+            path=f"/api/v2/teams/{team_id}",
+            params={"include": "users"},
+        )
+        payload = r.json() or {}
+        included = payload.get("included") or []
+        users: list[User] = []
+        for inc in included:
+            if inc.get("type") != "users":
+                continue
+            attrs = dict(inc.get("attributes") or {})
+            attrs["id"] = inc.get("id")
+            users.append(User.model_validate(attrs))
+        return users
+
+    def list_organization_memberships(
+        self, team_id: str
+    ) -> list[OrganizationMembership]:
+        """List the organization memberships that belong to a team."""
+        if not valid_string_id(team_id):
+            raise InvalidTeamIDError()
+        r = self.t.request(
+            "GET",
+            path=f"/api/v2/teams/{team_id}",
+            params={"include": "organization-memberships"},
+        )
+        payload = r.json() or {}
+        included = payload.get("included") or []
+        memberships: list[OrganizationMembership] = []
+        for inc in included:
+            if inc.get("type") != "organization-memberships":
+                continue
+            attrs = dict(inc.get("attributes") or {})
+            attrs["id"] = inc.get("id")
+            memberships.append(OrganizationMembership.model_validate(attrs))
+        return memberships

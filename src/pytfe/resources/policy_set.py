@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterator
+from typing import Any
 
 from ..errors import (
     InvalidNameError,
@@ -18,6 +19,7 @@ from ..errors import (
 from ..models.policy_set import (
     PolicySet,
     PolicySetAddPoliciesOptions,
+    PolicySetAddProjectExclusionsOptions,
     PolicySetAddProjectsOptions,
     PolicySetAddWorkspaceExclusionsOptions,
     PolicySetAddWorkspacesOptions,
@@ -25,6 +27,7 @@ from ..models.policy_set import (
     PolicySetListOptions,
     PolicySetReadOptions,
     PolicySetRemovePoliciesOptions,
+    PolicySetRemoveProjectExclusionsOptions,
     PolicySetRemoveProjectsOptions,
     PolicySetRemoveWorkspaceExclusionsOptions,
     PolicySetRemoveWorkspacesOptions,
@@ -63,6 +66,11 @@ class PolicySets(_Service):
                 attrs["workspace_exclusions"] = (
                     d.get("relationships", {})
                     .get("workspace-exclusions", {})
+                    .get("data", [])
+                )
+                attrs["project_exclusions"] = (
+                    d.get("relationships", {})
+                    .get("project-exclusions", {})
                     .get("data", [])
                 )
                 attrs["workspaces"] = (
@@ -143,6 +151,9 @@ class PolicySets(_Service):
         attrs["workspace_exclusions"] = relationships_data.get(
             "workspace-exclusions", {}
         ).get("data", [])
+        attrs["project_exclusions"] = relationships_data.get(
+            "project-exclusions", {}
+        ).get("data", [])
         attrs["workspaces"] = relationships_data.get("workspaces", {}).get("data", [])
         attrs["projects"] = relationships_data.get("projects", {}).get("data", [])
         attrs["policies"] = relationships_data.get("policies", {}).get("data", [])
@@ -160,9 +171,13 @@ class PolicySets(_Service):
         if not valid_string_id(policy_set_id):
             raise InvalidPolicySetIDError()
 
-        params = (
-            options.model_dump(by_alias=True, exclude_none=True) if options else None
-        )
+        params: dict[str, Any] | None = None
+        if options is not None:
+            params = options.model_dump(
+                by_alias=True, exclude_none=True, mode="json"
+            )
+            if isinstance(params.get("include"), list):
+                params["include"] = ",".join(params["include"])
 
         r = self.t.request(
             "GET",
@@ -179,6 +194,9 @@ class PolicySets(_Service):
         attrs["organization"] = relationships_data.get("organization", {})
         attrs["workspace_exclusions"] = relationships_data.get(
             "workspace-exclusions", {}
+        ).get("data", [])
+        attrs["project_exclusions"] = relationships_data.get(
+            "project-exclusions", {}
         ).get("data", [])
         attrs["workspaces"] = relationships_data.get("workspaces", {}).get("data", [])
         attrs["projects"] = relationships_data.get("projects", {}).get("data", [])
@@ -218,6 +236,9 @@ class PolicySets(_Service):
         attrs["organization"] = relationships_data.get("organization", {})
         attrs["workspace_exclusions"] = relationships_data.get(
             "workspace-exclusions", {}
+        ).get("data", [])
+        attrs["project_exclusions"] = relationships_data.get(
+            "project-exclusions", {}
         ).get("data", [])
         attrs["workspaces"] = relationships_data.get("workspaces", {}).get("data", [])
         attrs["projects"] = relationships_data.get("projects", {}).get("data", [])
@@ -381,6 +402,52 @@ class PolicySets(_Service):
         self.t.request(
             "DELETE",
             f"/api/v2/policy-sets/{policy_set_id}/relationships/workspace-exclusions",
+            json_body=payload,
+        )
+        return None
+
+    def add_project_exclusions(
+        self,
+        policy_set_id: str,
+        options: PolicySetAddProjectExclusionsOptions,
+    ) -> None:
+        """Add project exclusions to a policy set."""
+        if not valid_string_id(policy_set_id):
+            raise InvalidPolicySetIDError()
+        if not options.project_exclusions:
+            raise ValueError("project_exclusions is required")
+        payload = {
+            "data": [
+                {"id": project.id, "type": "projects"}
+                for project in options.project_exclusions
+            ]
+        }
+        self.t.request(
+            "POST",
+            f"/api/v2/policy-sets/{policy_set_id}/relationships/project-exclusions",
+            json_body=payload,
+        )
+        return None
+
+    def remove_project_exclusions(
+        self,
+        policy_set_id: str,
+        options: PolicySetRemoveProjectExclusionsOptions,
+    ) -> None:
+        """Remove project exclusions from a policy set."""
+        if not valid_string_id(policy_set_id):
+            raise InvalidPolicySetIDError()
+        if not options.project_exclusions:
+            raise ValueError("project_exclusions is required")
+        payload = {
+            "data": [
+                {"id": project.id, "type": "projects"}
+                for project in options.project_exclusions
+            ]
+        }
+        self.t.request(
+            "DELETE",
+            f"/api/v2/policy-sets/{policy_set_id}/relationships/project-exclusions",
             json_body=payload,
         )
         return None

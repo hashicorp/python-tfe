@@ -268,6 +268,31 @@ class Projects(_Service):
         path = f"/api/v2/projects/{project_id}"
         self.t.request("DELETE", path)
 
+    def move_workspaces(
+        self, project_id: str, workspace_ids: builtins.list[str]
+    ) -> None:
+        """Move one or more workspaces into a project.
+
+        The caller must have permission to move each workspace out of its
+        current project and into the target project.
+        """
+        if not valid_string_id(project_id):
+            raise ValueError("Project ID is required and must be valid")
+        if not workspace_ids:
+            raise ValueError("at least one workspace id is required")
+        for wid in workspace_ids:
+            if not valid_string_id(wid):
+                raise ValueError(f"invalid workspace id: {wid!r}")
+        payload = {
+            "data": [{"id": wid, "type": "workspaces"} for wid in workspace_ids]
+        }
+        self.t.request(
+            "POST",
+            f"/api/v2/projects/{project_id}/relationships/workspaces",
+            json_body=payload,
+        )
+        return None
+
     def list_tag_bindings(self, project_id: str) -> builtins.list[TagBinding]:
         """List tag bindings for a project"""
         # Validate inputs

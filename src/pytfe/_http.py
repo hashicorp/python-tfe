@@ -110,7 +110,11 @@ class HTTPTransport:
                 self._sleep(attempt, retry_after)
                 attempt += 1
                 continue
-            # print(resp)
+            # When the caller explicitly opted out of redirect-following,
+            # surface 3xx responses to them (so they can read Location)
+            # rather than treating them as errors.
+            if not allow_redirects and 300 <= resp.status_code < 400:
+                return resp
             self._raise_if_error(resp)
             return resp
 

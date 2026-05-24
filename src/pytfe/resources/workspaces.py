@@ -22,6 +22,7 @@ from ..errors import (
     WorkspaceRequiredError,
 )
 from ..models.agent import AgentPool
+from ..models.assessment_result import AssessmentResult
 from ..models.common import (
     EffectiveTagBinding,
     Tag,
@@ -1015,3 +1016,46 @@ class Workspaces(_Service):
                 return (inc.get("attributes") or {}).get("raw-markdown")
 
         return None
+
+    def current_assessment_result(self, workspace_id: str) -> AssessmentResult | None:
+        """Get the current health-assessment (drift detection) result for a workspace.
+
+        Returns ``None`` if the workspace has no assessment result yet (assessments
+        may be disabled, or no assessment has run).
+        """
+        if not valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+        try:
+            r = self.t.request(
+                "GET",
+                f"/api/v2/workspaces/{workspace_id}/current-assessment-result",
+            )
+        except Exception as exc:
+            from ..errors import NotFound
+
+            if isinstance(exc, NotFound):
+                return None
+            raise
+        data = (r.json() or {}).get("data") or {}
+        attributes = dict(data.get("attributes") or {})
+        attributes["id"] = data.get("id", "")
+        return AssessmentResult.model_validate(attributes)
+
+    def list_applicable_varsets(
+        self, workspace_id: str
+    ) -> Iterator[dict[str, Any]]:
+        """List variable sets that apply to a workspace, including inherited ones.
+
+        Returns raw varset attribute dicts (id/name/global/var-count/etc.). The
+        endpoint summarises varsets rather than returning the full relationship
+        graph, so it is exposed as plain dicts to avoid the heavier
+        ``VariableSet`` parsing path. Callers wanting the full model can pass
+        each ``id`` to ``client.variable_sets.read``.
+        """
+        if not valid_string_id(workspace_id):
+            raise InvalidWorkspaceIDError()
+        path = f"/api/v2/workspaces/{workspace_id}/applicable-varsets"
+        for item in self._list(path):
+            attrs = dict(item.get("attributes") or {})
+            attrs["id"] = item.get("id", "")
+            yield attrs
