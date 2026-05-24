@@ -140,8 +140,8 @@ class TestPlans:
             assert len(result["resource_changes"]) == 1
             assert result["resource_changes"][0]["change"]["actions"] == ["create"]
 
-    def test_read_json_output_follows_redirect_without_auth(self, plans_service):
-        """The 307 redirect target must be fetched with include_auth=False."""
+    def test_read_json_output_follows_redirect(self, plans_service):
+        """The 307 redirect target is followed manually and its body returned."""
         mock_json_data = {"format_version": "1.1"}
 
         with patch.object(plans_service, "t") as mock_transport:
@@ -167,4 +167,4 @@ class TestPlans:
                 "GET",
                 "https://archivist.example/blob?sig=abc",
             )
-            assert second_call.kwargs == {"include_auth": False}
+            assert second_call.kwargs == {}

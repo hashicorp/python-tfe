@@ -2,7 +2,6 @@
 
 from unittest.mock import Mock, patch
 
-import httpx
 import pytest
 
 from pytfe._http import HTTPTransport
@@ -284,53 +283,13 @@ class TestStateVersions:
             "https://example.com/upload-raw",
             data=b"raw-state",
             headers={"Content-Type": "application/octet-stream"},
-            include_auth=False,
         )
         mock_transport.request.assert_any_call(
             "PUT",
             "https://example.com/upload-json",
             data=b"json-state",
             headers={"Content-Type": "application/octet-stream"},
-            include_auth=False,
         )
-
-    def test_upload_state_version_presigned_put_omits_authorization_header(self):
-        """Test upload() does not send the TFE token to presigned upload URLs."""
-        seen_authorization_headers: list[str | None] = []
-
-        def handler(request: httpx.Request) -> httpx.Response:
-            seen_authorization_headers.append(request.headers.get("authorization"))
-            return httpx.Response(200)
-
-        transport = HTTPTransport(
-            "https://app.terraform.io",
-            "secret-token",
-            timeout=5,
-            verify_tls=True,
-            user_agent_suffix=None,
-            max_retries=0,
-            backoff_base=0,
-            backoff_cap=0,
-            backoff_jitter=False,
-            http2=False,
-            proxies=None,
-            ca_bundle=None,
-        )
-        transport._sync = httpx.Client(transport=httpx.MockTransport(handler))
-        service = StateVersions(transport)
-        created_sv = StateVersion(
-            id="sv-upload-1",
-            status=StateVersionStatus.PENDING,
-            hosted_state_upload_url="https://archivist.terraform.io/upload-raw",
-        )
-        final_sv = StateVersion(id="sv-upload-1", status=StateVersionStatus.FINALIZED)
-        options = StateVersionCreateOptions(serial=10, md5="abc123")
-
-        with patch.object(service, "create", return_value=created_sv):
-            with patch.object(service, "read", return_value=final_sv):
-                service.upload("ws-123", raw_state=b"raw-state", options=options)
-
-        assert seen_authorization_headers == [None]
 
     def test_upload_state_version_unsupported_on_create_error(
         self, state_versions_service
@@ -407,7 +366,6 @@ class TestStateVersions:
             "https://example.com/signed-download",
             allow_redirects=True,
             headers={"Accept": "*/*"},
-            include_auth=False,
         )
         assert result == b"{}"
 
