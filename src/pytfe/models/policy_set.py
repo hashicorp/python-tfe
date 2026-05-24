@@ -23,6 +23,7 @@ class PolicySetIncludeOpt(str, Enum):
     POLICY_SET_NEWEST_VERSION = "newest_version"
     POLICY_SET_CURRENT_VERSION = "current_version"
     POLICY_SET_WORKSPACE_EXCLUSIONS = "workspace_exclusions"
+    POLICY_SET_PROJECT_EXCLUSIONS = "project_exclusions"
 
 
 class PolicySet(BaseModel):
@@ -55,6 +56,9 @@ class PolicySet(BaseModel):
     current_version: PolicySetVersion | None = Field(None, alias="current-version")
     workspace_exclusions: list[Workspace] = Field(
         default_factory=list, alias="workspace-exclusions"
+    )
+    project_exclusions: list[Project] = Field(
+        default_factory=list, alias="project-exclusions"
     )
 
 
@@ -165,3 +169,15 @@ class PolicySetRemoveProjectsOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     projects: list[Project] = Field(default_factory=list)
+
+
+class PolicySetAddProjectExclusionsOptions(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    project_exclusions: list[Project] = Field(default_factory=list)
+
+
+class PolicySetRemoveProjectExclusionsOptions(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    project_exclusions: list[Project] = Field(default_factory=list)

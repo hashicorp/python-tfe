@@ -11,15 +11,20 @@ from pytfe.models import (
     Policy,
     PolicyKind,
     PolicySetAddPoliciesOptions,
+    PolicySetAddProjectExclusionsOptions,
     PolicySetAddProjectsOptions,
     PolicySetAddWorkspacesOptions,
     PolicySetCreateOptions,
+    PolicySetIncludeOpt,
     PolicySetListOptions,
+    PolicySetReadOptions,
     PolicySetRemovePoliciesOptions,
+    PolicySetRemoveProjectExclusionsOptions,
     PolicySetRemoveProjectsOptions,
     PolicySetRemoveWorkspacesOptions,
     PolicySetUpdateOptions,
     Project,
+    ProjectCreateOptions,
     Workspace,
 )
 
@@ -133,6 +138,12 @@ def main():
     parser.add_argument("--search", help="Search policy sets by name")
     parser.add_argument("--page", type=int, default=1)
     parser.add_argument("--page-size", type=int, default=20)
+    parser.add_argument(
+        "--demo-project-exclusions",
+        action="store_true",
+        help="End-to-end demo: create a scratch global policy set + project, "
+        "add the project to exclusions, then remove it and clean up.",
+    )
     args = parser.parse_args()
 
     if not args.token:
@@ -442,6 +453,79 @@ def main():
 
         except Exception as e:
             print(f"Error deleting policy set: {e}")
+
+    # 12) Demo: project-exclusions lifecycle (creates scratch resources)
+    if args.demo_project_exclusions:
+        import time
+
+        _print_header("Project-exclusions lifecycle demo (scratch resources)")
+        stamp = int(time.time())
+        created_ps_id = None
+        created_proj_id = None
+        try:
+            ps = client.policy_sets.create(
+                args.org,
+                PolicySetCreateOptions(name=f"pytfe-pe-{stamp}", Global=True),
+            )
+            created_ps_id = ps.id
+            print(f"created policy set: {ps.id} ({ps.name}, global=True)")
+
+            proj = client.projects.create(
+                args.org,
+                ProjectCreateOptions(name=f"pytfe-pe-proj-{stamp}"),
+            )
+            created_proj_id = proj.id
+            print(f"created project:    {proj.id} ({proj.name})")
+
+            print(f"\nadding project {proj.id} to exclusions of {ps.id}")
+            client.policy_sets.add_project_exclusions(
+                ps.id,
+                PolicySetAddProjectExclusionsOptions(
+                    project_exclusions=[Project(id=proj.id)]
+                ),
+            )
+            print("added")
+
+            ps_after = client.policy_sets.read_with_options(
+                ps.id,
+                PolicySetReadOptions(
+                    include=[PolicySetIncludeOpt.POLICY_SET_PROJECT_EXCLUSIONS]
+                ),
+            )
+            excluded_ids = [p.id for p in (ps_after.project_exclusions or [])]
+            print(f"current excluded projects: {excluded_ids}")
+
+            print(f"\nremoving project {proj.id} from exclusions")
+            client.policy_sets.remove_project_exclusions(
+                ps.id,
+                PolicySetRemoveProjectExclusionsOptions(
+                    project_exclusions=[Project(id=proj.id)]
+                ),
+            )
+            print("removed")
+            ps_final = client.policy_sets.read_with_options(
+                ps.id,
+                PolicySetReadOptions(
+                    include=[PolicySetIncludeOpt.POLICY_SET_PROJECT_EXCLUSIONS]
+                ),
+            )
+            print(
+                "final excluded projects:   "
+                f"{[p.id for p in (ps_final.project_exclusions or [])]}"
+            )
+        finally:
+            if created_proj_id:
+                try:
+                    client.projects.delete(created_proj_id)
+                    print(f"cleaned up project {created_proj_id}")
+                except Exception as e:
+                    print(f"WARN: could not clean up project: {e}")
+            if created_ps_id:
+                try:
+                    client.policy_sets.delete(created_ps_id)
+                    print(f"cleaned up policy set {created_ps_id}")
+                except Exception as e:
+                    print(f"WARN: could not clean up policy set: {e}")
 
 
 if __name__ == "__main__":

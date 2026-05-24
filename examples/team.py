@@ -101,6 +101,35 @@ def main():
         default=None,
         help="Team ID for read/update/delete operation",
     )
+    parser.add_argument(
+        "--add-user",
+        action="append",
+        default=[],
+        help="HCP Terraform username to add to --team-id (repeatable)",
+    )
+    parser.add_argument(
+        "--remove-user",
+        action="append",
+        default=[],
+        help="HCP Terraform username to remove from --team-id (repeatable)",
+    )
+    parser.add_argument(
+        "--add-ou",
+        action="append",
+        default=[],
+        help="Organization membership id (ou-…) to add to --team-id (repeatable)",
+    )
+    parser.add_argument(
+        "--remove-ou",
+        action="append",
+        default=[],
+        help="Organization membership id to remove from --team-id (repeatable)",
+    )
+    parser.add_argument(
+        "--list-members",
+        action="store_true",
+        help="List the team's current users and organization memberships",
+    )
     args = parser.parse_args()
 
     cfg = TFEConfig(address=args.address, token=args.token)
@@ -178,6 +207,43 @@ def main():
             f"Organization memberships included: {len(team.organization_memberships)}"
         )
         print()
+
+    # Team membership management (runs before the list output below)
+    membership_requested = (
+        args.add_user
+        or args.remove_user
+        or args.add_ou
+        or args.remove_ou
+        or args.list_members
+    )
+    if membership_requested:
+        if not args.team_id:
+            print("Error: --team-id is required for membership operations")
+            return
+        if args.add_user:
+            _print_header(f"Adding users to {args.team_id}: {args.add_user}")
+            client.teams.add_users(args.team_id, args.add_user)
+        if args.remove_user:
+            _print_header(f"Removing users from {args.team_id}: {args.remove_user}")
+            client.teams.remove_users(args.team_id, args.remove_user)
+        if args.add_ou:
+            _print_header(f"Adding org memberships to {args.team_id}: {args.add_ou}")
+            client.teams.add_organization_memberships(args.team_id, args.add_ou)
+        if args.remove_ou:
+            _print_header(
+                f"Removing org memberships from {args.team_id}: {args.remove_ou}"
+            )
+            client.teams.remove_organization_memberships(args.team_id, args.remove_ou)
+        if args.list_members:
+            _print_header(f"Listing members of team {args.team_id}")
+            users = list(client.teams.list_users(args.team_id))
+            print(f"users ({len(users)}):")
+            for u in users:
+                print(f"  - {u.id} {getattr(u, 'username', '')}")
+            ous = list(client.teams.list_organization_memberships(args.team_id))
+            print(f"organization memberships ({len(ous)}):")
+            for m in ous:
+                print(f"  - {m.id} {getattr(m, 'email', '')}")
 
     if args.delete:
         if not args.team_id:

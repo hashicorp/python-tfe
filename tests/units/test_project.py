@@ -364,7 +364,7 @@ class TestProjectTagBindings:
 
     def test_list_effective_tag_bindings_success(self):
         """Test successful listing of effective tag bindings"""
-        # Mock API response
+        # Mock API response — single page, no pagination metadata.
         mock_response = Mock()
         mock_response.json.return_value = {
             "data": [
@@ -380,8 +380,10 @@ class TestProjectTagBindings:
         }
         self.mock_transport.request.return_value = mock_response
 
-        # Call the method
-        result = self.projects_service.list_effective_tag_bindings(self.project_id)
+        # Call the method (returns Iterator — materialize to assert)
+        result = list(
+            self.projects_service.list_effective_tag_bindings(self.project_id)
+        )
 
         # Assertions
         assert len(result) == 1
@@ -392,19 +394,23 @@ class TestProjectTagBindings:
         assert result[0].value == "production"
         assert "self" in result[0].links
 
-        # Verify API call
-        self.mock_transport.request.assert_called_once_with(
-            "GET", f"/api/v2/projects/{self.project_id}/effective-tag-bindings"
+        # Verify the request was issued against the right path (params include
+        # page[number]/page[size] from _list — assert on path only).
+        call = self.mock_transport.request.call_args
+        assert call.args == (
+            "GET",
+            f"/api/v2/projects/{self.project_id}/effective-tag-bindings",
         )
 
     def test_list_effective_tag_bindings_invalid_project_id(self):
         """Test listing effective tag bindings with invalid project ID"""
         import pytest
 
+        # Generator-based list methods validate on first iteration.
         with pytest.raises(
             ValueError, match="Project ID is required and must be valid"
         ):
-            self.projects_service.list_effective_tag_bindings(None)
+            list(self.projects_service.list_effective_tag_bindings(None))
 
     def test_add_tag_bindings_success(self):
         """Test successful addition of tag bindings"""

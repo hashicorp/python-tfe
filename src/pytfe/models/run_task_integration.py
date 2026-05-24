@@ -12,10 +12,7 @@ from ..errors import InvalidTaskResultsCallbackStatusError
 
 
 class TaskResultStatus(str, Enum):
-    """Statuses accepted by the Run Task callback endpoint.
-
-    Mirrors the Go SDK's accepted callback statuses (passed, failed, running).
-    """
+    """Statuses accepted by the Run Task callback endpoint."""
 
     passed = "passed"
     failed = "failed"
