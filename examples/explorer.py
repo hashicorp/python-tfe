@@ -20,14 +20,12 @@
     │ create_saved_view      │ Create saved Explorer view         │ organization: str; options: ExplorerSavedViewCreateOptions                   │ ExplorerSavedView            │
     │ read_saved_view        │ Fetch one saved view by id         │ organization: str; view_id: str                                              │ ExplorerSavedView            │
     │ update_saved_view      │ Update saved view definition       │ organization: str; view_id: str; options: ExplorerSavedViewUpdateOptions     │ ExplorerSavedView            │
-    │ delete_saved_view      │ Remove saved view by id            │ organization: str; view_id: str                                              │ ExplorerSavedView            │
+    │ delete_saved_view      │ Remove saved view by id            │ organization: str; view_id: str                                              │ None                         │
     │ saved_view_results     │ Execute saved view, stream rows    │ organization: str; view_id: str                                              │ Iterator[ExplorerRow]        │
-    │ saved_view_results_csv │ Saved view results as CSV          │ organization: str; view_id: str                                              │ str (CSV; fallbacks)         │
+    │ saved_view_results_csv │ Saved view results as CSV          │ organization: str; view_id: str                                              │ str (CSV)                    │
     └────────────────────────┴────────────────────────────────────┴──────────────────────────────────────────────────────────────────────────────┴──────────────────────────────┘
-    delete_saved_view: if the DELETE response has no JSON body, the client returns a
-      minimal ExplorerSavedView with the same id.
-    saved_view_results_csv: tries the saved-view CSV endpoint first; on failure it may
-      call export_csv after read_saved_view, or build CSV from saved_view_results.
+    saved_view_results_csv: hits the dedicated saved-view CSV endpoint
+      (``/explorer/views/{id}/csv``) and returns the response text verbatim.
 
   INPUT AND OUTPUT MODELS (how to pass; allowed values)
   ───────────────────────────────────────────────────────
@@ -95,9 +93,9 @@
       list of strings (even for a single operand).
 
   Output models (return values only; you do not instantiate these for requests)
-    ExplorerRow — from query(), saved_view_results(): read .id, .row_type, .attributes.
-      .attributes is a dict of column values; keys may be hyphenated or snake_case depending
-      on the API field name.
+    ExplorerRow — from query(), saved_view_results(): read .id, .type, .attributes.
+      .attributes is a dict of column values; keys are normalised to snake_case at
+      parse time so callers can index ``row.attributes["workspace_name"]`` directly.
     ExplorerSavedView — from create_saved_view, read_saved_view, update_saved_view,
       delete_saved_view, list_saved_views: .id, .name, .created_at, .query_type, .query.
     str — from export_csv, saved_view_results_csv: raw CSV document body.
@@ -208,7 +206,7 @@ def main() -> None:
     # from ExplorerQueryOptions. Here we request the workspaces view, sort by
     # workspace_name descending (leading hyphen in sort), and add a single URL-style
     # filter (workspace_name contains "42"). The iterator yields ExplorerRow objects
-    # (id, row_type, attributes dict); we only print the first five rows.
+    # (id, type, attributes dict); we only print the first five rows.
     _banner(
         "Step 1 of 7: query()",
         "Workspaces view, sorted by -workspace_name, filter workspace_name contains '42'.",
@@ -236,7 +234,7 @@ def main() -> None:
             )
             print(f"  Row {count}:")
             print(f"    id:               {row.id}")
-            print(f"    row_type:         {row.row_type!r}")
+            print(f"    type:         {row.type!r}")
             print(f"    workspace_name:  {name!r}")
             print("    ---")
         print(f"Summary: printed {count} row(s) (limit 5).")
@@ -333,7 +331,7 @@ def main() -> None:
                     break
                 print(f"  Result row {i + 1}:")
                 print(f"    id:        {row.id}")
-                print(f"    row_type:  {row.row_type!r}")
+                print(f"    type:  {row.type!r}")
                 print("    ---")
             print("Summary: saved_view_results completed (limit 3 rows printed).")
         except TFEError as e:

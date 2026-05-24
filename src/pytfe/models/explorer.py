@@ -27,6 +27,8 @@ class ExplorerViewType(str, Enum):
 class ExplorerUrlFilter(BaseModel):
     """One slot in ExplorerQueryOptions.filters → filter[i][field][op][idx] query keys."""
 
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
     index: int = Field(..., ge=0, description="Filter index in the query string")
     field: str = Field(
         ..., min_length=1, description="Explorer field name in snake_case"
@@ -43,7 +45,7 @@ class ExplorerUrlFilter(BaseModel):
 class ExplorerQueryOptions(BaseModel):
     """GET /organizations/{org}/explorer (and export/csv) query string as structured fields."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     view_type: ExplorerViewType = Field(..., alias="type")
     sort: str | None = Field(
@@ -63,17 +65,24 @@ class ExplorerQueryOptions(BaseModel):
 
 
 class ExplorerRow(BaseModel):
-    """One Explorer result row: json:api id/type plus flat attributes for the view."""
+    """One Explorer result row: JSON:API id/type plus flat attributes for the view.
 
-    model_config = ConfigDict(populate_by_name=True)
+    Attribute keys are normalised to snake_case at parse time so callers can
+    index ``row.attributes["workspace_name"]`` rather than juggling hyphen vs
+    snake variants.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     id: str
-    row_type: str = Field(..., alias="type")
+    type: str
     attributes: dict[str, Any] = Field(default_factory=dict)
 
 
 class ExplorerSavedQueryFilter(BaseModel):
     """One saved-view filter row (list-valued `value` matches create/update JSON)."""
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     field: str = Field(..., min_length=1)
     operator: str = Field(..., min_length=1)
@@ -83,7 +92,7 @@ class ExplorerSavedQueryFilter(BaseModel):
 class ExplorerSavedQuery(BaseModel):
     """Nested query on a saved view: view type, filters, optional fields and sort lists."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     query_type: ExplorerViewType = Field(..., alias="type")
     filter: list[ExplorerSavedQueryFilter] | None = None
@@ -92,9 +101,15 @@ class ExplorerSavedQuery(BaseModel):
 
 
 class ExplorerSavedView(BaseModel):
-    """Saved view resource: metadata plus embedded query (response and some request paths)."""
+    """Saved view resource: metadata plus embedded query.
 
-    model_config = ConfigDict(populate_by_name=True)
+    The HCP Terraform API returns ``query-type`` at the view level *and*
+    ``type`` nested inside ``query``. They are always equal in practice; the
+    SDK surfaces both because they appear in different positions in the
+    request/response payload.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     id: str
     name: str
@@ -106,7 +121,7 @@ class ExplorerSavedView(BaseModel):
 class ExplorerSavedViewCreateOptions(BaseModel):
     """POST .../explorer/views attributes: display name, top-level query-type, nested query."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     name: str = Field(..., min_length=1)
     query_type: ExplorerViewType = Field(..., alias="query-type")
@@ -116,7 +131,7 @@ class ExplorerSavedViewCreateOptions(BaseModel):
 class ExplorerSavedViewUpdateOptions(BaseModel):
     """PATCH .../explorer/views/{id} attributes: name and full replacement query."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     name: str = Field(..., min_length=1)
     query: ExplorerSavedQuery
