@@ -95,9 +95,6 @@
 * Updated AgentPool relationship model structure — consumers referencing the old relationship fields must update to the new project_ids/workspace_ids shape by @isivaselvan [#166](https://github.com/hashicorp/python-tfe/pull/166)
 
 ## Bug Fixes
-* Fixed bearer token not being forwarded during state version upload to the presigned URL, which caused upload failures by @iam404 [#168](https://github.com/hashicorp/python-tfe/pull/168)
-* Fixed Explorer API query handling and optimized response parsing by @iam404 [#170](https://github.com/hashicorp/python-tfe/pull/170)
-* Fixed typos and moved RunStage enum to avoid naming conflict with the new TaskStage resource by @iam404 [#167](https://github.com/hashicorp/python-tfe/pull/167)
 * Fixed task result relationships to map into typed SDK models instead of raw JSON by @TanyaSingh369-svg [#156](https://github.com/hashicorp/python-tfe/pull/156)
 * Fixed task stage relationship mapping in the task result resource by @TanyaSingh369-svg [#156](https://github.com/hashicorp/python-tfe/pull/156)
 
