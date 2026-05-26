@@ -72,15 +72,21 @@ with pytest.raises(InvalidOrgError):
 If you genuinely need eager validation (raised from the call expression itself, not the first `for` loop), use the wrapper pattern:
 
 ```python
-def list(self, organization: str, ...) -> Iterator[Workspace]:
+def list(
+    self,
+    organization: str,
+    options: WorkspaceListOptions | None = None,
+) -> Iterator[Workspace]:
     if not valid_string_id(organization):
         raise InvalidOrgError()             # eager
 
-    params = ...
-    path = ...
+    params = options.model_dump(by_alias=True, exclude_none=True, mode="json") if options else {}
+    path = f"/api/v2/organizations/{organization}/workspaces"
+
     def _gen() -> Iterator[Workspace]:
         for item in self._list(path, params=params):
             yield self._workspace_from(item)
+
     return _gen()
 ```
 
@@ -131,15 +137,15 @@ Do **not** reach for `iter(list)` just because the endpoint is non-paginated. Us
 
 ```python
 # ❌ Returns Iterable instead of Iterator — looks similar, isn't.
-def list(...) -> Iterable[Workspace]: ...
+def list(self) -> Iterable[Workspace]: ...
 
 # ❌ Returns Pager / LazyList / custom wrapper.
-def list(...) -> WorkspaceList: ...
+def list(self) -> WorkspaceList: ...
 
 # ❌ Returns concrete list. The type is a public contract; consumers will
 #    rely on len(), indexing, and isinstance(result, list). See "Known
 #    exceptions" below for the one method where this is documented.
-def list_widgets(...) -> list[Widget]: ...
+def list_widgets(self) -> list[Widget]: ...
 ```
 
 ## Known exceptions (and why)

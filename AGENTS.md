@@ -14,6 +14,7 @@ src/pytfe/
   config.py            # TFEConfig — auth, timeout, retry, proxy settings
   _http.py             # HTTPTransport — request, retry, redirects, auth
   _jsonapi.py          # JSON:API envelope helpers
+  _logging.py.         # Logging primitives for the pytfe SDK
   errors.py            # Typed exception hierarchy (TFEError + ~80 subclasses)
   utils.py             # Validation + small helpers
   models/              # Pydantic v2 models, one file per resource

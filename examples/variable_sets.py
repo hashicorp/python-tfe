@@ -76,13 +76,11 @@ def variable_set_example():
 
         # 2. Create a new variable set
         print("2. Creating a new variable set...")
-        create_options = VariableSetCreateOptions.model_validate(
-            {
-                "name": "python-sdk-example-varset",
-                "description": "Example variable set created with Python SDK",
-                "global": False,  # Not global, will apply to specific workspaces/projects
-                "priority": True,  # High priority
-            }
+        create_options = VariableSetCreateOptions(
+            name="python-sdk-example-varset",
+            description="Example variable set created with Python SDK",
+            global_=False,  # Not global, will apply to specific workspaces/projects
+            priority=True,  # High priority
         )
 
         new_variable_set = client.variable_sets.create(org_name, create_options)
@@ -359,13 +357,11 @@ def global_variable_set_example():
 
         # Create a global variable set
         print("Creating a global variable set...")
-        global_create_options = VariableSetCreateOptions.model_validate(
-            {
-                "name": "python-sdk-global-varset",
-                "description": "Global variable set for common settings",
-                "global": True,  # Make it global
-                "priority": False,
-            }
+        global_create_options = VariableSetCreateOptions(
+            name="python-sdk-global-varset",
+            description="Global variable set for common settings",
+            global_=True,  # Make it global
+            priority=False,
         )
 
         global_varset = client.variable_sets.create(org_name, global_create_options)
@@ -451,13 +447,11 @@ def project_scoped_variable_set_example():
         print("Creating a project-scoped variable set...")
         parent = Parent(project=Project(id=target_project.id))
 
-        project_create_options = VariableSetCreateOptions.model_validate(
-            {
-                "name": "python-sdk-project-varset",
-                "description": f"Project-specific variables for {target_project.name}",
-                "global": False,  # Not global
-                "parent": parent.model_dump(),  # Scope to specific project
-            }
+        project_create_options = VariableSetCreateOptions(
+            name="python-sdk-project-varset",
+            description=f"Project-specific variables for {target_project.name}",
+            global_=False,  # Not global
+            parent=parent,  # Scope to specific project
         )
 
         project_varset = client.variable_sets.create(org_name, project_create_options)

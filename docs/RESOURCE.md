@@ -37,11 +37,11 @@ from ._base import _Service
 class Widgets(_Service):
     """Service for managing widgets."""
 
-    def list(...) -> Iterator[Widget]: ...
-    def read(...) -> Widget: ...
-    def create(...) -> Widget: ...
-    def update(...) -> Widget: ...
-    def delete(...) -> None: ...
+    def list(self) -> Iterator[Widget]: ...
+    def read(self, widget_id: str) -> Widget: ...
+    def create(self, organization: str, options: WidgetCreateOptions) -> Widget: ...
+    def update(self, widget_id: str, options: WidgetUpdateOptions) -> Widget: ...
+    def delete(self, widget_id: str) -> None: ...
 
     def _widget_from(self, data: dict[str, Any]) -> Widget: ...
 ```
@@ -188,32 +188,23 @@ If the model has relationships, pull them from `data["relationships"]` and eithe
 
 1. **Embed an id-stub** using `Model.model_construct(id=...)` — use this when the model defines the relation as `OtherModel | None`. `model_construct` skips validation, which is correct for partial `{id, type}` data:
 
-   ```python
-   relationships = data.get("relationships", {})
-   run_data = relationships.get("run", {}).get("data")
-   if run_data:
-       attributes["run"] = Run.model_construct(id=run_data["id"])
-   ```
+```python
+relationships = data.get("relationships", {})
+run_data = relationships.get("run", {}).get("data")
+if run_data:
+    attributes["run"] = Run.model_construct(id=run_data["id"])
+```
 
 2. **Flatten to `*_id`** when the model exposes a flat `team_id: str | None` field:
 
-   ```python
-   team_data = (relationships.get("team") or {}).get("data") or {}
-   if team_data.get("id"):
-       attributes["team-id"] = team_data["id"]
-   ```
+```python
+team_data = (relationships.get("team") or {}).get("data") or {}
+if team_data.get("id"):
+    attributes["team-id"] = team_data["id"]
+```
 
 Always defensively coalesce with `or {}` — relationships may be missing from sparse responses.
 
-## Presigned URLs and redirects
-
-The TFE bearer token must not be forwarded to Archivist, S3, or other presigned blob hosts. Signed upload/download URLs already carry their own credentials.
-
-- Direct signed URL: `self.t.request("GET", url, include_auth=False)`
-- API endpoint that returns a redirect: call the API path with `allow_redirects=False`, read the `Location` header, then fetch that URL with `include_auth=False`
-- Add a unit test that asserts the blob URL call uses `include_auth=False`
-
-This applies to state upload/download, plan JSON output/schema, apply errored state, and any future blob-backed endpoint.
 
 ## Pagination — use `self._list`, don't roll your own
 
@@ -249,12 +240,12 @@ You usually don't need to catch these — let them propagate to the caller. Catc
 - You want to translate to a more specific error (`except TFEError as e: if "rate-limit" in str(e): raise ...`)
 - The "error" is actually an expected outcome — like a `NotFound` meaning "no current assessment yet":
 
-  ```python
-  try:
-      r = self.t.request("GET", f"/api/v2/workspaces/{ws_id}/current-assessment-result")
-  except NotFound:
-      return None
-  ```
+```python
+try:
+    r = self.t.request("GET", f"/api/v2/workspaces/{ws_id}/current-assessment-result")
+except NotFound:
+    return None
+```
 
 ## Wiring into the client
 
@@ -460,7 +451,6 @@ raise InvalidWidgetIDError()                          # preferred for new APIs
 - [ ] `list*` returns `Iterator[X]` via `self._list(...)` (see [ITERATORS.md](ITERATORS.md))
 - [ ] Response parsing helper `_widget_from(data)` translates JSON:API → Pydantic
 - [ ] Non-standard response shapes (`204`, `null`, bare resources, raw bytes, redirects) are verified against docs/go-tfe/spec and covered by tests
-- [ ] Presigned upload/download/blob URLs are fetched with `include_auth=False`
 - [ ] Classes with `def list(...)` avoid later bare `list[...]` annotations
 - [ ] Models added per [MODELS.md](MODELS.md), wired in `models/__init__.py`
 - [ ] Resource wired into `client.py` (import + `self.widgets = Widgets(...)`)

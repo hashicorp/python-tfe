@@ -157,9 +157,19 @@ For full details — environment variables, redaction guarantees, and how to add
 
 ## Documentation
 
-- API reference and guides (SDK): **coming soon**  
-- Terraform Enterprise API: https://developer.hashicorp.com/terraform/enterprise/api-docs
-- Internal reference: [`docs/ITERATORS.md`](./docs/ITERATORS.md), [`docs/MODELS.md`](./docs/MODELS.md), [`docs/RESOURCE.md`](./docs/RESOURCE.md), [`docs/LOGGING.md`](./docs/LOGGING.md)
+Start with [Getting started](./docs/getting-started.md), then use the
+[API index](./docs/api/index.md) to find resource-specific guides, examples,
+and upstream HCP Terraform API docs.
+
+| Need | Start here |
+|---|---|
+| Configure the SDK | [Authentication](./docs/authentication.md), [Pagination](./docs/pagination.md), [Logging](./docs/LOGGING.md) |
+| API guides | [API index](./docs/api/index.md), [Workspaces](./docs/api/workspaces.md), [Runs/plans/applies](./docs/api/runs-plans-applies.md), [State versions](./docs/api/state-versions.md) |
+| Scenario guides | [API-driven run](./docs/scenarios/api-driven-run.md), [State management](./docs/scenarios/state-management.md), [Migrate workspaces and state](./docs/scenarios/migrate-workspaces-and-state.md), [Team access onboarding](./docs/scenarios/team-access-onboarding.md) |
+| Operations guides | [Troubleshooting](./docs/troubleshooting.md), [Errors](./docs/errors.md), [Terraform Enterprise](./docs/terraform-enterprise.md) |
+| Contribute to the SDK | [CONTRIBUTING](./docs/CONTRIBUTING.md), [ITERATORS](./docs/ITERATORS.md), [MODELS](./docs/MODELS.md), [RESOURCE](./docs/RESOURCE.md) |
+
+Upstream API reference: https://developer.hashicorp.com/terraform/cloud-docs/api-docs
 
 ## Examples
 

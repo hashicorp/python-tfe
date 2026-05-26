@@ -97,6 +97,7 @@
 ## Bug Fixes
 * Fixed task result relationships to map into typed SDK models instead of raw JSON by @TanyaSingh369-svg [#156](https://github.com/hashicorp/python-tfe/pull/156)
 * Fixed task stage relationship mapping in the task result resource by @TanyaSingh369-svg [#156](https://github.com/hashicorp/python-tfe/pull/156)
+* Updated variable set models to support ``global_`` inputs. Since ``global`` is a Python reserved word, callers previously had to use ``model_validate`` as a workaround; existing ``global`` alias usage continues to work unchanged.
 
 
 # v0.1.5
