@@ -74,12 +74,10 @@ from pytfe.models import (
 
 varset = client.variable_sets.create(
     "my-organization",
-    VariableSetCreateOptions.model_validate(
-        {
-            "name": "shared-cloud-settings",
-            "description": "Shared cloud settings",
-            "global": False,
-        }
+    VariableSetCreateOptions(
+        name="shared-cloud-settings",
+        description="Shared cloud settings",
+        global_=False,
     ),
 )
 

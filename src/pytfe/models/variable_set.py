@@ -6,7 +6,7 @@ from __future__ import annotations
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from .organization import Organization
 from .project import Project
@@ -32,6 +32,8 @@ class Parent(BaseModel):
 
 class VariableSet(BaseModel):
     """Represents a Terraform Enterprise variable set."""
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     id: str | None = None
     name: str | None = None
@@ -80,6 +82,8 @@ class VariableSetListOptions(BaseModel):
 class VariableSetCreateOptions(BaseModel):
     """Options for creating a variable set."""
 
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
     name: str
     description: str | None = None
     global_: bool = Field(alias="global")
@@ -95,6 +99,8 @@ class VariableSetReadOptions(BaseModel):
 
 class VariableSetUpdateOptions(BaseModel):
     """Options for updating a variable set."""
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     name: str | None = None
     description: str | None = None
