@@ -227,6 +227,8 @@ class RunList(BaseModel):
 
 
 class RunListOptions(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
     page_number: int | None = Field(default=1, alias="page[number]")
     page_size: int | None = Field(default=20, alias="page[size]")
 

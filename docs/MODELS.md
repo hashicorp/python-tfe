@@ -248,6 +248,28 @@ workspace: dict | None = None                   # loses type information
 workspace: Workspace | None = None              # ✅ (filled via model_construct in resource)
 ```
 
+### Python keyword aliases require `populate_by_name=True`
+
+`populate_by_name=True` is documented above as "Always" — for aliases that are Python keywords (`global`, `class`, `from`, `import`, `return`, `yield`, `lambda`, `del`, `pass`, `raise`, `with`, `as`, `is`, `in`, `not`, `and`, `or`, `if`, `else`, `elif`, `for`, `while`, `try`, `except`, `finally`, `def`, `async`, `await`), it's not just convenience — it's a correctness requirement. Without it, callers cannot construct the model with a kwarg at all and are forced into ugly workarounds:
+
+```python
+# ❌ Without populate_by_name=True, this is the only way to construct:
+VariableSetCreateOptions(name="x", **{"global": False})            # awkward
+VariableSetCreateOptions.model_validate({"name": "x", "global": False})  # inconsistent with every other *CreateOptions
+
+# Field name with trailing underscore IS NOT accepted because populate_by_name defaults to False:
+VariableSetCreateOptions(name="x", global_=False)                  # ValidationError: 'global' field required
+
+# ✅ With populate_by_name=True, the trailing-underscore form works and matches the rest of the SDK:
+class VariableSetCreateOptions(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    global_: bool = Field(alias="global")
+
+VariableSetCreateOptions(name="x", global_=False)                  # ✅
+```
+
+The CI check in `tests/units/test_model_conventions.py` enforces this for every model that declares an `alias=`. Models that intentionally accept only the wire-format alias must be added to the explicit allowlist in that test, with a comment explaining why.
+
 ## Checklist when adding a new model
 
 - [ ] `from __future__ import annotations` at the top

@@ -156,6 +156,8 @@ class AgentPoolUpdateOptions(BaseModel):
 class AgentPoolReadOptions(BaseModel):
     """Options for reading an agent pool."""
 
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
     # Optional: Include related resources
     include: list[AgentPoolIncludeOpt] | None = Field(default=None, alias="include")
 
