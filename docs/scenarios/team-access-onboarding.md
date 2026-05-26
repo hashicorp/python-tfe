@@ -77,10 +77,17 @@ print(grant.id)
 Use project access when the team needs the same access across a project:
 
 ```python
+from pytfe.models.team_project_access import TeamProjectAccessListOptions
+
 # See examples/team_project_access.py for a full project access example.
-for access in client.team_project_accesses.list("team-abc123"):
+for access in client.team_project_accesses.list(
+    TeamProjectAccessListOptions(Project_id="prj-abc123")
+):
     print(access.id)
 ```
+
+`team_project_accesses.list` filters by project, not by team. Pass the project
+ID and iterate the returned grants to see which teams have access.
 
 ## Create a team token
 

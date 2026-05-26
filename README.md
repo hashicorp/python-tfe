@@ -175,6 +175,9 @@ For full details — environment variables, redaction guarantees, and how to add
   - [Manage workspace variables](./docs/scenarios/manage-workspace-variables.md)
   - [Team access onboarding](./docs/scenarios/team-access-onboarding.md)
   - [State management](./docs/scenarios/state-management.md)
+  - [Errored state recovery](./docs/scenarios/errored-state-recovery.md)
+  - [Agent pool setup](./docs/scenarios/agent-pool-setup.md)
+  - [Notification configurations](./docs/scenarios/notification-configurations.md)
   - [Policy enforcement](./docs/scenarios/policy-enforcement.md)
   - [Run task integration](./docs/scenarios/run-task-integration.md)
 - Operations guides:

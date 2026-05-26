@@ -136,8 +136,8 @@ def test_create_workspace(self, client):
     client._transport.request = MagicMock(return_value=mock_response)
     
     # Execute the operation
-    options = WorkspaceCreateOptions(name="new-workspace", organization="test-org")
-    workspace = client.workspaces.create(options)
+    options = WorkspaceCreateOptions(name="new-workspace")
+    workspace = client.workspaces.create("test-org", options)
     
     # Assertions
     assert workspace.id == "ws-new"
@@ -156,15 +156,20 @@ Always test validation and error handling:
 
 ```python
 def test_create_workspace_invalid_org(self, client):
-    """Test creating workspace with invalid organization."""
+    """Test creating workspace with an empty organization name."""
+    options = WorkspaceCreateOptions(name="test")
     with pytest.raises(InvalidOrgError):
-        options = WorkspaceCreateOptions(name="test", organization="")
-        client.workspaces.create(options)
+        client.workspaces.create("", options)
 
 def test_read_workspace_invalid_id(self, client):
-    """Test reading workspace with invalid ID."""
+    """Test read_by_id with an empty workspace ID."""
     with pytest.raises(InvalidWorkspaceIDError):
-        client.workspaces.read(workspace_id="")
+        client.workspaces.read_by_id("")
+
+def test_read_workspace_invalid_name(self, client):
+    """Test read with an empty workspace name."""
+    with pytest.raises(InvalidWorkspaceValueError):
+        client.workspaces.read("", organization="valid-org")
 ```
 
 ### 4. Test Pagination

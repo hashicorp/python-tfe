@@ -58,7 +58,7 @@ terraform_dir = Path("./terraform")
 
 def read_or_create_workspace() -> Workspace:
     try:
-        return client.workspaces.read(organization, workspace_name)
+        return client.workspaces.read(workspace_name, organization=organization)
     except TFEError:
         return client.workspaces.create(
             organization,
