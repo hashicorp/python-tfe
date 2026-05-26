@@ -157,9 +157,32 @@ For full details — environment variables, redaction guarantees, and how to add
 
 ## Documentation
 
-- API reference and guides (SDK): **coming soon**  
+- User guides:
+  - [Getting started](./docs/getting-started.md)
+  - [Authentication](./docs/authentication.md)
+  - [Pagination](./docs/pagination.md)
+  - [API index](./docs/api/index.md)
+- Focused API guides:
+  - [Workspaces](./docs/api/workspaces.md)
+  - [Runs, plans, and applies](./docs/api/runs-plans-applies.md)
+  - [State versions](./docs/api/state-versions.md)
+  - [Variables and variable sets](./docs/api/variables-and-variable-sets.md)
+  - [Teams and access](./docs/api/teams-and-access.md)
+  - [Policies](./docs/api/policies.md)
+  - [Run tasks](./docs/api/run-tasks.md)
+- Scenario guides:
+  - [API-driven run](./docs/scenarios/api-driven-run.md)
+  - [Manage workspace variables](./docs/scenarios/manage-workspace-variables.md)
+  - [Team access onboarding](./docs/scenarios/team-access-onboarding.md)
+  - [State management](./docs/scenarios/state-management.md)
+  - [Policy enforcement](./docs/scenarios/policy-enforcement.md)
+  - [Run task integration](./docs/scenarios/run-task-integration.md)
+- Operations guides:
+  - [Troubleshooting](./docs/troubleshooting.md)
+  - [Errors](./docs/errors.md)
+  - [Terraform Enterprise](./docs/terraform-enterprise.md)
 - Terraform Enterprise API: https://developer.hashicorp.com/terraform/enterprise/api-docs
-- Internal reference: [`docs/ITERATORS.md`](./docs/ITERATORS.md), [`docs/MODELS.md`](./docs/MODELS.md), [`docs/RESOURCE.md`](./docs/RESOURCE.md), [`docs/LOGGING.md`](./docs/LOGGING.md)
+- Internal contributor reference: [`docs/ITERATORS.md`](./docs/ITERATORS.md), [`docs/MODELS.md`](./docs/MODELS.md), [`docs/RESOURCE.md`](./docs/RESOURCE.md), [`docs/LOGGING.md`](./docs/LOGGING.md)
 
 ## Examples
 
