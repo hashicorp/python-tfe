@@ -88,6 +88,8 @@ When the server returns JSON:API errors, `exc.errors` may contain structured
 entries:
 
 ```python
+try:
+    make_request()
 except TFEError as exc:
     for error in exc.errors:
         print(error)
@@ -95,4 +97,3 @@ except TFEError as exc:
 
 Use these details for logs and diagnostics, but keep user-facing messages short
 and avoid printing secrets.
-

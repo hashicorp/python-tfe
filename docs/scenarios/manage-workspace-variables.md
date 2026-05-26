@@ -74,10 +74,12 @@ from pytfe.models import (
 
 varset = client.variable_sets.create(
     "my-organization",
-    VariableSetCreateOptions(
-        name="shared-cloud-settings",
-        description="Shared cloud settings",
-        global_=False,
+    VariableSetCreateOptions.model_validate(
+        {
+            "name": "shared-cloud-settings",
+            "description": "Shared cloud settings",
+            "global": False,
+        }
     ),
 )
 
@@ -122,4 +124,3 @@ client.variable_sets.delete(varset.id)
 - Prefer variable sets for shared values to avoid drift between workspaces.
 - Use workspace variables for exceptions and workspace-local values.
 - Be deliberate with global variable sets because they apply broadly.
-

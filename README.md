@@ -157,35 +157,19 @@ For full details — environment variables, redaction guarantees, and how to add
 
 ## Documentation
 
-- User guides:
-  - [Getting started](./docs/getting-started.md)
-  - [Authentication](./docs/authentication.md)
-  - [Pagination](./docs/pagination.md)
-  - [API index](./docs/api/index.md)
-- Focused API guides:
-  - [Workspaces](./docs/api/workspaces.md)
-  - [Runs, plans, and applies](./docs/api/runs-plans-applies.md)
-  - [State versions](./docs/api/state-versions.md)
-  - [Variables and variable sets](./docs/api/variables-and-variable-sets.md)
-  - [Teams and access](./docs/api/teams-and-access.md)
-  - [Policies](./docs/api/policies.md)
-  - [Run tasks](./docs/api/run-tasks.md)
-- Scenario guides:
-  - [API-driven run](./docs/scenarios/api-driven-run.md)
-  - [Manage workspace variables](./docs/scenarios/manage-workspace-variables.md)
-  - [Team access onboarding](./docs/scenarios/team-access-onboarding.md)
-  - [State management](./docs/scenarios/state-management.md)
-  - [Errored state recovery](./docs/scenarios/errored-state-recovery.md)
-  - [Agent pool setup](./docs/scenarios/agent-pool-setup.md)
-  - [Notification configurations](./docs/scenarios/notification-configurations.md)
-  - [Policy enforcement](./docs/scenarios/policy-enforcement.md)
-  - [Run task integration](./docs/scenarios/run-task-integration.md)
-- Operations guides:
-  - [Troubleshooting](./docs/troubleshooting.md)
-  - [Errors](./docs/errors.md)
-  - [Terraform Enterprise](./docs/terraform-enterprise.md)
-- Terraform Enterprise API: https://developer.hashicorp.com/terraform/enterprise/api-docs
-- Internal contributor reference: [`docs/ITERATORS.md`](./docs/ITERATORS.md), [`docs/MODELS.md`](./docs/MODELS.md), [`docs/RESOURCE.md`](./docs/RESOURCE.md), [`docs/LOGGING.md`](./docs/LOGGING.md)
+Start with [Getting started](./docs/getting-started.md), then use the
+[API index](./docs/api/index.md) to find resource-specific guides, examples,
+and upstream HCP Terraform API docs.
+
+| Need | Start here |
+|---|---|
+| Configure the SDK | [Authentication](./docs/authentication.md), [Pagination](./docs/pagination.md), [Logging](./docs/LOGGING.md) |
+| API guides | [API index](./docs/api/index.md), [Workspaces](./docs/api/workspaces.md), [Runs/plans/applies](./docs/api/runs-plans-applies.md), [State versions](./docs/api/state-versions.md) |
+| Scenario guides | [API-driven run](./docs/scenarios/api-driven-run.md), [State management](./docs/scenarios/state-management.md), [Migrate workspaces and state](./docs/scenarios/migrate-workspaces-and-state.md), [Team access onboarding](./docs/scenarios/team-access-onboarding.md) |
+| Operations guides | [Troubleshooting](./docs/troubleshooting.md), [Errors](./docs/errors.md), [Terraform Enterprise](./docs/terraform-enterprise.md) |
+| Contribute to the SDK | [CONTRIBUTING](./docs/CONTRIBUTING.md), [ITERATORS](./docs/ITERATORS.md), [MODELS](./docs/MODELS.md), [RESOURCE](./docs/RESOURCE.md) |
+
+Upstream API reference: https://developer.hashicorp.com/terraform/cloud-docs/api-docs
 
 ## Examples
 
