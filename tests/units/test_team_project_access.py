@@ -183,7 +183,7 @@ class TestTeamProjectAccesses:
             return_value=[team_project_access_response_data]
         )
 
-        options = TeamProjectAccessListOptions(page_size=10, Project_id="prj-123")
+        options = TeamProjectAccessListOptions(page_size=10, project_id="prj-123")
 
         result_iter = team_project_accesses_service.list(options)
         items = list(result_iter)

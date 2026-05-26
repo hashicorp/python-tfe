@@ -21,7 +21,7 @@ import os
 
 from pytfe import TFEClient, TFEConfig
 from pytfe.errors import TFEError
-from pytfe.models.organization_tags import (
+from pytfe.models import (
     AddWorkspacesToTagOptions,
     OrganizationTagsDeleteOptions,
 )

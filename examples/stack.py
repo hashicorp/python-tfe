@@ -7,9 +7,9 @@ import argparse
 import os
 
 from pytfe import TFEClient, TFEConfig
-from pytfe.models.agent import AgentPool
-from pytfe.models.project import Project
-from pytfe.models.stack import (
+from pytfe.models import (
+    AgentPool,
+    Project,
     StackCreateOptions,
     StackListOptions,
     StackSortColumn,

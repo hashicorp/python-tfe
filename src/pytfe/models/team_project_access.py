@@ -136,12 +136,12 @@ class TeamProjectAccessListOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     page_size: int | None = Field(default=None, alias="page[size]")
-    Project_id: str | None = Field(default=None, alias="filter[project][id]")
+    project_id: str | None = Field(default=None, alias="filter[project][id]")
 
     @model_validator(mode="after")
     def valid(self) -> TeamProjectAccessListOptions:
         """Validate the options."""
-        if self.Project_id is not None and not valid_string_id(self.Project_id):
+        if self.project_id is not None and not valid_string_id(self.project_id):
             raise InvalidProjectIDError()
         return self
 

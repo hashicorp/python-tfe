@@ -134,6 +134,12 @@ from .organization_membership import (
     OrganizationMembershipStatus,
     OrgMembershipIncludeOpt,
 )
+from .organization_tags import (
+    AddWorkspacesToTagOptions,
+    OrganizationTag,
+    OrganizationTagsDeleteOptions,
+    OrganizationTagsListOptions,
+)
 from .organization_token import (
     OrganizationToken,
     OrganizationTokenCreateOptions,
@@ -332,11 +338,9 @@ from .run_task import (
 )
 from .run_task_integration import (
     TaskResultCallbackRequestOptions,
+    TaskResultCallbackStatus,
     TaskResultOutcome,
     TaskResultTag,
-)
-from .run_task_integration import (
-    TaskResultStatus as TaskResultCallbackStatus,
 )
 from .run_task_request import (
     RunTaskRequest,
@@ -358,6 +362,15 @@ from .ssh_key import (
     SSHKeyCreateOptions,
     SSHKeyListOptions,
     SSHKeyUpdateOptions,
+)
+from .stack import (
+    Stack,
+    StackCreateOptions,
+    StackListOptions,
+    StackSortColumn,
+    StackUpdateOptions,
+    StackVcsRepo,
+    StackVcsRepoOptions,
 )
 from .stack_configuration import (
     StackComponent,
@@ -402,6 +415,21 @@ from .team import (
     TeamPermissions,
     TeamUpdateOptions,
 )
+from .team_project_access import (
+    ProjectSettingsPermissionType,
+    ProjectTeamsPermissionType,
+    ProjectVariableSetsPermissionType,
+    TeamProjectAccessAddOptions,
+    TeamProjectAccessListOptions,
+    TeamProjectAccessProjectPermissionsOptions,
+    TeamProjectAccessType,
+    TeamProjectAccessUpdateOptions,
+    TeamProjectAccessWorkspacePermissionsOptions,
+    WorkspaceRunsPermissionType,
+    WorkspaceSentinelMocksPermissionType,
+    WorkspaceStateVersionsPermissionType,
+    WorkspaceVariablesPermissionType,
+)
 from .team_token import (
     CreatedByChoice,
     TeamToken,
@@ -417,6 +445,10 @@ from .team_workspace_access import (
     TeamWorkspaceSentinelMocksPermission,
     TeamWorkspaceStateVersionsPermission,
     TeamWorkspaceVariablesPermission,
+)
+from .user import (
+    User,
+    UserUpdateCurrentOptions,
 )
 
 # Variables
@@ -881,6 +913,36 @@ __all__ = [
     # State Version Outputs
     "StateVersionOutput",
     "StateVersionOutputsListOptions",
+    # Team project access
+    "ProjectSettingsPermissionType",
+    "ProjectTeamsPermissionType",
+    "ProjectVariableSetsPermissionType",
+    "TeamProjectAccessAddOptions",
+    "TeamProjectAccessListOptions",
+    "TeamProjectAccessProjectPermissionsOptions",
+    "TeamProjectAccessType",
+    "TeamProjectAccessUpdateOptions",
+    "TeamProjectAccessWorkspacePermissionsOptions",
+    "WorkspaceRunsPermissionType",
+    "WorkspaceSentinelMocksPermissionType",
+    "WorkspaceStateVersionsPermissionType",
+    "WorkspaceVariablesPermissionType",
+    # User
+    "User",
+    "UserUpdateCurrentOptions",
+    # Organization tags
+    "OrganizationTag",
+    "OrganizationTagsListOptions",
+    "AddWorkspacesToTagOptions",
+    "OrganizationTagsDeleteOptions",
+    # Stack
+    "StackCreateOptions",
+    "StackListOptions",
+    "StackSortColumn",
+    "StackUpdateOptions",
+    "StackVcsRepoOptions",
+    "StackVcsRepo",
+    "Stack",
 ]
 
 # Rebuild models with forward references after all models are loaded

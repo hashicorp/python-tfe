@@ -4,12 +4,12 @@ import argparse
 import os
 
 from pytfe import TFEClient, TFEConfig
-from pytfe.models.project import Project
-from pytfe.models.team import Team
-from pytfe.models.team_project_access import (
+from pytfe.models import (
+    Project,
     ProjectSettingsPermissionType,
     ProjectTeamsPermissionType,
     ProjectVariableSetsPermissionType,
+    Team,
     TeamProjectAccessAddOptions,
     TeamProjectAccessListOptions,
     TeamProjectAccessProjectPermissionsOptions,

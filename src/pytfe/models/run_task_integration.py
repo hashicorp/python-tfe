@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ..errors import InvalidTaskResultsCallbackStatusError
 
 
-class TaskResultStatus(str, Enum):
+class TaskResultCallbackStatus(str, Enum):
     """Statuses accepted by the Run Task callback endpoint."""
 
     passed = "passed"
@@ -68,14 +68,14 @@ class TaskResultCallbackRequestOptions(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
 
-    status: TaskResultStatus = Field(..., alias="status")
+    status: TaskResultCallbackStatus = Field(..., alias="status")
     message: str | None = Field(None, alias="message")
     url: str | None = Field(None, alias="url")
     outcomes: list[TaskResultOutcome] | None = Field(None, alias="outcomes")
 
     def _validate(self) -> None:
         """Validate callback status."""
-        if not isinstance(self.status, TaskResultStatus):
+        if not isinstance(self.status, TaskResultCallbackStatus):
             raise InvalidTaskResultsCallbackStatusError()
 
     def to_payload(self) -> dict[str, Any]:

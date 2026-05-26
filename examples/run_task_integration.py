@@ -62,10 +62,10 @@ from __future__ import annotations
 import os
 
 from pytfe import TFEClient, TFEConfig
-from pytfe.models.run_task_integration import (
+from pytfe.models import (
     TaskResultCallbackRequestOptions,
+    TaskResultCallbackStatus,
     TaskResultOutcome,
-    TaskResultStatus,
     TaskResultTag,
 )
 
@@ -109,7 +109,7 @@ def main() -> None:
     # )
 
     options = TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.passed,
+        status=TaskResultCallbackStatus.passed,
         message="Run task completed successfully",
         url="https://example.com/results",
         outcomes=[outcome],

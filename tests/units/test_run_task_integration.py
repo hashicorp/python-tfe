@@ -16,8 +16,8 @@ from pytfe.errors import (
 )
 from pytfe.models.run_task_integration import (
     TaskResultCallbackRequestOptions,
+    TaskResultCallbackStatus,
     TaskResultOutcome,
-    TaskResultStatus,
     TaskResultTag,
 )
 from pytfe.resources._base import _Service
@@ -39,7 +39,7 @@ def service(transport: Mock) -> RunTaskIntegrations:
 
 def _basic_options() -> TaskResultCallbackRequestOptions:
     return TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.passed,
+        status=TaskResultCallbackStatus.passed,
         message="All good",
         url="https://example.com/details",
     )
@@ -85,7 +85,11 @@ def test_callback_invalid_token_raises_typed_error(service, bad_token):
 
 @pytest.mark.parametrize(
     "good_status",
-    [TaskResultStatus.passed, TaskResultStatus.failed, TaskResultStatus.running],
+    [
+        TaskResultCallbackStatus.passed,
+        TaskResultCallbackStatus.failed,
+        TaskResultCallbackStatus.running,
+    ],
 )
 def test_callback_accepts_all_valid_statuses(service, transport, good_status):
     options = TaskResultCallbackRequestOptions(status=good_status)
@@ -99,7 +103,7 @@ def test_callback_accepts_all_valid_statuses(service, transport, good_status):
     ["pending", "errored", "unreachable", "", "PASSED", "unknown", None, 123],
 )
 def test_callback_rejects_invalid_statuses(service, bad_status):
-    options = TaskResultCallbackRequestOptions(status=TaskResultStatus.passed)
+    options = TaskResultCallbackRequestOptions(status=TaskResultCallbackStatus.passed)
     options.status = bad_status  # type: ignore[assignment]
     with pytest.raises(InvalidTaskResultsCallbackStatusError):
         service.callback(CALLBACK_URL, ACCESS_TOKEN, options)
@@ -173,7 +177,7 @@ def test_payload_basic_exact_shape(service, transport):
 
 
 def test_payload_status_only_exact_shape(service, transport):
-    options = TaskResultCallbackRequestOptions(status=TaskResultStatus.running)
+    options = TaskResultCallbackRequestOptions(status=TaskResultCallbackStatus.running)
     service.callback(CALLBACK_URL, ACCESS_TOKEN, options)
     assert transport.request.call_args.kwargs["json_body"] == {
         "data": {
@@ -197,7 +201,7 @@ def test_payload_with_outcomes_and_tags_exact_shape(service, transport):
         },
     )
     options = TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.failed, outcomes=[outcome]
+        status=TaskResultCallbackStatus.failed, outcomes=[outcome]
     )
     service.callback(CALLBACK_URL, ACCESS_TOKEN, options)
 
@@ -235,7 +239,7 @@ def test_payload_with_outcomes_and_tags_exact_shape(service, transport):
 
 def test_message_omitted_when_none(service, transport):
     options = TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.passed, url="https://x"
+        status=TaskResultCallbackStatus.passed, url="https://x"
     )
     service.callback(CALLBACK_URL, ACCESS_TOKEN, options)
     attrs = transport.request.call_args.kwargs["json_body"]["data"]["attributes"]
@@ -244,7 +248,7 @@ def test_message_omitted_when_none(service, transport):
 
 def test_url_omitted_when_none(service, transport):
     options = TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.passed, message="m"
+        status=TaskResultCallbackStatus.passed, message="m"
     )
     service.callback(CALLBACK_URL, ACCESS_TOKEN, options)
     attrs = transport.request.call_args.kwargs["json_body"]["data"]["attributes"]
@@ -252,7 +256,7 @@ def test_url_omitted_when_none(service, transport):
 
 
 def test_relationships_omitted_when_outcomes_none(service, transport):
-    options = TaskResultCallbackRequestOptions(status=TaskResultStatus.passed)
+    options = TaskResultCallbackRequestOptions(status=TaskResultCallbackStatus.passed)
     service.callback(CALLBACK_URL, ACCESS_TOKEN, options)
     body = transport.request.call_args.kwargs["json_body"]
     assert "relationships" not in body["data"]
@@ -260,7 +264,7 @@ def test_relationships_omitted_when_outcomes_none(service, transport):
 
 def test_relationships_omitted_when_outcomes_empty_list(service, transport):
     options = TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.passed, outcomes=[]
+        status=TaskResultCallbackStatus.passed, outcomes=[]
     )
     service.callback(CALLBACK_URL, ACCESS_TOKEN, options)
     body = transport.request.call_args.kwargs["json_body"]
@@ -269,7 +273,7 @@ def test_relationships_omitted_when_outcomes_empty_list(service, transport):
 
 def test_outcome_attributes_omit_none_fields(service, transport):
     options = TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.passed, outcomes=[TaskResultOutcome()]
+        status=TaskResultCallbackStatus.passed, outcomes=[TaskResultOutcome()]
     )
     service.callback(CALLBACK_URL, ACCESS_TOKEN, options)
     entry = transport.request.call_args.kwargs["json_body"]["data"]["relationships"][
@@ -281,7 +285,7 @@ def test_outcome_attributes_omit_none_fields(service, transport):
 def test_tag_level_omitted_when_none(service, transport):
     outcome = TaskResultOutcome(tags={"category": [TaskResultTag(label="only")]})
     options = TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.passed, outcomes=[outcome]
+        status=TaskResultCallbackStatus.passed, outcomes=[outcome]
     )
     service.callback(CALLBACK_URL, ACCESS_TOKEN, options)
     tags = transport.request.call_args.kwargs["json_body"]["data"]["relationships"][
@@ -293,7 +297,7 @@ def test_tag_level_omitted_when_none(service, transport):
 def test_outcome_tags_omitted_when_none(service, transport):
     outcome = TaskResultOutcome(description="no tags here")
     options = TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.passed, outcomes=[outcome]
+        status=TaskResultCallbackStatus.passed, outcomes=[outcome]
     )
     service.callback(CALLBACK_URL, ACCESS_TOKEN, options)
     attrs = transport.request.call_args.kwargs["json_body"]["data"]["relationships"][
@@ -307,7 +311,7 @@ def test_outcome_tags_omitted_when_none(service, transport):
 
 def test_multiple_outcomes_preserve_order(service, transport):
     options = TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.passed,
+        status=TaskResultCallbackStatus.passed,
         outcomes=[
             TaskResultOutcome(outcome_id="o-1", description="first"),
             TaskResultOutcome(outcome_id="o-2", description="second"),
@@ -333,7 +337,7 @@ def test_multiple_tags_per_category(service, transport):
         }
     )
     options = TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.failed, outcomes=[outcome]
+        status=TaskResultCallbackStatus.failed, outcomes=[outcome]
     )
     service.callback(CALLBACK_URL, ACCESS_TOKEN, options)
     tags = transport.request.call_args.kwargs["json_body"]["data"]["relationships"][
@@ -352,7 +356,7 @@ def test_multiple_tags_per_category(service, transport):
 def test_unicode_message_and_body(service, transport):
     outcome = TaskResultOutcome(body="✓ all good — 通过")
     options = TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.passed,
+        status=TaskResultCallbackStatus.passed,
         message="résumé 🎉",
         outcomes=[outcome],
     )
@@ -369,7 +373,7 @@ def test_markdown_body_preserved_verbatim(service, transport):
     md = "## Results\n\n- [link](https://x)\n- **bold**\n\n```py\nprint('ok')\n```"
     outcome = TaskResultOutcome(body=md)
     options = TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.passed, outcomes=[outcome]
+        status=TaskResultCallbackStatus.passed, outcomes=[outcome]
     )
     service.callback(CALLBACK_URL, ACCESS_TOKEN, options)
     serialized = transport.request.call_args.kwargs["json_body"]["data"][
@@ -397,7 +401,7 @@ def test_outcome_accepts_alias_input():
 
 def test_options_accepts_string_status():
     options = TaskResultCallbackRequestOptions.model_validate({"status": "passed"})
-    assert options.status == TaskResultStatus.passed
+    assert options.status == TaskResultCallbackStatus.passed
 
 
 # ─── SDK client wiring ────────────────────────────────────────────────────────
@@ -427,7 +431,7 @@ def test_to_payload_is_idempotent():
     """Calling to_payload twice must produce equal dicts and must not mutate
     the options instance — important because callers may inspect/log payloads."""
     options = TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.passed,
+        status=TaskResultCallbackStatus.passed,
         message="hi",
         outcomes=[
             TaskResultOutcome(
@@ -450,7 +454,7 @@ def test_to_payload_is_json_serializable():
     import json
 
     options = TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.failed,
+        status=TaskResultCallbackStatus.failed,
         outcomes=[
             TaskResultOutcome(
                 outcome_id="o-1",
@@ -479,7 +483,7 @@ def test_sequential_callbacks_are_independent(service, transport):
     service.callback(
         CALLBACK_URL,
         "v1.other-token",
-        TaskResultCallbackRequestOptions(status=TaskResultStatus.failed),
+        TaskResultCallbackRequestOptions(status=TaskResultCallbackStatus.failed),
     )
     assert transport.request.call_count == 2
     assert transport.request.call_args_list[0].kwargs["headers"] == {
@@ -507,7 +511,7 @@ def test_outcome_with_empty_tags_dict_emits_empty_object(service, transport):
     desired later, update both the model and this test together."""
     outcome = TaskResultOutcome(tags={})
     options = TaskResultCallbackRequestOptions(
-        status=TaskResultStatus.passed, outcomes=[outcome]
+        status=TaskResultCallbackStatus.passed, outcomes=[outcome]
     )
     service.callback(CALLBACK_URL, ACCESS_TOKEN, options)
     attrs = transport.request.call_args.kwargs["json_body"]["data"]["relationships"][

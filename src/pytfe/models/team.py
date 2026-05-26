@@ -131,7 +131,7 @@ class TeamCreateOptions(BaseModel):
     organization_access: OrganizationAccessOptions | None = Field(
         default=None, alias="organization-access"
     )
-    visibility: str | None = Field(alias="visibility")
+    visibility: str | None = Field(default=None, alias="visibility")
     allow_member_token_management: bool | None = Field(
         default=None, alias="allow-member-token-management"
     )
