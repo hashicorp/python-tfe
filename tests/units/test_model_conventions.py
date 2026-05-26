@@ -11,12 +11,11 @@ from __future__ import annotations
 
 import importlib
 import pkgutil
-from typing import Iterator
+from collections.abc import Iterator
 
 from pydantic import BaseModel
 
 import pytfe.models
-
 
 # Models that intentionally accept only their wire-format alias and reject the
 # Python field name as a constructor kwarg. Every entry needs a reason. The
@@ -58,8 +57,7 @@ def _iter_model_classes() -> Iterator[type[BaseModel]]:
 
 def _has_alias_field(cls: type[BaseModel]) -> bool:
     return any(
-        getattr(field, "alias", None) is not None
-        for field in cls.model_fields.values()
+        getattr(field, "alias", None) is not None for field in cls.model_fields.values()
     )
 
 
