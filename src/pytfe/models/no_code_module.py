@@ -61,7 +61,9 @@ class NoCodeModuleCreateOptions(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
-    registry_module_id: str = Field(..., description="ID of the registry module to enable")
+    registry_module_id: str = Field(
+        ..., description="ID of the registry module to enable"
+    )
     enabled: bool | None = None
     version_pin: str | None = Field(default=None, alias="version-pin")
     variable_options: list[NoCodeVariableOption] = Field(
@@ -115,7 +117,9 @@ class NoCodeWorkspaceCreateOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     name: str = Field(..., description="Workspace name")
-    project_id: str = Field(..., description="ID of the project to create the workspace in")
+    project_id: str = Field(
+        ..., description="ID of the project to create the workspace in"
+    )
     description: str | None = None
     agent_pool_id: str | None = Field(default=None, alias="agent-pool-id")
     auto_apply: bool | None = None

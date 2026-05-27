@@ -227,9 +227,7 @@ class TestNoCodeModuleRead:
 
         self.service.read(
             "nocode-abc123",
-            NoCodeModuleReadOptions(
-                include=[NoCodeModuleIncludeOpt.VARIABLE_OPTIONS]
-            ),
+            NoCodeModuleReadOptions(include=[NoCodeModuleIncludeOpt.VARIABLE_OPTIONS]),
         )
 
         params = self.transport.request.call_args.kwargs["params"]
@@ -436,9 +434,7 @@ class TestNoCodeCreateWorkspace:
 
         ws = self.service.create_workspace(
             "nocode-abc123",
-            NoCodeWorkspaceCreateOptions(
-                name="no-code-ws", project_id="prj-abc123"
-            ),
+            NoCodeWorkspaceCreateOptions(name="no-code-ws", project_id="prj-abc123"),
         )
 
         method, path = self.transport.request.call_args.args
@@ -567,8 +563,7 @@ class TestNoCodeUpgradeWorkspace:
         body = self.transport.request.call_args.kwargs["json_body"]
         assert method == "POST"
         assert (
-            path
-            == "/api/v2/no-code-modules/nocode-abc123/workspaces/ws-abc123/upgrade"
+            path == "/api/v2/no-code-modules/nocode-abc123/workspaces/ws-abc123/upgrade"
         )
         assert body == {"data": {"type": "workspaces", "attributes": {}}}
         assert result.id == "wsu-abc123"
@@ -651,15 +646,11 @@ class TestNoCodeReadAndConfirmUpgrade:
 
     def test_read_upgrade_invalid_upgrade_id(self) -> None:
         with pytest.raises(InvalidWorkspaceUpgradeIDError):
-            self.service.read_workspace_upgrade(
-                "nocode-abc123", "ws-abc123", ""
-            )
+            self.service.read_workspace_upgrade("nocode-abc123", "ws-abc123", "")
 
     def test_confirm_upgrade_invalid_workspace_id(self) -> None:
         with pytest.raises(InvalidWorkspaceIDError):
-            self.service.confirm_workspace_upgrade(
-                "nocode-abc123", "", "wsu-abc123"
-            )
+            self.service.confirm_workspace_upgrade("nocode-abc123", "", "wsu-abc123")
 
 
 class TestWorkspaceAgentPoolParserFix:

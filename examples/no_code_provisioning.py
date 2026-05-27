@@ -83,9 +83,7 @@ def main() -> int:
     # Re-read with include to confirm variable options round-trip.
     refreshed = client.no_code_modules.read(
         no_code_module.id,
-        NoCodeModuleReadOptions(
-            include=[NoCodeModuleIncludeOpt.VARIABLE_OPTIONS]
-        ),
+        NoCodeModuleReadOptions(include=[NoCodeModuleIncludeOpt.VARIABLE_OPTIONS]),
     )
     for option in refreshed.variable_options:
         print(

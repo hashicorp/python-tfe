@@ -291,9 +291,8 @@ class NoCodeModules(_Service):
             raise RequiredNameError()
         if not valid_string_id(options.project_id):
             raise RequiredProjectError()
-        if (
-            options.execution_mode == ExecutionMode.AGENT
-            and not valid_string_id(options.agent_pool_id)
+        if options.execution_mode == ExecutionMode.AGENT and not valid_string_id(
+            options.agent_pool_id
         ):
             raise RequiredAgentPoolIDError()
 
@@ -448,9 +447,7 @@ class NoCodeModules(_Service):
         if options.terraform_version is not None:
             attrs["terraform-version"] = options.terraform_version
 
-        body: dict[str, Any] = {
-            "data": {"type": _WORKSPACE_TYPE, "attributes": attrs}
-        }
+        body: dict[str, Any] = {"data": {"type": _WORKSPACE_TYPE, "attributes": attrs}}
 
         relationships: dict[str, Any] = {
             "project": {"data": {"type": "projects", "id": options.project_id}},
