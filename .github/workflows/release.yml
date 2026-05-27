@@ -1,4 +1,4 @@
-name: release
+name: PyPI release
 
 # Publishes the package to PyPI / TestPyPI via manual dispatch only.
 #
