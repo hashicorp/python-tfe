@@ -166,7 +166,7 @@ class RunTasks(_Service):
             },
         }
         if options.hmac_key is not None:
-            body["data"]["attributes"]["hmac_key"] = options.hmac_key
+            body["data"]["attributes"]["hmac-key"] = options.hmac_key
         if options.enabled is not None:
             body["data"]["attributes"]["enabled"] = options.enabled
         if options.global_configuration is not None:
@@ -181,7 +181,7 @@ class RunTasks(_Service):
             body["data"]["attributes"]["global-configuration"] = gc_dict
         if options.agent_pool is not None and options.agent_pool.id:
             body["data"]["relationships"] = {
-                "agent_pool": {
+                "agent-pool": {
                     "data": {"type": "agent_pools", "id": options.agent_pool.id}
                 }
             }

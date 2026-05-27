@@ -193,7 +193,7 @@ def _ws_from(d: dict[str, Any]) -> Workspace:
             {"id": relationships["ssh-key"]["data"].get("id")}
         )
     if relationships.get("agent-pool", {}).get("data"):
-        attr["agent_pools"] = AgentPool.model_validate(
+        attr["agent_pool"] = AgentPool.model_validate(
             {"id": relationships["agent-pool"]["data"].get("id")}
         )
     if relationships.get("current-run", {}).get("data"):

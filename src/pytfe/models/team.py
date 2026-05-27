@@ -102,25 +102,25 @@ class TeamListOptions(BaseModel):
 class OrganizationAccessOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    manage_policies: bool | None = Field(default=False, alias="manage-policies")
+    manage_policies: bool | None = Field(default=None, alias="manage-policies")
     manage_policy_overrides: bool | None = Field(
-        default=False, alias="manage-policy-overrides"
+        default=None, alias="manage-policy-overrides"
     )
-    manage_workspaces: bool | None = Field(default=False, alias="manage-workspaces")
-    manage_vcs_settings: bool | None = Field(default=False, alias="manage-vcs-settings")
-    manage_providers: bool | None = Field(default=False, alias="manage-providers")
-    manage_modules: bool | None = Field(default=False, alias="manage-modules")
-    manage_run_tasks: bool | None = Field(default=False, alias="manage-run-tasks")
-    manage_projects: bool | None = Field(default=False, alias="manage-projects")
-    read_workspaces: bool | None = Field(default=False, alias="read-workspaces")
-    read_projects: bool | None = Field(default=False, alias="read-projects")
-    manage_membership: bool | None = Field(default=False, alias="manage-membership")
-    manage_teams: bool | None = Field(default=False, alias="manage-teams")
+    manage_workspaces: bool | None = Field(default=None, alias="manage-workspaces")
+    manage_vcs_settings: bool | None = Field(default=None, alias="manage-vcs-settings")
+    manage_providers: bool | None = Field(default=None, alias="manage-providers")
+    manage_modules: bool | None = Field(default=None, alias="manage-modules")
+    manage_run_tasks: bool | None = Field(default=None, alias="manage-run-tasks")
+    manage_projects: bool | None = Field(default=None, alias="manage-projects")
+    read_workspaces: bool | None = Field(default=None, alias="read-workspaces")
+    read_projects: bool | None = Field(default=None, alias="read-projects")
+    manage_membership: bool | None = Field(default=None, alias="manage-membership")
+    manage_teams: bool | None = Field(default=None, alias="manage-teams")
     manage_organization_access: bool | None = Field(
-        default=False, alias="manage-organization-access"
+        default=None, alias="manage-organization-access"
     )
-    access_secret_teams: bool | None = Field(default=False, alias="access-secret-teams")
-    manage_agent_pools: bool | None = Field(default=False, alias="manage-agent-pools")
+    access_secret_teams: bool | None = Field(default=None, alias="access-secret-teams")
+    manage_agent_pools: bool | None = Field(default=None, alias="manage-agent-pools")
 
 
 class TeamCreateOptions(BaseModel):
@@ -152,7 +152,7 @@ class TeamUpdateOptions(BaseModel):
     organization_access: OrganizationAccessOptions | None = Field(
         default=None, alias="organization-access"
     )
-    visibility: str | None = Field(alias="visibility")
+    visibility: str | None = Field(default=None, alias="visibility")
     allow_member_token_management: bool | None = Field(
         default=None, alias="allow-member-token-management"
     )
