@@ -22,7 +22,6 @@ import pytest
 from pytfe.errors import AuthError, NotFound, ValidationError
 from pytfe.models.agent import (
     AgentPool,
-    AgentPoolAllowedWorkspacePolicy,
     AgentPoolAssignToWorkspacesOptions,
     AgentPoolCreateOptions,
     AgentPoolListOptions,
@@ -42,54 +41,23 @@ class TestAgentPoolModels:
             name="test-pool",
             created_at="2023-01-01T00:00:00Z",
             organization_scoped=True,
-            allowed_workspace_policy=AgentPoolAllowedWorkspacePolicy.ALL_WORKSPACES,
             agent_count=0,
         )
 
         assert agent_pool.id == "apool-123456789abcdef0"
         assert agent_pool.name == "test-pool"
         assert agent_pool.organization_scoped is True
-        assert (
-            agent_pool.allowed_workspace_policy
-            == AgentPoolAllowedWorkspacePolicy.ALL_WORKSPACES
-        )
         assert agent_pool.agent_count == 0
-
-    def test_agent_pool_allowed_workspace_policy_enum(self):
-        """Test AgentPoolAllowedWorkspacePolicy enum values"""
-        assert AgentPoolAllowedWorkspacePolicy.ALL_WORKSPACES == "all-workspaces"
-        assert (
-            AgentPoolAllowedWorkspacePolicy.SPECIFIC_WORKSPACES == "specific-workspaces"
-        )
-
-        agent_pool = AgentPool(
-            id="apool-123456789abcdef0",
-            name="test-pool",
-            created_at="2023-01-01T00:00:00Z",
-            organization_scoped=False,
-            allowed_workspace_policy=AgentPoolAllowedWorkspacePolicy.SPECIFIC_WORKSPACES,
-            agent_count=3,
-        )
-
-        assert (
-            agent_pool.allowed_workspace_policy
-            == AgentPoolAllowedWorkspacePolicy.SPECIFIC_WORKSPACES
-        )
 
     def test_agent_pool_create_options(self):
         """Test AgentPoolCreateOptions model"""
         options = AgentPoolCreateOptions(
             name="test-pool",
             organization_scoped=True,
-            allowed_workspace_policy=AgentPoolAllowedWorkspacePolicy.SPECIFIC_WORKSPACES,
         )
 
         assert options.name == "test-pool"
         assert options.organization_scoped is True
-        assert (
-            options.allowed_workspace_policy
-            == AgentPoolAllowedWorkspacePolicy.SPECIFIC_WORKSPACES
-        )
 
     def test_agent_pool_create_options_workspace_ids(self):
         """Test AgentPoolCreateOptions with allowed/excluded workspace IDs (bug fix)"""
@@ -165,7 +133,6 @@ class TestAgentPoolOperations:
 
         options = AgentPoolListOptions(
             page_size=10,
-            allowed_workspace_policy=AgentPoolAllowedWorkspacePolicy.ALL_WORKSPACES,
         )
 
         list(agent_pools_service.list("test-org", options))
@@ -176,7 +143,6 @@ class TestAgentPoolOperations:
         params = call_args[1]["params"]
         assert params["page[number]"] == 1
         assert params["page[size]"] == 10
-        assert params["filter[allowed_workspace_policy]"] == "all-workspaces"
 
     def test_create_agent_pool(self, agent_pools_service, mock_transport):
         """Test creating an agent pool"""
@@ -198,7 +164,6 @@ class TestAgentPoolOperations:
         options = AgentPoolCreateOptions(
             name="new-pool",
             organization_scoped=True,
-            allowed_workspace_policy=AgentPoolAllowedWorkspacePolicy.ALL_WORKSPACES,
         )
 
         agent_pool = agent_pools_service.create("test-org", options)

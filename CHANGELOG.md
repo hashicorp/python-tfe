@@ -1,6 +1,109 @@
 # Unreleased
 
+
 # Released
+# v1.0.0
+
+## Features
+
+### Teams
+* Added Teams resource with full CRUD operations (list, create, read, update, delete) by @isivaselvan [#118](https://github.com/hashicorp/python-tfe/pull/118)
+* Added add_users, remove_users, add_organization_memberships, remove_organization_memberships, list_users and list_organization_memberships methods by @iam404 [#171](https://github.com/hashicorp/python-tfe/pull/168)
+
+### Team Project Access
+* Added Team Project Access resource with list, add, read, update, and remove methods by @isivaselvan [#127](https://github.com/hashicorp/python-tfe/pull/127)
+
+### Stacks
+* Added Stack resource with create, update, list, read, delete, force_delete and fetch_latest_from_vcs methods by @isivaselvan [#128](https://github.com/hashicorp/python-tfe/pull/128)
+
+### Explorer API
+* Added Explorer resource support with query, CSV export, list saved view, create saced view, read saved view, update saved view, delete saved view, saved view result query, and saved view CSV export endpoints by @jasodeep [#136](https://github.com/hashicorp/python-tfe/pull/136)
+
+### Organization Tokens
+* Added Organization Token resource with full Create, read, delete and create/read/delete with options operations by @NimishaShrivastava-dev [#141](https://github.com/hashicorp/python-tfe/pull/141)
+
+### Users
+* Added User resource with read, read_current, and update_current methods by @TanyaSingh369-svg [#144](https://github.com/hashicorp/python-tfe/pull/144)
+
+### Registry Provider Platform
+* Added Registry Provider Platform resource with create, list, read, and delete methods by @isivaselvan [#145](https://github.com/hashicorp/python-tfe/pull/145)
+
+### Organization Tags
+* Added Organization Tags resource with list, add_workspaces, and delete methods by @NimishaShrivastava-dev [#146](https://github.com/hashicorp/python-tfe/pull/146)
+
+### Stack Configuration
+* Added Stack Configuration resource with create, list, and read methods by @isivaselvan [#147](https://github.com/hashicorp/python-tfe/pull/147)
+
+### Organization Audit Configurations
+* Added Organization Audit Configuration resource with list, read and update support by @NimishaShrivastava-dev [#154](https://github.com/hashicorp/python-tfe/pull/154)
+
+### Comments
+* Added Comment resource with list, read, and create methods by @isivaselvan [#155](https://github.com/hashicorp/python-tfe/pull/155)
+
+### Task Result
+* Added Task Result resource with read method, typed models, and unit tests by @TanyaSingh369-svg [#156](https://github.com/hashicorp/python-tfe/pull/156)
+
+### Team Tokens
+* Added Team Token resource with list, read, create, and delete methods supporting both legacy and new multi-team token APIs by @isivaselvan [#157](https://github.com/hashicorp/python-tfe/pull/157)
+
+### Run Task Integration
+* Added Run Task Integration resource with callback support for sending run task results back to Terraform, including callback payload models and webhook server example by @TanyaSingh369-svg [#160](https://github.com/hashicorp/python-tfe/pull/160)
+
+### State Version Upload
+* Added state version upload support with presigned URL flow and improved examples by @NimishaShrivastava-dev [#163](https://github.com/hashicorp/python-tfe/pull/163)
+
+### Workspace Run Task
+* Added Workspace Run Task resource CRUD operation with models for managing run tasks associated with a workspace by @isivaselvan [#164](https://github.com/hashicorp/python-tfe/pull/164)
+
+### Task Stage
+* Added Task Stage resource and models for interacting with run task stages by @isivaselvan [#165](https://github.com/hashicorp/python-tfe/pull/165)
+
+### Team Workspace Access
+* Added Team Workspace Access resource list, read, add, update and remove methods along with models and examples for managing team access to workspaces by @iam404 [#168](https://github.com/hashicorp/python-tfe/pull/168)
+
+### No-Code Provisioning
+* Added no_code_modules resource with create, read, update, delete, read_variables, create_workspace, upgrade_workspace, read_workspace_upgrade, and confirm_workspace_upgrade methods.
+
+## Enhancements
+
+### Terraform Actions
+* Added invoke action address field to Run and RunCreateOptions models to support Terraform action invocations by @isivaselvan [#158](https://github.com/hashicorp/python-tfe/pull/158)
+
+### Agent Pool
+* Updated Agent Pool models to include project_ids and workspace_ids (allowed and excluded) fields by @isivaselvan [#166](https://github.com/hashicorp/python-tfe/pull/166)
+* Added assign_to_project method to the Agent Pool resource for associating agent pools with projects by @isivaselvan [#166](https://github.com/hashicorp/python-tfe/pull/166)
+* Added typed agent pool error classes (InvalidAgentPoolIDError and related) by @isivaselvan [#166](https://github.com/hashicorp/python-tfe/pull/166)
+* Updated AgentPoolListOptions with new filter parameters for list method by @isivaselvan [#166](https://github.com/hashicorp/python-tfe/pull/166)
+
+### Existing Resource Improvements
+* Updated Apply resource with errored_state method which uses additional read endpoints and log download support by @iam404 [#168](https://github.com/hashicorp/python-tfe/pull/168)
+* Updated Configuration Version resource with ingress_attributes method which uses additional endpoints for uploaded configuration handling by @iam404 [#168](https://github.com/hashicorp/python-tfe/pull/168)
+* Updated Plan resource with additional read_for_run, read_json_output_for_run, read_json_schema_for_run and follow_json_output_redirect methods by @iam404 [#168](https://github.com/hashicorp/python-tfe/pull/168)
+* Updated Policy Set resource with new add_project_exclusions, remove_project_exclusions methods to support project exclusions by @iam404 [#168](https://github.com/hashicorp/python-tfe/pull/168)
+* Updated Projects resource with new move_workspaces (into project) method iterator conversion of list_effective_tag_bindings operations by @iam404 [#168](https://github.com/hashicorp/python-tfe/pull/168)
+* Updated Registry Module resource with iterator conversion of list_version method by @iam404 [#168](https://github.com/hashicorp/python-tfe/pull/168)
+* Updated State Version resource with new rollback method by @iam404 [#168](https://github.com/hashicorp/python-tfe/pull/168)
+* Updated Workspaces resource with additional current_assessment_result and list_applicable_varsets methods by @iam404 [#168](https://github.com/hashicorp/python-tfe/pull/168)
+
+### SDK Logging
+* Added pytfe._logging module with structured stdlib-based logging framework by @iam404 [#171](https://github.com/hashicorp/python-tfe/pull/171)
+* Added setup_logging() function to configure the pytfe logger namespace with optional level and format control by @iam404 [#171](https://github.com/hashicorp/python-tfe/pull/171)
+* Added HTTP transport tracing via RoundTrip formatter with request/response logging, header/body redaction, and configurable truncation by @iam404 [#171](https://github.com/hashicorp/python-tfe/pull/171)
+* Added PYTFE_LOG, PYTFE_LOG_HEADERS, and PYTFE_LOG_TRUNCATE_BYTES environment variables for runtime log configuration by @iam404 [#171](https://github.com/hashicorp/python-tfe/pull/171)
+
+## Breaking Changes
+
+### Agent Pool
+* Removed allowed_workspace_policy attribute from Agent Pool models and methods by @isivaselvan [#166](https://github.com/hashicorp/python-tfe/pull/166)
+* Updated AgentPool relationship model structure — consumers referencing the old relationship fields must update to the new project_ids/workspace_ids shape by @isivaselvan [#166](https://github.com/hashicorp/python-tfe/pull/166)
+
+## Bug Fixes
+* Fixed task result relationships to map into typed SDK models instead of raw JSON by @TanyaSingh369-svg [#156](https://github.com/hashicorp/python-tfe/pull/156)
+* Fixed task stage relationship mapping in the task result resource by @TanyaSingh369-svg [#156](https://github.com/hashicorp/python-tfe/pull/156)
+* Updated variable set models to support **global_** inputs. Since **global** is a Python reserved word, callers previously had to use **model_validate** as a workaround; existing **global** alias usage continues to work unchanged.
+* Fixed the workspace JSON:API parser to populate the singular agent_pool field instead of writing to a non-existent agent_pools key. The relationship was previously parsed off the wire but silently dropped because the model field is singular; workspace.agent_pool now returns the related AgentPool stub as documented.
+
+
 # v0.1.5
 
 * `pytfe.__version__` added in src/pytfe/init.py via importlib.metadata.version("pytfe"). This will resolve to the version from pyproject.toml.

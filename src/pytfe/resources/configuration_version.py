@@ -20,6 +20,7 @@ from ..models.configuration_version import (
     ConfigurationVersionCreateOptions,
     ConfigurationVersionListOptions,
     ConfigurationVersionReadOptions,
+    IngressAttributes,
 )
 from ..utils import pack_contents, valid_string_id
 from ._base import _Service
@@ -197,6 +198,39 @@ class ConfigurationVersions(_Service):
         path = f"/api/v2/configuration-versions/{cv_id}/download"
         response = self.t.request("GET", path)
         return response.content
+
+    def ingress_attributes(self, cv_id: str) -> IngressAttributes | None:
+        """Get the VCS ingress attributes for a configuration version.
+
+        Returns ``None`` if the configuration version was not created from a
+        VCS connection (so has no ingress data). The API responds with
+        ``null`` for API-driven CVs and with 404 for some older TFE
+        instances.
+        """
+        if not valid_string_id(cv_id):
+            raise ValueError(ERR_INVALID_CONFIG_VERSION_ID)
+        try:
+            response = self.t.request(
+                "GET",
+                f"/api/v2/configuration-versions/{cv_id}/ingress-attributes",
+            )
+        except NotFound:
+            return None
+        body = response.json()
+        if body is None:
+            return None
+        if not isinstance(body, dict):
+            return None
+        # The OpenAPI spec describes the response as the bare
+        # `ingress-attributes` resource, but the live API wraps it in the
+        # standard JSON:API envelope. Accept both shapes.
+        data = body.get("data", body)
+        if not isinstance(data, dict) or not data:
+            return None
+        attributes = data.get("attributes")
+        if not isinstance(attributes, dict):
+            return None
+        return IngressAttributes.model_validate(attributes)
 
     def soft_delete_backing_data(self, cv_id: str) -> None:
         """Soft delete backing data for a configuration version (Enterprise only)."""

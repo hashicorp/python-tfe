@@ -8,7 +8,7 @@ from .agent import (
     Agent,
     AgentListOptions,
     AgentPool,
-    AgentPoolAllowedWorkspacePolicy,
+    AgentPoolAssignToProjectsOptions,
     AgentPoolAssignToWorkspacesOptions,
     AgentPoolCreateOptions,
     AgentPoolListOptions,
@@ -20,6 +20,11 @@ from .agent import (
     AgentToken,
     AgentTokenCreateOptions,
     AgentTokenListOptions,
+)
+from .assessment_result import AssessmentResult
+from .comment import (
+    Comment,
+    CommentCreateOptions,
 )
 
 # ── Core models split out of old types.py ─────────────────────────────────────
@@ -58,8 +63,32 @@ from .data_retention_policy import (
     DataRetentionPolicyDontDeleteSetOptions,
     DataRetentionPolicySetOptions,
 )
+from .explorer import (
+    ExplorerQueryOptions,
+    ExplorerRow,
+    ExplorerSavedQuery,
+    ExplorerSavedQueryFilter,
+    ExplorerSavedView,
+    ExplorerSavedViewCreateOptions,
+    ExplorerSavedViewUpdateOptions,
+    ExplorerUrlFilter,
+    ExplorerViewType,
+)
 
 # ── Notification Configurations ───────────────────────────────────────────────
+from .no_code_module import (
+    NoCodeModule,
+    NoCodeModuleCreateOptions,
+    NoCodeModuleIncludeOpt,
+    NoCodeModuleReadOptions,
+    NoCodeModuleUpdateOptions,
+    NoCodeVariableOption,
+    NoCodeWorkspaceCreateOptions,
+    NoCodeWorkspaceUpgradeOptions,
+    NoCodeWorkspaceVariable,
+    RegistryModuleVariable,
+    WorkspaceUpgrade,
+)
 from .notification_configuration import (
     DeliveryResponse,
     NotificationConfiguration,
@@ -101,6 +130,15 @@ from .organization import (
     ReadRunQueueOptions,
     RunQueue,
 )
+from .organization_audit_configuration import (
+    OrganizationAuditConfigAuditStreaming,
+    OrganizationAuditConfigAuditTrails,
+    OrganizationAuditConfigPermissions,
+    OrganizationAuditConfigTimestamps,
+    OrganizationAuditConfiguration,
+    OrganizationAuditConfigurationOptions,
+    OrganizationAuditConfigurationTest,
+)
 from .organization_membership import (
     OrganizationMembership,
     OrganizationMembershipCreateOptions,
@@ -108,6 +146,19 @@ from .organization_membership import (
     OrganizationMembershipReadOptions,
     OrganizationMembershipStatus,
     OrgMembershipIncludeOpt,
+)
+from .organization_tags import (
+    AddWorkspacesToTagOptions,
+    OrganizationTag,
+    OrganizationTagsDeleteOptions,
+    OrganizationTagsListOptions,
+)
+from .organization_token import (
+    OrganizationToken,
+    OrganizationTokenCreateOptions,
+    OrganizationTokenDeleteOptions,
+    OrganizationTokenReadOptions,
+    TokenType,
 )
 from .policy import (
     Policy,
@@ -140,6 +191,7 @@ from .policy_evaluation import (
 from .policy_set import (
     PolicySet,
     PolicySetAddPoliciesOptions,
+    PolicySetAddProjectExclusionsOptions,
     PolicySetAddProjectsOptions,
     PolicySetAddWorkspaceExclusionsOptions,
     PolicySetAddWorkspacesOptions,
@@ -149,6 +201,7 @@ from .policy_set import (
     PolicySetListOptions,
     PolicySetReadOptions,
     PolicySetRemovePoliciesOptions,
+    PolicySetRemoveProjectExclusionsOptions,
     PolicySetRemoveProjectsOptions,
     PolicySetRemoveWorkspaceExclusionsOptions,
     PolicySetRemoveWorkspacesOptions,
@@ -230,6 +283,13 @@ from .registry_provider import (
     RegistryProviderPermissions,
     RegistryProviderReadOptions,
 )
+from .registry_provider_platform import (
+    RegistryProviderPlatform,
+    RegistryProviderPlatformCreateOptions,
+    RegistryProviderPlatformID,
+    RegistryProviderPlatformListOptions,
+    RegistryProviderPlatformPermissions,
+)
 from .registry_provider_version import (
     RegistryProviderVersion,
     RegistryProviderVersionCreateOptions,
@@ -289,6 +349,16 @@ from .run_task import (
     Stage,
     TaskEnforcementLevel,
 )
+from .run_task_integration import (
+    TaskResultCallbackRequestOptions,
+    TaskResultCallbackStatus,
+    TaskResultOutcome,
+    TaskResultTag,
+)
+from .run_task_request import (
+    RunTaskRequest,
+    RunTaskRequestCapabilities,
+)
 from .run_trigger import (
     RunTrigger,
     RunTriggerCreateOptions,
@@ -306,6 +376,25 @@ from .ssh_key import (
     SSHKeyListOptions,
     SSHKeyUpdateOptions,
 )
+from .stack import (
+    Stack,
+    StackCreateOptions,
+    StackListOptions,
+    StackSortColumn,
+    StackUpdateOptions,
+    StackVcsRepo,
+    StackVcsRepoOptions,
+)
+from .stack_configuration import (
+    StackComponent,
+    StackConfiguration,
+    StackConfigurationCreateOptions,
+    StackConfigurationIncludeOps,
+    StackConfigurationListOptions,
+    StackConfigurationReadOptions,
+    StackConfigurationSource,
+    StackConfigurationStatus,
+)
 from .state_version import (
     StateVersion,
     StateVersionCreateOptions,
@@ -317,10 +406,62 @@ from .state_version_output import (
     StateVersionOutput,
     StateVersionOutputsListOptions,
 )
+
+# ── Task Result ───────────────────────────────────────────────────────────────
+from .task_result import (
+    TaskEnforcementLevel as TaskResultEnforcementLevel,
+)
+
+# ── Task Stage & Task Result ─────────────────────────────────────────────────
+from .task_result import (
+    TaskResult,
+    TaskResultStatus,
+    TaskResultStatusTimestamps,
+)
+from .task_stage import TaskStage
 from .team import (
     OrganizationAccess,
     Team,
+    TeamCreateOptions,
+    TeamIncludeOpt,
+    TeamListOptions,
     TeamPermissions,
+    TeamUpdateOptions,
+)
+from .team_project_access import (
+    ProjectSettingsPermissionType,
+    ProjectTeamsPermissionType,
+    ProjectVariableSetsPermissionType,
+    TeamProjectAccessAddOptions,
+    TeamProjectAccessListOptions,
+    TeamProjectAccessProjectPermissionsOptions,
+    TeamProjectAccessType,
+    TeamProjectAccessUpdateOptions,
+    TeamProjectAccessWorkspacePermissionsOptions,
+    WorkspaceRunsPermissionType,
+    WorkspaceSentinelMocksPermissionType,
+    WorkspaceStateVersionsPermissionType,
+    WorkspaceVariablesPermissionType,
+)
+from .team_token import (
+    CreatedByChoice,
+    TeamToken,
+    TeamTokenCreateOptions,
+    TeamTokenListOptions,
+)
+from .team_workspace_access import (
+    TeamWorkspaceAccess,
+    TeamWorkspaceAccessAddOptions,
+    TeamWorkspaceAccessType,
+    TeamWorkspaceAccessUpdateOptions,
+    TeamWorkspaceRunsPermission,
+    TeamWorkspaceSentinelMocksPermission,
+    TeamWorkspaceStateVersionsPermission,
+    TeamWorkspaceVariablesPermission,
+)
+from .user import (
+    User,
+    UserUpdateCurrentOptions,
 )
 
 # Variables
@@ -386,9 +527,27 @@ from .workspace_resource import (
     WorkspaceResource,
     WorkspaceResourceListOptions,
 )
+from .workspace_run_task import (
+    WorkspaceRunTask,
+    WorkspaceRunTaskCreateOptions,
+    WorkspaceRunTaskListOptions,
+    WorkspaceRunTaskUpdateOptions,
+)
 
 # ── Public surface ────────────────────────────────────────────────────────────
 __all__ = [
+    # No-code provisioning
+    "NoCodeModule",
+    "NoCodeModuleCreateOptions",
+    "NoCodeModuleIncludeOpt",
+    "NoCodeModuleReadOptions",
+    "NoCodeModuleUpdateOptions",
+    "NoCodeVariableOption",
+    "NoCodeWorkspaceCreateOptions",
+    "NoCodeWorkspaceUpgradeOptions",
+    "NoCodeWorkspaceVariable",
+    "RegistryModuleVariable",
+    "WorkspaceUpgrade",
     # Notification configurations
     "DeliveryResponse",
     "NotificationConfiguration",
@@ -427,8 +586,8 @@ __all__ = [
     # Agent & pools
     "Agent",
     "AgentPool",
-    "AgentPoolAllowedWorkspacePolicy",
     "AgentPoolAssignToWorkspacesOptions",
+    "AgentPoolAssignToProjectsOptions",
     "AgentPoolCreateOptions",
     "AgentPoolListOptions",
     "AgentPoolReadOptions",
@@ -496,6 +655,21 @@ __all__ = [
     "RegistryProviderVersionID",
     "RegistryProviderVersionListOptions",
     "RegistryProviderVersionPermissions",
+    # Registry provider platforms
+    "RegistryProviderPlatform",
+    "RegistryProviderPlatformCreateOptions",
+    "RegistryProviderPlatformID",
+    "RegistryProviderPlatformListOptions",
+    "RegistryProviderPlatformPermissions",
+    # Stack Configuration
+    "StackComponent",
+    "StackConfiguration",
+    "StackConfigurationCreateOptions",
+    "StackConfigurationIncludeOps",
+    "StackConfigurationListOptions",
+    "StackConfigurationReadOptions",
+    "StackConfigurationSource",
+    "StackConfigurationStatus",
     # Query runs
     "QueryRun",
     "QueryRunActions",
@@ -507,6 +681,16 @@ __all__ = [
     "QueryRunStatus",
     "QueryRunStatusTimestamps",
     "QueryRunVariable",
+    # Explorer
+    "ExplorerQueryOptions",
+    "ExplorerRow",
+    "ExplorerSavedQuery",
+    "ExplorerSavedQueryFilter",
+    "ExplorerSavedView",
+    "ExplorerSavedViewCreateOptions",
+    "ExplorerSavedViewUpdateOptions",
+    "ExplorerUrlFilter",
+    "ExplorerViewType",
     # Core (from old types.py, now split)
     "Entitlements",
     "ExecutionMode",
@@ -514,15 +698,48 @@ __all__ = [
     "Organization",
     "OrganizationCreateOptions",
     "OrganizationUpdateOptions",
+    "OrganizationAuditConfigAuditStreaming",
+    "OrganizationAuditConfigAuditTrails",
+    "OrganizationAuditConfigPermissions",
+    "OrganizationAuditConfigTimestamps",
+    "OrganizationAuditConfiguration",
+    "OrganizationAuditConfigurationOptions",
+    "OrganizationAuditConfigurationTest",
     "OrganizationMembership",
     "OrganizationMembershipCreateOptions",
     "OrganizationMembershipListOptions",
     "OrganizationMembershipReadOptions",
     "OrganizationMembershipStatus",
     "OrgMembershipIncludeOpt",
+    # Organization Tokens
+    "OrganizationToken",
+    "OrganizationTokenCreateOptions",
+    "OrganizationTokenDeleteOptions",
+    "OrganizationTokenReadOptions",
+    "TokenType",
     "OrganizationAccess",
     "Team",
     "TeamPermissions",
+    "TeamCreateOptions",
+    "TeamIncludeOpt",
+    "TeamListOptions",
+    "TeamUpdateOptions",
+    # Team Tokens
+    "CreatedByChoice",
+    "TeamToken",
+    "TeamTokenCreateOptions",
+    "TeamTokenListOptions",
+    # Team Workspace Access
+    "TeamWorkspaceAccess",
+    "TeamWorkspaceAccessAddOptions",
+    "TeamWorkspaceAccessType",
+    "TeamWorkspaceAccessUpdateOptions",
+    "TeamWorkspaceRunsPermission",
+    "TeamWorkspaceSentinelMocksPermission",
+    "TeamWorkspaceStateVersionsPermission",
+    "TeamWorkspaceVariablesPermission",
+    # Assessment Result
+    "AssessmentResult",
     "Project",
     "ProjectAddTagBindingsOptions",
     "ProjectCreateOptions",
@@ -573,6 +790,11 @@ __all__ = [
     # Workspace Resources
     "WorkspaceResource",
     "WorkspaceResourceListOptions",
+    # Workspace Run Tasks
+    "WorkspaceRunTask",
+    "WorkspaceRunTaskListOptions",
+    "WorkspaceRunTaskCreateOptions",
+    "WorkspaceRunTaskUpdateOptions",
     "RunQueue",
     "ReadRunQueueOptions",
     # Runs
@@ -602,6 +824,12 @@ __all__ = [
     "RunEventList",
     "RunEventListOptions",
     "RunEventReadOptions",
+    # Task Stage & Task Result
+    "TaskStage",
+    "TaskResult",
+    # Comments
+    "Comment",
+    "CommentCreateOptions",
     # Run tasks
     "RunTask",
     "RunTaskIncludeOptions",
@@ -614,6 +842,20 @@ __all__ = [
     "RunTaskCreateOptions",
     "RunTaskUpdateOptions",
     "RunTaskReadOptions",
+    # Run Task Request
+    "RunTaskRequest",
+    "RunTaskRequestCapabilities",
+    # Task Result
+    "TaskResult",
+    "TaskResultEnforcementLevel",
+    "TaskResultStatus",
+    "TaskResultStatusTimestamps",
+    "TaskStage",
+    # Run task integration (callback)
+    "TaskResultCallbackRequestOptions",
+    "TaskResultCallbackStatus",
+    "TaskResultOutcome",
+    "TaskResultTag",
     # Run triggers
     "RunTrigger",
     "RunTriggerCreateOptions",
@@ -653,6 +895,7 @@ __all__ = [
     "PolicySetAddProjectsOptions",
     "PolicySetAddWorkspacesOptions",
     "PolicySetAddWorkspaceExclusionsOptions",
+    "PolicySetAddProjectExclusionsOptions",
     "PolicySetCreateOptions",
     "PolicySetListOptions",
     "PolicySetReadOptions",
@@ -660,6 +903,7 @@ __all__ = [
     "PolicySetRemoveWorkspacesOptions",
     "PolicySetRemoveWorkspaceExclusionsOptions",
     "PolicySetRemoveProjectsOptions",
+    "PolicySetRemoveProjectExclusionsOptions",
     "PolicySetUpdateOptions",
     # Policy Set Parameters
     "PolicySetParameter",
@@ -694,7 +938,74 @@ __all__ = [
     # State Version Outputs
     "StateVersionOutput",
     "StateVersionOutputsListOptions",
+    # Team project access
+    "ProjectSettingsPermissionType",
+    "ProjectTeamsPermissionType",
+    "ProjectVariableSetsPermissionType",
+    "TeamProjectAccessAddOptions",
+    "TeamProjectAccessListOptions",
+    "TeamProjectAccessProjectPermissionsOptions",
+    "TeamProjectAccessType",
+    "TeamProjectAccessUpdateOptions",
+    "TeamProjectAccessWorkspacePermissionsOptions",
+    "WorkspaceRunsPermissionType",
+    "WorkspaceSentinelMocksPermissionType",
+    "WorkspaceStateVersionsPermissionType",
+    "WorkspaceVariablesPermissionType",
+    # User
+    "User",
+    "UserUpdateCurrentOptions",
+    # Organization tags
+    "OrganizationTag",
+    "OrganizationTagsListOptions",
+    "AddWorkspacesToTagOptions",
+    "OrganizationTagsDeleteOptions",
+    # Stack
+    "StackCreateOptions",
+    "StackListOptions",
+    "StackSortColumn",
+    "StackUpdateOptions",
+    "StackVcsRepoOptions",
+    "StackVcsRepo",
+    "Stack",
 ]
 
 # Rebuild models with forward references after all models are loaded
 PolicyCheck.model_rebuild()
+RegistryProvider.model_rebuild()
+RegistryProviderVersion.model_rebuild()
+RegistryProviderPlatform.model_rebuild()
+Run.model_rebuild(
+    raise_errors=False,
+    _types_namespace={"TaskStage": TaskStage},
+)
+TaskStage.model_rebuild(
+    raise_errors=False,
+    _types_namespace={
+        "Run": Run,
+        "TaskResult": TaskResult,
+        "PolicyEvaluation": PolicyEvaluation,
+    },
+)
+TaskResult.model_rebuild(
+    raise_errors=False,
+    _types_namespace={
+        "TaskStage": TaskStage,
+    },
+)
+AgentPool.model_rebuild(
+    raise_errors=False,
+    _types_namespace={"Project": Project},
+)
+Project.model_rebuild(
+    raise_errors=False,
+    _types_namespace={"AgentPool": AgentPool},
+)
+RunTask.model_rebuild(
+    raise_errors=False,
+    _types_namespace={"WorkspaceRunTask": WorkspaceRunTask, "AgentPool": AgentPool},
+)
+Workspace.model_rebuild(
+    raise_errors=False,
+    _types_namespace={"AgentPool": AgentPool, "Run": Run, "TaskStage": TaskStage},
+)

@@ -21,7 +21,6 @@ from ..errors import (
     UnsupportedOperationsError,
 )
 from ..utils import has_tags_regex_defined, is_valid_workspace_name, valid_string
-from .agent import AgentPool
 from .common import EffectiveTagBinding, Tag, TagBinding
 from .configuration_version import ConfigurationVersion
 from .data_retention_policy import DataRetentionPolicyChoice
@@ -32,6 +31,7 @@ from .state_version import StateVersion
 from .variable import Variable
 
 if TYPE_CHECKING:
+    from .agent import AgentPool
     from .run import Run
 
 
@@ -525,7 +525,9 @@ class VCSRepoOptions(BaseModel):
 def _rebuild_workspace_model() -> None:
     """Rebuild Workspace model to resolve forward references."""
     try:
+        from .agent import AgentPool  # noqa: F401
         from .run import Run  # noqa: F401
+        from .task_stage import TaskStage  # noqa: F401
 
         Workspace.model_rebuild()
     except ImportError:

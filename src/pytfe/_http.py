@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 import time
 from collections.abc import Mapping
@@ -12,6 +13,7 @@ from urllib.parse import urljoin
 import httpx
 
 from ._jsonapi import build_headers, parse_error_payload
+from ._logging import RoundTrip, transport_logger
 from .errors import (
     AuthError,
     NotFound,
@@ -78,13 +80,15 @@ class HTTPTransport:
         data: bytes | None = None,
         headers: dict[str, str] | None = None,
         allow_redirects: bool = True,
+        include_auth: bool = True,
     ) -> httpx.Response:
         url = self._build_url(path)
         hdrs = dict(self.headers)
+        if not include_auth:
+            hdrs.pop("Authorization", None)
         if headers:
             hdrs.update(headers)
         attempt = 0
-        # print(method, url, params, json_body, hdrs)
         while True:
             try:
                 resp = self._sync.request(
@@ -97,6 +101,13 @@ class HTTPTransport:
                     follow_redirects=allow_redirects,
                 )
             except httpx.HTTPError as e:
+                transport_logger.debug(
+                    "transport exception on %s %s (attempt %d): %s",
+                    method,
+                    url,
+                    attempt,
+                    e,
+                )
                 if attempt >= self.max_retries:
                     raise ServerError(str(e)) from e
                 self._sleep(attempt, None)
@@ -104,12 +115,45 @@ class HTTPTransport:
                 continue
             if resp.status_code in _RETRY_STATUSES and attempt < self.max_retries:
                 retry_after = _parse_retry_after(resp)
+                transport_logger.info(
+                    "retrying %s %s after %s (status=%d, attempt=%d)",
+                    method,
+                    url,
+                    f"{retry_after:.2f}s" if retry_after else "backoff",
+                    resp.status_code,
+                    attempt,
+                )
                 self._sleep(attempt, retry_after)
                 attempt += 1
                 continue
-            # print(resp)
+            # When the caller explicitly opted out of redirect-following,
+            # surface 3xx responses to them (so they can read Location)
+            # rather than treating them as errors.
+            if not allow_redirects and 300 <= resp.status_code < 400:
+                self._log_round_trip(resp)
+                return resp
+            self._log_round_trip(resp)
             self._raise_if_error(resp)
             return resp
+
+    def _log_round_trip(self, resp: httpx.Response) -> None:
+        """Emit a DEBUG-level request/response trace when enabled.
+
+        Cheap when disabled: ``isEnabledFor(DEBUG)`` short-circuits before any
+        body decoding or JSON parsing happens.
+        """
+        if not transport_logger.isEnabledFor(logging.DEBUG):
+            return
+        # Treat binary content types as raw streams so we don't try to JSON
+        # parse a state-version download or a CV tarball.
+        ct = (resp.headers.get("content-type") or "").lower()
+        raw = not (
+            "json" in ct
+            or ct.startswith("text/")
+            or ct == ""
+            or "application/vnd.api+json" in ct
+        )
+        transport_logger.debug("\n%s", RoundTrip(resp, raw=raw).generate())
 
     def _sleep(self, attempt: int, retry_after: float | None) -> None:
         if retry_after is not None:

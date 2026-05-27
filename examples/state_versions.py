@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import os
 from pathlib import Path
 
@@ -15,6 +17,7 @@ from pytfe.models import (
     StateVersionListOptions,
     StateVersionOutputsListOptions,
 )
+from pytfe.models.workspace import WorkspaceLockOptions
 
 
 def _print_header(title: str):
@@ -37,6 +40,16 @@ def main():
     parser.add_argument("--download", help="Path to save downloaded current state")
     parser.add_argument("--upload", help="Path to a .tfstate (or JSON state) to upload")
     parser.add_argument("--page-size", type=int, default=10)
+    parser.add_argument(
+        "--rollback-to",
+        help="State version id to roll the workspace back to. The workspace "
+        "will be locked, rolled back, then unlocked.",
+    )
+    parser.add_argument(
+        "--rollback-dry-run",
+        action="store_true",
+        help="With --rollback-to, print the plan without performing the rollback.",
+    )
     args = parser.parse_args()
 
     cfg = TFEConfig(address=args.address, token=args.token)
@@ -110,21 +123,78 @@ def main():
     # 5) (Optional) Upload a new state file
     if args.upload:
         _print_header(f"Uploading new state from: {args.upload}")
-        payload = Path(args.upload).read_bytes()
         try:
+            payload = Path(args.upload).read_bytes()
+            state_obj = json.loads(payload.decode("utf-8"))
+            serial = int(state_obj["serial"])
+            lineage = state_obj.get("lineage")
+            md5 = hashlib.md5(payload).hexdigest()  # nosec B324
+            locked_workspace = False
+
+            try:
+                client.workspaces.lock(
+                    args.workspace_id,
+                    WorkspaceLockOptions(
+                        reason="python-tfe state_versions upload example"
+                    ),
+                )
+                locked_workspace = True
+            except Exception:
+                # Continue in case the workspace is already locked by the caller.
+                pass
+
             # If your server supports signed uploads, this will:
             #   a) create SV (to get upload URL)
             #   b) PUT bytes to the signed URL
             #   c) read back the SV to return a hydrated object
-            new_sv = client.state_versions.upload(
-                args.workspace_id,
-                raw_state=payload,
-                options=StateVersionCreateOptions(),
-            )
+            try:
+                new_sv = client.state_versions.upload(
+                    args.workspace_id,
+                    raw_state=payload,
+                    options=StateVersionCreateOptions(
+                        serial=serial,
+                        md5=md5,
+                        lineage=lineage,
+                    ),
+                )
+            finally:
+                if locked_workspace:
+                    client.workspaces.unlock(args.workspace_id)
             print(f"Uploaded new SV: {new_sv.id} status={new_sv.status}")
+        except FileNotFoundError:
+            print(f"Upload file not found: {args.upload}")
+        except (KeyError, ValueError, json.JSONDecodeError):
+            print(
+                "Upload input must be a valid Terraform state JSON containing at least a serial value."
+            )
         except ErrStateVersionUploadNotSupported as e:
             # Some older/self-hosted versions don’t support direct upload
             print(f"Upload not supported on this server: {e}")
+
+    # 6) (Optional) Roll back to a previous state version
+    if args.rollback_to:
+        _print_header(
+            f"Rolling {args.workspace_id} back to state version {args.rollback_to}"
+        )
+        if args.rollback_dry_run:
+            print("--rollback-dry-run set; not locking or rolling back")
+        else:
+            print("locking workspace ...")
+            client.workspaces.lock(
+                args.workspace_id,
+                WorkspaceLockOptions(reason="python-tfe rollback demo"),
+            )
+            try:
+                new_sv = client.state_versions.rollback(
+                    args.workspace_id, args.rollback_to
+                )
+                print(
+                    f"rollback succeeded — new state version: {new_sv.id} "
+                    f"(serial={new_sv.serial})"
+                )
+            finally:
+                print("unlocking workspace ...")
+                client.workspaces.unlock(args.workspace_id)
 
 
 if __name__ == "__main__":

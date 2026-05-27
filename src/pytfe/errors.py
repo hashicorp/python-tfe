@@ -58,6 +58,24 @@ class RequiredFieldMissing(TFEError): ...
 class ErrStateVersionUploadNotSupported(TFEError): ...
 
 
+class InvalidCallbackURLError(TFEError):
+    def __init__(self, message: str = "Invalid callback URL") -> None:
+        super().__init__(message)
+
+
+class InvalidAccessTokenError(TFEError):
+    def __init__(self, message: str = "Invalid access token") -> None:
+        super().__init__(message)
+
+
+class InvalidTaskResultsCallbackStatusError(TFEError):
+    def __init__(
+        self,
+        message: str = "Invalid task result callback status; must be one of: passed, failed, running",
+    ) -> None:
+        super().__init__(message)
+
+
 # Generic error constants
 ERR_UNAUTHORIZED = "unauthorized"
 ERR_RESOURCE_NOT_FOUND = "resource not found"
@@ -120,6 +138,11 @@ ERR_INVALID_SSH_KEY_ID = "invalid SSH key ID"
 ERR_INVALID_RESERVED_TAG_KEY_ID = "invalid reserved tag key ID"
 ERR_REQUIRED_TAG_KEY = "tag key is required"
 ERR_INVALID_TAG_KEY = "invalid tag key"
+
+# Organization Tag Error Constants
+ERR_INVALID_TAG = "invalid value for tag"
+ERR_REQUIRED_TAG_ID = "tag ID is required"
+ERR_REQUIRED_TAG_WORKSPACE_ID = "workspace ID is required"
 
 
 class WorkspaceNotFound(NotFound): ...
@@ -315,6 +338,13 @@ class InvalidRunTaskCategoryError(InvalidValues):
         super().__init__(message)
 
 
+class InvalidWorkspaceRunTaskIDError(InvalidValues):
+    """Raised when an invalid workspace run task ID is provided."""
+
+    def __init__(self, message: str = "invalid value for workspace run task ID"):
+        super().__init__(message)
+
+
 # Run Trigger errors
 class RequiredRunTriggerListOpsError(RequiredFieldMissing):
     """Raised when required run trigger list options are missing."""
@@ -369,6 +399,13 @@ class InvalidQueryRunIDError(InvalidValues):
     """Raised when an invalid query run ID is provided."""
 
     def __init__(self, message: str = "invalid value for query run ID"):
+        super().__init__(message)
+
+
+class InvalidExplorerSavedViewIDError(InvalidValues):
+    """Raised when a saved view id is missing or blank (Explorer view-scoped routes)."""
+
+    def __init__(self, message: str = "invalid value for explorer saved view ID"):
         super().__init__(message)
 
 
@@ -460,7 +497,7 @@ class InvalidPoliciesError(InvalidValues):
 
 # Policy Evaluation errors
 class InvalidTaskStageIDError(InvalidValues):
-    """Raised when an invalid task stage ID is provided."""
+    """Raised when a task stage ID is invalid."""
 
     def __init__(self, message: str = "invalid value for task stage ID"):
         super().__init__(message)
@@ -529,4 +566,176 @@ class InvalidKeyIDError(InvalidValues):
     """Raised when an invalid key ID is provided."""
 
     def __init__(self, message: str = "invalid value for key-id"):
+        super().__init__(message)
+
+
+# Team errors
+class EmptyTeamNameError(InvalidValues):
+    """Raised when a team name is empty."""
+
+    def __init__(self, message: str = "team names cannot be empty"):
+        super().__init__(message)
+
+
+class InvalidTeamIDError(InvalidValues):
+    """Raised when an invalid team ID is provided."""
+
+    def __init__(self, message: str = "invalid value for team ID"):
+        super().__init__(message)
+
+
+# Team Project Access errors
+class InvalidProjectIDError(InvalidValues):
+    """Raised when an invalid project ID is provided."""
+
+    def __init__(self, message: str = "invalid value for project ID"):
+        super().__init__(message)
+
+
+class RequiredTeamError(RequiredFieldMissing):
+    """Raised when a required team field is missing."""
+
+    def __init__(self, message: str = "team is required"):
+        super().__init__(message)
+
+
+class InvalidTeamProjectAccessIDError(InvalidValues):
+    """Raised when an invalid team project access ID is provided."""
+
+    def __init__(self, message: str = "invalid value for team project access ID"):
+        super().__init__(message)
+
+
+# Registry Provider Platform errors
+class RequiredOSError(RequiredFieldMissing):
+    """Raised when a required OS field is missing."""
+
+    def __init__(self, message: str = "os is required"):
+        super().__init__(message)
+
+
+class RequiredArchError(RequiredFieldMissing):
+    """Raised when a required architecture field is missing."""
+
+    def __init__(self, message: str = "arch is required"):
+        super().__init__(message)
+
+
+class RequiredShasumError(RequiredFieldMissing):
+    """Raised when a required shasum field is missing."""
+
+    def __init__(self, message: str = "shasum is required"):
+        super().__init__(message)
+
+
+class RequiredFilenameError(RequiredFieldMissing):
+    """Raised when a required filename field is missing."""
+
+    def __init__(self, message: str = "filename is required"):
+        super().__init__(message)
+
+
+class InvalidOSError(InvalidValues):
+    """Raised when an invalid OS field is provided."""
+
+    def __init__(self, message: str = "invalid value for os"):
+        super().__init__(message)
+
+
+class InvalidArchError(InvalidValues):
+    """Raised when an invalid architecture field is provided."""
+
+    def __init__(self, message: str = "invalid value for arch"):
+        super().__init__(message)
+
+
+class InvalidNamespaceError(InvalidValues):
+    """Raised when an invalid namespace field is provided."""
+
+    def __init__(self, message: str = "invalid value for namespace"):
+        super().__init__(message)
+
+
+class InvalidRegistryNameError(InvalidValues):
+    """Raised when an invalid registry name field is provided."""
+
+    def __init__(
+        self,
+        message: str = "invalid value for registry-name. It must be either private or public",
+    ):
+        super().__init__(message)
+
+
+# Stack Configuration errors
+class InvalidStackIDError(InvalidValues):
+    """Raised when an invalid stack ID is provided."""
+
+    def __init__(self, message: str = "invalid value for stack ID"):
+        super().__init__(message)
+
+
+class InvalidStackConfigurationIDError(InvalidValues):
+    """Raised when an invalid stack configuration ID is provided."""
+
+    def __init__(self, message: str = "invalid value for stack configuration ID"):
+        super().__init__(message)
+
+
+# Comment errors
+class InvalidCommentIDError(InvalidValues):
+    """Raised when an invalid comment ID is provided."""
+
+    def __init__(self, message: str = "invalid value for comment ID"):
+        super().__init__(message)
+
+
+class RequiredCommentBodyError(TFEError):
+    """Raised when comment body is empty or missing."""
+
+    def __init__(self, message: str = "comment body is required"):
+        super().__init__(message)
+
+
+# Team Token errors
+class InvalidTokenIDError(InvalidValues):
+    """Raised when an invalid authentication token ID is provided."""
+
+    def __init__(self, message: str = "invalid value for token ID"):
+        super().__init__(message)
+
+
+# Agent Pool errors
+class InvalidAgentPoolIDError(InvalidValues):
+    """Raised when an invalid agent pool ID is provided."""
+
+    def __init__(self, message: str = "invalid value for agent pool ID"):
+        super().__init__(message)
+
+
+class RequiredProjectError(RequiredFieldMissing):
+    """Raised when a required project field is missing."""
+
+    def __init__(self, message: str = "project is required"):
+        super().__init__(message)
+
+
+# No-code module errors
+class InvalidNoCodeModuleIDError(InvalidValues):
+    """Raised when an invalid no-code module ID is provided."""
+
+    def __init__(self, message: str = "invalid value for no-code module ID"):
+        super().__init__(message)
+
+
+class InvalidWorkspaceUpgradeIDError(InvalidValues):
+    """Raised when an invalid workspace upgrade ID is provided."""
+
+    def __init__(self, message: str = "invalid value for workspace upgrade ID"):
+        super().__init__(message)
+
+
+class RequiredRegistryModuleIDError(RequiredFieldMissing):
+    """Raised when a registry module ID is required but missing."""
+
+    def __init__(self, message: str = "registry module ID is required"):
         super().__init__(message)

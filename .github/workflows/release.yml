@@ -1,0 +1,175 @@
+name: release
+
+# Publishes the package to PyPI / TestPyPI via manual dispatch only.
+#
+# Flow:
+#   1. Cut and push a git tag (e.g. `v1.0.0`) on a commit merged into main.
+#   2. Actions → release → Run workflow → enter the tag, choose target=testpypi.
+#   3. Verify the TestPyPI release looks correct.
+#   4. Re-run the workflow with the same tag and target=pypi.
+#
+
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Where to publish"
+        required: true
+        default: testpypi
+        type: choice
+        options: [testpypi, pypi]
+      tag:
+        description: "Git tag to publish (e.g. v1.0.0). Must exist on origin and be reachable from main."
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Validate that the inputs are sane and the source commit is releasable.
+  #    - tag input is a bare name (no path separators / refspec tricks)
+  #    - the ref we end up on is genuinely a git tag, not a branch with
+  #      the same name (resolved via refs/tags/$TAG)
+  #    - the tag commit is reachable from origin/main (caught even when
+  #      pyproject version was bumped on an un-merged branch)
+  #    - tag string matches pyproject.toml's version
+  # ---------------------------------------------------------------------------
+  validate:
+    name: Validate release source
+    runs-on: ubuntu-latest
+    outputs:
+      tag-ref: ${{ steps.resolve.outputs.tag-ref }}
+    steps:
+      - name: Sanitise and qualify the tag input
+        id: resolve
+        env:
+          TAG_INPUT: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          # Reject inputs that look like refspecs, paths, or anything other
+          # than a bare tag name. Stops attempts like 'heads/main' or
+          # '../../etc/passwd' or 'refs/tags/v1.0.0' (which would be
+          # double-prefixed below).
+          if [[ "$TAG_INPUT" != "$(printf '%s' "$TAG_INPUT" | tr -d '\n')" ]]; then
+            echo "::error::tag input must not contain newlines."; exit 1
+          fi
+          case "$TAG_INPUT" in
+            ""|*/*|*..*|.*|*' '*) echo "::error::tag input '$TAG_INPUT' must be a bare git tag name (no '/', '..', leading '.', or whitespace)."; exit 1 ;;
+          esac
+          echo "tag-ref=refs/tags/$TAG_INPUT" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout the fully-qualified tag ref
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+        with:
+          # ref must be 'refs/tags/<tag>' (not just '<tag>') so a branch
+          # with the same name cannot win git's dwim resolution.
+          ref: ${{ steps.resolve.outputs.tag-ref }}
+          fetch-depth: 0
+
+      - name: Verify HEAD actually points at the requested tag
+        env:
+          TAG_INPUT: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          # Belt-and-braces: even though we asked for refs/tags/$TAG,
+          # confirm git resolved it to a real tag pointing at HEAD.
+          if ! git tag --points-at HEAD | grep -Fxq "$TAG_INPUT"; then
+            echo "::error::HEAD does not match tag '$TAG_INPUT'. Checkout resolved to a different ref."
+            exit 1
+          fi
+          echo "HEAD is exactly tag '$TAG_INPUT' (commit $(git rev-parse --short HEAD))"
+
+      - name: Verify HEAD is reachable from origin/main
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main:origin-main
+          if ! git merge-base --is-ancestor HEAD origin-main; then
+            echo "::error::Tag commit is not reachable from origin/main."
+            echo "::error::This catches tags placed on branches that were never merged, and tags whose commits were later force-pushed off main."
+            exit 1
+          fi
+          echo "tag commit is on main — OK"
+
+      - name: Set up Python
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+        with:
+          python-version: "3.12"
+
+      - name: Verify tag matches pyproject.toml version
+        env:
+          TAG_INPUT: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          py_ver=$(python -c "import tomllib, pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_bytes())['project']['version'])")
+          if [[ "$TAG_INPUT" != "v${py_ver}" && "$TAG_INPUT" != "$py_ver" ]]; then
+            echo "::error::Tag '$TAG_INPUT' does not match pyproject.toml version '$py_ver' (expected 'v$py_ver' or '$py_ver')."
+            exit 1
+          fi
+          echo "tag '$TAG_INPUT' matches pyproject.toml version '$py_ver'"
+
+  # ---------------------------------------------------------------------------
+  # 2. Run lint + tests across every supported Python version as a release
+  #    gate. Catches "tag exists but main is broken on 3.10" scenarios even
+  #    if branch protection didn't catch it.
+  # ---------------------------------------------------------------------------
+  test:
+    name: Test (py${{ matrix.python-version }})
+    needs: validate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+        with:
+          ref: ${{ needs.validate.outputs.tag-ref }}
+
+      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dev deps and run lint + tests
+        run: |
+          python -m pip install --upgrade pip
+          make dev-install
+          make lint
+          make test
+
+  # ---------------------------------------------------------------------------
+  # 3. Build and upload. Uses bin/publish-pypi.sh verbatim so the local and
+  #    CI publish paths stay identical (single source of truth for build
+  #    flags, twine invocation, and upload URL selection).
+  #
+  #    The environment binding (pypi or testpypi) determines which
+  #    PYPI_API_TOKEN secret resolves at runtime; each environment owns
+  #    its own copy. The same is true for required reviewers — configure
+  #    them per environment in repo Settings.
+  # ---------------------------------------------------------------------------
+  publish:
+    name: Publish to ${{ inputs.target }}
+    needs: [validate, test]
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.target }}
+      # GitHub Environments display URL — distinct from the upload URL,
+      # which lives in bin/publish-pypi.sh. Point it at the project page
+      # of whichever index we are publishing to so the "View deployment"
+      # link in the Actions UI doesn't mislead approvers.
+      url: ${{ (inputs.target == 'testpypi' && 'https://test.pypi.org/project/pytfe/') || 'https://pypi.org/project/pytfe/' }}
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8
+        with:
+          ref: ${{ needs.validate.outputs.tag-ref }}
+
+      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+        with:
+          python-version: "3.12"
+
+      - name: Publish via bin/publish-pypi.sh
+        env:
+          PYPI_TOKEN: ${{ secrets.PYPI_API_TOKEN }}
+          PYPI_REPO: ${{ inputs.target }}
+        run: bash bin/publish-pypi.sh

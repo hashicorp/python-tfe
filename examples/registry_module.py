@@ -304,8 +304,7 @@ def main():
                 registry_name=RegistryName.PRIVATE,
             )
 
-            versions = client.registry_modules.list_versions(module_id)
-            versions_list = list(versions) if hasattr(versions, "__iter__") else []
+            versions_list = list(client.registry_modules.list_versions(module_id))
             print(f"Found {len(versions_list)} versions")
 
             for i, version in enumerate(versions_list[:3], 1):

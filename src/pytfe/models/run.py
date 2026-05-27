@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -15,9 +16,11 @@ from .cost_estimate import CostEstimate
 from .plan import Plan
 from .policy_check import PolicyCheck
 from .run_event import RunEvent
-from .task_stage import TaskStage
 from .user import User
 from .workspace import Workspace
+
+if TYPE_CHECKING:
+    from .task_stage import TaskStage
 
 
 class RunSource(str, Enum):
@@ -125,6 +128,7 @@ class Run(BaseModel):
     terraform_version: str | None = Field(None, alias="terraform-version")
     trigger_reason: str | None = Field(None, alias="trigger-reason")
     variables: list[RunVariableAttr] | None = Field(None, alias="variables")
+    invoke_action_addrs: list[str] | None = Field(None, alias="invoke-action-addrs")
 
     # Relations
     apply: Apply | None = Field(None, alias="apply")
@@ -223,6 +227,8 @@ class RunList(BaseModel):
 
 
 class RunListOptions(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
     page_number: int | None = Field(default=1, alias="page[number]")
     page_size: int | None = Field(default=20, alias="page[size]")
 
@@ -292,6 +298,7 @@ class RunCreateOptions(BaseModel):
     policy_paths: list[str] | None = Field(None, alias="policy-paths")
     auto_apply: bool | None = Field(None, alias="auto-apply")
     variables: list[RunVariable] | None = Field(None, alias="variables")
+    invoke_action_addrs: list[str] | None = Field(None, alias="invoke-action-addrs")
 
 
 class RunReadOptions(BaseModel):
@@ -325,6 +332,6 @@ class RunDiscardOptions(BaseModel):
 
 
 # Rebuild models to resolve forward references
-Run.model_rebuild()
-RunList.model_rebuild()
-OrganizationRunList.model_rebuild()
+Run.model_rebuild(raise_errors=False)
+RunList.model_rebuild(raise_errors=False)
+OrganizationRunList.model_rebuild(raise_errors=False)

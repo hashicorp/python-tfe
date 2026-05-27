@@ -22,6 +22,15 @@ def main():
     )
     parser.add_argument("--token", default=os.getenv("TFE_TOKEN", ""))
     parser.add_argument("--apply-id", required=True, help="Apply ID to work with")
+    parser.add_argument(
+        "--recover-errored-state",
+        action="store_true",
+        help="Fetch the failed-upload state via /applies/{id}/errored-state",
+    )
+    parser.add_argument(
+        "--out",
+        help="When recovering errored state, write the bytes to this path",
+    )
     args = parser.parse_args()
 
     cfg = TFEConfig(address=args.address, token=args.token)
@@ -48,6 +57,27 @@ def main():
     except Exception as e:
         print(f"Error reading apply: {e}")
         return 1
+
+    if args.recover_errored_state:
+        from pytfe.errors import NotFound
+
+        _print_header("Recovering errored state (GET /applies/{id}/errored-state)")
+        try:
+            data = client.applies.errored_state(args.apply_id)
+        except NotFound:
+            print(
+                "No errored state available — apply did not fail during state "
+                "upload, or storage retention has elapsed."
+            )
+        else:
+            print(f"Recovered {len(data)} bytes of errored state")
+            if args.out:
+                with open(args.out, "wb") as f:
+                    f.write(data)
+                print(f"Wrote {args.out}")
+            else:
+                preview = data[:256].decode("utf-8", errors="replace")
+                print(f"--- preview ---\n{preview}\n--- end preview ---")
 
     print("\n" + "=" * 80)
     print("Apply demo completed successfully!")

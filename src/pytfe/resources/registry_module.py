@@ -217,8 +217,23 @@ class RegistryModules(_Service):
 
         return self._parse_registry_module_version(data)
 
-    def list_versions(self, module_id: RegistryModuleID) -> list[RegistryModuleVersion]:  # type: ignore[valid-type]
-        """List all versions of a registry module."""
+    def list_versions(
+        self, module_id: RegistryModuleID
+    ) -> Iterator[RegistryModuleVersion]:
+        """List all versions of a registry module.
+
+        This method intentionally fetches eagerly and returns ``iter(list)``
+        instead of the canonical ``for x in self._list(...): yield ...``
+        pattern used elsewhere in the SDK. The reason is the fallback path:
+        if the primary ``/versions`` endpoint is unavailable, we fall back
+        to reading the module and extracting versions from
+        ``version_statuses``. A pure generator could yield items from the
+        primary endpoint, fail partway, then switch to the fallback and
+        yield duplicates. Eager materialization avoids that risk.
+
+        See ``docs/ITERATORS.md`` for the convention and when it's OK to
+        deviate from it.
+        """
         if not self._validate_module_id(module_id):
             raise ValueError("Invalid module ID")
 
@@ -241,12 +256,12 @@ class RegistryModules(_Service):
             # Handle the case where data might be None or empty
             data = response_data.get("data", []) if response_data else []
 
-            versions = []
+            versions: list[RegistryModuleVersion] = []
             for item in data:
                 if item:  # Skip None items
                     versions.append(self._parse_registry_module_version(item))
 
-            return versions
+            return iter(versions)
 
         except Exception:
             # Fallback: If the API endpoint doesn't exist, try to get versions from the module itself
@@ -270,9 +285,9 @@ class RegistryModules(_Service):
                     }
                     versions.append(self._parse_registry_module_version(version_data))
 
-                return versions
+                return iter(versions)
             except Exception:
-                return []  # Return empty list if all methods fail
+                return iter([])  # Return empty iterator if all methods fail
 
     def read_terraform_registry_module(
         self, module_id: RegistryModuleID, version: str

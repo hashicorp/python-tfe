@@ -4,23 +4,26 @@
 from __future__ import annotations
 
 from enum import Enum
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
 from ..models.common import Pagination
 from .agent import AgentPool
 from .organization import Organization
-from .workspace_run_task import WorkspaceRunTask
+
+if TYPE_CHECKING:
+    from .workspace_run_task import WorkspaceRunTask
 
 
 class RunTask(BaseModel):
     id: str
-    name: str
+    name: str | None = None
     description: str | None = None
-    url: str
-    category: str
+    url: str | None = None
+    category: str | None = None
     hmac_key: str | None = None
-    enabled: bool
+    enabled: bool | None = None
     global_configuration: GlobalRunTask | None = None
 
     agent_pool: AgentPool | None = None
@@ -41,10 +44,10 @@ class GlobalRunTaskOptions(BaseModel):
 
 
 class Stage(str, Enum):
-    PRE_PLAN = "pre-plan"
-    POST_PLAN = "post-plan"
-    PRE_APPLY = "pre-apply"
-    POST_APPLY = "post-apply"
+    PRE_PLAN = "pre_plan"
+    POST_PLAN = "post_plan"
+    PRE_APPLY = "pre_apply"
+    POST_APPLY = "post_apply"
 
 
 class TaskEnforcementLevel(str, Enum):

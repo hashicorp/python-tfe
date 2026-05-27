@@ -11,9 +11,20 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import TYPE_CHECKING
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from ..errors import (
+    InvalidNameError,
+    RequiredNameError,
+)
+from ..utils import valid_string, valid_string_id
+from .organization import Organization
+from .workspace import Workspace
+
+if TYPE_CHECKING:
+    from .project import Project
 
 
 class AgentStatus(str, Enum):
@@ -22,13 +33,6 @@ class AgentStatus(str, Enum):
     IDLE = "idle"
     BUSY = "busy"
     UNKNOWN = "unknown"
-
-
-class AgentPoolAllowedWorkspacePolicy(str, Enum):
-    """Agent pool allowed workspace policy enumeration."""
-
-    ALL_WORKSPACES = "all-workspaces"
-    SPECIFIC_WORKSPACES = "specific-workspaces"
 
 
 class Agent(BaseModel):
@@ -48,72 +52,114 @@ class Agent(BaseModel):
 class AgentPool(BaseModel):
     """Agent Pool represents a Terraform Enterprise agent pool."""
 
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
     id: str
-    name: str | None = None
-    created_at: datetime | None = None
-    organization_scoped: bool | None = None
-    allowed_workspace_policy: AgentPoolAllowedWorkspacePolicy | None = None
-    agent_count: int = 0
+    name: str | None = Field(default=None, alias="name")
+    created_at: datetime | None = Field(default=None, alias="created-at")
+    organization_scoped: bool | None = Field(default=None, alias="organization-scoped")
+    agent_count: int | None = Field(default=None, alias="agent-count")
 
     # Relations
-    organization: Any | None = None  # Organization type from main types
-    workspaces: list[Any] = Field(default_factory=list)  # Workspace types
+    organization: Organization | None = Field(default=None, alias="organization")
+    workspaces: list[Workspace] = Field(default_factory=list, alias="workspaces")
     agents: list[Agent] = Field(default_factory=list)
+    allowed_workspaces: list[Workspace] = Field(
+        default_factory=list, alias="allowed-workspaces"
+    )
+    excluded_workspaces: list[Workspace] = Field(
+        default_factory=list, alias="excluded-workspaces"
+    )
+    allowed_projects: list[Project] = Field(
+        default_factory=list, alias="allowed-projects"
+    )
 
 
-# Agent Pool Options
+class AgentPoolIncludeOpt(str, Enum):
+    AGENT_POOL_WORKSPACES = "workspaces"
 
 
 class AgentPoolListOptions(BaseModel):
     """Options for listing agent pools."""
 
-    # Pagination options
-    page_number: int | None = None
-    page_size: int | None = None
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    page_size: int | None = Field(default=None, alias="page[size]")
     # Optional: Include related resources
-    include: list[str] | None = None
-    # Optional: Filter by allowed workspace policy
-    allowed_workspace_policy: AgentPoolAllowedWorkspacePolicy | None = None
+    include: list[AgentPoolIncludeOpt] | None = Field(default=None, alias="include")
+    query: str | None = Field(default=None, alias="q")
+    allowed_workspace_name: str | None = Field(
+        default=None, alias="filter[allowed_workspaces][name]"
+    )
+    allowed_project_name: str | None = Field(
+        default=None, alias="filter[allowed_projects][name]"
+    )
+    sort: str | None = Field(default=None, alias="sort")
 
 
 class AgentPoolCreateOptions(BaseModel):
     """Options for creating an agent pool."""
 
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
     # Required: A name to identify the agent pool
-    name: str
-    # Optional: Whether the agent pool is organization scoped
-    organization_scoped: bool | None = None
-    # Optional: Allowed workspace policy
-    allowed_workspace_policy: AgentPoolAllowedWorkspacePolicy | None = None
-    # Optional: IDs of workspaces allowed to use this pool (sent as relationships.allowed-workspaces)
-    allowed_workspace_ids: list[str] = Field(default_factory=list)
-    # Optional: IDs of workspaces excluded from this pool (sent as relationships.excluded-workspaces)
-    excluded_workspace_ids: list[str] = Field(default_factory=list)
+    name: str = Field(alias="name")
+    organization_scoped: bool | None = Field(default=None, alias="organization-scoped")
+    allowed_workspace_ids: list[str] | None = Field(
+        default=None, alias="allowed-workspaces"
+    )
+    excluded_workspace_ids: list[str] | None = Field(
+        default=None, alias="excluded-workspaces"
+    )
+    allowed_project_ids: list[str] | None = Field(
+        default=None, alias="allowed-projects"
+    )
+
+    @model_validator(mode="after")
+    def valid(self) -> AgentPoolCreateOptions:
+        """Validate the options for creating an agent pool."""
+        if not valid_string(self.name):
+            raise RequiredNameError()
+        if not valid_string_id(self.name):
+            raise InvalidNameError()
+
+        return self
 
 
 class AgentPoolUpdateOptions(BaseModel):
     """Options for updating an agent pool."""
 
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
     # Optional: A name to identify the agent pool
-    name: str | None = None
-    # Optional: Whether the agent pool is organization scoped
-    organization_scoped: bool | None = None
-    # Optional: Allowed workspace policy
-    allowed_workspace_policy: AgentPoolAllowedWorkspacePolicy | None = None
-    # Optional: Full replacement list of workspace IDs allowed to use this pool
-    allowed_workspace_ids: list[str] = Field(default_factory=list)
-    # Optional: Full replacement list of workspace IDs excluded from this pool
-    excluded_workspace_ids: list[str] = Field(default_factory=list)
+    name: str | None = Field(default=None, alias="name")
+    organization_scoped: bool | None = Field(default=None, alias="organization-scoped")
+    allowed_workspace_ids: list[str] | None = Field(
+        default=None, alias="allowed-workspaces"
+    )
+    excluded_workspace_ids: list[str] | None = Field(
+        default=None, alias="excluded-workspaces"
+    )
+    allowed_project_ids: list[str] | None = Field(
+        default=None, alias="allowed-projects"
+    )
+
+    @model_validator(mode="after")
+    def valid(self) -> AgentPoolUpdateOptions:
+        """Validate the options for updating an agent pool."""
+        if self.name is not None and not valid_string_id(self.name):
+            raise InvalidNameError()
+
+        return self
 
 
 class AgentPoolReadOptions(BaseModel):
     """Options for reading an agent pool."""
 
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
     # Optional: Include related resources
-    include: list[str] | None = None
-
-
-# Agent Pool Workspace Assignment Options
+    include: list[AgentPoolIncludeOpt] | None = Field(default=None, alias="include")
 
 
 class AgentPoolAssignToWorkspacesOptions(BaseModel):
@@ -128,7 +174,10 @@ class AgentPoolRemoveFromWorkspacesOptions(BaseModel):
     workspace_ids: list[str] = Field(default_factory=list)
 
 
-# Agent Options
+class AgentPoolAssignToProjectsOptions(BaseModel):
+    """Options for assigning an agent pool to projects."""
+
+    project_ids: list[str] = Field(default_factory=list)
 
 
 class AgentListOptions(BaseModel):

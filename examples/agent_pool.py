@@ -27,7 +27,7 @@ import uuid
 from pytfe import TFEClient, TFEConfig
 from pytfe.errors import NotFound
 from pytfe.models import (
-    AgentPoolAllowedWorkspacePolicy,
+    AgentPoolAssignToProjectsOptions,
     AgentPoolAssignToWorkspacesOptions,
     AgentPoolCreateOptions,
     AgentPoolListOptions,
@@ -46,6 +46,7 @@ def main():
     workspace_id = os.environ.get(
         "TFE_WORKSPACE_ID"
     )  # optional, for workspace assignment
+    project_id = os.environ.get("TFE_PROJECT_ID")  # optional, for project assignment
 
     if not token:
         print("TFE_TOKEN environment variable is required")
@@ -81,7 +82,6 @@ def main():
         create_options = AgentPoolCreateOptions(
             name=unique_name,
             organization_scoped=True,  # Optional parameter
-            allowed_workspace_policy=AgentPoolAllowedWorkspacePolicy.ALL_WORKSPACES,  # Optional
         )
 
         new_pool = client.agent_pools.create(org, create_options)
@@ -92,7 +92,6 @@ def main():
         pool_details = client.agent_pools.read(new_pool.id)
         print(f"Name: {pool_details.name}")
         print(f"Organization Scoped: {pool_details.organization_scoped}")
-        print(f"Policy: {pool_details.allowed_workspace_policy}")
         print(f"Agent Count: {pool_details.agent_count}")
 
         # Example 4: Update the agent pool
@@ -124,6 +123,14 @@ def main():
             print(f"  Removed workspace {workspace_id} from pool {updated_pool.name}")
         else:
             print("\n Skipping workspace assignment (set TFE_WORKSPACE_ID to test)")
+
+        if project_id:
+            print("\n Assigning project to agent pool...")
+            updated_pool = client.agent_pools.assign_to_projects(
+                new_pool.id,
+                AgentPoolAssignToProjectsOptions(project_ids=[project_id]),
+            )
+            print(f"  Assigned project {project_id} to pool {updated_pool.name}")
 
         # Example 6: Create an agent token
         print("\n Creating agent token...")

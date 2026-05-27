@@ -8,11 +8,17 @@ from .config import TFEConfig
 from .resources.agent_pools import AgentPools
 from .resources.agents import Agents, AgentTokens
 from .resources.apply import Applies
+from .resources.comment import Comments
 from .resources.configuration_version import ConfigurationVersions
+from .resources.explorer import Explorer
+from .resources.no_code_module import NoCodeModules
 from .resources.notification_configuration import NotificationConfigurations
 from .resources.oauth_client import OAuthClients
 from .resources.oauth_token import OAuthTokens
+from .resources.organization_audit_configuration import OrganizationAuditConfigurations
 from .resources.organization_membership import OrganizationMemberships
+from .resources.organization_tags import OrganizationTags
+from .resources.organization_token import OrganizationTokens
 from .resources.organizations import Organizations
 from .resources.plan import Plans
 from .resources.policy import Policies
@@ -26,18 +32,30 @@ from .resources.projects import Projects
 from .resources.query_run import QueryRuns
 from .resources.registry_module import RegistryModules
 from .resources.registry_provider import RegistryProviders
+from .resources.registry_provider_platform import RegistryProviderPlatforms
 from .resources.registry_provider_version import RegistryProviderVersions
 from .resources.reserved_tag_key import ReservedTagKeys
 from .resources.run import Runs
 from .resources.run_event import RunEvents
 from .resources.run_task import RunTasks
+from .resources.run_task_integration import RunTaskIntegrations
 from .resources.run_trigger import RunTriggers
 from .resources.ssh_keys import SSHKeys
+from .resources.stack import Stacks
+from .resources.stack_configuration import StackConfigurations
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
+from .resources.task_result import TaskResults
+from .resources.task_stage import TaskStages
+from .resources.team import Teams
+from .resources.team_project_access import TeamProjectAccesses
+from .resources.team_token import TeamTokens
+from .resources.team_workspace_access import TeamWorkspaceAccesses
+from .resources.user import Users
 from .resources.variable import Variables
 from .resources.variable_sets import VariableSets, VariableSetVariables
 from .resources.workspace_resources import WorkspaceResourcesService
+from .resources.workspace_run_task import WorkspaceRunTasks
 from .resources.workspaces import Workspaces
 
 
@@ -72,25 +90,45 @@ class TFEClient:
         self.plans = Plans(self._transport)
         self.organizations = Organizations(self._transport)
         self.organization_memberships = OrganizationMemberships(self._transport)
+        self.organization_audit_configurations = OrganizationAuditConfigurations(
+            self._transport
+        )
+        self.explorer = Explorer(
+            self._transport
+        )  # org Explorer queries and saved views
 
+        self.users = Users(self._transport)
+        self.task_results = TaskResults(self._transport)
+        self.organization_tags = OrganizationTags(self._transport)
+        self.organization_tokens = OrganizationTokens(self._transport)
         self.projects = Projects(self._transport)
         self.variables = Variables(self._transport)
         self.variable_sets = VariableSets(self._transport)
         self.variable_set_variables = VariableSetVariables(self._transport)
         self.workspaces = Workspaces(self._transport)
         self.workspace_resources = WorkspaceResourcesService(self._transport)
+        self.workspace_run_tasks = WorkspaceRunTasks(self._transport)
         self.registry_modules = RegistryModules(self._transport)
+        self.no_code_modules = NoCodeModules(self._transport)
         self.registry_providers = RegistryProviders(self._transport)
         self.registry_provider_versions = RegistryProviderVersions(self._transport)
+        self.registry_provider_platforms = RegistryProviderPlatforms(self._transport)
+
+        # Stack resources
+        self.stacks = Stacks(self._transport)
+        self.stack_configurations = StackConfigurations(self._transport)
 
         # State and execution resources
         self.state_versions = StateVersions(self._transport)
         self.state_version_outputs = StateVersionOutputs(self._transport)
         self.run_tasks = RunTasks(self._transport)
+        self.run_task_integrations = RunTaskIntegrations(self._transport)
         self.run_triggers = RunTriggers(self._transport)
         self.runs = Runs(self._transport)
+        self.task_stages = TaskStages(self._transport)
         self.query_runs = QueryRuns(self._transport)
         self.run_events = RunEvents(self._transport)
+        self.comments = Comments(self._transport)
         self.policies = Policies(self._transport)
         self.policy_evaluations = PolicyEvaluations(self._transport)
         self.policy_checks = PolicyChecks(self._transport)
@@ -101,6 +139,12 @@ class TFEClient:
 
         # SSH Keys
         self.ssh_keys = SSHKeys(self._transport)
+
+        # Team project access
+        self.teams = Teams(self._transport)
+        self.team_project_accesses = TeamProjectAccesses(self._transport)
+        self.team_tokens = TeamTokens(self._transport)
+        self.team_workspace_accesses = TeamWorkspaceAccesses(self._transport)
 
         # Reserved Tag Key
         self.reserved_tag_key = ReservedTagKeys(self._transport)

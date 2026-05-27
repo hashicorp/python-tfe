@@ -10,11 +10,15 @@ import pytest
 from pytfe._http import HTTPTransport
 from pytfe.errors import (
     InvalidKeyIDError,
+    InvalidNameError,
+    InvalidNamespaceError,
+    InvalidOrgError,
     InvalidVersionError,
     RequiredPrivateRegistryError,
 )
 from pytfe.models.registry_provider import (
     RegistryName,
+    RegistryProvider,
     RegistryProviderID,
 )
 from pytfe.models.registry_provider_version import (
@@ -59,34 +63,52 @@ class TestRegistryProviderVersions:
             version="1.0.0",
         )
 
-    def test_validate_provider_id_success(self, versions_service, valid_provider_id):
-        """Test _validate_provider_id with valid provider ID."""
-        result = versions_service._validate_provider_id(valid_provider_id)
-        assert result is True
-
-    def test_validate_provider_id_invalid_organization(
-        self, versions_service, valid_provider_id
-    ):
-        """Test _validate_provider_id with invalid organization name."""
-        valid_provider_id.organization_name = ""
-        result = versions_service._validate_provider_id(valid_provider_id)
-        assert result is False
-
     def test_create_version_validations(self, versions_service):
-        """Test create method validations."""
-        # Test with invalid provider ID
-        invalid_provider_id = RegistryProviderID(
-            organization_name="",
-            registry_name=RegistryName.PRIVATE,
-            namespace="test-namespace",
-            name="test-provider",
-        )
-        options = RegistryProviderVersionCreateOptions(
-            version="1.0.0", **{"key-id": "test-key-id"}, protocols=["5.0"]
-        )
+        """Test create method raises error when constructing invalid provider ID."""
+        with pytest.raises(InvalidOrgError):
+            RegistryProviderID(
+                organization_name="",
+                registry_name=RegistryName.PRIVATE,
+                namespace="test-namespace",
+                name="test-provider",
+            )
 
-        with pytest.raises(ValueError, match="Invalid provider ID"):
-            versions_service.create(invalid_provider_id, options)
+    def test_invalid_provider_id_fields(self):
+        """Test RegistryProviderID raises correct error for each invalid field."""
+        base = {
+            "organization_name": "test-org",
+            "registry_name": RegistryName.PRIVATE,
+            "namespace": "test-namespace",
+            "name": "test-provider",
+        }
+        with pytest.raises(InvalidOrgError):
+            RegistryProviderID(**{**base, "organization_name": ""})
+        with pytest.raises(InvalidOrgError):
+            RegistryProviderID(**{**base, "organization_name": "   "})
+        with pytest.raises(InvalidNameError):
+            RegistryProviderID(**{**base, "name": ""})
+        with pytest.raises(InvalidNamespaceError):
+            RegistryProviderID(**{**base, "namespace": ""})
+
+    def test_invalid_version_id_fields(self):
+        """Test RegistryProviderVersionID raises correct error for each invalid field."""
+        base = {
+            "organization_name": "test-org",
+            "registry_name": RegistryName.PRIVATE,
+            "namespace": "test-namespace",
+            "name": "test-provider",
+            "version": "1.0.0",
+        }
+        with pytest.raises(InvalidOrgError):
+            RegistryProviderVersionID(**{**base, "organization_name": ""})
+        with pytest.raises(InvalidNameError):
+            RegistryProviderVersionID(**{**base, "name": ""})
+        with pytest.raises(InvalidNamespaceError):
+            RegistryProviderVersionID(**{**base, "namespace": ""})
+        with pytest.raises(InvalidVersionError):
+            RegistryProviderVersionID(**{**base, "version": ""})
+        with pytest.raises(RequiredPrivateRegistryError):
+            RegistryProviderVersionID(**{**base, "registry_name": RegistryName.PUBLIC})
 
     def test_create_version_requires_private_registry(
         self, versions_service, mock_transport
@@ -240,17 +262,15 @@ class TestRegistryProviderVersions:
         assert result[1].shasums_uploaded is True
 
     def test_read_version_validations(self, versions_service):
-        """Test read method with invalid version ID."""
-        invalid_version_id = RegistryProviderVersionID(
-            organization_name="",
-            registry_name=RegistryName.PRIVATE,
-            namespace="test-namespace",
-            name="test-provider",
-            version="1.0.0",
-        )
-
-        with pytest.raises(ValueError, match="Invalid provider ID"):
-            versions_service.read(invalid_version_id)
+        """Test read method raises error when constructing invalid version ID."""
+        with pytest.raises(InvalidOrgError):
+            RegistryProviderVersionID(
+                organization_name="",
+                registry_name=RegistryName.PRIVATE,
+                namespace="test-namespace",
+                name="test-provider",
+                version="1.0.0",
+            )
 
     def test_read_version_success(
         self, versions_service, valid_version_id, mock_transport
@@ -359,10 +379,8 @@ class TestRegistryProviderVersions:
         assert result.id == "provver-123"
         assert result.version == "1.0.0"
         assert result.key_id == "test-key-id"
-        assert result.registry_provider == {
-            "id": "prov-123",
-            "type": "registry-providers",
-        }
+        assert isinstance(result.registry_provider, RegistryProvider)
+        assert result.registry_provider.id == "prov-123"
         assert result.registry_provider_platforms is not None
         assert len(result.registry_provider_platforms) == 2
 

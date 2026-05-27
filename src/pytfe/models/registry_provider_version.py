@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -16,8 +16,12 @@ from ..errors import (
 from ..utils import valid_string_id
 from .registry_provider import (
     RegistryName,
+    RegistryProvider,
     RegistryProviderID,
 )
+
+if TYPE_CHECKING:
+    from .registry_provider_platform import RegistryProviderPlatform
 
 
 class RegistryProviderVersionPermissions(BaseModel):
@@ -35,20 +39,24 @@ class RegistryProviderVersion(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     id: str
-    version: str
-    created_at: datetime = Field(alias="created-at")
-    updated_at: datetime = Field(alias="updated-at")
-    key_id: str = Field(alias="key-id")
-    protocols: list[str]
-    permissions: RegistryProviderVersionPermissions
-    shasums_uploaded: bool = Field(alias="shasums-uploaded")
-    shasums_sig_uploaded: bool = Field(alias="shasums-sig-uploaded")
+    version: str = Field(alias="version", default="")
+    created_at: datetime | None = Field(alias="created-at", default=None)
+    updated_at: datetime | None = Field(alias="updated-at", default=None)
+    key_id: str = Field(alias="key-id", default="")
+    protocols: list[str] = Field(alias="protocols", default_factory=list)
+    permissions: RegistryProviderVersionPermissions | None = Field(
+        alias="permissions", default=None
+    )
+    shasums_uploaded: bool | None = Field(alias="shasums-uploaded", default=None)
+    shasums_sig_uploaded: bool | None = Field(
+        alias="shasums-sig-uploaded", default=None
+    )
 
     # Relations
-    registry_provider: dict[str, Any] | None = Field(
+    registry_provider: RegistryProvider | None = Field(
         alias="registry-provider", default=None
     )
-    registry_provider_platforms: list[dict[str, Any]] | None = Field(
+    registry_provider_platforms: list[RegistryProviderPlatform] | None = Field(
         alias="platforms", default=None
     )
 
@@ -142,7 +150,7 @@ class RegistryProviderVersionID(RegistryProviderID):
     version: str
 
     @model_validator(mode="after")
-    def valid(self) -> RegistryProviderVersionID:
+    def valid_version_id(self) -> RegistryProviderVersionID:
         if not valid_string_id(self.version):
             raise InvalidVersionError()
         if self.registry_name != RegistryName.PRIVATE:

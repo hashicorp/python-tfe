@@ -268,6 +268,29 @@ class Projects(_Service):
         path = f"/api/v2/projects/{project_id}"
         self.t.request("DELETE", path)
 
+    def move_workspaces(
+        self, project_id: str, workspace_ids: builtins.list[str]
+    ) -> None:
+        """Move one or more workspaces into a project.
+
+        The caller must have permission to move each workspace out of its
+        current project and into the target project.
+        """
+        if not valid_string_id(project_id):
+            raise ValueError("Project ID is required and must be valid")
+        if not workspace_ids:
+            raise ValueError("at least one workspace id is required")
+        for wid in workspace_ids:
+            if not valid_string_id(wid):
+                raise ValueError(f"invalid workspace id: {wid!r}")
+        payload = {"data": [{"id": wid, "type": "workspaces"} for wid in workspace_ids]}
+        self.t.request(
+            "POST",
+            f"/api/v2/projects/{project_id}/relationships/workspaces",
+            json_body=payload,
+        )
+        return None
+
     def list_tag_bindings(self, project_id: str) -> builtins.list[TagBinding]:
         """List tag bindings for a project"""
         # Validate inputs
@@ -292,29 +315,21 @@ class Projects(_Service):
 
     def list_effective_tag_bindings(
         self, project_id: str
-    ) -> builtins.list[EffectiveTagBinding]:
-        """List effective tag bindings for a project"""
-        # Validate inputs
+    ) -> Iterator[EffectiveTagBinding]:
+        """List effective tag bindings for a project."""
         if not valid_string_id(project_id):
             raise ValueError("Project ID is required and must be valid")
 
         path = f"/api/v2/projects/{project_id}/effective-tag-bindings"
-        response = self.t.request("GET", path)
-        data = response.json()["data"]
-
-        effective_tag_bindings = []
-        for item in data:
+        for item in self._list(path):
             attr = item.get("attributes", {}) or {}
             links = item.get("links", {}) or {}
-            effective_tag_binding = EffectiveTagBinding(
+            yield EffectiveTagBinding(
                 id=_safe_str(item.get("id")),
                 key=_safe_str(attr.get("key")),
                 value=_safe_str(attr.get("value")),
                 links=links,
             )
-            effective_tag_bindings.append(effective_tag_binding)
-
-        return effective_tag_bindings
 
     def add_tag_bindings(
         self, project_id: str, options: ProjectAddTagBindingsOptions
