@@ -76,6 +76,19 @@ from .explorer import (
 )
 
 # ── Notification Configurations ───────────────────────────────────────────────
+from .no_code_module import (
+    NoCodeModule,
+    NoCodeModuleCreateOptions,
+    NoCodeModuleIncludeOpt,
+    NoCodeModuleReadOptions,
+    NoCodeModuleUpdateOptions,
+    NoCodeVariableOption,
+    NoCodeWorkspaceCreateOptions,
+    NoCodeWorkspaceUpgradeOptions,
+    NoCodeWorkspaceVariable,
+    RegistryModuleVariable,
+    WorkspaceUpgrade,
+)
 from .notification_configuration import (
     DeliveryResponse,
     NotificationConfiguration,
@@ -523,6 +536,18 @@ from .workspace_run_task import (
 
 # ── Public surface ────────────────────────────────────────────────────────────
 __all__ = [
+    # No-code provisioning
+    "NoCodeModule",
+    "NoCodeModuleCreateOptions",
+    "NoCodeModuleIncludeOpt",
+    "NoCodeModuleReadOptions",
+    "NoCodeModuleUpdateOptions",
+    "NoCodeVariableOption",
+    "NoCodeWorkspaceCreateOptions",
+    "NoCodeWorkspaceUpgradeOptions",
+    "NoCodeWorkspaceVariable",
+    "RegistryModuleVariable",
+    "WorkspaceUpgrade",
     # Notification configurations
     "DeliveryResponse",
     "NotificationConfiguration",

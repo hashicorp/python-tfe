@@ -11,6 +11,7 @@ from .resources.apply import Applies
 from .resources.comment import Comments
 from .resources.configuration_version import ConfigurationVersions
 from .resources.explorer import Explorer
+from .resources.no_code_module import NoCodeModules
 from .resources.notification_configuration import NotificationConfigurations
 from .resources.oauth_client import OAuthClients
 from .resources.oauth_token import OAuthTokens
@@ -108,6 +109,7 @@ class TFEClient:
         self.workspace_resources = WorkspaceResourcesService(self._transport)
         self.workspace_run_tasks = WorkspaceRunTasks(self._transport)
         self.registry_modules = RegistryModules(self._transport)
+        self.no_code_modules = NoCodeModules(self._transport)
         self.registry_providers = RegistryProviders(self._transport)
         self.registry_provider_versions = RegistryProviderVersions(self._transport)
         self.registry_provider_platforms = RegistryProviderPlatforms(self._transport)

@@ -81,6 +81,7 @@ column.
 | `client.agents` | `Agents` | `list`, `read`, `delete` | [agent.py](../../examples/agent.py) | [Agents](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/agents) |
 | `client.agent_tokens` | `AgentTokens` | `list`, `read`, `create`, `delete` | [agent.py](../../examples/agent.py) | [Agent tokens](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/agent-tokens) |
 | `client.registry_modules` | `RegistryModules` | `list`, `read`, `create`, `update`, `delete`, version and upload helpers | [registry_module.py](../../examples/registry_module.py) | [Registry modules](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/private-registry/modules) |
+| `client.no_code_modules` | `NoCodeModules` | `create`, `read`, `update`, `delete`, `read_variables`, `create_workspace`, `upgrade_workspace`, `read_workspace_upgrade`, `confirm_workspace_upgrade` | [no_code_provisioning.py](../../examples/no_code_provisioning.py) | [No-code provisioning](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/no-code-provisioning) |
 | `client.registry_providers` | `RegistryProviders` | `list`, `read`, `create`, `delete` | [registry_provider.py](../../examples/registry_provider.py) | [Registry providers](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/private-registry/providers) |
 | `client.registry_provider_versions` | `RegistryProviderVersions` | `list`, `read`, `create`, `delete` | [registry_provider_version.py](../../examples/registry_provider_version.py) | [Registry providers](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/private-registry/providers) |
 | `client.registry_provider_platforms` | `RegistryProviderPlatforms` | `list`, `read`, `create`, `delete` | [registry_provider_platform.py](../../examples/registry_provider_platform.py) | [Registry providers](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/private-registry/providers) |
@@ -103,3 +104,4 @@ column.
 - [teams-and-access.md](teams-and-access.md)
 - [policies.md](policies.md)
 - [run-tasks.md](run-tasks.md)
+- [no-code-provisioning.md](no-code-provisioning.md)

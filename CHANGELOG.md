@@ -61,6 +61,9 @@
 ### Team Workspace Access
 * Added Team Workspace Access resource list, read, add, update and remove methods along with models and examples for managing team access to workspaces by @iam404 [#168](https://github.com/hashicorp/python-tfe/pull/168)
 
+### No-Code Provisioning
+* Added no_code_modules resource with create, read, update, delete, read_variables, create_workspace, upgrade_workspace, read_workspace_upgrade, and confirm_workspace_upgrade methods.
+
 ## Enhancements
 
 ### Terraform Actions
@@ -97,7 +100,8 @@
 ## Bug Fixes
 * Fixed task result relationships to map into typed SDK models instead of raw JSON by @TanyaSingh369-svg [#156](https://github.com/hashicorp/python-tfe/pull/156)
 * Fixed task stage relationship mapping in the task result resource by @TanyaSingh369-svg [#156](https://github.com/hashicorp/python-tfe/pull/156)
-* Updated variable set models to support ``global_`` inputs. Since ``global`` is a Python reserved word, callers previously had to use ``model_validate`` as a workaround; existing ``global`` alias usage continues to work unchanged.
+* Updated variable set models to support **global_** inputs. Since **global** is a Python reserved word, callers previously had to use **model_validate** as a workaround; existing **global** alias usage continues to work unchanged.
+* Fixed the workspace JSON:API parser to populate the singular agent_pool field instead of writing to a non-existent agent_pools key. The relationship was previously parsed off the wire but silently dropped because the model field is singular; workspace.agent_pool now returns the related AgentPool stub as documented.
 
 
 # v0.1.5

@@ -717,3 +717,25 @@ class RequiredProjectError(RequiredFieldMissing):
 
     def __init__(self, message: str = "project is required"):
         super().__init__(message)
+
+
+# No-code module errors
+class InvalidNoCodeModuleIDError(InvalidValues):
+    """Raised when an invalid no-code module ID is provided."""
+
+    def __init__(self, message: str = "invalid value for no-code module ID"):
+        super().__init__(message)
+
+
+class InvalidWorkspaceUpgradeIDError(InvalidValues):
+    """Raised when an invalid workspace upgrade ID is provided."""
+
+    def __init__(self, message: str = "invalid value for workspace upgrade ID"):
+        super().__init__(message)
+
+
+class RequiredRegistryModuleIDError(RequiredFieldMissing):
+    """Raised when a registry module ID is required but missing."""
+
+    def __init__(self, message: str = "registry module ID is required"):
+        super().__init__(message)
