@@ -95,14 +95,18 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
         with:
-          python-version: "3.12"
+          python-version: "3.10"
 
       - name: Verify tag matches pyproject.toml version
         env:
           TAG_INPUT: ${{ inputs.tag }}
         run: |
           set -euo pipefail
-          py_ver=$(python -c "import tomllib, pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_bytes())['project']['version'])")
+          # Parse [project].version with a regex anchored at column 0 so it
+          # can't accidentally match `target-version` or `python_version`
+          # entries further down. tomllib would be cleaner but isn't in
+          # 3.10's stdlib, and pulling in tomli for one read isn't worth it.
+          py_ver=$(python -c "import re,sys; m=re.search(r'(?m)^version\s*=\s*\"([^\"]+)\"', open('pyproject.toml').read()); sys.exit('version not found in pyproject.toml') if not m else print(m.group(1))")
           if [[ "$TAG_INPUT" != "v${py_ver}" && "$TAG_INPUT" != "$py_ver" ]]; then
             echo "::error::Tag '$TAG_INPUT' does not match pyproject.toml version '$py_ver' (expected 'v$py_ver' or '$py_ver')."
             exit 1
@@ -166,7 +170,7 @@ jobs:
 
       - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
         with:
-          python-version: "3.12"
+          python-version: "3.10"
 
       - name: Publish via bin/publish-pypi.sh
         env:
