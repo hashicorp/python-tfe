@@ -65,12 +65,9 @@ missing, and the IAM trust + EC2 policies are refreshed in place.
 
 from __future__ import annotations
 
-import hashlib
 import io
 import json
 import os
-import socket
-import ssl
 import sys
 import tarfile
 import time
@@ -104,6 +101,12 @@ DESTROY_AFTER_VERIFY = os.environ.get(
 
 OIDC_PROVIDER_URL = "app.terraform.io"
 OIDC_AUDIENCE = "aws.workload.identity"
+
+# Placeholder thumbprint for IAM's CreateOpenIDConnectProvider. AWS no
+# longer validates this field for providers backed by Amazon Trust Services
+# CAs (app.terraform.io is one) — any 40-char hex string is accepted.
+# See: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html
+OIDC_PROVIDER_THUMBPRINT_PLACEHOLDER = "0" * 40
 
 # Tag applied to the test instance so we can find/verify it later.
 INSTANCE_NAME_TAG = WORKSPACE_NAME
@@ -176,20 +179,6 @@ def banner(s: str) -> None:
     print("=" * 72)
 
 
-def get_app_terraform_thumbprint() -> str:
-    """Fetch the leaf cert SHA1 thumbprint for app.terraform.io.
-
-    AWS no longer strictly enforces this thumbprint for IdPs backed by
-    Amazon Trust Services CAs (since July 2023), but the API still
-    requires the field. We pass the real leaf thumbprint for correctness.
-    """
-    ctx = ssl.create_default_context()
-    with socket.create_connection((OIDC_PROVIDER_URL, 443), timeout=10) as sock:
-        with ctx.wrap_socket(sock, server_hostname=OIDC_PROVIDER_URL) as ssock:
-            cert = ssock.getpeercert(binary_form=True)
-    return hashlib.sha1(cert).hexdigest()  # noqa: S324 (intentional: AWS API expects SHA1)
-
-
 def ensure_oidc_provider(iam) -> str:
     """Create or reuse the app.terraform.io OIDC provider. Returns ARN."""
     expected_url = f"https://{OIDC_PROVIDER_URL}"
@@ -199,11 +188,10 @@ def ensure_oidc_provider(iam) -> str:
             print(f"  reusing OIDC provider: {p['Arn']}")
             return p["Arn"]
 
-    thumbprint = get_app_terraform_thumbprint()
     resp = iam.create_open_id_connect_provider(
         Url=expected_url,
         ClientIDList=[OIDC_AUDIENCE],
-        ThumbprintList=[thumbprint],
+        ThumbprintList=[OIDC_PROVIDER_THUMBPRINT_PLACEHOLDER],
     )
     arn = resp["OpenIDConnectProviderArn"]
     print(f"  created OIDC provider: {arn}")

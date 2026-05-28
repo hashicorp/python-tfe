@@ -59,11 +59,8 @@ Re-runs are idempotent.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
-import socket
-import ssl
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -83,6 +80,21 @@ from pytfe.models import (
 OIDC_PROVIDER_URL = "app.terraform.io"
 OIDC_AUDIENCE = "aws.workload.identity"
 STATIC_AWS_VARS = ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_SESSION_TOKEN")
+
+# Placeholder thumbprint sent to AWS when creating the OIDC provider. AWS's
+# `CreateOpenIDConnectProvider` accepts a `ThumbprintList` parameter that
+# was historically expected to be the SHA1 hash of the provider's TLS
+# certificate. Since July 2023 AWS no longer validates this value for
+# providers backed by Amazon Trust Services CAs (which app.terraform.io
+# is) — the cert chain is validated at runtime against the ATS root CAs.
+# Any 40-char hex string is accepted in the field.
+# See: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html
+#
+# Sending a placeholder removes the need for this script to make a TLS
+# connection to app.terraform.io and SHA1-hash the leaf cert — both of
+# which trip CodeQL's py/insecure-protocol and py/weak-sensitive-data-hashing
+# rules even though neither is a security concern in this context.
+OIDC_PROVIDER_THUMBPRINT_PLACEHOLDER = "0" * 40
 
 
 # ---------------------------------------------------------------------------
@@ -258,16 +270,6 @@ def parse_args(argv: list[str] | None = None) -> Args:
 # ---------------------------------------------------------------------------
 
 
-def _terraform_thumbprint() -> str:
-    ctx = ssl.create_default_context()
-    with socket.create_connection((OIDC_PROVIDER_URL, 443), timeout=10) as sock:
-        with ctx.wrap_socket(sock, server_hostname=OIDC_PROVIDER_URL) as ssock:
-            cert = ssock.getpeercert(binary_form=True)
-    # AWS API expects SHA1; this is not used as a security primitive (since
-    # July 2023 AWS validates the certificate chain, not the thumbprint).
-    return hashlib.sha1(cert).hexdigest()  # noqa: S324
-
-
 def ensure_identity_provider(iam) -> tuple[str, bool]:
     """Return (OIDC provider ARN, was_created). Idempotent: reuses any
     existing provider for the same URL rather than recreating it.
@@ -285,7 +287,7 @@ def ensure_identity_provider(iam) -> tuple[str, bool]:
     resp = iam.create_open_id_connect_provider(
         Url=expected_url,
         ClientIDList=[OIDC_AUDIENCE],
-        ThumbprintList=[_terraform_thumbprint()],
+        ThumbprintList=[OIDC_PROVIDER_THUMBPRINT_PLACEHOLDER],
     )
     return resp["OpenIDConnectProviderArn"], True
 
