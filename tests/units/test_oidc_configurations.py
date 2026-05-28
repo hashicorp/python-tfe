@@ -135,8 +135,7 @@ class TestAWSOIDCConfigurations:
 
     def test_update_requires_role_arn(self) -> None:
         # AWS update has exactly one updatable field; constructing the
-        # options without a role_arn is a local error — matches go-tfe's
-        # ErrRequiredRoleARN behaviour.
+        # options without a role_arn is a local error
         import pydantic
 
         with pytest.raises(pydantic.ValidationError):

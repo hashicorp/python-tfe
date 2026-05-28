@@ -28,14 +28,7 @@ from .organization import Organization
 
 
 def _non_empty_role_arn(value: str) -> str:
-    """AWS role ARNs must be non-empty strings.
-
-    go-tfe's ``AWSOIDCConfigurationUpdateOptions.valid()`` rejects empty
-    role ARNs locally with ``ErrRequiredRoleARN``. We mirror that for both
-    create and update so callers get a clear pydantic error at construction
-    time instead of an opaque server-side 422 (or worse, an accepted but
-    malformed config record).
-    """
+    """AWS role ARNs must be non-empty strings."""
     if not value or not value.strip():
         raise ValueError("role_arn must be a non-empty string")
     return value
@@ -73,15 +66,7 @@ class AWSOIDCConfigurationCreateOptions(BaseModel):
 
 
 class AWSOIDCConfigurationUpdateOptions(BaseModel):
-    """Options for updating an AWS OIDC configuration.
-
-    Unlike Azure/GCP/Vault — whose update options are fully partial —
-    ``role_arn`` is REQUIRED here. The AWS resource has exactly one
-    updatable attribute, so an update with no fields is meaningless;
-    go-tfe's ``AWSOIDCConfigurationUpdateOptions.valid()`` rejects the
-    empty case locally with ``ErrRequiredRoleARN`` and we mirror that
-    behaviour.
-    """
+    """Options for updating an AWS OIDC configuration."""
 
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 

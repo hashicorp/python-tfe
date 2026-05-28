@@ -270,6 +270,82 @@ end-to-end. The blog walks through the AWS-side trust resources using the
 Terraform AWS provider; the policies above are the literal JSON
 equivalents.
 
+### Reference script: bulk OIDC setup across many workspaces
+
+[`examples/oidc_setup.py`](../../examples/oidc_setup.py) is a reference
+script for configuring OIDC federation across a list of workspaces in one
+invocation. Treat it as a worked example you can run as-is or adapt; it
+isn't part of the SDK's public API.
+
+It supports two modes:
+
+- **Managed-IAM** (default): the script provisions a per-workspace IAM
+  role scoped to that workspace's OIDC `sub` claim, optionally attaches
+  AWS-managed or inline permissions, and sets `TFC_AWS_PROVIDER_AUTH` +
+  `TFC_AWS_RUN_ROLE_ARN` on each workspace. The IAM OIDC provider is
+  account-global and is created once / reused across runs.
+
+- **Bring-your-own-role** (`--use-existing-role <ARN>`): the script makes
+  no AWS API calls. It just sets the OIDC env vars on each workspace
+  pointing at a role ARN you manage elsewhere (e.g. with the Terraform
+  AWS provider). Useful when your IAM is owned by a separate team or
+  pipeline.
+
+```bash
+export TFE_TOKEN=<hcp-token>
+
+# Managed-IAM:
+export AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=... AWS_SESSION_TOKEN=...
+python examples/oidc_setup.py \
+    --cloud aws \
+    --org my-org \
+    --workspaces prod-app,staging-app,dev-app \
+    --attach-managed-policy arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess
+
+# Bring-your-own-role (no AWS credentials needed):
+python examples/oidc_setup.py \
+    --cloud aws \
+    --org my-org \
+    --workspaces prod-app,staging-app,dev-app \
+    --use-existing-role arn:aws:iam::111122223333:role/my-tfc-role
+```
+
+The script is idempotent (safe to re-run), reports per-workspace status,
+and exits non-zero if any workspace failed. Other flags worth knowing:
+`--skip-identity-provider`, `--create-missing` (create the HCP workspace
+if missing instead of failing), `--remove-static-aws-creds` (clean up
+any old `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` /
+`AWS_SESSION_TOKEN` env vars on the workspace), `--inline-policy`. The
+`--cloud` flag only accepts `aws` today; the flag exists so other
+providers can be added without breaking callers.
+
+### Runnable end-to-end example
+
+A complete, self-contained script that does the full setup (AWS OIDC
+provider + IAM role + trust policy + EC2 policy + HCP workspace + env vars
++ Terraform upload + plan/apply + verify + destroy) is at
+[`examples/oidc_aws_e2e.py`](../../examples/oidc_aws_e2e.py).
+
+You only need to provide the workspace name; everything else has a sane
+default:
+
+```bash
+export TFE_TOKEN=<hcp-token>           # user or team token
+export TFE_ORG=<hcp-org>
+export AWS_ACCESS_KEY_ID=<sandbox>
+export AWS_SECRET_ACCESS_KEY=<sandbox>
+export AWS_SESSION_TOKEN=<sandbox>     # if using STS session credentials
+export OIDC_WORKSPACE_NAME=my-app-prod # the only project-specific input
+
+python examples/oidc_aws_e2e.py
+```
+
+The script is idempotent — safe to re-run, every AWS and HCP resource is
+created only if missing, and trust + IAM policies are refreshed in place.
+By default it terminates the test EC2 at the end (`OIDC_DESTROY_AFTER_VERIFY`
+defaults to `true`) but always keeps the workspace, IAM role, and OIDC
+provider so you can reuse the same setup for real Terraform code.
+
 ### Example: same setup via a variable set across many workspaces
 
 ```python
