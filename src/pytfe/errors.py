@@ -739,3 +739,11 @@ class RequiredRegistryModuleIDError(RequiredFieldMissing):
 
     def __init__(self, message: str = "registry module ID is required"):
         super().__init__(message)
+
+
+# OIDC configuration errors
+class InvalidOIDCConfigurationIDError(InvalidValues):
+    """Raised when an invalid OIDC configuration ID is provided."""
+
+    def __init__(self, message: str = "invalid value for OIDC configuration ID"):
+        super().__init__(message)

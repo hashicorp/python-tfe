@@ -119,6 +119,20 @@ from .oauth_token import (
     OAuthTokenListOptions,
     OAuthTokenUpdateOptions,
 )
+from .oidc_configuration import (
+    AWSOIDCConfiguration,
+    AWSOIDCConfigurationCreateOptions,
+    AWSOIDCConfigurationUpdateOptions,
+    AzureOIDCConfiguration,
+    AzureOIDCConfigurationCreateOptions,
+    AzureOIDCConfigurationUpdateOptions,
+    GCPOIDCConfiguration,
+    GCPOIDCConfigurationCreateOptions,
+    GCPOIDCConfigurationUpdateOptions,
+    VaultOIDCConfiguration,
+    VaultOIDCConfigurationCreateOptions,
+    VaultOIDCConfigurationUpdateOptions,
+)
 
 # Organization / Project
 from .organization import (
@@ -536,6 +550,19 @@ from .workspace_run_task import (
 
 # ── Public surface ────────────────────────────────────────────────────────────
 __all__ = [
+    # HYOK OIDC configurations
+    "AWSOIDCConfiguration",
+    "AWSOIDCConfigurationCreateOptions",
+    "AWSOIDCConfigurationUpdateOptions",
+    "AzureOIDCConfiguration",
+    "AzureOIDCConfigurationCreateOptions",
+    "AzureOIDCConfigurationUpdateOptions",
+    "GCPOIDCConfiguration",
+    "GCPOIDCConfigurationCreateOptions",
+    "GCPOIDCConfigurationUpdateOptions",
+    "VaultOIDCConfiguration",
+    "VaultOIDCConfigurationCreateOptions",
+    "VaultOIDCConfigurationUpdateOptions",
     # No-code provisioning
     "NoCodeModule",
     "NoCodeModuleCreateOptions",

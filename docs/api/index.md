@@ -82,6 +82,10 @@ column.
 | `client.agent_tokens` | `AgentTokens` | `list`, `read`, `create`, `delete` | [agent.py](../../examples/agent.py) | [Agent tokens](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/agent-tokens) |
 | `client.registry_modules` | `RegistryModules` | `list`, `read`, `create`, `update`, `delete`, version and upload helpers | [registry_module.py](../../examples/registry_module.py) | [Registry modules](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/private-registry/modules) |
 | `client.no_code_modules` | `NoCodeModules` | `create`, `read`, `update`, `delete`, `read_variables`, `create_workspace`, `upgrade_workspace`, `read_workspace_upgrade`, `confirm_workspace_upgrade` | [no_code_provisioning.py](../../examples/no_code_provisioning.py) | [No-code provisioning](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/no-code-provisioning) |
+| `client.aws_oidc_configurations` | `AWSOIDCConfigurations` | `create`, `read`, `update`, `delete` | [oidc_configurations.py](../../examples/oidc_configurations.py) | [AWS OIDC](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/hold-your-own-key/oidc-configurations/aws) |
+| `client.azure_oidc_configurations` | `AzureOIDCConfigurations` | `create`, `read`, `update`, `delete` | [oidc_configurations.py](../../examples/oidc_configurations.py) | [Azure OIDC](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/hold-your-own-key/oidc-configurations/azure) |
+| `client.gcp_oidc_configurations` | `GCPOIDCConfigurations` | `create`, `read`, `update`, `delete` | [oidc_configurations.py](../../examples/oidc_configurations.py) | [GCP OIDC](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/hold-your-own-key/oidc-configurations/gcp) |
+| `client.vault_oidc_configurations` | `VaultOIDCConfigurations` | `create`, `read`, `update`, `delete` | [oidc_configurations.py](../../examples/oidc_configurations.py) | [Vault OIDC](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/hold-your-own-key/oidc-configurations/vault) |
 | `client.registry_providers` | `RegistryProviders` | `list`, `read`, `create`, `delete` | [registry_provider.py](../../examples/registry_provider.py) | [Registry providers](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/private-registry/providers) |
 | `client.registry_provider_versions` | `RegistryProviderVersions` | `list`, `read`, `create`, `delete` | [registry_provider_version.py](../../examples/registry_provider_version.py) | [Registry providers](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/private-registry/providers) |
 | `client.registry_provider_platforms` | `RegistryProviderPlatforms` | `list`, `read`, `create`, `delete` | [registry_provider_platform.py](../../examples/registry_provider_platform.py) | [Registry providers](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/private-registry/providers) |
@@ -105,3 +109,4 @@ column.
 - [policies.md](policies.md)
 - [run-tasks.md](run-tasks.md)
 - [no-code-provisioning.md](no-code-provisioning.md)
+- [oidc-configurations.md](oidc-configurations.md)
