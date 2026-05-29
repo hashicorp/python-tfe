@@ -26,7 +26,7 @@ New or touched `BaseModel` classes should set `model_config = ConfigDict(...)` u
 | `populate_by_name=True` | **Always.** Lets callers pass either the field name (`created_at=...`) or the alias (`{"created-at": ...}`) when constructing. |
 | `validate_by_name=True` | Use on models that are parsed *from* API responses **or** constructed by callers via field names. Pair with `populate_by_name=True`. |
 | `extra="forbid"` | Use on `*CreateOptions` / `*UpdateOptions` / option models where you want a typo (`workspce_id=...`) to fail loudly instead of being silently dropped. Don't put it on response models — the API can add fields and we don't want that to break parsing. |
-| `extra="allow"` | Standard for **response models** parsed from API payloads. The default (`extra="ignore"`) silently drops any wire attribute without a declared field, so a new server field becomes a data-loss bug. `extra="allow"` retains undeclared fields in `model_extra` under their wire names (e.g. `model_extra["future-field"]`). Note: extra keys are *not* dot-accessible as snake_case and have no type — add an explicit aliased field for anything users should access ergonomically. `Workspace` is the reference implementation; relationship parsing for these models goes through `resources/_jsonapi`. |
+| `extra="allow"` | Standard for **response models** parsed from API payloads. The default (`extra="ignore"`) silently drops any wire attribute without a declared field, so a new server field becomes a data-loss bug. `extra="allow"` retains undeclared fields in `model_extra` under their wire names (e.g. `model_extra["future-field"]`). Note: extra keys are *not* dot-accessible as snake_case and have no type — add an explicit aliased field for anything users should access ergonomically. `Workspace` is the reference implementation; relationship parsing for these models goes through `pytfe._jsonapi.parse_relationships` (see the Relationships section). |
 | `arbitrary_types_allowed=True` | Only when you genuinely have a non-Pydantic type in a field (rare). |
 
 The standard line you'll write 90% of the time:
@@ -178,11 +178,33 @@ class TaskStage(BaseModel):
     task_results: list[TaskResult] | None = Field(None, alias="task-results")
 ```
 
-Use `model_construct` (not `model_validate`) in the resource for these stubs — it skips validation, which is correct because you only have `{id, type}`:
+The resource layer should populate these via the shared `parse_relationships` helper (see below) rather than a hand-rolled if-ladder. For a true one-off, `Model.model_construct(id=...)` (not `model_validate`) is correct — it skips validation, which is right because you only have `{id, type}`.
+
+### Parsing relationships — `pytfe._jsonapi.parse_relationships`
+
+Don't hand-roll the `relationships.get("x", {}).get("data")` if-ladder per resource. The canonical parser lives in `src/pytfe/_jsonapi.py` and is driven by a declarative map of `{wire_relation: Model}` (or `{wire_relation: (python_attr, Model)}` when the attribute name diverges from `wire.replace("-", "_")`):
 
 ```python
-attributes["run"] = Run.model_construct(id=run_data["id"])
+from .._jsonapi import parse_relationships
+
+_WIDGET_REL_MAP = {
+    "organization": Organization,                 # attr derived: "organization"
+    "current-run": Run,                            # attr derived: "current_run"
+    "vars": ("variables", Variable),               # wire name diverges from attr
+}
+
+def _widget_from(d, included=None):
+    attrs = dict(d.get("attributes") or {})
+    attrs["id"] = d.get("id")
+    attrs.update(parse_relationships(d.get("relationships"), _WIDGET_REL_MAP, included=included))
+    return Widget.model_validate(attrs)
 ```
+
+`parse_relationships` handles single vs list `data`, skips null/absent and unmapped relations (so they fall back to model defaults / `extra="allow"`), and — when the caller passes the response's top-level `included` array — hydrates the **full** related object instead of an id-only stub (so `?include=current_run` returns a populated `Run`, not just `{id}`). Thread `included` from read paths: `payload = r.json(); _widget_from(payload["data"], payload.get("included"))`.
+
+Keep genuinely polymorphic relations (e.g. workspace `locked-by`, `data-retention-policy-choice`) and relations whose `data` carries inline attributes (e.g. workspace `outputs`) as explicit special cases — they don't fit the simple map. `Workspace` (`resources/workspaces.py`) and `Run` (`resources/run.py`) are the reference implementations.
+
+> One gotcha: a parser written as a **method** on a service class that also defines `def list(...)` cannot annotate `included: list[...] | None` — in class scope `list` resolves to the method. Make the parser a module-level function (preferred, matches `_ws_from`/`_run_from`), or use `builtins.list[...]`.
 
 ### Option 2 — Flat `*_id` field
 
@@ -276,6 +298,7 @@ The CI check in `tests/units/test_model_conventions.py` enforces this for every 
 - [ ] `from __future__ import annotations` at the top
 - [ ] New or touched classes use `model_config = ConfigDict(populate_by_name=True, validate_by_name=True)` unless preserving a local legacy pattern
 - [ ] Hyphenated JSON:API attribute names → `Field(alias="...")`
+- [ ] **Response models** (parsed from API payloads) add `extra="allow"` to their `ConfigDict` for forward compatibility; relationships are parsed via `parse_relationships`, not a hand-rolled if-ladder
 - [ ] Response model fields default to `T | None = Field(None, alias="...")`
 - [ ] `*CreateOptions` uses `Field(...)` for required fields, `T | None = None` for optional
 - [ ] `*UpdateOptions` is fully optional

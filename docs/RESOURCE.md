@@ -184,26 +184,35 @@ def _widget_from(self, data: dict[str, Any]) -> Widget:
     return Widget.model_validate(attrs)
 ```
 
-If the model has relationships, pull them from `data["relationships"]` and either:
-
-1. **Embed an id-stub** using `Model.model_construct(id=...)` — use this when the model defines the relation as `OtherModel | None`. `model_construct` skips validation, which is correct for partial `{id, type}` data:
+If the model has relationships, parse them with the shared `parse_relationships` helper from `pytfe._jsonapi` — don't hand-roll a per-relation if-ladder. Pass a declarative `{wire_relation: Model}` map (or `{wire: (python_attr, Model)}` when the attribute name diverges from `wire.replace("-", "_")`), and thread the response's top-level `included` so `?include=` requests hydrate full nested objects instead of id-only stubs:
 
 ```python
-relationships = data.get("relationships", {})
-run_data = relationships.get("run", {}).get("data")
-if run_data:
-    attributes["run"] = Run.model_construct(id=run_data["id"])
+from .._jsonapi import parse_relationships
+
+_WIDGET_REL_MAP = {"organization": Organization, "current-run": Run}
+
+def _widget_from(self, data: dict[str, Any], included=None) -> Widget:
+    attrs = dict(data.get("attributes") or {})
+    attrs["id"] = data.get("id")
+    attrs.update(parse_relationships(data.get("relationships"), _WIDGET_REL_MAP, included=included))
+    return Widget.model_validate(attrs)
+
+# caller threads included from the envelope:
+payload = r.json()
+return self._widget_from(payload["data"], payload.get("included"))
 ```
 
-2. **Flatten to `*_id`** when the model exposes a flat `team_id: str | None` field:
+`parse_relationships` skips null/absent/unmapped relations, handles single vs list `data`, and builds id-only stubs via `model_construct` when `included` is absent. For a relation the model exposes as a **flat `*_id`** field instead of an embedded model, keep the small manual extraction:
 
 ```python
-team_data = (relationships.get("team") or {}).get("data") or {}
+team_data = (data.get("relationships", {}).get("team") or {}).get("data") or {}
 if team_data.get("id"):
-    attributes["team-id"] = team_data["id"]
+    attrs["team-id"] = team_data["id"]
 ```
 
-Always defensively coalesce with `or {}` — relationships may be missing from sparse responses.
+Keep polymorphic relations (e.g. `locked-by`) and relations whose `data` carries inline attributes (e.g. workspace `outputs`) as explicit special cases — they don't fit the map. See `resources/workspaces.py` and `resources/run.py` for the reference parsers. Always defensively coalesce with `or {}` — relationships may be missing from sparse responses.
+
+> If the parser is a **method** on a service class that defines `def list(...)`, you can't annotate `included: list[...] | None` (in class scope `list` is the method). Prefer a module-level `_widget_from` function (like `_ws_from`/`_run_from`), or use `builtins.list[...]`.
 
 
 ## Pagination — use `self._list`, don't roll your own
