@@ -3,6 +3,44 @@
 
 from __future__ import annotations
 
+# ── TFE admin versions (Terraform / OPA / Sentinel) ──────────────────────────
+from .admin_version import (
+    OpaVersion,
+    OpaVersionCreateOptions,
+    OpaVersionUpdateOptions,
+    SentinelVersion,
+    SentinelVersionCreateOptions,
+    SentinelVersionUpdateOptions,
+    TerraformVersion,
+    TerraformVersionCreateOptions,
+    TerraformVersionUpdateOptions,
+)
+
+# ── TFE admin runs ────────────────────────────────────────────────────────────
+from .admin_run import (
+    AdminRun,
+    AdminRunListOptions,
+)
+
+# ── TFE admin organizations ───────────────────────────────────────────────────
+from .admin_organization import (
+    AdminOrganization,
+    AdminOrganizationListOptions,
+    AdminOrganizationUpdateOptions,
+)
+
+# ── TFE admin users ───────────────────────────────────────────────────────────
+from .admin_user import (
+    AdminUser,
+    AdminUserListOptions,
+)
+
+# ── TFE admin workspaces ──────────────────────────────────────────────────────
+from .admin_workspace import (
+    AdminWorkspace,
+    AdminWorkspaceListOptions,
+)
+
 # ── TFE admin identity (SAML / SCIM) ──────────────────────────────────────────
 from .admin_identity import (
     AdminSAMLSettings,
@@ -567,6 +605,29 @@ from .workspace_run_task import (
 
 # ── Public surface ────────────────────────────────────────────────────────────
 __all__ = [
+    # TFE admin versions
+    "TerraformVersion",
+    "TerraformVersionCreateOptions",
+    "TerraformVersionUpdateOptions",
+    "OpaVersion",
+    "OpaVersionCreateOptions",
+    "OpaVersionUpdateOptions",
+    "SentinelVersion",
+    "SentinelVersionCreateOptions",
+    "SentinelVersionUpdateOptions",
+    # TFE admin runs
+    "AdminRun",
+    "AdminRunListOptions",
+    # TFE admin organizations
+    "AdminOrganization",
+    "AdminOrganizationListOptions",
+    "AdminOrganizationUpdateOptions",
+    # TFE admin users
+    "AdminUser",
+    "AdminUserListOptions",
+    # TFE admin workspaces
+    "AdminWorkspace",
+    "AdminWorkspaceListOptions",
     # TFE admin identity
     "AdminSAMLSettings",
     "AdminSAMLSettingsUpdateOptions",
