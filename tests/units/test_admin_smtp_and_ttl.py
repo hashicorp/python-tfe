@@ -243,9 +243,7 @@ class TestOrganizationDefaultSettings:
         self.transport.request.return_value = _resp(_org_envelope())
         self.service.update_default_settings(
             "my-org",
-            OrganizationDefaultSettingsUpdateOptions(
-                default_execution_mode="local"
-            ),
+            OrganizationDefaultSettingsUpdateOptions(default_execution_mode="local"),
         )
         body = self.transport.request.call_args.kwargs["json_body"]
         assert body["data"]["attributes"] == {"default-execution-mode": "local"}

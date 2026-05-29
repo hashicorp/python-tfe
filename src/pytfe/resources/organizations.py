@@ -166,9 +166,7 @@ class Organizations(_Service):
         )
         return self._parse_default_settings(r.json()["data"])
 
-    def reset_default_settings(
-        self, organization: str
-    ) -> OrganizationDefaultSettings:
+    def reset_default_settings(self, organization: str) -> OrganizationDefaultSettings:
         """Reset to ``remote`` execution and clear any default agent pool.
 
         Convenience over :meth:`update_default_settings` — equivalent to

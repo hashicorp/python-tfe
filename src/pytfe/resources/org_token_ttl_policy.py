@@ -71,9 +71,7 @@ class OrganizationTokenTTLPolicies(_Service):
         )
         return [_parse_policy(item) for item in r.json().get("data") or []]
 
-    def reset_to_defaults(
-        self, organization: str
-    ) -> builtins.list[OrgTokenTTLPolicy]:
+    def reset_to_defaults(self, organization: str) -> builtins.list[OrgTokenTTLPolicy]:
         """Reset all four token types to the documented 2-year default
         (``DEFAULT_MAX_TTL_MS = 63_072_000_000``).
         """

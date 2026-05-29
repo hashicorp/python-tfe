@@ -43,9 +43,7 @@ def _print_policies(client: TFEClient, organization: str) -> None:
         return
     for p in policies:
         days = (p.max_ttl_ms or 0) // 86_400_000
-        print(
-            f"  {p.token_type!s:>40}  max_ttl_ms={p.max_ttl_ms:>14,}  (~{days} days)"
-        )
+        print(f"  {p.token_type!s:>40}  max_ttl_ms={p.max_ttl_ms:>14,}  (~{days} days)")
 
 
 def main() -> int:

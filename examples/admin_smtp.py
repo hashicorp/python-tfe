@@ -68,7 +68,9 @@ def main() -> int:
         print("\n[EXAMPLE_APPLY_WRITES=true] refreshing host to its current value")
         options = AdminSMTPSettingsUpdateOptions(host=smtp.host)
         if send_test and test_address:
-            print(f"[EXAMPLE_SEND_TEST_EMAIL=true] also requesting test email to {test_address}")
+            print(
+                f"[EXAMPLE_SEND_TEST_EMAIL=true] also requesting test email to {test_address}"
+            )
             options = AdminSMTPSettingsUpdateOptions(
                 host=smtp.host, test_email_address=test_address
             )
