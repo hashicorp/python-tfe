@@ -3,6 +3,18 @@
 
 from __future__ import annotations
 
+# ── TFE admin identity (SAML / SCIM) ──────────────────────────────────────────
+from .admin_identity import (
+    AdminSAMLSettings,
+    AdminSAMLSettingsUpdateOptions,
+    AdminSCIMSettings,
+    AdminSCIMSettingsUpdateOptions,
+    AdminSCIMToken,
+    AdminSCIMTokenCreateOptions,
+    SAMLProviderType,
+    SAMLSignatureMethod,
+)
+
 # ── Agent & Agent Pools ────────────────────────────────────────────────────────
 from .agent import (
     Agent,
@@ -73,6 +85,13 @@ from .explorer import (
     ExplorerSavedViewUpdateOptions,
     ExplorerUrlFilter,
     ExplorerViewType,
+)
+
+# ── GitHub App Installations ─────────────────────────────────────────────────
+from .github_app_installation import (
+    GitHubAppInstallation,
+    GitHubAppInstallationListOptions,
+    GitHubAppInstallationType,
 )
 
 # ── Notification Configurations ───────────────────────────────────────────────
@@ -536,6 +555,19 @@ from .workspace_run_task import (
 
 # ── Public surface ────────────────────────────────────────────────────────────
 __all__ = [
+    # TFE admin identity
+    "AdminSAMLSettings",
+    "AdminSAMLSettingsUpdateOptions",
+    "AdminSCIMSettings",
+    "AdminSCIMSettingsUpdateOptions",
+    "AdminSCIMToken",
+    "AdminSCIMTokenCreateOptions",
+    "SAMLProviderType",
+    "SAMLSignatureMethod",
+    # GitHub App installations
+    "GitHubAppInstallation",
+    "GitHubAppInstallationListOptions",
+    "GitHubAppInstallationType",
     # No-code provisioning
     "NoCodeModule",
     "NoCodeModuleCreateOptions",

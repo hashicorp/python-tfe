@@ -739,3 +739,34 @@ class RequiredRegistryModuleIDError(RequiredFieldMissing):
 
     def __init__(self, message: str = "registry module ID is required"):
         super().__init__(message)
+
+
+# Admin SAML/SCIM + GitHub App installation errors
+class InvalidSAMLProviderTypeError(InvalidValues):
+    """Raised when an unrecognised SAML provider type is supplied."""
+
+    def __init__(self, message: str = "invalid value for SAML provider type") -> None:
+        super().__init__(message)
+
+
+class InvalidSCIMTokenIDError(InvalidValues):
+    """Raised when an invalid SCIM token ID is supplied."""
+
+    def __init__(self, message: str = "invalid value for SCIM token ID") -> None:
+        super().__init__(message)
+
+
+class RequiredSCIMTokenDescriptionError(RequiredFieldMissing):
+    """Raised when a SCIM token is created without a non-empty description."""
+
+    def __init__(self, message: str = "SCIM token description is required") -> None:
+        super().__init__(message)
+
+
+class InvalidGitHubAppInstallationIDError(InvalidValues):
+    """Raised when an invalid GitHub App installation ID is supplied."""
+
+    def __init__(
+        self, message: str = "invalid value for GitHub App installation ID"
+    ) -> None:
+        super().__init__(message)

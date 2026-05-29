@@ -94,6 +94,18 @@ column.
 | `client.explorer` | `Explorer` | query and saved-view helpers | [explorer.py](../../examples/explorer.py) | [Explorer](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/explorer) |
 | `client.stacks` | `Stacks` | `list`, `read`, `create`, `update`, `delete`, `force_delete`, VCS fetch | [stack.py](../../examples/stack.py) | [Stacks](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/stacks) |
 | `client.stack_configurations` | `StackConfigurations` | `list`, `read`, `create` | [stack_configuration.py](../../examples/stack_configuration.py) | [Stacks](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/stacks) |
+| `client.github_app_installations` | `GitHubAppInstallations` | `list`, `read` | [github_app_installations.py](../../examples/github_app_installations.py) | [GitHub App installations](https://developer.hashicorp.com/terraform/enterprise/api-docs/github-app-installations) |
+
+## TFE admin (site-admin only)
+
+These endpoints require TFE site-admin permission and return `404` on
+HCP Terraform (SaaS).
+
+| Client attribute | Resource class | Common methods | Example | Upstream API docs |
+|---|---|---|---|---|
+| `client.admin.saml_settings` | `_AdminSAMLSettings` | `read`, `update`, `revoke_idp_cert` | [admin_identity.py](../../examples/admin_identity.py) | [SAML settings](https://developer.hashicorp.com/terraform/enterprise/api-docs/admin/settings) |
+| `client.admin.scim_settings` | `_AdminSCIMSettings` | `read`, `update`, `delete` | [admin_identity.py](../../examples/admin_identity.py) | [SCIM settings](https://developer.hashicorp.com/terraform/enterprise/api-docs/admin/scim-settings) |
+| `client.admin.scim_tokens` | `_AdminSCIMTokens` | `list`, `create`, `read`, `delete` | [admin_identity.py](../../examples/admin_identity.py) | [SCIM tokens](https://developer.hashicorp.com/terraform/enterprise/api-docs/admin/scim-tokens) |
 
 ## Focused guides
 
@@ -105,3 +117,4 @@ column.
 - [policies.md](policies.md)
 - [run-tasks.md](run-tasks.md)
 - [no-code-provisioning.md](no-code-provisioning.md)
+- [admin-identity.md](admin-identity.md)
