@@ -35,6 +35,8 @@ from ..models.admin_identity import (
     AdminSCIMSettingsUpdateOptions,
     AdminSCIMToken,
     AdminSCIMTokenCreateOptions,
+    AdminSMTPSettings,
+    AdminSMTPSettingsUpdateOptions,
 )
 from ..utils import valid_string, valid_string_id
 from ._base import _Service
@@ -45,6 +47,7 @@ _SCIM_SETTINGS_TYPE = "scim-settings"
 # for SCIM tokens; the endpoint path namespaces them under /admin/scim-tokens
 # but the resource type string in the body is the shared one.
 _SCIM_TOKEN_TYPE = "authentication-tokens"
+_SMTP_TYPE = "smtp-settings"
 
 
 _M = TypeVar("_M", bound=BaseModel)
@@ -176,6 +179,34 @@ class _AdminSCIMTokens(_Service):
 
 
 # ---------------------------------------------------------------------------
+# SMTP settings
+# ---------------------------------------------------------------------------
+
+
+class _AdminSMTPSettings(_Service):
+    """Resource for ``/api/v2/admin/smtp-settings``.
+
+    Singleton resource. Notable wire semantics:
+
+    - ``password`` is sensitive; the transport logger redacts it before
+      it reaches debug output.
+    - ``test-email-address`` is write-only — when supplied on update, TFE
+      sends a verification email to that address as a side effect of the
+      PATCH. The field is never returned on read.
+    """
+
+    def read(self) -> AdminSMTPSettings:
+        r = self.t.request("GET", "/api/v2/admin/smtp-settings")
+        return _parse_jsonapi(r.json()["data"], AdminSMTPSettings)
+
+    def update(self, options: AdminSMTPSettingsUpdateOptions) -> AdminSMTPSettings:
+        attrs = options.model_dump(by_alias=True, exclude_none=True, mode="json")
+        body = {"data": {"type": _SMTP_TYPE, "attributes": attrs}}
+        r = self.t.request("PATCH", "/api/v2/admin/smtp-settings", json_body=body)
+        return _parse_jsonapi(r.json()["data"], AdminSMTPSettings)
+
+
+# ---------------------------------------------------------------------------
 # Admin namespace facade
 # ---------------------------------------------------------------------------
 
@@ -192,3 +223,4 @@ class AdminClient:
         self.saml_settings = _AdminSAMLSettings(transport)
         self.scim_settings = _AdminSCIMSettings(transport)
         self.scim_tokens = _AdminSCIMTokens(transport)
+        self.smtp_settings = _AdminSMTPSettings(transport)

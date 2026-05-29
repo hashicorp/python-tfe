@@ -226,8 +226,45 @@ Two things worth pinning explicitly:
   fields like `github-app-installation-id` use the HCP-side `id`, not
   the numeric GitHub-side installation ID.
 
+## SMTP settings
+
+Singleton resource. Same admin-only requirements as SAML/SCIM.
+
+| Method | Purpose |
+|---|---|
+| `client.admin.smtp_settings.read()` | Read current SMTP config (no password). |
+| `client.admin.smtp_settings.update(options)` | Partial update; `password` and `test_email_address` are write-only. |
+
+```python
+from pytfe.models import AdminSMTPSettingsUpdateOptions, SMTPAuthType
+
+# Read
+smtp = client.admin.smtp_settings.read()
+print(smtp.enabled, smtp.host, smtp.port, smtp.auth)
+
+# Update (also sends a test email if test_email_address is set)
+client.admin.smtp_settings.update(
+    AdminSMTPSettingsUpdateOptions(
+        enabled=True,
+        host="smtp.example.com",
+        port=587,
+        sender="noreply@example.com",
+        auth=SMTPAuthType.LOGIN,
+        username="smtp-bot",
+        password="set-by-secret-manager",
+        test_email_address="ops@example.com",
+    )
+)
+```
+
+The `auth` field accepts `SMTPAuthType.NONE`, `PLAIN`, or `LOGIN`.
+`password` is sensitive — the transport logger redacts it in debug
+output. `test_email_address` is a write-only signal: when supplied on
+update, TFE sends a verification email to that address and the field is
+not returned on read.
+
 ## Token requirements
 
-- SAML / SCIM / SCIM tokens: TFE site-admin user token.
+- SAML / SCIM / SCIM tokens / SMTP: TFE site-admin user token.
 - GitHub App installations: any user token; the response is scoped to
   what that user can see.

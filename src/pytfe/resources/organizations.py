@@ -26,6 +26,8 @@ from ..models.organization import (
     Entitlements,
     Organization,
     OrganizationCreateOptions,
+    OrganizationDefaultSettings,
+    OrganizationDefaultSettingsUpdateOptions,
     OrganizationUpdateOptions,
     ReadRunQueueOptions,
     RunQueue,
@@ -36,6 +38,32 @@ from ._base import _Service
 
 def _safe_str(v: Any, default: str = "") -> str:
     return v if isinstance(v, str) else (str(v) if v is not None else default)
+
+
+def _parse_org(data: dict[str, Any]) -> Organization:
+    """Parse a JSON:API ``data`` block into an :class:`Organization`.
+
+    Handles two things the legacy ``Organization(**attrs)`` shortcut
+    didn't:
+
+    - Hyphenated attribute names like ``default-execution-mode`` are
+      accepted via the model's aliases (``populate_by_name=True``).
+    - The ``default-agent-pool`` relationship — which sits OUTSIDE
+      ``attributes`` in the JSON:API envelope — is lifted into the
+      ``default_agent_pool`` field as ``{"id": "<pool-id>"}`` so callers
+      can do ``org.default_agent_pool["id"]`` without traversing
+      relationships themselves.
+    """
+    attrs = data.get("attributes") or {}
+    org_data: dict[str, Any] = dict(attrs)
+    org_data["id"] = _safe_str(data.get("id"))
+
+    relationships = data.get("relationships") or {}
+    pool_rel = (relationships.get("default-agent-pool") or {}).get("data")
+    if pool_rel and pool_rel.get("id"):
+        org_data["default_agent_pool"] = {"id": pool_rel["id"]}
+
+    return Organization.model_validate(org_data)
 
 
 class Organizations(_Service):
@@ -51,51 +79,114 @@ class Organizations(_Service):
         body = {
             "data": {
                 "type": "organizations",
-                "attributes": options.model_dump(exclude_none=True),
+                # by_alias=True is required so fields with hyphenated
+                # JSON:API aliases (e.g. ``default-execution-mode``,
+                # ``default-agent-pool-id``, ``max-ttl-enabled``) reach
+                # the server with their wire names instead of being
+                # silently dropped as unknown snake_case keys.
+                "attributes": options.model_dump(
+                    by_alias=True, exclude_none=True, mode="json"
+                ),
             }
         }
         r = self.t.request("PATCH", f"/api/v2/organizations/{name}", json_body=body)
-        d = r.json()["data"]
-        attr = d.get("attributes", {}) or {}
-        org_id = _safe_str(d.get("id"))
-        org_data = dict(attr)
-        org_data["id"] = org_id
-        return Organization(**org_data)
+        return _parse_org(r.json()["data"])
 
     def create(self, options: OrganizationCreateOptions) -> Organization:
         Organizations.validate(options)
         body = {
             "data": {
                 "type": "organizations",
-                "attributes": options.model_dump(exclude_none=True),
+                "attributes": options.model_dump(
+                    by_alias=True, exclude_none=True, mode="json"
+                ),
             }
         }
         r = self.t.request("POST", "/api/v2/organizations", json_body=body)
-        d = r.json()["data"]
-        attr = d.get("attributes", {}) or {}
-        org_id = _safe_str(d.get("id"))
-        org_data = dict(attr)
-        org_data["id"] = org_id
-        return Organization(**org_data)
+        return _parse_org(r.json()["data"])
 
     def list(self) -> Iterator[Organization]:
         for item in self._list("/api/v2/organizations"):
-            attr = item.get("attributes", {}) or {}
-            org_id = _safe_str(item.get("id"))
-            # Unpack all attributes, override id
-            org_data = dict(attr)
-            org_data["id"] = org_id
-            yield Organization(**org_data)
+            yield _parse_org(item)
 
     def read(self, name: str) -> Organization:
         r = self.t.request("GET", f"/api/v2/organizations/{name}")
-        d = r.json()["data"]
-        attr = d.get("attributes", {}) or {}
-        org_id = _safe_str(d.get("id"))
-        # Unpack all attributes, override id
-        org_data = dict(attr)
-        org_data["id"] = org_id
-        return Organization(**org_data)
+        return _parse_org(r.json()["data"])
+
+    # ---- Organization default settings (provider parity) -----------------
+    #
+    # All three methods below hit the regular org endpoint —
+    # ``GET/PATCH /api/v2/organizations/{name}`` — but expose a narrower
+    # surface focused on ``default-execution-mode`` and the
+    # ``default-agent-pool`` relationship, which is how the Terraform
+    # provider's ``tfe_organization_default_settings`` resource models
+    # the same state.
+
+    def _parse_default_settings(
+        self, data: dict[str, Any]
+    ) -> OrganizationDefaultSettings:
+        attrs = data.get("attributes") or {}
+        relationships = data.get("relationships") or {}
+        pool_rel = (relationships.get("default-agent-pool") or {}).get("data")
+        pool_id = pool_rel.get("id") if pool_rel else None
+        return OrganizationDefaultSettings.model_validate(
+            {
+                "id": data.get("id"),
+                "default-execution-mode": attrs.get("default-execution-mode"),
+                "default_agent_pool_id": pool_id,
+            }
+        )
+
+    def read_default_settings(self, organization: str) -> OrganizationDefaultSettings:
+        """Read the org's default execution mode and default agent pool."""
+        if not valid_string_id(organization):
+            raise ValueError(ERR_INVALID_ORG)
+        r = self.t.request("GET", f"/api/v2/organizations/{organization}")
+        return self._parse_default_settings(r.json()["data"])
+
+    def update_default_settings(
+        self,
+        organization: str,
+        options: OrganizationDefaultSettingsUpdateOptions,
+    ) -> OrganizationDefaultSettings:
+        """Patch only the default-settings fields on the org. Cross-field
+        validation (``default_agent_pool_id`` requires ``agent`` execution
+        mode) is enforced at options construction time, not here.
+        """
+        if not valid_string_id(organization):
+            raise ValueError(ERR_INVALID_ORG)
+        body = {
+            "data": {
+                "type": "organizations",
+                "attributes": options.to_payload(),
+            }
+        }
+        r = self.t.request(
+            "PATCH", f"/api/v2/organizations/{organization}", json_body=body
+        )
+        return self._parse_default_settings(r.json()["data"])
+
+    def reset_default_settings(
+        self, organization: str
+    ) -> OrganizationDefaultSettings:
+        """Reset to ``remote`` execution and clear any default agent pool.
+
+        Convenience over :meth:`update_default_settings` — equivalent to
+        calling it with ``default_execution_mode="remote"`` and
+        ``default_agent_pool_id=None`` explicitly (the latter is sent as
+        wire ``null`` so any existing pool is unlinked).
+        """
+        # mypy reads the Pydantic-synthesised __init__ as accepting only
+        # the wire-aliased kwargs (``default-execution-mode``) and not
+        # the Python field names. The runtime behaviour with
+        # ``populate_by_name=True`` accepts both; suppress here.
+        return self.update_default_settings(
+            organization,
+            OrganizationDefaultSettingsUpdateOptions(  # type: ignore[call-arg]
+                default_execution_mode="remote",
+                default_agent_pool_id=None,
+            ),
+        )
 
     @staticmethod
     def validate(opts: OrganizationCreateOptions) -> None:

@@ -252,3 +252,56 @@ class AdminSCIMTokenCreateOptions(BaseModel):
         ..., description="Human-readable description shown in audit logs."
     )
     expired_at: datetime | None = Field(default=None, alias="expired-at")
+
+
+# ---------------------------------------------------------------------------
+# SMTP settings
+# ---------------------------------------------------------------------------
+
+
+class SMTPAuthType(str, Enum):
+    """Authentication mechanism for the SMTP relay."""
+
+    NONE = "none"
+    PLAIN = "plain"
+    LOGIN = "login"
+
+
+class AdminSMTPSettings(BaseModel):
+    """Snapshot of the organisation's SMTP relay settings on TFE.
+
+    ``password`` and ``test_email_address`` are write-only on the upstream
+    API and are never returned by ``read()`` — modelled here as fields
+    only on the update options below.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    id: str | None = None
+    enabled: bool | None = None
+    host: str | None = None
+    port: int | None = None
+    sender: str | None = None
+    auth: SMTPAuthType | None = None
+    username: str | None = None
+
+
+class AdminSMTPSettingsUpdateOptions(BaseModel):
+    """Partial update options for SMTP settings.
+
+    Every field is optional. ``password`` is sensitive; the transport
+    logger redacts it before debug output. ``test_email_address`` is a
+    write-only signal — when set, TFE sends a verification email to that
+    address as part of the PATCH; the field is not returned on read.
+    """
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    enabled: bool | None = None
+    host: str | None = None
+    port: int | None = None
+    sender: str | None = None
+    auth: SMTPAuthType | None = None
+    username: str | None = None
+    password: str | None = None
+    test_email_address: str | None = Field(default=None, alias="test-email-address")

@@ -165,7 +165,7 @@ and upstream HCP Terraform API docs.
 |---|---|
 | Configure the SDK | [Authentication](./docs/authentication.md), [Pagination](./docs/pagination.md), [Logging](./docs/LOGGING.md) |
 | API guides | [API index](./docs/api/index.md), [Workspaces](./docs/api/workspaces.md), [Runs/plans/applies](./docs/api/runs-plans-applies.md), [State versions](./docs/api/state-versions.md) |
-| Scenario guides | [API-driven run](./docs/scenarios/api-driven-run.md), [State management](./docs/scenarios/state-management.md), [Migrate workspaces and state](./docs/scenarios/migrate-workspaces-and-state.md), [Team access onboarding](./docs/scenarios/team-access-onboarding.md), [No-code provisioning](./docs/scenarios/no-code-provisioning.md), [TFE identity bootstrap](./docs/scenarios/tfe-identity-bootstrap.md) |
+| Scenario guides | [API-driven run](./docs/scenarios/api-driven-run.md), [State management](./docs/scenarios/state-management.md), [Migrate workspaces and state](./docs/scenarios/migrate-workspaces-and-state.md), [Team access onboarding](./docs/scenarios/team-access-onboarding.md), [No-code provisioning](./docs/scenarios/no-code-provisioning.md), [TFE identity bootstrap](./docs/scenarios/tfe-identity-bootstrap.md), [TFE admin bootstrap](./docs/scenarios/tfe-admin-bootstrap.md) |
 | Operations guides | [Troubleshooting](./docs/troubleshooting.md), [Errors](./docs/errors.md), [Terraform Enterprise](./docs/terraform-enterprise.md) |
 | Contribute to the SDK | [CONTRIBUTING](./docs/CONTRIBUTING.md), [ITERATORS](./docs/ITERATORS.md), [MODELS](./docs/MODELS.md), [RESOURCE](./docs/RESOURCE.md) |
 

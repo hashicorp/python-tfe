@@ -17,6 +17,7 @@ from .resources.no_code_module import NoCodeModules
 from .resources.notification_configuration import NotificationConfigurations
 from .resources.oauth_client import OAuthClients
 from .resources.oauth_token import OAuthTokens
+from .resources.org_token_ttl_policy import OrganizationTokenTTLPolicies
 from .resources.organization_audit_configuration import OrganizationAuditConfigurations
 from .resources.organization_membership import OrganizationMemberships
 from .resources.organization_tags import OrganizationTags
@@ -90,6 +91,12 @@ class TFEClient:
 
         # GitHub App installation discovery
         self.github_app_installations = GitHubAppInstallations(self._transport)
+
+        # Org-wide API-token TTL policy (pairs with max_ttl_enabled on
+        # the parent organisation)
+        self.organization_token_ttl_policies = OrganizationTokenTTLPolicies(
+            self._transport
+        )
 
         # Core resources
         self.configuration_versions = ConfigurationVersions(self._transport)

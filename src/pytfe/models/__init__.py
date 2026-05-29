@@ -11,8 +11,11 @@ from .admin_identity import (
     AdminSCIMSettingsUpdateOptions,
     AdminSCIMToken,
     AdminSCIMTokenCreateOptions,
+    AdminSMTPSettings,
+    AdminSMTPSettingsUpdateOptions,
     SAMLProviderType,
     SAMLSignatureMethod,
+    SMTPAuthType,
 )
 
 # ── Agent & Agent Pools ────────────────────────────────────────────────────────
@@ -138,6 +141,13 @@ from .oauth_token import (
     OAuthTokenListOptions,
     OAuthTokenUpdateOptions,
 )
+from .org_token_ttl_policy import (
+    DEFAULT_MAX_TTL_MS,
+    OrgTokenTTLPolicy,
+    OrgTokenTTLPolicyUpdateOptions,
+    TokenPolicyType,
+    parse_ttl_to_ms,
+)
 
 # Organization / Project
 from .organization import (
@@ -145,6 +155,8 @@ from .organization import (
     ExecutionMode,
     Organization,
     OrganizationCreateOptions,
+    OrganizationDefaultSettings,
+    OrganizationDefaultSettingsUpdateOptions,
     OrganizationUpdateOptions,
     ReadRunQueueOptions,
     RunQueue,
@@ -562,8 +574,11 @@ __all__ = [
     "AdminSCIMSettingsUpdateOptions",
     "AdminSCIMToken",
     "AdminSCIMTokenCreateOptions",
+    "AdminSMTPSettings",
+    "AdminSMTPSettingsUpdateOptions",
     "SAMLProviderType",
     "SAMLSignatureMethod",
+    "SMTPAuthType",
     # GitHub App installations
     "GitHubAppInstallation",
     "GitHubAppInstallationListOptions",
@@ -729,7 +744,15 @@ __all__ = [
     "Pagination",
     "Organization",
     "OrganizationCreateOptions",
+    "OrganizationDefaultSettings",
+    "OrganizationDefaultSettingsUpdateOptions",
     "OrganizationUpdateOptions",
+    # Org-token TTL policy
+    "DEFAULT_MAX_TTL_MS",
+    "OrgTokenTTLPolicy",
+    "OrgTokenTTLPolicyUpdateOptions",
+    "TokenPolicyType",
+    "parse_ttl_to_ms",
     "OrganizationAuditConfigAuditStreaming",
     "OrganizationAuditConfigAuditTrails",
     "OrganizationAuditConfigPermissions",
