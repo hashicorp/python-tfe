@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import builtins
 from collections.abc import Iterator
 from typing import Any
 
@@ -59,7 +58,9 @@ class _AdminTerraformVersions(_Service):
         r = self.t.request("POST", "/api/v2/admin/terraform-versions", json_body=body)
         return _parse_terraform_version(r.json()["data"])
 
-    def update(self, version_id: str, options: TerraformVersionUpdateOptions) -> TerraformVersion:
+    def update(
+        self, version_id: str, options: TerraformVersionUpdateOptions
+    ) -> TerraformVersion:
         if not valid_string_id(version_id):
             raise ValueError(ERR_INVALID_VERSION)
         attrs = options.model_dump(by_alias=True, exclude_none=True, mode="json")
@@ -125,7 +126,9 @@ class _AdminSentinelVersions(_Service):
         r = self.t.request("POST", "/api/v2/admin/sentinel-versions", json_body=body)
         return _parse_sentinel_version(r.json()["data"])
 
-    def update(self, version_id: str, options: SentinelVersionUpdateOptions) -> SentinelVersion:
+    def update(
+        self, version_id: str, options: SentinelVersionUpdateOptions
+    ) -> SentinelVersion:
         if not valid_string_id(version_id):
             raise ValueError(ERR_INVALID_VERSION)
         attrs = options.model_dump(by_alias=True, exclude_none=True, mode="json")

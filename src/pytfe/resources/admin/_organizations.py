@@ -24,7 +24,9 @@ def _parse_admin_organization(data: dict[str, Any]) -> AdminOrganization:
 
 
 class _AdminOrganizations(_Service):
-    def list(self, options: AdminOrganizationListOptions | None = None) -> Iterator[AdminOrganization]:
+    def list(
+        self, options: AdminOrganizationListOptions | None = None
+    ) -> Iterator[AdminOrganization]:
         params: dict[str, Any] = {}
         if options:
             if options.query:
@@ -42,7 +44,9 @@ class _AdminOrganizations(_Service):
         r = self.t.request("GET", f"/api/v2/admin/organizations/{name}")
         return _parse_admin_organization(r.json()["data"])
 
-    def update(self, name: str, options: AdminOrganizationUpdateOptions) -> AdminOrganization:
+    def update(
+        self, name: str, options: AdminOrganizationUpdateOptions
+    ) -> AdminOrganization:
         if not valid_string_id(name):
             raise ValueError(ERR_INVALID_NAME)
         attrs = options.model_dump(by_alias=True, exclude_none=True, mode="json")

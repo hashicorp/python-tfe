@@ -17,12 +17,14 @@ def _parse_admin_run(data: dict[str, Any]) -> AdminRun:
     rels = data.get("relationships") or {}
     org_data = (rels.get("organization") or {}).get("data") or {}
     ws_data = (rels.get("workspace") or {}).get("data") or {}
-    return AdminRun.model_validate({
-        "id": data.get("id"),
-        "organization_name": org_data.get("id"),
-        "workspace_id": ws_data.get("id"),
-        **attrs,
-    })
+    return AdminRun.model_validate(
+        {
+            "id": data.get("id"),
+            "organization_name": org_data.get("id"),
+            "workspace_id": ws_data.get("id"),
+            **attrs,
+        }
+    )
 
 
 class _AdminRuns(_Service):

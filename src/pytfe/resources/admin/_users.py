@@ -66,7 +66,9 @@ class _AdminUsers(_Service):
     def revoke_admin(self, user_id: str) -> AdminUser:
         if not valid_string_id(user_id):
             raise ValueError(ERR_INVALID_NAME)
-        r = self.t.request("POST", f"/api/v2/admin/users/{user_id}/actions/revoke-admin")
+        r = self.t.request(
+            "POST", f"/api/v2/admin/users/{user_id}/actions/revoke-admin"
+        )
         return _parse_admin_user(r.json()["data"])
 
     def disable_two_factor(self, user_id: str) -> AdminUser:

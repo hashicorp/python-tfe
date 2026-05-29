@@ -10,7 +10,11 @@ from ._saml import _AdminSAMLSettings
 from ._scim import _AdminSCIMSettings, _AdminSCIMTokens
 from ._smtp import _AdminSMTPSettings
 from ._users import _AdminUsers
-from ._versions import _AdminOpaVersions, _AdminSentinelVersions, _AdminTerraformVersions
+from ._versions import (
+    _AdminOpaVersions,
+    _AdminSentinelVersions,
+    _AdminTerraformVersions,
+)
 from ._workspaces import _AdminWorkspaces
 
 
