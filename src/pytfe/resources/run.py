@@ -57,7 +57,9 @@ def _run_from(d: dict[str, Any], included: list[dict[str, Any]] | None = None) -
     """Parse a JSON:API run resource into a Run, hydrating relations."""
     attr = dict(d.get("attributes") or {})
     attr["id"] = _safe_str(d.get("id"))
-    attr.update(parse_relationships(d.get("relationships"), _RUN_REL_MAP, included=included))
+    attr.update(
+        parse_relationships(d.get("relationships"), _RUN_REL_MAP, included=included)
+    )
     return Run.model_validate(attr)
 
 

@@ -65,7 +65,10 @@ class RegistryProviderVersions(_Service):
                 {
                     "registry-provider": RegistryProvider,
                     # wire relation "platforms" maps to the divergent field name
-                    "platforms": ("registry_provider_platforms", RegistryProviderPlatform),
+                    "platforms": (
+                        "registry_provider_platforms",
+                        RegistryProviderPlatform,
+                    ),
                 },
             )
         )

@@ -105,9 +105,7 @@ class TestIncludedHydration:
 
 class TestSharedHelper:
     def test_build_included_index_keys_by_type_and_id(self):
-        idx = build_included_index(
-            [{"type": "runs", "id": "run-x", "attributes": {}}]
-        )
+        idx = build_included_index([{"type": "runs", "id": "run-x", "attributes": {}}])
         assert ("runs", "run-x") in idx
 
     def test_build_included_index_dedupes_first_wins(self):

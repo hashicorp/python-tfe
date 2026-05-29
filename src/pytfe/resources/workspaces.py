@@ -205,7 +205,9 @@ def _ws_from(
     attr["vcs-repo"] = vcs_repo
 
     # Generic relations: declarative map + optional ``included`` hydration.
-    attr.update(parse_relationships(relationships, _WORKSPACE_REL_MAP, included=included))
+    attr.update(
+        parse_relationships(relationships, _WORKSPACE_REL_MAP, included=included)
+    )
 
     # Special-case relations that don't fit the generic (attr, Model) map.
     attr["outputs"] = outputs
