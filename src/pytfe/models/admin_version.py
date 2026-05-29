@@ -6,6 +6,14 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field
 
 
+class ToolVersionArchitecture(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    url: str | None = None
+    sha: str | None = None
+    os: str | None = None
+    arch: str | None = None
+
+
 class TerraformVersion(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
     id: str | None = None
@@ -19,6 +27,7 @@ class TerraformVersion(BaseModel):
     deprecated_reason: str | None = Field(default=None, alias="deprecated-reason")
     usage: int | None = None
     created_at: str | None = Field(default=None, alias="created-at")
+    archs: list[ToolVersionArchitecture] | None = None
 
 
 class TerraformVersionCreateOptions(BaseModel):
@@ -31,6 +40,7 @@ class TerraformVersionCreateOptions(BaseModel):
     beta: bool | None = None
     deprecated: bool | None = None
     deprecated_reason: str | None = Field(default=None, alias="deprecated-reason")
+    archs: list[ToolVersionArchitecture] | None = None
 
 
 class TerraformVersionUpdateOptions(BaseModel):
@@ -43,6 +53,7 @@ class TerraformVersionUpdateOptions(BaseModel):
     beta: bool | None = None
     deprecated: bool | None = None
     deprecated_reason: str | None = Field(default=None, alias="deprecated-reason")
+    archs: list[ToolVersionArchitecture] | None = None
 
 
 class OpaVersion(BaseModel):
@@ -58,6 +69,7 @@ class OpaVersion(BaseModel):
     deprecated_reason: str | None = Field(default=None, alias="deprecated-reason")
     usage: int | None = None
     created_at: str | None = Field(default=None, alias="created-at")
+    archs: list[ToolVersionArchitecture] | None = None
 
 
 class OpaVersionCreateOptions(BaseModel):
@@ -70,6 +82,7 @@ class OpaVersionCreateOptions(BaseModel):
     beta: bool | None = None
     deprecated: bool | None = None
     deprecated_reason: str | None = Field(default=None, alias="deprecated-reason")
+    archs: list[ToolVersionArchitecture] | None = None
 
 
 class OpaVersionUpdateOptions(BaseModel):
@@ -82,6 +95,7 @@ class OpaVersionUpdateOptions(BaseModel):
     beta: bool | None = None
     deprecated: bool | None = None
     deprecated_reason: str | None = Field(default=None, alias="deprecated-reason")
+    archs: list[ToolVersionArchitecture] | None = None
 
 
 class SentinelVersion(BaseModel):
@@ -97,6 +111,7 @@ class SentinelVersion(BaseModel):
     deprecated_reason: str | None = Field(default=None, alias="deprecated-reason")
     usage: int | None = None
     created_at: str | None = Field(default=None, alias="created-at")
+    archs: list[ToolVersionArchitecture] | None = None
 
 
 class SentinelVersionCreateOptions(BaseModel):
@@ -109,6 +124,7 @@ class SentinelVersionCreateOptions(BaseModel):
     beta: bool | None = None
     deprecated: bool | None = None
     deprecated_reason: str | None = Field(default=None, alias="deprecated-reason")
+    archs: list[ToolVersionArchitecture] | None = None
 
 
 class SentinelVersionUpdateOptions(BaseModel):
@@ -121,3 +137,4 @@ class SentinelVersionUpdateOptions(BaseModel):
     beta: bool | None = None
     deprecated: bool | None = None
     deprecated_reason: str | None = Field(default=None, alias="deprecated-reason")
+    archs: list[ToolVersionArchitecture] | None = None

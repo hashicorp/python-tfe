@@ -18,6 +18,9 @@ class AdminWorkspace(BaseModel):
     id: str | None = None
     name: str | None = None
     locked: bool | None = None
-    execution_mode: str | None = Field(default=None, alias="execution-mode")
+    # vcs-repo is an attribute object; only the identifier is surfaced here.
+    vcs_repo_identifier: str | None = None
+    # Lifted from the `organization` relationship at parse time.
     organization_name: str | None = None
+    # Lifted from the `current-run` relationship at parse time.
     current_run_id: str | None = None

@@ -17,11 +17,13 @@ def _parse_admin_workspace(data: dict[str, Any]) -> AdminWorkspace:
     rels = data.get("relationships") or {}
     org_data = (rels.get("organization") or {}).get("data") or {}
     run_data = (rels.get("current-run") or {}).get("data") or {}
+    vcs_repo = attrs.pop("vcs-repo", None) or {}
     return AdminWorkspace.model_validate(
         {
             "id": data.get("id"),
             "organization_name": org_data.get("id"),
             "current_run_id": run_data.get("id"),
+            "vcs_repo_identifier": vcs_repo.get("identifier") if vcs_repo else None,
             **attrs,
         }
     )

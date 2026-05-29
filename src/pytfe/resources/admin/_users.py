@@ -60,14 +60,14 @@ class _AdminUsers(_Service):
     def grant_admin(self, user_id: str) -> AdminUser:
         if not valid_string_id(user_id):
             raise ValueError(ERR_INVALID_NAME)
-        r = self.t.request("POST", f"/api/v2/admin/users/{user_id}/actions/grant-admin")
+        r = self.t.request("POST", f"/api/v2/admin/users/{user_id}/actions/grant_admin")
         return _parse_admin_user(r.json()["data"])
 
     def revoke_admin(self, user_id: str) -> AdminUser:
         if not valid_string_id(user_id):
             raise ValueError(ERR_INVALID_NAME)
         r = self.t.request(
-            "POST", f"/api/v2/admin/users/{user_id}/actions/revoke-admin"
+            "POST", f"/api/v2/admin/users/{user_id}/actions/revoke_admin"
         )
         return _parse_admin_user(r.json()["data"])
 
@@ -75,6 +75,6 @@ class _AdminUsers(_Service):
         if not valid_string_id(user_id):
             raise ValueError(ERR_INVALID_NAME)
         r = self.t.request(
-            "POST", f"/api/v2/admin/users/{user_id}/actions/disable-two-factor"
+            "POST", f"/api/v2/admin/users/{user_id}/actions/disable_two_factor"
         )
         return _parse_admin_user(r.json()["data"])

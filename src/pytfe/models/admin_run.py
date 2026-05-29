@@ -20,7 +20,9 @@ class AdminRun(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
     id: str | None = None
     status: RunStatus | None = None
+    has_changes: bool | None = Field(default=None, alias="has-changes")
     plan_only: bool | None = Field(default=None, alias="plan-only")
-    organization_name: str | None = None
-    workspace_name: str | None = None
+    # Populated from the `workspace` relationship (always present).
     workspace_id: str | None = None
+    # Populated only when `?include=workspace.organization` is passed.
+    organization_name: str | None = None

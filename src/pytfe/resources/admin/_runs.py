@@ -15,12 +15,13 @@ from .._base import _Service
 def _parse_admin_run(data: dict[str, Any]) -> AdminRun:
     attrs = data.get("attributes") or {}
     rels = data.get("relationships") or {}
-    org_data = (rels.get("organization") or {}).get("data") or {}
     ws_data = (rels.get("workspace") or {}).get("data") or {}
+    # organization is a compound include (workspace.organization) — only
+    # present when the caller passes ?include=workspace.organization.
+    # We don't surface that parameter yet, so organization_name stays None.
     return AdminRun.model_validate(
         {
             "id": data.get("id"),
-            "organization_name": org_data.get("id"),
             "workspace_id": ws_data.get("id"),
             **attrs,
         }

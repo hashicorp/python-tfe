@@ -48,6 +48,7 @@ from .admin_version import (
     TerraformVersion,
     TerraformVersionCreateOptions,
     TerraformVersionUpdateOptions,
+    ToolVersionArchitecture,
 )
 
 # ── TFE admin workspaces ──────────────────────────────────────────────────────
@@ -606,6 +607,7 @@ from .workspace_run_task import (
 # ── Public surface ────────────────────────────────────────────────────────────
 __all__ = [
     # TFE admin versions
+    "ToolVersionArchitecture",
     "TerraformVersion",
     "TerraformVersionCreateOptions",
     "TerraformVersionUpdateOptions",
