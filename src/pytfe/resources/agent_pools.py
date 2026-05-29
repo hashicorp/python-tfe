@@ -16,6 +16,7 @@ from pytfe.models.organization import Organization
 from pytfe.models.project import Project
 from pytfe.models.workspace import Workspace
 
+from .._jsonapi import parse_relationships
 from ..errors import (
     InvalidAgentPoolIDError,
     InvalidOrgError,
@@ -404,41 +405,18 @@ class AgentPools(_Service):
     def _parse_agent_pool_from(self, data: dict[str, Any]) -> AgentPool:
         """Helper method to parse agent pool data from API response."""
         attr = data.get("attributes", {})
-        relationships = data.get("relationships", {})
         attr["id"] = data.get("id")
-
-        # Extract agents count
-        agents_data = relationships.get("agents", {}).get("data", [])
-        attr["agents"] = [Agent(id=agent["id"]) for agent in agents_data]
-
-        org_data = relationships.get("organization", {}).get("data")
-        attr["organization"] = Organization(id=org_data["id"]) if org_data else None
-
-        workspaces_data = relationships.get("workspaces", {}).get("data", [])
-        attr["workspaces"] = [
-            Workspace.model_validate({"id": ws["id"]}) for ws in workspaces_data
-        ]
-
-        allowed_workspaces_data = relationships.get("allowed-workspaces", {}).get(
-            "data", []
+        attr.update(
+            parse_relationships(
+                data.get("relationships"),
+                {
+                    "agents": Agent,
+                    "organization": Organization,
+                    "workspaces": Workspace,
+                    "allowed-workspaces": Workspace,
+                    "excluded-workspaces": Workspace,
+                    "allowed-projects": Project,
+                },
+            )
         )
-        attr["allowed_workspaces"] = [
-            Workspace.model_validate({"id": ws["id"]}) for ws in allowed_workspaces_data
-        ]
-
-        excluded_workspaces_data = relationships.get("excluded-workspaces", {}).get(
-            "data", []
-        )
-        attr["excluded_workspaces"] = [
-            Workspace.model_validate({"id": ws["id"]})
-            for ws in excluded_workspaces_data
-        ]
-
-        allowed_projects_data = relationships.get("allowed-projects", {}).get(
-            "data", []
-        )
-        attr["allowed_projects"] = [
-            Project.model_validate({"id": proj["id"]}) for proj in allowed_projects_data
-        ]
-
         return AgentPool.model_validate(attr)

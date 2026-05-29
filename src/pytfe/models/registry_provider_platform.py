@@ -25,7 +25,9 @@ from .registry_provider_version import (
 class RegistryProviderPlatformPermissions(BaseModel):
     """Registry provider platform permissions."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     can_delete: bool = Field(alias="can-delete")
     can_upload_asset: bool = Field(alias="can-upload-asset")
@@ -34,7 +36,9 @@ class RegistryProviderPlatformPermissions(BaseModel):
 class RegistryProviderPlatform(BaseModel):
     """Registry provider platform model."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     os: str = Field(alias="os", default="")

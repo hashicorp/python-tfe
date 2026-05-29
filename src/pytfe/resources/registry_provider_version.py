@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import parse_relationships
 from ..errors import (
     RequiredPrivateRegistryError,
 )
@@ -57,26 +58,17 @@ class RegistryProviderVersions(_Service):
         """Parse a registry provider version from API response data."""
 
         attrs = data.get("attributes", {})
-        relationships = data.get("relationships", {})
         attrs["id"] = data.get("id")
-
-        # Parse relationships as typed stubs
-        if "registry-provider" in relationships:
-            rp_data = relationships["registry-provider"].get("data")
-            if rp_data and rp_data.get("id"):
-                attrs["registry_provider"] = RegistryProvider.model_construct(
-                    id=rp_data["id"]
-                )
-
-        if "platforms" in relationships:
-            platforms_data = relationships["platforms"].get("data", [])
-            if platforms_data:
-                attrs["registry_provider_platforms"] = [
-                    RegistryProviderPlatform.model_construct(id=p["id"])
-                    for p in platforms_data
-                    if p.get("id")
-                ]
-
+        attrs.update(
+            parse_relationships(
+                data.get("relationships"),
+                {
+                    "registry-provider": RegistryProvider,
+                    # wire relation "platforms" maps to the divergent field name
+                    "platforms": ("registry_provider_platforms", RegistryProviderPlatform),
+                },
+            )
+        )
         return RegistryProviderVersion.model_validate(attrs)
 
     def list(

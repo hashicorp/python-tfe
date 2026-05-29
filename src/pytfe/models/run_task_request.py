@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class RunTaskRequestCapabilities(BaseModel):
     """Defines the capabilities that the caller supports."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     outcomes: bool = Field(..., description="Whether the caller supports outcomes")
 
@@ -22,7 +22,7 @@ class RunTaskRequest(BaseModel):
     https://developer.hashicorp.com/terraform/enterprise/api-docs/run-tasks/run-tasks-integration#common-properties
     """
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     access_token: str = Field(
         ..., alias="access_token", description="The access token for the run task"

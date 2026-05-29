@@ -11,7 +11,9 @@ from pydantic import BaseModel, ConfigDict, Field
 class AssessmentResult(BaseModel):
     """Result of a workspace health assessment (drift detection)."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     succeeded: bool | None = Field(default=None, alias="succeeded")

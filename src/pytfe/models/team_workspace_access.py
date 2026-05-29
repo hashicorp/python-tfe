@@ -43,7 +43,9 @@ class TeamWorkspaceSentinelMocksPermission(str, Enum):
 class TeamWorkspaceAccess(BaseModel):
     """A team's access grant on a workspace (`/api/v2/team-workspaces/{id}`)."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     access: TeamWorkspaceAccessType | None = None

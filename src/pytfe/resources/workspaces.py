@@ -9,6 +9,7 @@ from typing import Any
 
 from pytfe.models.ssh_key import SSHKey
 
+from .._jsonapi import RelationMap, parse_relationships
 from ..errors import (
     InvalidOrgError,
     InvalidSSHKeyIDError,
@@ -70,7 +71,6 @@ from ..utils import (
     valid_string,
     valid_string_id,
 )
-from .._jsonapi import RelationMap, parse_relationships
 from ._base import _Service
 
 # Declarative relationship map: wire relation name -> model (attr derived as

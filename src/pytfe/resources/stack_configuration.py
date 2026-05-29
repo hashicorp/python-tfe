@@ -8,6 +8,7 @@ from typing import Any
 
 from pytfe.models.configuration_version import IngressAttributes
 
+from .._jsonapi import parse_relationships
 from ..models.stack import Stack
 from ..models.stack_configuration import (
     StackConfiguration,
@@ -82,17 +83,10 @@ class StackConfigurations(_Service):
         """Parse a StackConfiguration from API response data."""
         attrs = dict(data.get("attributes", {}))
         attrs["id"] = data.get("id")
-        relationships = data.get("relationships", {})
-
-        stack_data = relationships.get("stack", {}).get("data")
-        if stack_data and stack_data.get("id"):
-            attrs["stack"] = Stack.model_validate({"id": stack_data["id"]})
-        ingress_attributes_data = relationships.get("ingress-attributes", {}).get(
-            "data"
-        )
-        if ingress_attributes_data and ingress_attributes_data.get("id"):
-            attrs["ingress_attributes"] = IngressAttributes.model_validate(
-                {"id": ingress_attributes_data["id"]}
+        attrs.update(
+            parse_relationships(
+                data.get("relationships"),
+                {"stack": Stack, "ingress-attributes": IngressAttributes},
             )
-
+        )
         return StackConfiguration.model_validate(attrs)

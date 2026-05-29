@@ -44,7 +44,9 @@ class PolicyCheckIncludeOpt(str, Enum):
 class PolicyCheck(BaseModel):
     """PolicyCheck represents a Terraform Enterprise policy check."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     actions: PolicyActions | None = Field(None, alias="actions")
@@ -63,7 +65,9 @@ class PolicyCheck(BaseModel):
 class PolicyActions(BaseModel):
     """PolicyActions represents the policy check actions."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     is_overridable: bool | None = Field(None, alias="is-overridable")
 
@@ -71,7 +75,9 @@ class PolicyActions(BaseModel):
 class PolicyPermissions(BaseModel):
     """PolicyPermissions represents the policy check permissions."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     can_override: bool | None = Field(None, alias="can-override")
 
@@ -79,7 +85,9 @@ class PolicyPermissions(BaseModel):
 class PolicyResult(BaseModel):
     """PolicyResult represents the complete policy check result"""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     advisory_failed: int | None = Field(None, alias="advisory-failed")
     duration: int | None = Field(None, alias="duration")
@@ -94,7 +102,9 @@ class PolicyResult(BaseModel):
 class PolicyStatusTimestamps(BaseModel):
     """PolicyStatusTimestamps holds the timestamps for individual policy check statuses."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     errored_at: datetime | None = Field(None, alias="errored-at")
     hard_failed_at: datetime | None = Field(None, alias="hard-failed-at")
@@ -115,7 +125,9 @@ class PolicyCheckListOptions(BaseModel):
 class PolicyCheckList(BaseModel):
     """PolicyCheckList represents a list of policy checks."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     items: list[PolicyCheck] = Field(default_factory=list, alias="items")
     current_page: int | None = Field(None, alias="current_page")

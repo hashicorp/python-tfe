@@ -10,6 +10,7 @@ from pytfe.models import (
     Project,
 )
 
+from .._jsonapi import parse_relationships
 from ..models.stack import (
     Stack,
     StackCreateOptions,
@@ -127,16 +128,14 @@ class Stacks(_Service):
     def _stack_from(self, data: dict) -> Stack:
         attrs = data.get("attributes", {})
         attrs["id"] = data.get("id")
-        relationships = data.get("relationships", {})
         vcs_repo_raw = attrs.get("vcs-repo")
-        if vcs_repo_raw:
-            attrs["vcs_repo"] = StackVcsRepo.model_validate(vcs_repo_raw)
-        else:
-            attrs["vcs_repo"] = None
-        project_data = relationships.get("project", {}).get("data", {})
-        agent_pool_data = relationships.get("agent-pool", {}).get("data", {})
-        if isinstance(project_data, dict) and project_data.get("id"):
-            attrs["project"] = Project(id=project_data["id"])
-        if isinstance(agent_pool_data, dict) and agent_pool_data.get("id"):
-            attrs["agent_pool"] = AgentPool(id=agent_pool_data["id"])
+        attrs["vcs_repo"] = (
+            StackVcsRepo.model_validate(vcs_repo_raw) if vcs_repo_raw else None
+        )
+        attrs.update(
+            parse_relationships(
+                data.get("relationships"),
+                {"project": Project, "agent-pool": AgentPool},
+            )
+        )
         return Stack.model_validate(attrs)

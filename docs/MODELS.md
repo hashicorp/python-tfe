@@ -26,6 +26,7 @@ New or touched `BaseModel` classes should set `model_config = ConfigDict(...)` u
 | `populate_by_name=True` | **Always.** Lets callers pass either the field name (`created_at=...`) or the alias (`{"created-at": ...}`) when constructing. |
 | `validate_by_name=True` | Use on models that are parsed *from* API responses **or** constructed by callers via field names. Pair with `populate_by_name=True`. |
 | `extra="forbid"` | Use on `*CreateOptions` / `*UpdateOptions` / option models where you want a typo (`workspce_id=...`) to fail loudly instead of being silently dropped. Don't put it on response models — the API can add fields and we don't want that to break parsing. |
+| `extra="allow"` | Standard for **response models** parsed from API payloads. The default (`extra="ignore"`) silently drops any wire attribute without a declared field, so a new server field becomes a data-loss bug. `extra="allow"` retains undeclared fields in `model_extra` under their wire names (e.g. `model_extra["future-field"]`). Note: extra keys are *not* dot-accessible as snake_case and have no type — add an explicit aliased field for anything users should access ergonomically. `Workspace` is the reference implementation; relationship parsing for these models goes through `resources/_jsonapi`. |
 | `arbitrary_types_allowed=True` | Only when you genuinely have a non-Pydantic type in a field (rare). |
 
 The standard line you'll write 90% of the time:

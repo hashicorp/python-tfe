@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import build_included_index, parse_relationships
 from ..errors import (
     InvalidNoCodeModuleIDError,
     InvalidOrgError,
@@ -94,25 +95,23 @@ def _no_code_module_from(
     attrs = data.get("attributes") or {}
     relationships = data.get("relationships") or {}
 
-    module = NoCodeModule.model_validate(
-        {
-            "id": data.get("id"),
-            "enabled": attrs.get("enabled"),
-            "version-pin": attrs.get("version-pin"),
-        }
+    module_attrs: dict[str, Any] = {
+        "id": data.get("id"),
+        "enabled": attrs.get("enabled"),
+        "version-pin": attrs.get("version-pin"),
+    }
+    module_attrs.update(
+        parse_relationships(
+            relationships,
+            {"organization": Organization, "registry-module": RegistryModule},
+            included=included,
+        )
     )
-
-    org_data = (relationships.get("organization") or {}).get("data")
-    if org_data and org_data.get("id"):
-        module.organization = Organization.model_construct(id=org_data["id"])
-
-    rm_data = (relationships.get("registry-module") or {}).get("data")
-    if rm_data and rm_data.get("id"):
-        module.registry_module = RegistryModule.model_construct(id=rm_data["id"])
+    module = NoCodeModule.model_validate(module_attrs)
 
     vo_rel = (relationships.get("variable-options") or {}).get("data") or []
     if vo_rel and included:
-        index = {(item.get("type"), item.get("id")): item for item in included}
+        index = build_included_index(included)
         resolved: list[NoCodeVariableOption] = []
         for ref in vo_rel:
             key = (ref.get("type"), ref.get("id"))
@@ -138,20 +137,14 @@ def _workspace_upgrade_from(data: dict[str, Any]) -> WorkspaceUpgrade:
     attrs = data.get("attributes") or {}
     relationships = data.get("relationships") or {}
 
-    upgrade = WorkspaceUpgrade.model_validate(
-        {
-            "id": data.get("id"),
-            "status": attrs.get("status"),
-            "plan-url": attrs.get("plan-url"),
-            "message": attrs.get("message"),
-        }
-    )
-
-    ws_data = (relationships.get("workspace") or {}).get("data")
-    if ws_data and ws_data.get("id"):
-        upgrade.workspace = Workspace.model_construct(id=ws_data["id"])
-
-    return upgrade
+    upgrade_attrs: dict[str, Any] = {
+        "id": data.get("id"),
+        "status": attrs.get("status"),
+        "plan-url": attrs.get("plan-url"),
+        "message": attrs.get("message"),
+    }
+    upgrade_attrs.update(parse_relationships(relationships, {"workspace": Workspace}))
+    return WorkspaceUpgrade.model_validate(upgrade_attrs)
 
 
 class NoCodeModules(_Service):

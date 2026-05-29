@@ -25,7 +25,9 @@ class StackSortColumn(str, Enum):
 class StackVcsRepo(BaseModel):
     """StackVCSRepo represents the version control system repository for a stack."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     identifier: str = Field(alias="identifier")
     branch: str | None = Field(default=None, alias="branch")
@@ -51,7 +53,9 @@ class StackVcsRepoOptions(BaseModel):
 class Stack(BaseModel):
     """Stack represents a stack in Terraform Cloud."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     name: str | None = Field(default=None, alias="name")

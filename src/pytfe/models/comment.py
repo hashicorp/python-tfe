@@ -10,7 +10,9 @@ from ..utils import valid_string
 
 
 class Comment(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     body: str = Field(default="", alias="body")

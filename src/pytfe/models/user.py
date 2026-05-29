@@ -5,13 +5,17 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class TwoFactor(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
     enabled: bool = Field(default=False, alias="enabled")
     verified: bool = Field(default=False, alias="verified")
 
 
 class UserPermissions(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     can_create_organizations: bool = Field(
         default=False, alias="can-create-organizations"
@@ -24,7 +28,9 @@ class UserPermissions(BaseModel):
 
 
 class User(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str = Field(..., alias="id")
     auth_method: str | None = Field(default=None, alias="auth-method")

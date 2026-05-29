@@ -57,7 +57,7 @@ class OAuthClient(BaseModel):
     agent_pool: dict | None = Field(None, alias="agent-pool")
     projects: list[dict] | None = None
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
 
 class OAuthClientList(BaseModel):

@@ -45,13 +45,17 @@ class WorkspaceSource(str, Enum):
 
 
 class WorkspaceActions(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     is_destroyable: bool = Field(default=False, alias="is-destroyable")
 
 
 class WorkspacePermissions(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     can_destroy: bool = Field(default=False, alias="can-destroy")
     can_force_unlock: bool = Field(default=False, alias="can-force-unlock")
@@ -68,14 +72,18 @@ class WorkspacePermissions(BaseModel):
 
 
 class WorkspaceSettingOverwrites(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     execution_mode: bool | None = Field(None, alias="execution-mode")
     agent_pool: bool | None = Field(None, alias="agent-pool")
 
 
 class WorkspaceOutputs(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     name: str | None = Field(default=None, alias="name")
@@ -85,7 +93,9 @@ class WorkspaceOutputs(BaseModel):
 
 
 class LockedByChoice(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     run: Any | None = None
     user: Any | None = None
@@ -93,7 +103,9 @@ class LockedByChoice(BaseModel):
 
 
 class VCSRepo(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     branch: str | None = Field(default=None, alias="branch")
     display_identifier: str | None = Field(default=None, alias="display-identifier")

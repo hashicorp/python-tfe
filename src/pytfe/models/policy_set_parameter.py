@@ -10,7 +10,9 @@ from .variable import CategoryType
 
 
 class PolicySetParameter(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     key: str = Field(..., alias="key")

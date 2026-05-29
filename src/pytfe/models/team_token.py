@@ -15,7 +15,9 @@ from .user import User
 class TeamToken(BaseModel):
     """TeamToken represents a Terraform Enterprise team token."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     created_at: datetime | None = Field(default=None, alias="created-at")
@@ -49,7 +51,9 @@ class TeamTokenListOptions(BaseModel):
 
 
 class CreatedByChoice(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     organization: Organization | None = None
     user: User | None = None

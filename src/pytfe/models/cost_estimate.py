@@ -10,7 +10,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class CostEstimate(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     delta_monthly_cost: str = Field(default="", alias="delta-monthly-cost")
@@ -36,7 +38,9 @@ class CostEstimateStatus(str, Enum):
 
 
 class CostEstimateStatusTimestamps(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     canceled_at: datetime = Field(..., alias="canceled-at")
     errored_at: datetime = Field(..., alias="errored-at")

@@ -31,7 +31,7 @@ class OrgMembershipIncludeOpt(str, Enum):
 class OrganizationMembership(BaseModel):
     """Represents a Terraform Enterprise organization membership."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     id: str
     status: OrganizationMembershipStatus | None = Field(default=None, alias="status")

@@ -22,7 +22,9 @@ class ApplyStatus(str, Enum):
 
 
 class Apply(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     log_read_url: str | None = Field(None, alias="log-read-url")
@@ -37,7 +39,9 @@ class Apply(BaseModel):
 
 
 class ApplyStatusTimestamps(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     canceled_at: datetime | None = Field(None, alias="canceled-at")
     errored_at: datetime | None = Field(None, alias="errored-at")

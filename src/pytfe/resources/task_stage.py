@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import parse_relationships
 from ..errors import InvalidRunIDError, InvalidTaskStageIDError
 from ..models.policy_evaluation import PolicyEvaluation
 from ..models.run import Run
@@ -20,38 +21,21 @@ class TaskStages(_Service):
 
     def _parse_task_stage(self, data: dict[str, Any]) -> TaskStage:
         attributes = data.get("attributes", {})
-
         attributes["id"] = _safe_str(data.get("id"))
-
-        relationships = data.get("relationships", {})
-
-        run_data = relationships.get("run", {}).get("data")
-        if run_data:
-            attributes["run"] = Run.model_construct(id=run_data["id"])
-
-        task_results_data = relationships.get("task-results", {}).get(
-            "data",
-            [],
+        attributes.update(
+            parse_relationships(
+                data.get("relationships"),
+                {
+                    "run": Run,
+                    "task-results": TaskResult,
+                    "policy-evaluations": PolicyEvaluation,
+                },
+            )
         )
-
-        attributes["task-results"] = [
-            TaskResult.model_construct(id=task_result["id"])
-            for task_result in task_results_data
-        ]
-
-        policy_evaluations_data = relationships.get(
-            "policy-evaluations",
-            {},
-        ).get(
-            "data",
-            [],
-        )
-
-        attributes["policy-evaluations"] = [
-            PolicyEvaluation.model_construct(id=policy_evaluation["id"])
-            for policy_evaluation in policy_evaluations_data
-        ]
-
+        # Preserve the historical contract: parsed task stages expose empty
+        # lists (not None) for these collections when the relations are absent.
+        attributes.setdefault("task_results", [])
+        attributes.setdefault("policy_evaluations", [])
         return TaskStage.model_validate(attributes)
 
     # Read

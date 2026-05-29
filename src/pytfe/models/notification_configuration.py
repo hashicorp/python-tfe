@@ -53,7 +53,7 @@ class NotificationDestinationType(Enum):
 class DeliveryResponse(BaseModel):
     """Represents a notification configuration delivery response."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     body: str | None = None
     code: str | None = None
@@ -72,7 +72,7 @@ class DeliveryResponse(BaseModel):
 class NotificationConfigurationSubscribableChoice(BaseModel):
     """Choice type struct that represents the possible values within a polymorphic relation."""
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
     team: Any | None = None
     workspace: Any | None = None
@@ -81,7 +81,9 @@ class NotificationConfigurationSubscribableChoice(BaseModel):
 class NotificationConfiguration(BaseModel):
     """Represents a Notification Configuration."""
 
-    model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
+    model_config = ConfigDict(
+        populate_by_name=True, arbitrary_types_allowed=True, extra="allow"
+    )
 
     id: str | None = None
     created_at: datetime | None = Field(default=None, alias="created-at")
@@ -312,7 +314,7 @@ class NotificationConfigurationUpdateOptions(BaseModel):
 class NotificationConfigurationList(BaseModel):
     """Represents a list of notification configurations with pagination."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     items: list[NotificationConfiguration] = Field(default_factory=list)
     current_page: int = 0

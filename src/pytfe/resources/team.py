@@ -3,6 +3,7 @@ from __future__ import annotations
 import builtins
 from collections.abc import Iterator
 
+from .._jsonapi import parse_relationships
 from ..errors import (
     ERR_INVALID_ORG,
     InvalidTeamIDError,
@@ -40,23 +41,12 @@ class Teams(_Service):
     def _team_from(self, data: dict) -> Team:
         attrs = data.get("attributes", {})
         attrs["id"] = data.get("id")
-
-        relationships = data.get("relationships", {})
-
-        users_data = relationships.get("users", {}).get("data", [])
-        attrs["users"] = [
-            User.model_validate({"id": user_data.get("id")})
-            for user_data in users_data
-            if user_data.get("id")
-        ]
-        attrs["organization-memberships"] = [
-            OrganizationMembership.model_validate({"id": om_data.get("id")})
-            for om_data in relationships.get("organization-memberships", {}).get(
-                "data", []
+        attrs.update(
+            parse_relationships(
+                data.get("relationships"),
+                {"users": User, "organization-memberships": OrganizationMembership},
             )
-            if om_data.get("id")
-        ]
-
+        )
         return Team.model_validate(attrs)
 
     def create(self, organization: str, options: TeamCreateOptions) -> Team:

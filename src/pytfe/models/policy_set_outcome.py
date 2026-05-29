@@ -11,7 +11,9 @@ from .policy_evaluation import PolicyEvaluation, PolicyResultCount
 class PolicySetOutcome(BaseModel):
     """PolicySetOutcome represents outcome of the policy set that are part of the policy evaluation"""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     outcomes: list[Outcome] = Field(default_factory=list, alias="outcomes")
@@ -28,7 +30,9 @@ class PolicySetOutcome(BaseModel):
 class Outcome(BaseModel):
     """Outcome represents the outcome of the individual policy"""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     enforcement_level: str | None = Field(None, alias="enforcement-level")
     query: str | None = Field(None, alias="query")
@@ -40,7 +44,9 @@ class Outcome(BaseModel):
 class PolicySetOutcomeListFilter(BaseModel):
     """PolicySetOutcomeListFilter represents the filters that are supported while listing a policy set outcome"""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     status: str | None = Field(None, alias="status")
     enforcement_level: str | None = Field(None, alias="enforcement-level")

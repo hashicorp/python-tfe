@@ -27,7 +27,9 @@ class ExplorerViewType(str, Enum):
 class ExplorerUrlFilter(BaseModel):
     """One slot in ExplorerQueryOptions.filters → filter[i][field][op][idx] query keys."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     index: int = Field(..., ge=0, description="Filter index in the query string")
     field: str = Field(
@@ -72,7 +74,9 @@ class ExplorerRow(BaseModel):
     snake variants.
     """
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     type: str
@@ -82,7 +86,9 @@ class ExplorerRow(BaseModel):
 class ExplorerSavedQueryFilter(BaseModel):
     """One saved-view filter row (list-valued `value` matches create/update JSON)."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     field: str = Field(..., min_length=1)
     operator: str = Field(..., min_length=1)
@@ -92,7 +98,9 @@ class ExplorerSavedQueryFilter(BaseModel):
 class ExplorerSavedQuery(BaseModel):
     """Nested query on a saved view: view type, filters, optional fields and sort lists."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     query_type: ExplorerViewType = Field(..., alias="type")
     filter: list[ExplorerSavedQueryFilter] | None = None
@@ -109,7 +117,9 @@ class ExplorerSavedView(BaseModel):
     request/response payload.
     """
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     name: str

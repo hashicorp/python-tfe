@@ -27,7 +27,9 @@ class PolicySetIncludeOpt(str, Enum):
 
 
 class PolicySet(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     name: str | None = Field(None, alias="name")
@@ -63,7 +65,9 @@ class PolicySet(BaseModel):
 
 
 class PolicySetList(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     items: list[PolicySet] = Field(default_factory=list)
     current_page: int | None = None

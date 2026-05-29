@@ -25,7 +25,9 @@ class StackConfigurationStatus(str, Enum):
 class StackComponent(BaseModel):
     """StackComponent represents a stack component, specified by configuration"""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     name: str = Field(alias="name", default="")
     correlator: str = Field(alias="correlator", default="")
@@ -51,7 +53,9 @@ class StackConfigurationIncludeOps(str, Enum):
 class StackConfiguration(BaseModel):
     """StackConfiguration represents a snapshot of a stack's configuration."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     status: StackConfigurationStatus | None = Field(default=None, alias="status")

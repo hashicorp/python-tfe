@@ -29,7 +29,9 @@ class StateVersionIncludeOpt(str, Enum):
 
 
 class StateVersion(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str = Field(..., alias="id")
     created_at: datetime | None = Field(None, alias="created-at")
@@ -97,7 +99,9 @@ class StateVersionListOptions(BaseModel):
 
 
 class StateVersionList(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     items: list[StateVersion] = Field(default_factory=list)
     current_page: int | None = None

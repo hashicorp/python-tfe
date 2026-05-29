@@ -17,7 +17,9 @@ from .workspace import Workspace
 class WorkspaceRunTask(BaseModel):
     """Workspace run task model."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     enforcement_level: TaskEnforcementLevel | None = Field(

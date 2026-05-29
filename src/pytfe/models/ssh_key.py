@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class SSHKey(BaseModel):
     """Represents an SSH key in Terraform Enterprise."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     id: str = Field(..., description="The unique identifier for this SSH key")
     type: str = Field(default="ssh-keys", description="The type of this resource")
@@ -49,7 +49,7 @@ class SSHKeyListOptions(BaseModel):
 class SSHKeyList(BaseModel):
     """Represents a paginated list of SSH keys."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     items: list[SSHKey] = Field(default_factory=list, description="List of SSH keys")
     current_page: int | None = Field(None, description="Current page number")
