@@ -13,6 +13,37 @@ from pytfe.utils import valid_string_id
 from ._base import _Service
 
 
+def _transform_task_result_relationships(
+    relationships: dict[str, Any],
+) -> dict[str, Any]:
+    """Transform task result relationships into typed SDK models."""
+    result: dict[str, Any] = {
+        "policy-evaluations": [],
+    }
+
+    if not relationships:
+        return result
+
+    if data := relationships.get("task-stage", {}).get("data"):
+        result["task-stage"] = TaskStage.model_validate(data)
+
+    if data := relationships.get("run", {}).get("data"):
+        result["run"] = Run.model_validate(data)
+
+    if data := relationships.get("workspace", {}).get("data"):
+        result["workspace"] = Workspace.model_validate(data)
+
+    policy_evaluations = relationships.get("policy-evaluations", {}).get("data")
+    if isinstance(policy_evaluations, list):
+        result["policy-evaluations"] = [
+            PolicyEvaluation.model_validate(item)
+            for item in policy_evaluations
+            if isinstance(item, dict) and item.get("id")
+        ]
+
+    return result
+
+
 class TaskResults(_Service):
     def read(self, task_result_id: str) -> TaskResult:
         if not valid_string_id(task_result_id):
@@ -29,49 +60,13 @@ class TaskResults(_Service):
         return self._parse_task_result(data["data"])
 
     def _parse_task_result(self, data: dict[str, Any]) -> TaskResult:
-        # Ensure forward references in TaskResult are resolved before use.
-        TaskResult.model_rebuild(
-            raise_errors=False,
-            _types_namespace={
-                "PolicyEvaluation": PolicyEvaluation,
-                "Run": Run,
-                "TaskStage": TaskStage,
-                "Workspace": Workspace,
-            },
-        )
-
         attributes = data.get("attributes", {})
         attributes["id"] = data.get("id")
 
-        relationships = data.get("relationships", {})
-
-        # Map task-stage relationship into the TaskStage SDK model.
-        task_stage_data = relationships.get("task-stage", {}).get("data")
-        if task_stage_data:
-            attributes["task-stage"] = TaskStage.model_validate(task_stage_data)
-        else:
-            attributes["task-stage"] = None
-
-        # Map run relationship into the Run SDK model.
-        run_data = relationships.get("run", {}).get("data")
-        if run_data:
-            attributes["run"] = Run.model_validate(run_data)
-        else:
-            attributes["run"] = None
-
-        # Map workspace relationship into the Workspace SDK model.
-        workspace_data = relationships.get("workspace", {}).get("data")
-        if workspace_data:
-            attributes["workspace"] = Workspace.model_validate(workspace_data)
-        else:
-            attributes["workspace"] = None
-
-        # Map policy-evaluations relationship into a list of PolicyEvaluation models.
-        policy_evaluations_data = relationships.get("policy-evaluations", {}).get(
-            "data", []
+        relationships = _transform_task_result_relationships(
+            data.get("relationships", {}) or {}
         )
-        attributes["policy-evaluations"] = [
-            PolicyEvaluation.model_validate(pe) for pe in policy_evaluations_data
-        ]
+
+        attributes.update(relationships)
 
         return TaskResult.model_validate(attributes)
