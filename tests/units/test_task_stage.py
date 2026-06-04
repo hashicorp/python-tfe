@@ -201,7 +201,9 @@ def test_list_calls_internal_list(mocker):
     assert len(result) == 1
     assert isinstance(result[0], TaskStage)
 
-    service._list.assert_called_once_with("/api/v2/runs/run-123/task-stages")
+    service._list.assert_called_once_with(
+        "/api/v2/runs/run-123/task-stages", params=None
+    )
 
 
 # Override method tests

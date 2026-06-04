@@ -76,9 +76,9 @@ class TaskStages(_Service):
             raise InvalidRunIDError()
 
         path = f"/api/v2/runs/{run_id}/task-stages"
-        kwargs = {"params": options.model_dump(by_alias=True)} if options else {}
+        params = options.model_dump(by_alias=True) if options else None
 
-        for item in self._list(path, **kwargs):
+        for item in self._list(path, params=params):
             yield self._parse_task_stage(item)
 
     # Override

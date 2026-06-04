@@ -1,5 +1,10 @@
 # Unreleased
 
+## Bug Fixes
+
+### Variables
+* Fixed `variables.list()` / `variables.list_all()` infinite-looping on workspaces with 100 or more variables, so they are now fetched with a single request. The generic list helper also treats any response without `meta.pagination` as a single complete page, preventing the same loop on other non-paginated endpoints. [#181](https://github.com/hashicorp/python-tfe/issues/181)
+
 
 # Released
 # v1.0.0
