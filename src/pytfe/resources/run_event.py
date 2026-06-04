@@ -26,8 +26,9 @@ class RunEvents(_Service):
         params: dict[str, Any] = {}
         if options and options.include:
             params["include"] = ",".join(options.include)
+        # The run-events endpoint is not paginated; fetch the full set in one request.
         path = f"/api/v2/runs/{run_id}/run-events"
-        for item in self._list(path, params=params):
+        for item in self._list(path, params=params, paginated=False):
             attrs = item.get("attributes", {})
             attrs["id"] = item.get("id")
             yield RunEvent.model_validate(attrs)
