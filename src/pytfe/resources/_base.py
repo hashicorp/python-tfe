@@ -36,7 +36,6 @@ class _Service:
         # meta.pagination block (e.g. workspace /vars and /all-vars). Callers
         # opt those out so we issue exactly one request and never loop trying to
         # fetch a "next" page that re-returns the same set
-        # (see hashicorp/python-tfe#181).
         if not paginated:
             r = self.t.request("GET", path, params=base_params)
             json_response = r.json()
