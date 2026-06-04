@@ -103,7 +103,6 @@ class _Service:
             # collection returned in full. Treat it as a single complete page
             # and stop. Re-requesting would loop forever when the endpoint
             # ignores page[number]/page[size] and re-returns the same full set
-            # (the root cause of hashicorp/python-tfe#181).
             if len(data) >= int(p["page[size]"]):
                 logger.debug(
                     "List endpoint %s returned a full page (%d rows) without "
