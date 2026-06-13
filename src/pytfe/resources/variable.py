@@ -36,12 +36,7 @@ class Variables(_Service):
             # Add any options if needed in the future
             pass
 
-        for item in self._list(path, params=params):
-            attr = item.get("attributes", {}) or {}
-            var_id = item.get("id", "")
-            variable_data = dict(attr)
-            variable_data["id"] = var_id
-            yield Variable(**variable_data)
+        yield from self._list_variables(path, params=params)
 
     def list_all(
         self, workspace_id: str, options: VariableListOptions | None = None
@@ -56,7 +51,15 @@ class Variables(_Service):
             # Add any options if needed in the future
             pass
 
-        for item in self._list(path, params=params):
+        yield from self._list_variables(path, params=params)
+
+    def _list_variables(
+        self, path: str, *, params: dict[str, Any]
+    ) -> Iterator[Variable]:
+        response = self.t.request("GET", path, params=params)
+        data = response.json().get("data", [])
+
+        for item in data:
             attr = item.get("attributes", {}) or {}
             var_id = item.get("id", "")
             variable_data = dict(attr)
