@@ -171,6 +171,8 @@ class Workspace(BaseModel):
     source: WorkspaceSource | None = Field(None, alias="source")
     source_name: str | None = Field(None, alias="source-name")
     source_url: str | None = Field(None, alias="source-url")
+    # ID of the registry module a no-code workspace was provisioned from (#179).
+    source_module_id: str | None = Field(None, alias="source-module-id")
     structured_run_output_enabled: bool | None = Field(
         None, alias="structured-run-output-enabled"
     )
