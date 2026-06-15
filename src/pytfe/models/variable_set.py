@@ -33,7 +33,9 @@ class Parent(BaseModel):
 class VariableSet(BaseModel):
     """Represents a Terraform Enterprise variable set."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str | None = None
     name: str | None = None

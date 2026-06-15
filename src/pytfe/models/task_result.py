@@ -28,7 +28,9 @@ class TaskEnforcementLevel(str, Enum):
 
 
 class TaskResultStatusTimestamps(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     errored_at: datetime | None = Field(None, alias="errored-at")
     running_at: datetime | None = Field(None, alias="running-at")
@@ -38,7 +40,9 @@ class TaskResultStatusTimestamps(BaseModel):
 
 
 class TaskResult(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
 

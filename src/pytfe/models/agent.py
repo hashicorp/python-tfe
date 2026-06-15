@@ -52,7 +52,9 @@ class Agent(BaseModel):
 class AgentPool(BaseModel):
     """Agent Pool represents a Terraform Enterprise agent pool."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     name: str | None = Field(default=None, alias="name")

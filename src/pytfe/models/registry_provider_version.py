@@ -27,7 +27,9 @@ if TYPE_CHECKING:
 class RegistryProviderVersionPermissions(BaseModel):
     """Registry provider version permissions."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     can_delete: bool = Field(alias="can-delete")
     can_upload_asset: bool = Field(alias="can-upload-asset")
@@ -36,7 +38,9 @@ class RegistryProviderVersionPermissions(BaseModel):
 class RegistryProviderVersion(BaseModel):
     """Registry provider version model."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     version: str = Field(alias="version", default="")

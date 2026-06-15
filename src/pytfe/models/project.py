@@ -15,7 +15,9 @@ if TYPE_CHECKING:
 
 
 class Project(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     name: str | None = Field(default=None, alias="name")
@@ -124,7 +126,9 @@ class ProjectAddTagBindingsOptions(BaseModel):
 class ProjectSettingOverwrites(BaseModel):
     """Options for overwriting project settings"""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     execution_mode: bool | None = Field(alias="default-execution-mode")
     agent_pool: bool | None = Field(alias="default-agent-pool")

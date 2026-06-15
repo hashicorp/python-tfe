@@ -29,7 +29,7 @@ class QueryRunSource(str, Enum):
 class QueryRunActions(BaseModel):
     """Actions available on a query run."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     is_cancelable: bool = Field(
         ..., alias="is-cancelable", description="Whether the query run can be canceled"
@@ -44,7 +44,7 @@ class QueryRunActions(BaseModel):
 class QueryRunStatusTimestamps(BaseModel):
     """Timestamps for each status of a query run."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     pending_at: datetime | None = Field(
         None, alias="pending-at", description="When the query run was created"
@@ -78,7 +78,7 @@ class QueryRunVariable(BaseModel):
 class QueryRun(BaseModel):
     """Represents a query run in Terraform Enterprise."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     id: str = Field(..., description="The unique identifier for this query run")
     type: str = Field(default="queries", description="The type of this resource")

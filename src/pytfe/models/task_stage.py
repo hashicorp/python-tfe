@@ -26,7 +26,9 @@ class TaskStageStatus(str, Enum):
 
 
 class TaskStageStatusTimestamps(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     errored_at: datetime | None = Field(None, alias="errored-at")
     running_at: datetime | None = Field(None, alias="running-at")
@@ -36,7 +38,9 @@ class TaskStageStatusTimestamps(BaseModel):
 
 
 class Permissions(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     can_override_policy: bool | None = Field(None, alias="can-override-policy")
     can_override_tasks: bool | None = Field(None, alias="can-override-tasks")
@@ -44,13 +48,15 @@ class Permissions(BaseModel):
 
 
 class Actions(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     is_overridable: bool | None = Field(None, alias="is-overridable")
 
 
 class TaskStage(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     id: str
 

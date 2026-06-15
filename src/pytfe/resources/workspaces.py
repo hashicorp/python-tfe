@@ -9,6 +9,7 @@ from typing import Any
 
 from pytfe.models.ssh_key import SSHKey
 
+from .._jsonapi import RelationMap, parse_relationships
 from ..errors import (
     InvalidOrgError,
     InvalidSSHKeyIDError,
@@ -72,6 +73,25 @@ from ..utils import (
 )
 from ._base import _Service
 
+# Declarative relationship map: wire relation name -> model (attr derived as
+# wire.replace("-", "_")), or an explicit (attr, model) tuple where they diverge.
+# Polymorphic relations (locked-by, data-retention-policy-choice) and the
+# attribute-bearing ``outputs`` relation are handled as special cases in
+# ``_ws_from`` and intentionally left out of this map.
+_WORKSPACE_REL_MAP: RelationMap = {
+    "organization": Organization,
+    "project": Project,
+    "ssh-key": SSHKey,
+    "agent-pool": AgentPool,
+    "current-run": Run,
+    "latest-run": Run,
+    "current-configuration-version": ConfigurationVersion,
+    "current-state-version": StateVersion,
+    "current-assessment-result": AssessmentResult,
+    "remote-state-consumers": Workspace,
+    "vars": ("variables", Variable),  # wire name diverges from attr
+}
+
 
 def _em_safe(v: Any) -> ExecutionMode | None:
     # Only accept strings; map to enum if known, else None
@@ -81,8 +101,10 @@ def _em_safe(v: Any) -> ExecutionMode | None:
     return result if isinstance(result, ExecutionMode) else None
 
 
-def _ws_from(d: dict[str, Any]) -> Workspace:
-    attr: dict[str, Any] = d.get("attributes", {}) or {}
+def _ws_from(
+    d: dict[str, Any], included: list[dict[str, Any]] | None = None
+) -> Workspace:
+    attr: dict[str, Any] = dict(d.get("attributes") or {})
     relationships: dict[str, Any] = d.get("relationships", {}) or {}
 
     # Optional fields
@@ -119,7 +141,7 @@ def _ws_from(d: dict[str, Any]) -> Workspace:
             elif lb_data.get("type") == "teams":
                 locked_by = LockedByChoice.model_validate({"team": lb_data.get("id")})
 
-    # Map outputs
+    # Map outputs (the only relation whose data carries inline attributes)
     outputs = []
     if relationships.get("outputs", {}).get("data"):
         for output_data in relationships["outputs"].get("data", []):
@@ -173,48 +195,21 @@ def _ws_from(d: dict[str, Any]) -> Workspace:
                 )
 
     attr["id"] = d.get("id")
-    attr["execution_mode"] = em
+    # Overwrite the raw wire string with the coerced enum (unknown values -> None).
+    attr["execution-mode"] = em
     attr["actions"] = actions
     attr["permissions"] = permissions
-    attr["setting_overwrites"] = setting_overwrites
+    # Use alias keys consistently so the pre-built objects overwrite the raw wire
+    # dicts rather than leaving a duplicate that extra="allow" would leak.
+    attr["setting-overwrites"] = setting_overwrites
     attr["vcs-repo"] = vcs_repo
 
-    # Add parsed relations
-    if relationships.get("organization", {}).get("data"):
-        attr["organization"] = Organization.model_validate(
-            {"id": relationships["organization"]["data"].get("id")}
-        )
-    if relationships.get("project", {}).get("data"):
-        attr["project"] = Project.model_validate(
-            {"id": relationships["project"]["data"].get("id")}
-        )
-    if relationships.get("ssh-key", {}).get("data"):
-        attr["ssh_key"] = SSHKey.model_validate(
-            {"id": relationships["ssh-key"]["data"].get("id")}
-        )
-    if relationships.get("agent-pool", {}).get("data"):
-        attr["agent_pool"] = AgentPool.model_validate(
-            {"id": relationships["agent-pool"]["data"].get("id")}
-        )
-    if relationships.get("current-run", {}).get("data"):
-        attr["current_run"] = Run.model_validate(
-            {"id": relationships["current-run"]["data"].get("id")}
-        )
-    if relationships.get("current-configuration-version", {}).get("data"):
-        attr["current_configuration_version"] = ConfigurationVersion.model_validate(
-            {"id": relationships["current-configuration-version"]["data"].get("id")}
-        )
-    if relationships.get("vars", {}).get("data"):
-        attr["variables"] = [
-            Variable.model_validate({"id": item.get("id")})
-            for item in relationships["vars"]["data"]
-            if item.get("id")
-        ]
-    if relationships.get("current-state-version", {}).get("data"):
-        attr["current_state_version"] = StateVersion.model_validate(
-            {"id": relationships["current-state-version"]["data"].get("id")}
-        )
+    # Generic relations: declarative map + optional ``included`` hydration.
+    attr.update(
+        parse_relationships(relationships, _WORKSPACE_REL_MAP, included=included)
+    )
 
+    # Special-case relations that don't fit the generic (attr, Model) map.
     attr["outputs"] = outputs
     attr["locked_by"] = locked_by
     attr["data_retention_policy_choice"] = data_retention_policy_choice
@@ -280,7 +275,8 @@ class Workspaces(_Service):
             f"/api/v2/organizations/{organization}/workspaces/{workspace}",
             params=params,
         )
-        ws = _ws_from(r.json()["data"])
+        payload = r.json()
+        ws = _ws_from(payload["data"], payload.get("included"))
         ws.data_retention_policy = (
             ws.data_retention_policy_choice.convert_to_legacy_struct()
             if ws.data_retention_policy_choice
@@ -303,7 +299,8 @@ class Workspaces(_Service):
             if options.include:
                 params["include"] = ",".join([i.value for i in options.include])
         r = self.t.request("GET", f"/api/v2/workspaces/{workspace_id}", params=params)
-        ws = _ws_from(r.json()["data"])
+        payload = r.json()
+        ws = _ws_from(payload["data"], payload.get("included"))
         if ws.data_retention_policy_choice is not None:
             ws.data_retention_policy = (
                 ws.data_retention_policy_choice.convert_to_legacy_struct()

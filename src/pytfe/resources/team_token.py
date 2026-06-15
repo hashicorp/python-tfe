@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import parse_relationships
 from ..errors import InvalidOrgError, InvalidTeamIDError, InvalidTokenIDError
 from ..models.organization import Organization
 from ..models.team import Team
@@ -127,11 +128,8 @@ class TeamTokens(_Service):
         attrs["id"] = data.get("id")
         relationships = data.get("relationships", {})
 
-        team_data = relationships.get("team", {}).get("data")
-        if team_data and team_data.get("id"):
-            attrs["team"] = Team.model_construct(
-                id=team_data["id"],
-            )
+        # Simple relations via the shared helper; created-by is polymorphic below.
+        attrs.update(parse_relationships(relationships, {"team": Team}))
 
         created_by_data = relationships.get("created-by", {}).get("data")
         if created_by_data and created_by_data.get("id"):

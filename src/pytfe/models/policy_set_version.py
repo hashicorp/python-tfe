@@ -41,7 +41,9 @@ class PolicySetVersionStatus(str, Enum):
 class PolicySetVersionStatusTimestamps(BaseModel):
     """PolicySetVersionStatusTimestamps holds the timestamps for individual policy set version statuses."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     pending_at: datetime | None = Field(None, alias="pending-at")
     ingressing_at: datetime | None = Field(None, alias="ingressing-at")
@@ -50,7 +52,9 @@ class PolicySetVersionStatusTimestamps(BaseModel):
 
 
 class PolicySetIngressAttributes(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     commit_sha: str | None = Field(None, alias="commit-sha")
     commit_url: str | None = Field(None, alias="commit-url")
@@ -60,7 +64,9 @@ class PolicySetIngressAttributes(BaseModel):
 class PolicySetVersion(BaseModel):
     """PolicySetVersion represents a Terraform Enterprise Policy Set Version"""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     source: PolicySetVersionSource | None = Field(None, alias="source")

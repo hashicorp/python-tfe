@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import RelationMap, parse_relationships
 from ..errors import (
     InvalidOrgError,
     InvalidRunIDError,
@@ -37,48 +38,29 @@ from ..models.workspace import Workspace
 from ..utils import _safe_str, valid_string, valid_string_id
 from ._base import _Service
 
+_RUN_REL_MAP: RelationMap = {
+    "apply": Apply,
+    "configuration-version": ConfigurationVersion,
+    "cost-estimate": CostEstimate,
+    "created-by": User,
+    "confirmed-by": User,
+    "plan": Plan,
+    "workspace": Workspace,
+    "policy-checks": PolicyCheck,
+    "run-events": RunEvent,
+    "task-stages": TaskStage,
+    "comments": Comment,
+}
 
-def transform_relationships(relationships: dict) -> Any:
-    """
-    Transform relationships dict to map relationship names to their model objects.
-    Single IDs become model instances, multiple IDs become lists of model instances.
-    """
-    result = {}
 
-    # Map relationship keys to their model constructors
-    model_map = {
-        "apply": Apply,
-        "configuration-version": ConfigurationVersion,
-        "cost-estimate": CostEstimate,
-        "created-by": User,
-        "confirmed-by": User,
-        "plan": Plan,
-        "workspace": Workspace,
-        "policy-checks": PolicyCheck,
-        "run-events": RunEvent,
-        "task-stages": TaskStage,
-        "comments": Comment,
-    }
-
-    for key, value in relationships.items():
-        data = value.get("data")
-
-        if data is None:
-            continue
-
-        model_class = model_map.get(key)
-        if not model_class:
-            # Unknown relationship type, skip it
-            continue
-
-        if isinstance(data, list):
-            # Multiple entries - create list of model instances
-            result[key] = [model_class(id=item["id"]) for item in data if "id" in item]
-        elif isinstance(data, dict) and "id" in data:
-            # Single entry - create model instance
-            result[key] = model_class(id=data["id"])
-
-    return result
+def _run_from(d: dict[str, Any], included: list[dict[str, Any]] | None = None) -> Run:
+    """Parse a JSON:API run resource into a Run, hydrating relations."""
+    attr = dict(d.get("attributes") or {})
+    attr["id"] = _safe_str(d.get("id"))
+    attr.update(
+        parse_relationships(d.get("relationships"), _RUN_REL_MAP, included=included)
+    )
+    return Run.model_validate(attr)
 
 
 class Runs(_Service):
@@ -91,9 +73,7 @@ class Runs(_Service):
         params = options.model_dump(by_alias=True) if options else {}
         path = f"/api/v2/workspaces/{workspace_id}/runs"
         for item in self._list(path, params=params):
-            attrs = item.get("attributes", {})
-            attrs["id"] = item.get("id")
-            yield Run.model_validate(attrs)
+            yield _run_from(item)
 
     def list_for_organization(
         self, organization: str, options: RunListForOrganizationOptions | None = None
@@ -106,9 +86,7 @@ class Runs(_Service):
         # meta = jd.get("meta", {})
         # pagination = meta.get("pagination", {})
         for item in self._list(path, params=params):
-            attrs = item.get("attributes", {})
-            attrs["id"] = item.get("id")
-            yield Run.model_validate(attrs)
+            yield _run_from(item)
 
     def create(self, options: RunCreateOptions) -> Run:
         """Create a new run for the given workspace."""
@@ -148,13 +126,7 @@ class Runs(_Service):
             "/api/v2/runs",
             json_body=body,
         )
-        d = r.json().get("data", {})
-        attrs = d.get("attributes", {})
-        relationships = transform_relationships(d.get("relationships", {}))
-        combined = {
-            k.replace("-", "_"): v for k, v in {**attrs, **relationships}.items()
-        }
-        return Run(id=_safe_str(d.get("id")), **combined)
+        return _run_from(r.json().get("data", {}))
 
     def read(self, run_id: str) -> Run:
         """Read a run by its ID."""
@@ -174,13 +146,8 @@ class Runs(_Service):
             f"/api/v2/runs/{run_id}",
             params=params,
         )
-        d = r.json().get("data", {})
-        attrs = d.get("attributes", {})
-        relationships = transform_relationships(d.get("relationships", {}))
-        combined = {
-            k.replace("-", "_"): v for k, v in {**attrs, **relationships}.items()
-        }
-        return Run(id=_safe_str(d.get("id")), **combined)
+        payload = r.json()
+        return _run_from(payload.get("data", {}), payload.get("included"))
 
     def apply(self, run_id: str, options: RunApplyOptions | None = None) -> None:
         """Apply a run by its ID."""

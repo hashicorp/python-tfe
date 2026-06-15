@@ -22,7 +22,7 @@ class TaskResultCallbackStatus(str, Enum):
 class TaskResultTag(BaseModel):
     """Tag attached to a Run Task outcome to enrich the result display in the UI."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     label: str = Field(..., alias="label")
     level: str | None = Field(None, alias="level")
@@ -37,7 +37,7 @@ class TaskResultTag(BaseModel):
 class TaskResultOutcome(BaseModel):
     """Detailed Run Task outcome."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     outcome_id: str | None = Field(None, alias="outcome-id")
     description: str | None = Field(None, alias="description")

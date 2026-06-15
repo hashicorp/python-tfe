@@ -47,7 +47,9 @@ class ProjectVariableSetsPermissionType(str, Enum):
 class TeamProjectAccessProjectPermissions(BaseModel):
     """ProjectPermissions represents the team's permissions on its project"""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     project_settings_permission: ProjectSettingsPermissionType = Field(alias="settings")
     project_teams_permission: ProjectTeamsPermissionType = Field(alias="teams")
@@ -92,7 +94,9 @@ class WorkspaceVariablesPermissionType(str, Enum):
 class TeamProjectAccessWorkspacePermissions(BaseModel):
     """WorkspacePermissions represents the team's permission on all workspaces in its project"""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     runs: WorkspaceRunsPermissionType | None = Field(default=None, alias="runs")
     sentinel_mocks: WorkspaceSentinelMocksPermissionType | None = Field(
@@ -114,7 +118,9 @@ class TeamProjectAccessWorkspacePermissions(BaseModel):
 class TeamProjectAccess(BaseModel):
     """TeamProjectAccess represents a project access for a team"""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     access: TeamProjectAccessType | None = Field(default=None, alias="access")

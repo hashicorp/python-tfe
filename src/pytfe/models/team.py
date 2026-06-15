@@ -15,7 +15,7 @@ from .user import User
 class OrganizationAccess(BaseModel):
     """Organization access permissions for a team."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     manage_policies: bool = Field(default=False, alias="manage-policies")
     manage_policy_overrides: bool = Field(
@@ -41,7 +41,7 @@ class OrganizationAccess(BaseModel):
 class TeamPermissions(BaseModel):
     """Team permissions for the current user."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     can_destroy: bool = Field(alias="can-destroy")
     can_update_membership: bool = Field(alias="can-update-membership")
@@ -50,7 +50,7 @@ class TeamPermissions(BaseModel):
 class Team(BaseModel):
     """Represents a Terraform Enterprise team."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     id: str
     name: str | None = Field(default=None, alias="name")

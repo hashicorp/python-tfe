@@ -27,7 +27,9 @@ class PolicyEvaluationStatus(str, Enum):
 class PolicyEvaluation(BaseModel):
     """PolicyEvaluation represents the policy evaluations that are part of the task stage."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     status: PolicyEvaluationStatus | None = Field(None, alias="status")
@@ -46,7 +48,9 @@ class PolicyEvaluation(BaseModel):
 class PolicyEvaluationStatusTimestamps(BaseModel):
     """PolicyEvaluationStatusTimestamps represents the set of timestamps recorded for a policy evaluation"""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     passed_at: datetime | None = Field(None, alias="passed-at")
     failed_at: datetime | None = Field(None, alias="failed-at")
@@ -58,7 +62,9 @@ class PolicyEvaluationStatusTimestamps(BaseModel):
 class PolicyAttachable(BaseModel):
     """The task stage the policy evaluation belongs to"""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     type: str | None = Field(None, alias="type")
@@ -67,7 +73,9 @@ class PolicyAttachable(BaseModel):
 class PolicyResultCount(BaseModel):
     """PolicyResultCount represents the count of the policy results"""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     advisory_failed: int | None = Field(None, alias="advisory-failed")
     mandatory_failed: int | None = Field(None, alias="mandatory-failed")

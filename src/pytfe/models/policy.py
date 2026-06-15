@@ -12,7 +12,9 @@ from .policy_types import EnforcementLevel, PolicyKind
 
 
 class Policy(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     name: str | None = Field(None, alias="name")
@@ -26,7 +28,9 @@ class Policy(BaseModel):
 
 
 class PolicyList(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     items: list[Policy] = Field(default_factory=list)
     current_page: int | None = None

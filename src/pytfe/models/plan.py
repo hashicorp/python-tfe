@@ -26,7 +26,9 @@ class PlanStatus(str, Enum):
 
 
 class Plan(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     has_changes: bool | None = Field(None, alias="has-changes")
@@ -46,7 +48,9 @@ class Plan(BaseModel):
 
 
 class PlanStatusTimestamps(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     canceled_at: datetime | None = Field(None, alias="canceled-at")
     errored_at: datetime | None = Field(None, alias="errored-at")

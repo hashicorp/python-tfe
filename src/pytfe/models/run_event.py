@@ -18,7 +18,9 @@ class RunEventIncludeOpt(str, Enum):
 
 
 class RunEvent(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     action: str | None = Field(None, alias="action")
@@ -31,7 +33,9 @@ class RunEvent(BaseModel):
 
 
 class RunEventList(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     items: list[RunEvent] = Field(default_factory=list)
     current_page: int | None = None

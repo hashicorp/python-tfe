@@ -96,7 +96,11 @@ class RunOperation(str, Enum):
 class Run(BaseModel):
     """Run represents a Terraform Enterprise run."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    # extra="allow" keeps forward compatibility: undeclared server attributes are
+    # retained in model_extra rather than silently dropped. See docs/MODELS.md.
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     actions: RunActions | None = Field(None, alias="actions")
@@ -147,7 +151,9 @@ class Run(BaseModel):
 
 
 class RunActions(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     is_cancelable: bool = Field(..., alias="is-cancelable")
     is_confirmable: bool = Field(..., alias="is-confirmable")
@@ -156,7 +162,9 @@ class RunActions(BaseModel):
 
 
 class RunPermissions(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     can_apply: bool = Field(..., alias="can-apply")
     can_cancel: bool = Field(..., alias="can-cancel")
@@ -166,7 +174,9 @@ class RunPermissions(BaseModel):
 
 
 class RunStatusTimestamps(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     applied_at: datetime | None = Field(None, alias="applied-at")
     applying_at: datetime | None = Field(None, alias="applying-at")
@@ -207,7 +217,9 @@ class RunVariable(BaseModel):
 
 
 class RunVariableAttr(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     key: str = Field(..., alias="key")
     value: str = Field(..., alias="value")
@@ -216,7 +228,9 @@ class RunVariableAttr(BaseModel):
 class RunList(BaseModel):
     """RunList represents a list of runs."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     items: list[Run] = Field(default_factory=list)
     current_page: int | None = None
@@ -248,7 +262,9 @@ class OrganizationRunList(BaseModel):
     It differs from the RunList in that it does not include a TotalCount of records in the pagination details
     """
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     items: list[Run] = Field(default_factory=list)
     current_page: int | None = None

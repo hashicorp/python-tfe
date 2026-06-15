@@ -27,7 +27,9 @@ class NoCodeVariableOption(BaseModel):
     and when constructing create/update options.
     """
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str | None = None
     variable_name: str | None = Field(default=None, alias="variable-name")
@@ -40,7 +42,9 @@ class NoCodeModule(BaseModel):
     for the no-code provisioning workflow.
     """
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str | None = None
     enabled: bool | None = None
@@ -101,7 +105,9 @@ class NoCodeWorkspaceVariable(BaseModel):
     or upgrade. Mirrors the fields accepted under the ``vars`` relationship.
     """
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     key: str
     value: str | None = None
@@ -141,7 +147,9 @@ class NoCodeWorkspaceUpgradeOptions(BaseModel):
 class WorkspaceUpgrade(BaseModel):
     """The result of initiating or polling a no-code workspace upgrade."""
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str | None = None
     status: str | None = None
@@ -159,7 +167,9 @@ class RegistryModuleVariable(BaseModel):
     UIs that build no-code workspace creation forms.
     """
 
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str | None = None
     name: str | None = None

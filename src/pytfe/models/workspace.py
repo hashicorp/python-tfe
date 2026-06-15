@@ -21,6 +21,7 @@ from ..errors import (
     UnsupportedOperationsError,
 )
 from ..utils import has_tags_regex_defined, is_valid_workspace_name, valid_string
+from .assessment_result import AssessmentResult
 from .common import EffectiveTagBinding, Tag, TagBinding
 from .configuration_version import ConfigurationVersion
 from .data_retention_policy import DataRetentionPolicyChoice
@@ -44,13 +45,17 @@ class WorkspaceSource(str, Enum):
 
 
 class WorkspaceActions(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     is_destroyable: bool = Field(default=False, alias="is-destroyable")
 
 
 class WorkspacePermissions(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     can_destroy: bool = Field(default=False, alias="can-destroy")
     can_force_unlock: bool = Field(default=False, alias="can-force-unlock")
@@ -67,14 +72,18 @@ class WorkspacePermissions(BaseModel):
 
 
 class WorkspaceSettingOverwrites(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     execution_mode: bool | None = Field(None, alias="execution-mode")
     agent_pool: bool | None = Field(None, alias="agent-pool")
 
 
 class WorkspaceOutputs(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     name: str | None = Field(default=None, alias="name")
@@ -84,7 +93,9 @@ class WorkspaceOutputs(BaseModel):
 
 
 class LockedByChoice(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     run: Any | None = None
     user: Any | None = None
@@ -92,7 +103,9 @@ class LockedByChoice(BaseModel):
 
 
 class VCSRepo(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     branch: str | None = Field(default=None, alias="branch")
     display_identifier: str | None = Field(default=None, alias="display-identifier")
@@ -112,7 +125,9 @@ class VCSRepo(BaseModel):
 
 
 class Workspace(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     name: str | None = Field(None, alias="name")
@@ -127,6 +142,7 @@ class Workspace(BaseModel):
     auto_destroy_activity_duration: str | None = Field(
         None, alias="auto-destroy-activity-duration"
     )
+    auto_destroy_status: str | None = Field(None, alias="auto-destroy-status")
     can_queue_destroy_plan: bool | None = Field(None, alias="can-queue-destroy-plan")
     created_at: datetime | None = Field(None, alias="created-at")
     description: str | None = Field(None, alias="description")
@@ -137,13 +153,19 @@ class Workspace(BaseModel):
     inherits_project_auto_destroy: bool | None = Field(
         None, alias="inherits-project-auto-destroy"
     )
+    last_assessment_result_at: datetime | None = Field(
+        None, alias="last-assessment-result-at"
+    )
+    latest_change_at: datetime | None = Field(None, alias="latest-change-at")
     locked: bool | None = Field(None, alias="locked")
+    locked_reason: str | None = Field(None, alias="locked-reason")
     migration_environment: str | None = Field(None, alias="migration-environment")
     no_code_upgrade_available: bool | None = Field(
         None, alias="no-code-upgrade-available"
     )
     operations: bool | None = Field(None, alias="operations")
     permissions: WorkspacePermissions | None = Field(None, alias="permissions")
+    project_remote_state: bool | None = Field(None, alias="project-remote-state")
     queue_all_runs: bool | None = Field(None, alias="queue-all-runs")
     speculative_enabled: bool | None = Field(None, alias="speculative-enabled")
     source: WorkspaceSource | None = Field(None, alias="source")
@@ -156,6 +178,10 @@ class Workspace(BaseModel):
     trigger_prefixes: list[str] = Field(default_factory=list, alias="trigger-prefixes")
     trigger_patterns: list[str] = Field(default_factory=list, alias="trigger-patterns")
     vcs_repo: VCSRepo | None = Field(None, alias="vcs-repo")
+    vcs_repo_identifier: str | None = Field(None, alias="vcs-repo-identifier")
+    unarchived_workspace_change_requests_count: int | None = Field(
+        None, alias="unarchived-workspace-change-requests-count"
+    )
     working_directory: str | None = Field(None, alias="working-directory")
     updated_at: datetime | None = Field(None, alias="updated-at")
     resource_count: int | None = Field(None, alias="resource-count")
@@ -172,7 +198,13 @@ class Workspace(BaseModel):
     # Relations
     agent_pool: AgentPool | None = None  # AgentPool object
     current_run: Run | None = None  # Run object
+    # latest-run is the most recent run regardless of status; in current TFC/TFE
+    # it mirrors current-run (deprecated alias). Kept as a parsed relation, not
+    # an include option.
+    latest_run: Run | None = None  # Run object
     current_state_version: StateVersion | None = None  # StateVersion object
+    current_assessment_result: AssessmentResult | None = None
+    remote_state_consumers: list[Workspace] = Field(default_factory=list)
     organization: Organization | None = None
     project: Project | None = None
     ssh_key: SSHKey | None = None  # SSHKey object

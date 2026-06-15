@@ -9,7 +9,9 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class StateVersionOutput(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     id: str
     name: str
@@ -26,7 +28,9 @@ class StateVersionOutputsListOptions(BaseModel):
 
 
 class StateVersionOutputsList(BaseModel):
-    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
 
     items: list[StateVersionOutput] = Field(default_factory=list)
     current_page: int | None = None

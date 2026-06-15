@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class ReservedTagKey(BaseModel):
     """Represents a reserved tag key in Terraform Enterprise."""
 
-    model_config = ConfigDict(populate_by_name=True)
+    model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     id: str = Field(..., description="The unique identifier for this reserved tag key")
     type: str = Field(
