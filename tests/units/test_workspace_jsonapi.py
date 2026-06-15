@@ -37,6 +37,15 @@ class TestNewTypedFields:
         # aliased KPI field still maps despite the divergent snake/hyphen names
         assert ws.runs_count == 3
 
+    def test_source_module_id_parses_for_no_code_workspace(self):
+        # #179: no-code workspaces carry source-module-id; it must be a typed
+        # attribute, not buried in model_extra under the hyphenated wire key.
+        ws = _ws_from(_ws_payload(attributes={"source-module-id": "mod-ABC123"}))
+        assert ws.source_module_id == "mod-ABC123"
+        assert "source-module-id" not in (ws.model_extra or {})
+        # absent on a normal workspace -> None, never an error
+        assert _ws_from(_ws_payload()).source_module_id is None
+
 
 class TestForwardCompat:
     def test_unknown_attribute_survives_in_model_extra(self):

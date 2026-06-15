@@ -1,4 +1,6 @@
 # Unreleased
+
+# Released
 # v1.1.0
 
 ## Features
@@ -28,8 +30,13 @@
 ### Pagination
 * Fixed `list_*` infinite-looping for API call which are non paginated, so they are now fetched with a single request. The generic list helper also treats any response without `meta.pagination` as a single complete page, preventing the same loop on other non-paginated endpoints. [#181](https://github.com/hashicorp/python-tfe/issues/181)
 
+### Relationships
+* Unified JSON:API relationship parsing into a single canonical helper, replacing the per-resource hand-rolled logic across runs, workspaces, no-code modules and more. [#180](https://github.com/hashicorp/python-tfe/pull/180)
+* `?include=`'d relations are now fully hydrated from the response's `included` block (e.g. `workspace.current_run.status`) instead of being returned as id-only stubs.
+* Models retain unknown server attributes in `model_extra` (`extra="allow"`) instead of silently dropping them, keeping output closer to the live API.
+* Added missing `Workspace` fields `latest_run`, `latest_change_at`, `last_assessment_result_at`, and `source_module_id`, which previously raised `AttributeError`. [#179](https://github.com/hashicorp/python-tfe/issues/179)
 
-# Released
+
 # v1.0.0
 
 ## Features
