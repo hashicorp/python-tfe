@@ -1040,10 +1040,11 @@ class TestWorkspaceOperations:
         tag_bindings = list(workspaces_service.list_tag_bindings("ws-123"))
 
         # Verify API call
+        # tag-bindings is non-paginated: a single request with no page params.
         mock_transport.request.assert_called_once_with(
             "GET",
             "/api/v2/workspaces/ws-123/tag-bindings",
-            params={"page[number]": 1, "page[size]": 100},
+            params={},
         )
 
         # Verify returned data
@@ -1096,10 +1097,11 @@ class TestWorkspaceOperations:
         )
 
         # Verify API call
+        # effective-tag-bindings is non-paginated: one request, no page params.
         mock_transport.request.assert_called_once_with(
             "GET",
             "/api/v2/workspaces/ws-123/effective-tag-bindings",
-            params={"page[number]": 1, "page[size]": 100},
+            params={},
         )
 
         # Verify returned data

@@ -72,6 +72,7 @@ class TestRunEvents:
             mock_list.assert_called_once_with(
                 "/api/v2/runs/run-123/run-events",
                 params={"include": "actor"},
+                paginated=False,
             )
 
             # Verify results
@@ -113,6 +114,7 @@ class TestRunEvents:
             mock_list.assert_called_once_with(
                 "/api/v2/runs/run-456/run-events",
                 params={"include": "actor,comment"},
+                paginated=False,
             )
 
             assert len(results) == 1
@@ -140,6 +142,7 @@ class TestRunEvents:
             mock_list.assert_called_once_with(
                 "/api/v2/runs/run-789/run-events",
                 params={},
+                paginated=False,
             )
 
             assert len(results) == 1

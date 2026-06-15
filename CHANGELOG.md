@@ -1,5 +1,10 @@
 # Unreleased
 
+## Bug Fixes
+
+### Pagination
+* Fixed `list_*` infinite-looping for API call which are non paginated, so they are now fetched with a single request. The generic list helper also treats any response without `meta.pagination` as a single complete page, preventing the same loop on other non-paginated endpoints. [#181](https://github.com/hashicorp/python-tfe/issues/181)
+
 
 # Released
 # v1.0.0

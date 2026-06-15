@@ -320,8 +320,9 @@ class Projects(_Service):
         if not valid_string_id(project_id):
             raise ValueError("Project ID is required and must be valid")
 
+        # effective-tag-bindings is not paginated.
         path = f"/api/v2/projects/{project_id}/effective-tag-bindings"
-        for item in self._list(path):
+        for item in self._list(path, paginated=False):
             attr = item.get("attributes", {}) or {}
             links = item.get("links", {}) or {}
             yield EffectiveTagBinding(

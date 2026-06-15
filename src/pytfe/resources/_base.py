@@ -7,6 +7,7 @@ from collections.abc import Iterator
 from typing import Any
 
 from .._http import HTTPTransport
+from .._logging import logger
 
 
 def _to_int(value: Any) -> int | None:
@@ -26,9 +27,25 @@ class _Service:
         self.t = t
 
     def _list(
-        self, path: str, *, params: dict | None = None
+        self, path: str, *, params: dict | None = None, paginated: bool = True
     ) -> Iterator[dict[str, Any]]:
         base_params = dict(params or {})
+
+        # Some TFE endpoints are not paginated: they return the full collection
+        # in a single response, ignore page[number]/page[size], and emit no
+        # meta.pagination block (e.g. workspace /vars and /all-vars). Callers
+        # opt those out so we issue exactly one request and never loop trying to
+        # fetch a "next" page that re-returns the same set
+        if not paginated:
+            r = self.t.request("GET", path, params=base_params)
+            json_response = r.json()
+            if not isinstance(json_response, dict):
+                json_response = {}
+            data = json_response.get("data", [])
+            if isinstance(data, list):
+                yield from data
+            return
+
         page = int(base_params.get("page[number]", 1))
         while True:
             p = dict(base_params)
@@ -81,8 +98,17 @@ class _Service:
                 # Metadata present and indicates no next page.
                 break
 
-            # Fallback for endpoints that do not return pagination metadata.
-            page_size = int(p["page[size]"])
-            if len(data) < page_size:
-                break
-            page += 1
+            # No pagination metadata. Genuine TFE list endpoints always include
+            # meta.pagination, so a response without it is a non-paginated
+            # collection returned in full. Treat it as a single complete page
+            # and stop. Re-requesting would loop forever when the endpoint
+            # ignores page[number]/page[size] and re-returns the same full set
+            if len(data) >= int(p["page[size]"]):
+                logger.debug(
+                    "List endpoint %s returned a full page (%d rows) without "
+                    "pagination metadata; treating it as a single, "
+                    "non-paginated response.",
+                    path,
+                    len(data),
+                )
+            break
