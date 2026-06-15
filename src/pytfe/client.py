@@ -5,16 +5,19 @@ from __future__ import annotations
 
 from ._http import HTTPTransport
 from .config import TFEConfig
+from .resources.admin import AdminClient
 from .resources.agent_pools import AgentPools
 from .resources.agents import Agents, AgentTokens
 from .resources.apply import Applies
 from .resources.comment import Comments
 from .resources.configuration_version import ConfigurationVersions
 from .resources.explorer import Explorer
+from .resources.github_app_installation import GitHubAppInstallations
 from .resources.no_code_module import NoCodeModules
 from .resources.notification_configuration import NotificationConfigurations
 from .resources.oauth_client import OAuthClients
 from .resources.oauth_token import OAuthTokens
+from .resources.org_token_ttl_policy import OrganizationTokenTTLPolicies
 from .resources.organization_audit_configuration import OrganizationAuditConfigurations
 from .resources.organization_membership import OrganizationMemberships
 from .resources.organization_tags import OrganizationTags
@@ -82,6 +85,18 @@ class TFEClient:
         self.agent_pools = AgentPools(self._transport)
         self.agents = Agents(self._transport)
         self.agent_tokens = AgentTokens(self._transport)
+
+        # TFE admin namespace (SAML / SCIM / SCIM tokens)
+        self.admin = AdminClient(self._transport)
+
+        # GitHub App installation discovery
+        self.github_app_installations = GitHubAppInstallations(self._transport)
+
+        # Org-wide API-token TTL policy (pairs with max_ttl_enabled on
+        # the parent organisation)
+        self.organization_token_ttl_policies = OrganizationTokenTTLPolicies(
+            self._transport
+        )
 
         # Core resources
         self.configuration_versions = ConfigurationVersions(self._transport)

@@ -77,6 +77,12 @@ _SENSITIVE_HEADER_NAMES = frozenset(
 _SENSITIVE_HEADER_SUBSTRINGS = ("token", "secret", "password", "api-key", "apikey")
 
 # JSON keys whose values are redacted recursively in body dumps.
+# Both snake_case and hyphenated forms are listed because the JSON:API
+# wire format hyphenates ("private-key") and the comparison below is a
+# case-insensitive set membership test, not a normalising one.
+# X.509 certificate fields ("idp-cert", "certificate") are deliberately
+# NOT redacted — those are public material by design and redacting them
+# hurts debugging without protecting anything.
 _SENSITIVE_JSON_KEYS = frozenset(
     {
         "token",
@@ -85,6 +91,7 @@ _SENSITIVE_JSON_KEYS = frozenset(
         "secret",
         "password",
         "private_key",
+        "private-key",
         "client_secret",
     }
 )
