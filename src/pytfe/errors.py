@@ -746,6 +746,9 @@ class InvalidOIDCConfigurationIDError(InvalidValues):
     """Raised when an invalid OIDC configuration ID is provided."""
 
     def __init__(self, message: str = "invalid value for OIDC configuration ID"):
+        super().__init__(message)
+
+
 # Admin SAML/SCIM + GitHub App installation errors
 class InvalidSAMLProviderTypeError(InvalidValues):
     """Raised when an unrecognised SAML provider type is supplied."""
