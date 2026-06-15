@@ -82,8 +82,12 @@ for run in client.runs.list("ws-abc123", options):
 - `list` / `list_*` methods are lazy. If an invalid-id check is inside a
   generator method, the exception is raised when you iterate, not when you
   create the iterator.
-- Some relationship endpoints are not paginated by the server, but pyTFE still
-  exposes them as iterators for a consistent public API.
+- Some endpoints are not paginated by the server, but pyTFE still exposes them
+  as iterators for a consistent public API. A few — notably
+  `variables.list()` / `variables.list_all()` (the workspace `/vars` and
+  `/all-vars` endpoints) — return the entire collection in a single request and
+  ignore `page_size`. You still iterate them the same way; the SDK just fetches
+  everything in one round-trip.
 - A small number of older methods intentionally return concrete lists for
   backward compatibility. Prefer the iterator rule for new code, and check the
   method's return type if you are unsure.

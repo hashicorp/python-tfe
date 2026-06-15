@@ -1,4 +1,5 @@
 # Unreleased
+# v1.1.0
 
 ## Features
 
@@ -13,6 +14,10 @@
 * Added ``client.github_app_installations`` resource with ``list`` (supports ``filter[name]`` and ``filter[installation_id]``) and ``read`` methods for looking up GitHub App installations the authenticated user can see. Returns ``GitHubAppInstallation`` records carrying both the HCP-side ``id`` (``ghain-...``) and the GitHub-side numeric ``installation_id``. The actual GitHub App authorisation flow happens through the HCP Terraform UI; this resource is the discovery surface workspace/stack/registry-module VCS configuration consumes.
 * Added model ``GitHubAppInstallation``, ``GitHubAppInstallationListOptions``, ``GitHubAppInstallationType``.
 * Added typed exception ``InvalidGitHubAppInstallationIDError``.
+## Bug Fixes
+
+### Pagination
+* Fixed `list_*` infinite-looping for API call which are non paginated, so they are now fetched with a single request. The generic list helper also treats any response without `meta.pagination` as a single complete page, preventing the same loop on other non-paginated endpoints. [#181](https://github.com/hashicorp/python-tfe/issues/181)
 
 
 # Released

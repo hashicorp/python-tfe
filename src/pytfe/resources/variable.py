@@ -30,13 +30,16 @@ class Variables(_Service):
         if not valid_string_id(workspace_id):
             raise ValueError(ERR_INVALID_WORKSPACE_ID)
 
+        # The /vars endpoint is not paginated: it returns every variable in a
+        # single response and ignores page[number]/page[size]. Opt out of the
+        # pagination loop so we issue exactly one request (python-tfe#181).
         path = f"/api/v2/workspaces/{workspace_id}/vars"
         params: dict[str, Any] = {}
         if options:
             # Add any options if needed in the future
             pass
 
-        for item in self._list(path, params=params):
+        for item in self._list(path, params=params, paginated=False):
             attr = item.get("attributes", {}) or {}
             var_id = item.get("id", "")
             variable_data = dict(attr)
@@ -50,13 +53,14 @@ class Variables(_Service):
         if not valid_string_id(workspace_id):
             raise ValueError(ERR_INVALID_WORKSPACE_ID)
 
+        # Like /vars, the /all-vars endpoint is not paginated; request once.
         path = f"/api/v2/workspaces/{workspace_id}/all-vars"
         params: dict[str, Any] = {}
         if options:
             # Add any options if needed in the future
             pass
 
-        for item in self._list(path, params=params):
+        for item in self._list(path, params=params, paginated=False):
             attr = item.get("attributes", {}) or {}
             var_id = item.get("id", "")
             variable_data = dict(attr)

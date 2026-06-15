@@ -56,7 +56,23 @@ def list(
         yield self._workspace_from(item)
 ```
 
-That's it. `self._list()` lives in `_base.py` and handles `page[number]` / `page[size]` and follow-through automatically. It is also robust to endpoints that **don't paginate** — if the response has no pagination metadata and the returned data is smaller than the requested page size, the helper just breaks after one round-trip. So you do not need a different code path for relationship reads like `GET /workspaces/{id}/tag-bindings` (single response) versus list endpoints like `GET /organizations/{org}/workspaces` (paginated). The same `for item in self._list(path): yield ...` works for both.
+That's it. `self._list()` lives in `_base.py` and handles `page[number]` / `page[size]` and follow-through automatically. When a response carries no `meta.pagination` block, `_list` treats it as a single complete page and stops after one round-trip — so the same `for item in self._list(path): yield ...` works for ordinary paginated endpoints (`GET /organizations/{org}/workspaces`) and for single-response relationship reads (`GET /workspaces/{id}/tag-bindings`) alike.
+
+### Endpoints that ignore pagination entirely — pass `paginated=False`
+
+A few HCP Terraform endpoints return the **whole** collection on every request and ignore `page[number]` / `page[size]`. The workspace **`/vars`** and **`/all-vars`** endpoints are the known ones. For these you must opt out of the page loop explicitly:
+
+```python
+# variable.py — /vars is not paginated
+for item in self._list(path, params=params, paginated=False):
+    yield self._variable_from(item)
+```
+
+With `paginated=False`, `_list` issues exactly one request and yields every row.
+
+Why this matters: skipping the flag on such an endpoint with **≥ `page_size` rows (default 100)** used to spin forever — the helper saw a "full" page, asked for page 2, got the *same* full set back (the endpoint ignored the page param), and re-yielded it, indefinitely. That was the root cause of [#181](https://github.com/hashicorp/python-tfe/issues/181). The generic "no `meta.pagination` ⇒ single page" rule now catches this as a safety net, but **still set `paginated=False`** on a known non-paginated endpoint: it documents intent and avoids sending meaningless page params.
+
+> Rule of thumb: if the endpoint returns no `meta.pagination` and ignores `page[size]` (check go-tfe or the API docs — it returns the full collection in one shot), pass `paginated=False`.
 
 
 ### Note on lazy validation
@@ -131,7 +147,7 @@ def list_versions(
 
 `registry_module.list_versions` is the only method in the codebase that does this. Add a docstring note explaining the reason if you find yourself reaching for this pattern, so future readers don't mistake it for something to copy.
 
-Do **not** reach for `iter(list)` just because the endpoint is non-paginated. Use `self._list()` for those — that's the convention.
+Do **not** reach for `iter(list)` just because the endpoint is non-paginated. Use `self._list()` for those — that's the convention (with `paginated=False` if the endpoint ignores `page[size]` and returns the full set, as described above).
 
 ### Shape that does **not** match the convention (don't do this)
 
@@ -186,6 +202,7 @@ Don't assert `isinstance(result, list)` against the raw return — that asserts 
 - [ ] Every `list*` method returns `Iterator[X]`, not `list[X]` or `Iterable[X]`
 - [ ] `Iterator` is imported from `collections.abc`, not `typing`
 - [ ] The body uses the canonical `for item in self._list(path, params=params): yield ...` pattern — including for non-paginated single-shot endpoints
+- [ ] Endpoints that ignore `page[size]` and return the whole collection (e.g. workspace `/vars`, `/all-vars`) pass `paginated=False` to `self._list(...)` — otherwise they infinite-loop at ≥ 100 rows (see [#181](https://github.com/hashicorp/python-tfe/issues/181))
 - [ ] Hand-rolled `iter(materialized_list)` only appears if the method has a try/except fallback to a different endpoint (extremely rare — has a docstring note explaining why)
 - [ ] If a class defines `def list(...)`, later annotations in that class avoid bare `list[...]` so mypy does not resolve `list` to the method
 - [ ] Examples that call the method use `list(client.foo.list_bars(...))` (or stream with a `for` loop) — never assume list semantics on the bare return

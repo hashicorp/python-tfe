@@ -744,8 +744,9 @@ class Workspaces(_Service):
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
+        # tag-bindings is not paginated.
         path = f"/api/v2/workspaces/{workspace_id}/tag-bindings"
-        for item in self._list(path):
+        for item in self._list(path, paginated=False):
             attr = item.get("attributes", {}) or {}
             yield TagBinding(
                 id=item.get("id"),
@@ -759,8 +760,9 @@ class Workspaces(_Service):
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
+        # effective-tag-bindings is not paginated.
         path = f"/api/v2/workspaces/{workspace_id}/effective-tag-bindings"
-        for item in self._list(path):
+        for item in self._list(path, paginated=False):
             attr = item.get("attributes", {}) or {}
             yield EffectiveTagBinding(
                 id=item.get("id", ""),
