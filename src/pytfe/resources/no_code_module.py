@@ -255,11 +255,12 @@ class NoCodeModules(_Service):
         if not valid_string(version):
             raise InvalidVersionError()
 
+        # module-variables is not paginated; fetch the full set in one request.
         path = (
             f"/api/v2/no-code-modules/{no_code_module_id}"
             f"/versions/{version}/module-variables"
         )
-        for item in self._list(path):
+        for item in self._list(path, paginated=False):
             attrs = item.get("attributes") or {}
             yield RegistryModuleVariable.model_validate(
                 {

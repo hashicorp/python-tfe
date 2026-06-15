@@ -3,6 +3,60 @@
 
 from __future__ import annotations
 
+# ── TFE admin identity (SAML / SCIM) ──────────────────────────────────────────
+from .admin_identity import (
+    AdminSAMLSettings,
+    AdminSAMLSettingsUpdateOptions,
+    AdminSCIMSettings,
+    AdminSCIMSettingsUpdateOptions,
+    AdminSCIMToken,
+    AdminSCIMTokenCreateOptions,
+    AdminSMTPSettings,
+    AdminSMTPSettingsUpdateOptions,
+    SAMLProviderType,
+    SAMLSignatureMethod,
+    SMTPAuthType,
+)
+
+# ── TFE admin organizations ───────────────────────────────────────────────────
+from .admin_organization import (
+    AdminOrganization,
+    AdminOrganizationListOptions,
+    AdminOrganizationUpdateOptions,
+)
+
+# ── TFE admin runs ────────────────────────────────────────────────────────────
+from .admin_run import (
+    AdminRun,
+    AdminRunListOptions,
+)
+
+# ── TFE admin users ───────────────────────────────────────────────────────────
+from .admin_user import (
+    AdminUser,
+    AdminUserListOptions,
+)
+
+# ── TFE admin versions (Terraform / OPA / Sentinel) ──────────────────────────
+from .admin_version import (
+    OpaVersion,
+    OpaVersionCreateOptions,
+    OpaVersionUpdateOptions,
+    SentinelVersion,
+    SentinelVersionCreateOptions,
+    SentinelVersionUpdateOptions,
+    TerraformVersion,
+    TerraformVersionCreateOptions,
+    TerraformVersionUpdateOptions,
+    ToolVersionArchitecture,
+)
+
+# ── TFE admin workspaces ──────────────────────────────────────────────────────
+from .admin_workspace import (
+    AdminWorkspace,
+    AdminWorkspaceListOptions,
+)
+
 # ── Agent & Agent Pools ────────────────────────────────────────────────────────
 from .agent import (
     Agent,
@@ -75,6 +129,13 @@ from .explorer import (
     ExplorerViewType,
 )
 
+# ── GitHub App Installations ─────────────────────────────────────────────────
+from .github_app_installation import (
+    GitHubAppInstallation,
+    GitHubAppInstallationListOptions,
+    GitHubAppInstallationType,
+)
+
 # ── Notification Configurations ───────────────────────────────────────────────
 from .no_code_module import (
     NoCodeModule,
@@ -132,6 +193,12 @@ from .oidc_configuration import (
     VaultOIDCConfiguration,
     VaultOIDCConfigurationCreateOptions,
     VaultOIDCConfigurationUpdateOptions,
+from .org_token_ttl_policy import (
+    DEFAULT_MAX_TTL_MS,
+    OrgTokenTTLPolicy,
+    OrgTokenTTLPolicyUpdateOptions,
+    TokenPolicyType,
+    parse_ttl_to_ms,
 )
 
 # Organization / Project
@@ -140,6 +207,8 @@ from .organization import (
     ExecutionMode,
     Organization,
     OrganizationCreateOptions,
+    OrganizationDefaultSettings,
+    OrganizationDefaultSettingsUpdateOptions,
     OrganizationUpdateOptions,
     ReadRunQueueOptions,
     RunQueue,
@@ -563,6 +632,46 @@ __all__ = [
     "VaultOIDCConfiguration",
     "VaultOIDCConfigurationCreateOptions",
     "VaultOIDCConfigurationUpdateOptions",
+    # TFE admin versions
+    "ToolVersionArchitecture",
+    "TerraformVersion",
+    "TerraformVersionCreateOptions",
+    "TerraformVersionUpdateOptions",
+    "OpaVersion",
+    "OpaVersionCreateOptions",
+    "OpaVersionUpdateOptions",
+    "SentinelVersion",
+    "SentinelVersionCreateOptions",
+    "SentinelVersionUpdateOptions",
+    # TFE admin runs
+    "AdminRun",
+    "AdminRunListOptions",
+    # TFE admin organizations
+    "AdminOrganization",
+    "AdminOrganizationListOptions",
+    "AdminOrganizationUpdateOptions",
+    # TFE admin users
+    "AdminUser",
+    "AdminUserListOptions",
+    # TFE admin workspaces
+    "AdminWorkspace",
+    "AdminWorkspaceListOptions",
+    # TFE admin identity
+    "AdminSAMLSettings",
+    "AdminSAMLSettingsUpdateOptions",
+    "AdminSCIMSettings",
+    "AdminSCIMSettingsUpdateOptions",
+    "AdminSCIMToken",
+    "AdminSCIMTokenCreateOptions",
+    "AdminSMTPSettings",
+    "AdminSMTPSettingsUpdateOptions",
+    "SAMLProviderType",
+    "SAMLSignatureMethod",
+    "SMTPAuthType",
+    # GitHub App installations
+    "GitHubAppInstallation",
+    "GitHubAppInstallationListOptions",
+    "GitHubAppInstallationType",
     # No-code provisioning
     "NoCodeModule",
     "NoCodeModuleCreateOptions",
@@ -724,7 +833,15 @@ __all__ = [
     "Pagination",
     "Organization",
     "OrganizationCreateOptions",
+    "OrganizationDefaultSettings",
+    "OrganizationDefaultSettingsUpdateOptions",
     "OrganizationUpdateOptions",
+    # Org-token TTL policy
+    "DEFAULT_MAX_TTL_MS",
+    "OrgTokenTTLPolicy",
+    "OrgTokenTTLPolicyUpdateOptions",
+    "TokenPolicyType",
+    "parse_ttl_to_ms",
     "OrganizationAuditConfigAuditStreaming",
     "OrganizationAuditConfigAuditTrails",
     "OrganizationAuditConfigPermissions",

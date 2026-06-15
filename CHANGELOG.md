@@ -1,6 +1,20 @@
 # Unreleased
 # v1.1.0
 
+## Features
+
+### TFE admin identity (SAML / SCIM)
+* Added ``client.admin`` nested namespace exposing three TFE-only services: ``client.admin.saml_settings`` (read, update, revoke_idp_cert), ``client.admin.scim_settings`` (read, update, delete), and ``client.admin.scim_tokens`` (list, create, read, delete). All endpoints return ``pytfe.errors.NotFound`` on HCP Terraform (SaaS) — verified live against ``app.terraform.io``.
+* Added models: ``AdminSAMLSettings`` / ``AdminSAMLSettingsUpdateOptions``, ``AdminSCIMSettings`` / ``AdminSCIMSettingsUpdateOptions``, ``AdminSCIMToken`` / ``AdminSCIMTokenCreateOptions``, plus ``SAMLProviderType`` and ``SAMLSignatureMethod`` enums.
+* ``AdminSCIMSettingsUpdateOptions`` distinguishes "field unset" from "field explicitly set to None" for ``site_admin_group_scim_id``. Pass ``None`` to send JSON ``null`` (unlinking the SCIM site-admin group); omit the kwarg entirely to leave the server value untouched. The omit-vs-explicit-null distinction is preserved end-to-end via a custom ``to_payload()`` that inspects Pydantic's ``model_fields_set``.
+* Added typed exceptions ``InvalidSAMLProviderTypeError``, ``InvalidSCIMTokenIDError``, ``RequiredSCIMTokenDescriptionError``.
+* The transport-level redacting logger now redacts the wire-format ``private-key`` field (with hyphen) in addition to the existing ``private_key`` (with underscore), so SAML SP private keys cannot leak via ``PYTFE_LOG=debug``. X.509 certificate fields (``idp-cert``, ``certificate``, ``old-idp-cert``) are intentionally NOT redacted because they're public material by design.
+
+### GitHub App installation discovery
+* Added ``client.github_app_installations`` resource with ``list`` (supports ``filter[name]`` and ``filter[installation_id]``) and ``read`` methods for looking up GitHub App installations the authenticated user can see. Returns ``GitHubAppInstallation`` records carrying both the HCP-side ``id`` (``ghain-...``) and the GitHub-side numeric ``installation_id``. The actual GitHub App authorisation flow happens through the HCP Terraform UI; this resource is the discovery surface workspace/stack/registry-module VCS configuration consumes.
+* Added model ``GitHubAppInstallation``, ``GitHubAppInstallationListOptions``, ``GitHubAppInstallationType``.
+* Added typed exception ``InvalidGitHubAppInstallationIDError``.
+
 ### HYOK OIDC Configurations
 * Added aws_oidc_configurations, azure_oidc_configurations, gcp_oidc_configurations, and vault_oidc_configurations resources with create, read, update, and delete methods for Hold-Your-Own-Key OIDC configuration records. All four hit a single polymorphic HCP endpoint (POST /organizations/{org}/oidc-configurations for create, /oidc-configurations/{id} for read/update/delete) dispatched by JSON:API data.type, matching the structure used by go-tfe and the terraform-tfe provider.
 * Added typed models per provider: AWSOIDCConfiguration / AzureOIDCConfiguration / GCPOIDCConfiguration / VaultOIDCConfiguration plus matching CreateOptions and UpdateOptions for each.
@@ -8,6 +22,12 @@
 * AWSOIDCConfigurationCreateOptions and AWSOIDCConfigurationUpdateOptions both reject empty-string role_arn values via a non-empty field validator, mirroring go-tfe's local validation.
 * Added InvalidOIDCConfigurationIDError typed exception.
 * These resources require HYOK / Premium entitlement on the organization; calls against a non-HYOK org return NotFound. The SDK manages only the HCP-side configuration record — the cloud-side trust resources (IAM role, Azure federated credential, GCP workload identity pool, Vault JWT auth method) still need to be provisioned separately.
+
+## Bug Fixes
+
+### Pagination
+* Fixed `list_*` infinite-looping for API call which are non paginated, so they are now fetched with a single request. The generic list helper also treats any response without `meta.pagination` as a single complete page, preventing the same loop on other non-paginated endpoints. [#181](https://github.com/hashicorp/python-tfe/issues/181)
+
 
 # Released
 # v1.0.0

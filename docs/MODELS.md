@@ -59,7 +59,7 @@ class Run(BaseModel):
 Rules:
 
 - **Every multi-word JSON:API attribute** gets an alias. Don't try to invent a snake_case-to-hyphen mapper — be explicit per field.
-- **Page params** use the JSON:API square-bracket form: `Field(None, alias="page[number]")`, `Field(None, alias="page[size]")`.
+- **Page params** use the JSON:API square-bracket form: `Field(None, alias="page[number]")`, `Field(None, alias="page[size]")`. Note that a few endpoints (workspace `/vars`, `/all-vars`) are not paginated and ignore these — their resource methods call `self._list(..., paginated=False)`, so a `page_size` field on those options models would be a no-op. See [ITERATORS.md](ITERATORS.md).
 - **Filter params** use the same convention: `Field(None, alias="filter[workspace][name]")`.
 - **`include`** is a comma-separated string on the wire but exposed as `list[SomeEnum] | None` in Python; the resource layer dumps options with `mode="json"` and joins the resulting values (`",".join(params["include"])`). See the `policy_set.read_with_options` pattern.
 
