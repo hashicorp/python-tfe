@@ -2,7 +2,9 @@
 
 This document tracks which HCP Terraform / Terraform Enterprise API resources are
 implemented in pytfe. Each implemented resource is exposed on the client as
-`client.<namespace>`.
+`client.<namespace>`. This doc is updated in contrast to v1.1.0 release, and the
+resource list is reconciled against the public
+[HCP Terraform API documentation](https://developer.hashicorp.com/terraform/cloud-docs/api-docs).
 
 **Legend:** ✅ Covered &nbsp;·&nbsp; 🟡 Partial &nbsp;·&nbsp; ❌ Not yet implemented
 
@@ -85,19 +87,29 @@ partially covered are listed at the bottom of this page.
 
 ## Not yet implemented
 
+Public HCP Terraform API resources that do not yet have a pytfe client namespace:
+
 | Resource | Notes |
 |---|---|
-| Assessment results | Health-assessment reads. Model exists (`models/assessment_result.py`); no resource yet. Surfaced indirectly via `workspace.current_assessment_result`. |
-| Plan exports | Sentinel mock / plan export download. Model exists (`models/plan_export.py`); no resource yet. |
-| Cost estimates | Run cost-estimation reads. Model exists (`models/cost_estimate.py`); no resource yet. |
-| Change requests | ❌ |
-| Workspace transfers | Relocating a workspace between organizations. ❌ |
-| Recoverable items | Trash / restore of soft-deleted resources. ❌ |
-| Subscriptions | Organization subscription management. ❌ |
-| Feature sets | ❌ |
-| Billing invoices | ❌ |
-| Email recipient statuses | Notification email delivery statuses. ❌ |
-| VCS events | ❌ |
-| TFE site-admin | Site-admin API for self-hosted TFE (admin organizations, users, runs, workspaces, Terraform versions). ❌ |
-| GPG keys | Registry provider signing keys. ❌ |
-| IP ranges | `/api/meta/ip-ranges`. ❌ |
+| Assessment results | Health-assessment reads. Model exists (`models/assessment_result.py`); surfaced indirectly via `workspace.current_assessment_result`. |
+| Audit trails tokens | Auth tokens for the audit-trail streaming API. |
+| Change requests | — |
+| Cost estimates | Run cost-estimation reads. Model exists (`models/cost_estimate.py`). |
+| Feature sets | Organization feature sets. |
+| GPG keys | Private Registry provider signing keys. |
+| Group member roles | Team member role assignments. |
+| Invoices | Organization billing invoices. |
+| IP allowlists | Organization IP allowlist. |
+| IP ranges | `/api/meta/ip-ranges`. |
+| Metrics service tokens | Metrics endpoint service tokens. |
+| Plan exports | Sentinel mock / plan-export download. Model exists (`models/plan_export.py`). |
+| Subscriptions | Organization subscription management. |
+| Terraform actions | Only the Run `invoke_action_addrs` field today; no dedicated resource. |
+| User tokens | Personal (user) API tokens. |
+| VCS events | — |
+
+### Terraform Enterprise only (separate admin API)
+
+| Resource | Notes |
+|---|---|
+| Site-admin | TFE site-admin endpoints (admin organizations, users, runs, workspaces, Terraform / OPA / Sentinel versions). Not part of the public HCP Terraform API. |
