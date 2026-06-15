@@ -180,6 +180,20 @@ from .oauth_token import (
     OAuthTokenListOptions,
     OAuthTokenUpdateOptions,
 )
+from .oidc_configuration import (
+    AWSOIDCConfiguration,
+    AWSOIDCConfigurationCreateOptions,
+    AWSOIDCConfigurationUpdateOptions,
+    AzureOIDCConfiguration,
+    AzureOIDCConfigurationCreateOptions,
+    AzureOIDCConfigurationUpdateOptions,
+    GCPOIDCConfiguration,
+    GCPOIDCConfigurationCreateOptions,
+    GCPOIDCConfigurationUpdateOptions,
+    VaultOIDCConfiguration,
+    VaultOIDCConfigurationCreateOptions,
+    VaultOIDCConfigurationUpdateOptions,
+)
 from .org_token_ttl_policy import (
     DEFAULT_MAX_TTL_MS,
     OrgTokenTTLPolicy,
@@ -606,6 +620,19 @@ from .workspace_run_task import (
 
 # ── Public surface ────────────────────────────────────────────────────────────
 __all__ = [
+    # HYOK OIDC configurations
+    "AWSOIDCConfiguration",
+    "AWSOIDCConfigurationCreateOptions",
+    "AWSOIDCConfigurationUpdateOptions",
+    "AzureOIDCConfiguration",
+    "AzureOIDCConfigurationCreateOptions",
+    "AzureOIDCConfigurationUpdateOptions",
+    "GCPOIDCConfiguration",
+    "GCPOIDCConfigurationCreateOptions",
+    "GCPOIDCConfigurationUpdateOptions",
+    "VaultOIDCConfiguration",
+    "VaultOIDCConfigurationCreateOptions",
+    "VaultOIDCConfigurationUpdateOptions",
     # TFE admin versions
     "ToolVersionArchitecture",
     "TerraformVersion",

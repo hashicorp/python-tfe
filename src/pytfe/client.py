@@ -17,6 +17,12 @@ from .resources.no_code_module import NoCodeModules
 from .resources.notification_configuration import NotificationConfigurations
 from .resources.oauth_client import OAuthClients
 from .resources.oauth_token import OAuthTokens
+from .resources.oidc_configurations import (
+    AWSOIDCConfigurations,
+    AzureOIDCConfigurations,
+    GCPOIDCConfigurations,
+    VaultOIDCConfigurations,
+)
 from .resources.org_token_ttl_policy import OrganizationTokenTTLPolicies
 from .resources.organization_audit_configuration import OrganizationAuditConfigurations
 from .resources.organization_membership import OrganizationMemberships
@@ -125,6 +131,12 @@ class TFEClient:
         self.workspace_run_tasks = WorkspaceRunTasks(self._transport)
         self.registry_modules = RegistryModules(self._transport)
         self.no_code_modules = NoCodeModules(self._transport)
+
+        # HYOK OIDC configurations (AWS / Azure / GCP / Vault)
+        self.aws_oidc_configurations = AWSOIDCConfigurations(self._transport)
+        self.azure_oidc_configurations = AzureOIDCConfigurations(self._transport)
+        self.gcp_oidc_configurations = GCPOIDCConfigurations(self._transport)
+        self.vault_oidc_configurations = VaultOIDCConfigurations(self._transport)
         self.registry_providers = RegistryProviders(self._transport)
         self.registry_provider_versions = RegistryProviderVersions(self._transport)
         self.registry_provider_platforms = RegistryProviderPlatforms(self._transport)
