@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     InvalidPolicySetIDError,
 )
@@ -37,7 +38,9 @@ class PolicySetVersions(_Service):
             .get("policy-set", {})
             .get("data", {})
         )
-        return PolicySetVersion.model_validate(attrs)
+        return attach_jsonapi(
+            PolicySetVersion.model_validate(attrs), jd.get("data", {})
+        )
 
     def read(self, policy_set_version_id: str) -> PolicySetVersion:
         """Read is used to read a Policy Set Version by its ID."""
@@ -57,7 +60,9 @@ class PolicySetVersions(_Service):
             .get("policy-set", {})
             .get("data", {})
         )
-        return PolicySetVersion.model_validate(attrs)
+        return attach_jsonapi(
+            PolicySetVersion.model_validate(attrs), jd.get("data", {})
+        )
 
     def upload(self, policy_set_version: PolicySetVersion, file_path: str) -> None:
         """

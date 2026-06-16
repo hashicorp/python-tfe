@@ -8,6 +8,7 @@ import re
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..models.agent import AgentPool
 from ..models.common import (
     EffectiveTagBinding,
@@ -419,4 +420,4 @@ class Projects(_Service):
             else None
         )
 
-        return Project.model_validate(attrs)
+        return attach_jsonapi(Project.model_validate(attrs), data)

@@ -8,6 +8,8 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 # ---- Enums ----
 
 
@@ -28,7 +30,7 @@ class StateVersionIncludeOpt(str, Enum):
 # ---- DTOs ----
 
 
-class StateVersion(BaseModel):
+class StateVersion(TFEModel):
     model_config = ConfigDict(
         populate_by_name=True, validate_by_name=True, extra="allow"
     )

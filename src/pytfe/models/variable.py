@@ -7,6 +7,8 @@ from enum import Enum
 
 from pydantic import BaseModel
 
+from ._base import TFEModel
+
 
 class CategoryType(str, Enum):
     ENV = "env"
@@ -14,7 +16,7 @@ class CategoryType(str, Enum):
     TERRAFORM = "terraform"
 
 
-class Variable(BaseModel):
+class Variable(TFEModel):
     id: str | None = None
     key: str | None = None
     value: str | None = None

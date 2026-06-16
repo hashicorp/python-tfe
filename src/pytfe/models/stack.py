@@ -9,6 +9,7 @@ from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..errors import ERR_REQUIRED_NAME, ERR_REQUIRED_PROJECT
+from ._base import TFEModel
 from .agent import AgentPool
 from .project import Project
 
@@ -50,7 +51,7 @@ class StackVcsRepoOptions(BaseModel):
     oauth_token_id: str | None = Field(default=None, alias="oauth-token-id")
 
 
-class Stack(BaseModel):
+class Stack(TFEModel):
     """Stack represents a stack in Terraform Cloud."""
 
     model_config = ConfigDict(

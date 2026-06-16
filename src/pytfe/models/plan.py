@@ -9,6 +9,7 @@ from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..models.plan_export import PlanExport
+from ._base import TFEModel
 
 
 class PlanStatus(str, Enum):
@@ -25,7 +26,7 @@ class PlanStatus(str, Enum):
     PLAN_UNREACHABLE = "unreachable"
 
 
-class Plan(BaseModel):
+class Plan(TFEModel):
     model_config = ConfigDict(
         populate_by_name=True, validate_by_name=True, extra="allow"
     )

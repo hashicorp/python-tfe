@@ -7,6 +7,7 @@ import io
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     ERR_INVALID_CONFIG_VERSION_ID,
     ERR_INVALID_WORKSPACE_ID,
@@ -286,4 +287,4 @@ class ConfigurationVersions(_Service):
             "links": data.get("links"),
         }
 
-        return ConfigurationVersion(**cv_data)
+        return attach_jsonapi(ConfigurationVersion(**cv_data), data)

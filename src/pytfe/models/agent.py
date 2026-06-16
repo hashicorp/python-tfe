@@ -20,6 +20,7 @@ from ..errors import (
     RequiredNameError,
 )
 from ..utils import valid_string, valid_string_id
+from ._base import TFEModel
 from .organization import Organization
 from .workspace import Workspace
 
@@ -35,7 +36,7 @@ class AgentStatus(str, Enum):
     UNKNOWN = "unknown"
 
 
-class Agent(BaseModel):
+class Agent(TFEModel):
     """Agent represents a Terraform Enterprise agent."""
 
     id: str
@@ -49,7 +50,7 @@ class Agent(BaseModel):
     agent_pool: AgentPool | None = None
 
 
-class AgentPool(BaseModel):
+class AgentPool(TFEModel):
     """Agent Pool represents a Terraform Enterprise agent pool."""
 
     model_config = ConfigDict(
@@ -209,7 +210,7 @@ class AgentTokenCreateOptions(BaseModel):
     description: str
 
 
-class AgentToken(BaseModel):
+class AgentToken(TFEModel):
     """Agent Token represents an authentication token for agents."""
 
     id: str

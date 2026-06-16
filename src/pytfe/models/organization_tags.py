@@ -5,10 +5,11 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 from .organization import Organization
 
 
-class OrganizationTag(BaseModel):
+class OrganizationTag(TFEModel):
     """Terraform Enterprise organization tag."""
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")

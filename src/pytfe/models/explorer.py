@@ -14,6 +14,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 
 class ExplorerViewType(str, Enum):
     """Explorer `type` / `query-type` discriminator (HashiCorp Explorer API view types only)."""
@@ -66,7 +68,7 @@ class ExplorerQueryOptions(BaseModel):
     )
 
 
-class ExplorerRow(BaseModel):
+class ExplorerRow(TFEModel):
     """One Explorer result row: JSON:API id/type plus flat attributes for the view.
 
     Attribute keys are normalised to snake_case at parse time so callers can
@@ -108,7 +110,7 @@ class ExplorerSavedQuery(BaseModel):
     sort: list[str] | None = None
 
 
-class ExplorerSavedView(BaseModel):
+class ExplorerSavedView(TFEModel):
     """Saved view resource: metadata plus embedded query.
 
     The HCP Terraform API returns ``query-type`` at the view level *and*

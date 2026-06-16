@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from ..._jsonapi import attach_jsonapi
 from ...errors import ERR_INVALID_NAME
 from ...models.admin_run import AdminRun, AdminRunListOptions
 from ...utils import valid_string_id
@@ -19,12 +20,15 @@ def _parse_admin_run(data: dict[str, Any]) -> AdminRun:
     # organization is a compound include (workspace.organization) — only
     # present when the caller passes ?include=workspace.organization.
     # We don't surface that parameter yet, so organization_name stays None.
-    return AdminRun.model_validate(
-        {
-            "id": data.get("id"),
-            "workspace_id": ws_data.get("id"),
-            **attrs,
-        }
+    return attach_jsonapi(
+        AdminRun.model_validate(
+            {
+                "id": data.get("id"),
+                "workspace_id": ws_data.get("id"),
+                **attrs,
+            }
+        ),
+        data,
     )
 
 

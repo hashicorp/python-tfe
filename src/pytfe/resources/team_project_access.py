@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
+from .._jsonapi import attach_jsonapi
 from ..errors import InvalidTeamProjectAccessIDError
 from ..models.project import Project
 from ..models.team import Team
@@ -110,7 +111,7 @@ class TeamProjectAccesses(_Service):
         attrs["team"] = Team(id=team_data.get("id")) if team_data else None
         attrs["project"] = Project(id=project_data.get("id")) if project_data else None
 
-        return TeamProjectAccess.model_validate(attrs)
+        return attach_jsonapi(TeamProjectAccess.model_validate(attrs), data)
 
     def update(
         self, team_project_access_id: str, options: TeamProjectAccessUpdateOptions

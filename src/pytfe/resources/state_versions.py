@@ -7,6 +7,7 @@ from collections.abc import Iterator
 from typing import Any
 from urllib.parse import urlencode
 
+from .._jsonapi import attach_jsonapi
 from ..errors import ErrStateVersionUploadNotSupported, NotFound, TFEError
 from ..models.state_version import (
     StateVersion,
@@ -81,7 +82,7 @@ class StateVersions(_Service):
         for d in self._list(path, params=params):
             attrs = d.get("attributes", {})
             attrs["id"] = d.get("id")
-            yield StateVersion.model_validate(attrs)
+            yield attach_jsonapi(StateVersion.model_validate(attrs), d)
 
     def read(self, state_version_id: str) -> StateVersion:
         """Read a state version by ID."""
@@ -89,12 +90,17 @@ class StateVersions(_Service):
             raise ValueError("invalid state version id")
 
         r = self.t.request("GET", f"/api/v2/state-versions/{state_version_id}")
-        d = r.json()["data"]
+        payload = r.json()
+        d = payload["data"]
         attr = d.get("attributes", {}) or {}
 
-        return StateVersion(
-            id=_safe_str(d.get("id")),
-            **{k.replace("-", "_"): v for k, v in attr.items()},
+        return attach_jsonapi(
+            StateVersion(
+                id=_safe_str(d.get("id")),
+                **{k.replace("-", "_"): v for k, v in attr.items()},
+            ),
+            d,
+            payload.get("included"),
         )
 
     def read_with_options(
@@ -111,12 +117,17 @@ class StateVersions(_Service):
         r = self.t.request(
             "GET", f"/api/v2/state-versions/{state_version_id}", params=params
         )
-        d = r.json()["data"]
+        payload = r.json()
+        d = payload["data"]
         attr = d.get("attributes", {}) or {}
 
-        return StateVersion(
-            id=_safe_str(d.get("id")),
-            **{k.replace("-", "_"): v for k, v in attr.items()},
+        return attach_jsonapi(
+            StateVersion(
+                id=_safe_str(d.get("id")),
+                **{k.replace("-", "_"): v for k, v in attr.items()},
+            ),
+            d,
+            payload.get("included"),
         )
 
     def read_current(self, workspace_id: str) -> StateVersion:
@@ -127,12 +138,17 @@ class StateVersions(_Service):
         r = self.t.request(
             "GET", f"/api/v2/workspaces/{workspace_id}/current-state-version"
         )
-        d = r.json()["data"]
+        payload = r.json()
+        d = payload["data"]
         attr = d.get("attributes", {}) or {}
 
-        return StateVersion(
-            id=_safe_str(d.get("id")),
-            **{k.replace("-", "_"): v for k, v in attr.items()},
+        return attach_jsonapi(
+            StateVersion(
+                id=_safe_str(d.get("id")),
+                **{k.replace("-", "_"): v for k, v in attr.items()},
+            ),
+            d,
+            payload.get("included"),
         )
 
     def read_current_with_options(
@@ -151,12 +167,17 @@ class StateVersions(_Service):
             f"/api/v2/workspaces/{workspace_id}/current-state-version",
             params=params,
         )
-        d = r.json()["data"]
+        payload = r.json()
+        d = payload["data"]
         attr = d.get("attributes", {}) or {}
 
-        return StateVersion(
-            id=_safe_str(d.get("id")),
-            **{k.replace("-", "_"): v for k, v in attr.items()},
+        return attach_jsonapi(
+            StateVersion(
+                id=_safe_str(d.get("id")),
+                **{k.replace("-", "_"): v for k, v in attr.items()},
+            ),
+            d,
+            payload.get("included"),
         )
 
     # ----------------------------
@@ -395,4 +416,4 @@ class StateVersions(_Service):
         data = (resp.json() or {}).get("data") or {}
         attributes = dict(data.get("attributes") or {})
         attributes["id"] = data.get("id", "")
-        return StateVersion.model_validate(attributes)
+        return attach_jsonapi(StateVersion.model_validate(attributes), data)

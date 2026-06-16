@@ -8,6 +8,7 @@ from enum import Enum
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..errors import ERR_REQUIRED_NAME, EmptyTeamNameError
+from ._base import TFEModel
 from .organization_membership import OrganizationMembership
 from .user import User
 
@@ -47,7 +48,7 @@ class TeamPermissions(BaseModel):
     can_update_membership: bool = Field(alias="can-update-membership")
 
 
-class Team(BaseModel):
+class Team(TFEModel):
     """Represents a Terraform Enterprise team."""
 
     model_config = ConfigDict(populate_by_name=True, extra="allow")

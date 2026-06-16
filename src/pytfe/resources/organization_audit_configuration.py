@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 from urllib.parse import quote
 
+from .._jsonapi import attach_jsonapi
 from ..errors import ERR_INVALID_ORG
 from ..models.organization import Organization
 from ..models.organization_audit_configuration import (
@@ -81,14 +82,17 @@ class OrganizationAuditConfigurations(_Service):
         if isinstance(org_data, dict):
             org = Organization(id=org_data.get("id"))
 
-        return OrganizationAuditConfiguration.model_validate(
-            {
-                "id": data.get("id", ""),
-                "audit-trails": attrs.get("audit-trails"),
-                "hcp-audit-log-streaming": attrs.get("hcp-audit-log-streaming"),
-                "permissions": attrs.get("permissions"),
-                "timestamps": attrs.get("timestamps"),
-                "updated-at": attrs.get("updated-at"),
-                "organization": org,
-            }
+        return attach_jsonapi(
+            OrganizationAuditConfiguration.model_validate(
+                {
+                    "id": data.get("id", ""),
+                    "audit-trails": attrs.get("audit-trails"),
+                    "hcp-audit-log-streaming": attrs.get("hcp-audit-log-streaming"),
+                    "permissions": attrs.get("permissions"),
+                    "timestamps": attrs.get("timestamps"),
+                    "updated-at": attrs.get("updated-at"),
+                    "organization": org,
+                }
+            ),
+            data,
         )

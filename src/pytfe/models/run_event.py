@@ -8,6 +8,7 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 from .comment import Comment
 from .user import User
 
@@ -17,7 +18,7 @@ class RunEventIncludeOpt(str, Enum):
     RUN_EVENT_COMMENT = "comment"
 
 
-class RunEvent(BaseModel):
+class RunEvent(TFEModel):
     model_config = ConfigDict(
         populate_by_name=True, validate_by_name=True, extra="allow"
     )

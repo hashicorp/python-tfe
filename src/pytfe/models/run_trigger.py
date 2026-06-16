@@ -9,10 +9,11 @@ from enum import Enum
 from pydantic import BaseModel, Field
 
 from ..models.common import Pagination
+from ._base import TFEModel
 from .workspace import Workspace
 
 
-class RunTrigger(BaseModel):
+class RunTrigger(TFEModel):
     id: str
     type: str = Field(default="run-triggers")
     created_at: datetime

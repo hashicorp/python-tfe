@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     InvalidOrgError,
     InvalidRunTaskCategoryError,
@@ -108,18 +109,21 @@ def _run_task_from(d: dict[str, Any], org: str | None = None) -> RunTask:
                     WorkspaceRunTask(id=_safe_str(item.get("id")))
                 )
 
-    return RunTask(
-        id=id_str,
-        name=name_str,
-        description=_safe_str(attr.get("description")) or None,
-        url=_safe_str(attr.get("url")),
-        category=_safe_str(attr.get("category")),
-        hmac_key=attr.get("hmac-key"),  # Can be None
-        enabled=bool(attr.get("enabled")),
-        global_configuration=global_config,
-        agent_pool=agent_pool,
-        organization=organization,
-        workspace_run_tasks=workspace_run_tasks,
+    return attach_jsonapi(
+        RunTask(
+            id=id_str,
+            name=name_str,
+            description=_safe_str(attr.get("description")) or None,
+            url=_safe_str(attr.get("url")),
+            category=_safe_str(attr.get("category")),
+            hmac_key=attr.get("hmac-key"),  # Can be None
+            enabled=bool(attr.get("enabled")),
+            global_configuration=global_config,
+            agent_pool=agent_pool,
+            organization=organization,
+            workspace_run_tasks=workspace_run_tasks,
+        ),
+        d,
     )
 
 

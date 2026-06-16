@@ -5,8 +5,10 @@
 
 from pydantic import BaseModel
 
+from ._base import TFEModel
 
-class WorkspaceResource(BaseModel):
+
+class WorkspaceResource(TFEModel):
     """Represents a Terraform Enterprise workspace resource.
 
     These are resources managed by Terraform in a workspace's state.

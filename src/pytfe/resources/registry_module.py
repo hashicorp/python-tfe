@@ -7,6 +7,7 @@ import io
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     ERR_INVALID_NAME,
     ERR_INVALID_ORG,
@@ -571,22 +572,25 @@ class RegistryModules(_Service):
                     )
                 )
 
-        return RegistryModule(
-            id=data.get("id", ""),
-            name=attributes.get("name", ""),
-            provider=attributes.get("provider", ""),
-            registry_name=RegistryName(attributes.get("registry-name", "private")),
-            namespace=attributes.get("namespace", ""),
-            no_code=attributes.get("no-code", False),
-            permissions=permissions,
-            publishing_mechanism=attributes.get("publishing-mechanism"),
-            status=attributes.get("status"),
-            test_config=test_config,
-            vcs_repo=vcs_repo,
-            version_statuses=version_statuses,
-            created_at=attributes.get("created-at"),
-            updated_at=attributes.get("updated-at"),
-            organization=organization,
+        return attach_jsonapi(
+            RegistryModule(
+                id=data.get("id", ""),
+                name=attributes.get("name", ""),
+                provider=attributes.get("provider", ""),
+                registry_name=RegistryName(attributes.get("registry-name", "private")),
+                namespace=attributes.get("namespace", ""),
+                no_code=attributes.get("no-code", False),
+                permissions=permissions,
+                publishing_mechanism=attributes.get("publishing-mechanism"),
+                status=attributes.get("status"),
+                test_config=test_config,
+                vcs_repo=vcs_repo,
+                version_statuses=version_statuses,
+                created_at=attributes.get("created-at"),
+                updated_at=attributes.get("updated-at"),
+                organization=organization,
+            ),
+            data,
         )
 
     def _parse_registry_module_version(

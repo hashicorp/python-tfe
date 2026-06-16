@@ -1,5 +1,19 @@
 # Unreleased
 
+## Enhancements
+
+### Relationships
+* Added a lossless JSON:API escape hatch. **Every resource model** now derives from the new `pytfe.models.TFEModel` base and exposes `model.relationships`, `model.included`, `model.included_by(type, id)`, `model.related(name)`, and the `model.has_relationships` / `model.has_included` presence flags (distinguishing "absent on the wire" from "present but empty"). The raw blocks are private attributes — excluded from `model_dump()` **and from equality** — so this is additive and non-breaking; they complement `extra="allow"`, which only retains unknown *attributes*.
+  * **`relationships` capture** is wired broadly across the resources whose models are built through a dedicated parser (workspaces, runs, projects, teams, policies, policy sets, stacks, registry, no-code modules, comments, state versions, variable sets, oauth clients, notification configs, org memberships, query runs, admin orgs/runs/users/workspaces, and more), so the raw relationship references are always reachable.
+  * **`included` hydration** (typed relations filled from the document's top-level `included`, and a populated `model.included`) currently applies to the single-resource reads that thread it — `workspaces.read*`, `runs.read*`, `no_code_modules.read_variables`. Other single reads and **all list endpoints** capture `relationships` but not yet `included`; threading `included` through the remaining reads and list pagination is an in-progress follow-up.
+
+  See [docs/related-resources.md](docs/related-resources.md).
+
+## Bug Fixes
+
+### Relationships
+* Fixed `workspaces.read*(..., include=[WorkspaceIncludeOpt.OUTPUTS])` returning outputs with `None` name/value/type. Workspace `outputs` is now hydrated from the JSON:API `included` array through the shared relationship parser (matching go-tfe's `relation,outputs`), instead of a broken special case that read attributes off the id-only relationship references. [#134](https://github.com/hashicorp/python-tfe/issues/134) (the related project-include case, [#74](https://github.com/hashicorp/python-tfe/issues/74), was already resolved by the relationship refactor and is verified covered.)
+
 # Released
 # v1.1.0
 

@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     InvalidNameError,
     InvalidOrgError,
@@ -46,7 +47,7 @@ class Policies(_Service):
                 attrs["organization"] = item.get("relationships", {}).get(
                     "organization", {}
                 )
-                yield Policy.model_validate(attrs)
+                yield attach_jsonapi(Policy.model_validate(attrs), item)
 
         return _gen()
 
@@ -72,7 +73,7 @@ class Policies(_Service):
         d = jd.get("data", {})
         attrs = d.get("attributes", {})
         attrs["id"] = d.get("id")
-        return Policy.model_validate(attrs)
+        return attach_jsonapi(Policy.model_validate(attrs), d)
 
     def read(self, policy_id: str) -> Policy:
         """Read a specific policy by its ID."""
@@ -87,7 +88,7 @@ class Policies(_Service):
         attrs = d.get("attributes", {})
         attrs["id"] = d.get("id")
         attrs["organization"] = d.get("relationships", {}).get("organization", {})
-        return Policy.model_validate(attrs)
+        return attach_jsonapi(Policy.model_validate(attrs), d)
 
     def update(self, policy_id: str, options: PolicyUpdateOptions) -> Policy:
         """Update an existing policy by its ID."""
@@ -109,7 +110,7 @@ class Policies(_Service):
         attrs = d.get("attributes", {})
         attrs["id"] = d.get("id")
         attrs["organization"] = d.get("relationships", {}).get("organization", {})
-        return Policy.model_validate(attrs)
+        return attach_jsonapi(Policy.model_validate(attrs), d)
 
     def delete(self, policy_id: str) -> None:
         """Delete a specific policy by its ID."""

@@ -8,6 +8,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 
 class RegistryName(str, Enum):
     """Registry name enum for public/private registries."""
@@ -111,7 +113,7 @@ class RegistryModuleVersionStatuses(BaseModel):
     error: str | None = None
 
 
-class RegistryModule(BaseModel):
+class RegistryModule(TFEModel):
     """Registry module model."""
 
     id: str
@@ -131,7 +133,7 @@ class RegistryModule(BaseModel):
     organization: Any | None = None  # Will be Organization type from main types
 
 
-class RegistryModuleVersion(BaseModel):
+class RegistryModuleVersion(TFEModel):
     """Registry module version model."""
 
     id: str

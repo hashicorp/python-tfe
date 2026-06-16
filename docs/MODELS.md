@@ -37,6 +37,29 @@ class Foo(BaseModel):
     ...
 ```
 
+## Base class: `TFEModel` vs `BaseModel`
+
+| Inherit from | For |
+|---|---|
+| **`TFEModel`** (`pytfe.models`, defined in `models/_base.py`) | **Top-level resource models** — anything returned from a `read`/`list`/`create`/`update` that corresponds to a JSON:API *resource object* (`Workspace`, `Run`, `Project`, `Policy`, `AdminRun`, …). |
+| **`BaseModel`** | Everything else: `*CreateOptions` / `*UpdateOptions` / `*ListOptions`, nested attribute sub-objects (`WorkspacePermissions`, `VCSRepo`, …), enums, and `*List` envelopes. |
+
+`TFEModel` is **config-light** — it adds no `model_config`, so you still set your own (`extra="allow"`, etc.) exactly as above. What it adds is the lossless related-resource escape hatch: `.relationships`, `.included`, `.included_by(type, id)`, `.related(name)`, and the `.has_relationships` / `.has_included` presence flags. These are private attributes, so they never touch `model_dump()` and add no public fields — inheriting it is additive and non-breaking.
+
+For the accessors to be *populated* (not just present-and-empty), the resource's parser must hand the raw JSON:API resource dict (and any document `included`) to `attach_jsonapi`:
+
+```python
+from .._jsonapi import attach_jsonapi, parse_relationships   # in a resources/*.py
+
+def _foo_from(data, included=None):
+    attr = dict(data.get("attributes") or {})
+    attr["id"] = data.get("id")
+    attr.update(parse_relationships(data.get("relationships"), _FOO_REL_MAP, included=included))
+    return attach_jsonapi(Foo.model_validate(attr), data, included)
+```
+
+`attach_jsonapi(obj, data, included)` is the one line that captures both raw blocks; pass `included=payload.get("included")` from any `read`/`list` that supports `?include=`. See [related-resources.md](related-resources.md) for the consumer-facing view.
+
 ## Field aliases: JSON:API hyphens → Python snake_case
 
 HCP Terraform speaks JSON:API, which uses hyphenated attribute names (`created-at`, `auto-apply`, `state-versions`). Python uses snake_case. Bridge with `Field(alias=...)`:

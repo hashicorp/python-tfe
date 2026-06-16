@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     InvalidTaskStageIDError,
 )
@@ -41,4 +42,4 @@ class PolicyEvaluations(_Service):
                 .get("policy-attachable", {})
                 .get("data", {})
             )
-            yield PolicyEvaluation.model_validate(attrs)
+            yield attach_jsonapi(PolicyEvaluation.model_validate(attrs), item)

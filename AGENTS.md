@@ -57,6 +57,8 @@ A handful of conventions are pervasive enough that you'll regret breaking them. 
 
 2. **JSON:API attribute names go through `Field(alias="...")`.** The API sends `created-at`, Python uses `created_at`. Pair with `model_config = ConfigDict(populate_by_name=True, validate_by_name=True)` on the model. ([MODELS.md](docs/MODELS.md))
 
+2b. **Top-level response/resource models inherit `TFEModel`, not `BaseModel`.** It's config-light (you keep your own `model_config`) and adds the lossless `.relationships`/`.included`/`.related()`/`.has_*` accessors. Wire the resource's parser to call `attach_jsonapi(model, data, included)` so they're populated. Options/sub-object/enum models stay on `BaseModel`. ([MODELS.md](docs/MODELS.md) — TFEModel vs BaseModel)
+
 3. **`model_dump(by_alias=True, exclude_none=True)` for write payloads.** Without `by_alias=True` you'll send snake_case to the API and it will silently drop the fields. Add `mode="json"` if the options contain enums.
 
 4. **For new public APIs, prefer typed `TFEError` subclasses.** The error hierarchy in `errors.py` is part of the public API, and downstream consumers often `except TFEError:` once. Existing methods still expose many `ValueError` paths; do not change those established exceptions unless the breaking-change impact is explicitly accepted.

@@ -16,6 +16,7 @@ from ..errors import (
     RequiredShasumError,
 )
 from ..utils import valid_string, valid_string_id
+from ._base import TFEModel
 from .registry_provider_version import (
     RegistryProviderVersion,
     RegistryProviderVersionID,
@@ -33,7 +34,7 @@ class RegistryProviderPlatformPermissions(BaseModel):
     can_upload_asset: bool = Field(alias="can-upload-asset")
 
 
-class RegistryProviderPlatform(BaseModel):
+class RegistryProviderPlatform(TFEModel):
     """Registry provider platform model."""
 
     model_config = ConfigDict(

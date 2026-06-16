@@ -7,6 +7,7 @@ from collections.abc import Iterator
 from typing import Any
 from urllib.parse import quote
 
+from .._jsonapi import attach_jsonapi
 from ..errors import ERR_INVALID_OAUTH_CLIENT_ID, ERR_INVALID_ORG
 from ..models.oauth_client import (
     OAuthClient,
@@ -183,4 +184,4 @@ class OAuthClients(_Service):
         if "projects" in relationships:
             oauth_client.projects = relationships["projects"].get("data", [])
 
-        return oauth_client
+        return attach_jsonapi(oauth_client, data)

@@ -7,12 +7,13 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 from .organization import Organization
 from .team import Team
 from .user import User
 
 
-class TeamToken(BaseModel):
+class TeamToken(TFEModel):
     """TeamToken represents a Terraform Enterprise team token."""
 
     model_config = ConfigDict(

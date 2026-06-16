@@ -8,6 +8,8 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 
 class QueryRunStatus(str, Enum):
     """QueryRunStatus represents the status of a query run operation."""
@@ -75,7 +77,7 @@ class QueryRunVariable(BaseModel):
     value: str = Field(..., description="Variable value")
 
 
-class QueryRun(BaseModel):
+class QueryRun(TFEModel):
     """Represents a query run in Terraform Enterprise."""
 
     model_config = ConfigDict(populate_by_name=True, extra="allow")

@@ -6,7 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
-from .._jsonapi import parse_relationships
+from .._jsonapi import attach_jsonapi, parse_relationships
 from ..errors import (
     RequiredPrivateRegistryError,
 )
@@ -72,7 +72,7 @@ class RegistryProviderVersions(_Service):
                 },
             )
         )
-        return RegistryProviderVersion.model_validate(attrs)
+        return attach_jsonapi(RegistryProviderVersion.model_validate(attrs), data)
 
     def list(
         self,

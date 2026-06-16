@@ -8,6 +8,7 @@ from collections.abc import Iterator
 from typing import Any
 
 from .._http import HTTPTransport
+from .._jsonapi import attach_jsonapi
 from ..models.variable_set import (
     VariableSet,
     VariableSetApplyToProjectsOptions,
@@ -676,7 +677,7 @@ class VariableSets(_Service):
         parsed_data["parent"] = parent
 
         # Use Pydantic model validation to handle aliases properly
-        return VariableSet.model_validate(parsed_data)
+        return attach_jsonapi(VariableSet.model_validate(parsed_data), data)
 
 
 class VariableSetVariables(_Service):
@@ -946,4 +947,4 @@ class VariableSetVariables(_Service):
         parsed_data["variable_set"] = variable_set
 
         # Use Pydantic model validation
-        return VariableSetVariable.model_validate(parsed_data)
+        return attach_jsonapi(VariableSetVariable.model_validate(parsed_data), data)

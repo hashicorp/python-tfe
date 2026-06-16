@@ -10,7 +10,7 @@ from pytfe.models import (
     Project,
 )
 
-from .._jsonapi import parse_relationships
+from .._jsonapi import attach_jsonapi, parse_relationships
 from ..models.stack import (
     Stack,
     StackCreateOptions,
@@ -138,4 +138,4 @@ class Stacks(_Service):
                 {"project": Project, "agent-pool": AgentPool},
             )
         )
-        return Stack.model_validate(attrs)
+        return attach_jsonapi(Stack.model_validate(attrs), data)

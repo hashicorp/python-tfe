@@ -15,6 +15,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import InvalidGitHubAppInstallationIDError
 from ..models.github_app_installation import (
     GitHubAppInstallation,
@@ -26,7 +27,9 @@ from ._base import _Service
 
 def _parse(data: dict[str, Any]) -> GitHubAppInstallation:
     attrs = data.get("attributes") or {}
-    return GitHubAppInstallation.model_validate({"id": data.get("id"), **attrs})
+    return attach_jsonapi(
+        GitHubAppInstallation.model_validate({"id": data.get("id"), **attrs}), data
+    )
 
 
 class GitHubAppInstallations(_Service):

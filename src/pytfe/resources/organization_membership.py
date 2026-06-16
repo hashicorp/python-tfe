@@ -7,6 +7,7 @@ import re
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import ERR_INVALID_EMAIL, ERR_INVALID_ORG
 from ..models.organization import Organization
 from ..models.organization_membership import (
@@ -277,11 +278,14 @@ class OrganizationMemberships(_Service):
         # This would be populated when include options are used
         # For now, keeping it simple with just IDs
 
-        return OrganizationMembership(
-            id=membership_id,
-            status=status,
-            email=email,
-            organization=organization,
-            user=user,
-            teams=teams,
+        return attach_jsonapi(
+            OrganizationMembership(
+                id=membership_id,
+                status=status,
+                email=email,
+                organization=organization,
+                user=user,
+                teams=teams,
+            ),
+            data,
         )

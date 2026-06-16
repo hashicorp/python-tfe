@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 from .apply import Apply
 from .comment import Comment
 from .configuration_version import ConfigurationVersion
@@ -93,7 +94,7 @@ class RunOperation(str, Enum):
     Run_Operation_Save_Plan = "save_plan"
 
 
-class Run(BaseModel):
+class Run(TFEModel):
     """Run represents a Terraform Enterprise run."""
 
     # extra="allow" keeps forward compatibility: undeclared server attributes are

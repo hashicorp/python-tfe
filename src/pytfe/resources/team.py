@@ -3,7 +3,7 @@ from __future__ import annotations
 import builtins
 from collections.abc import Iterator
 
-from .._jsonapi import parse_relationships
+from .._jsonapi import attach_jsonapi, parse_relationships
 from ..errors import (
     ERR_INVALID_ORG,
     InvalidTeamIDError,
@@ -47,7 +47,7 @@ class Teams(_Service):
                 {"users": User, "organization-memberships": OrganizationMembership},
             )
         )
-        return Team.model_validate(attrs)
+        return attach_jsonapi(Team.model_validate(attrs), data)
 
     def create(self, organization: str, options: TeamCreateOptions) -> Team:
         """Create a new team in the given organization."""

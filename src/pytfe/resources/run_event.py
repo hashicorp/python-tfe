@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import InvalidRunEventIDError, InvalidRunIDError
 from ..models.run_event import (
     RunEvent,
@@ -31,7 +32,7 @@ class RunEvents(_Service):
         for item in self._list(path, params=params, paginated=False):
             attrs = item.get("attributes", {})
             attrs["id"] = item.get("id")
-            yield RunEvent.model_validate(attrs)
+            yield attach_jsonapi(RunEvent.model_validate(attrs), item)
 
     def read(self, run_event_id: str) -> RunEvent:
         """Read a specific run event by its ID."""
@@ -51,9 +52,14 @@ class RunEvents(_Service):
             f"/api/v2/run-events/{run_event_id}",
             params=params,
         )
-        d = r.json().get("data", {})
+        payload = r.json()
+        d = payload.get("data", {})
         attr = d.get("attributes", {}) or {}
-        return RunEvent(
-            id=d.get("id"),
-            **{k.replace("-", "_"): v for k, v in attr.items()},
+        return attach_jsonapi(
+            RunEvent(
+                id=d.get("id"),
+                **{k.replace("-", "_"): v for k, v in attr.items()},
+            ),
+            d,
+            payload.get("included"),
         )

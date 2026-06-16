@@ -8,6 +8,7 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 from .organization import Organization
 from .policy import Policy
 from .policy_set_version import PolicySetVersion
@@ -26,7 +27,7 @@ class PolicySetIncludeOpt(str, Enum):
     POLICY_SET_PROJECT_EXCLUSIONS = "project_exclusions"
 
 
-class PolicySet(BaseModel):
+class PolicySet(TFEModel):
     model_config = ConfigDict(
         populate_by_name=True, validate_by_name=True, extra="allow"
     )

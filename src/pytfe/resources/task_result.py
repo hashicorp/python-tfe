@@ -7,6 +7,7 @@ from pytfe.models.task_result import TaskResult
 from pytfe.models.task_stage import TaskStage
 from pytfe.utils import valid_string_id
 
+from .._jsonapi import attach_jsonapi
 from ._base import _Service
 
 
@@ -35,4 +36,4 @@ class TaskResults(_Service):
                 id=task_stage_data["id"]
             )
 
-        return TaskResult.model_validate(attributes)
+        return attach_jsonapi(TaskResult.model_validate(attributes), data)

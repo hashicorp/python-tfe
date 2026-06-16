@@ -3,7 +3,12 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, TypeVar
+
+if TYPE_CHECKING:
+    from .models._base import TFEModel
+
+_M = TypeVar("_M", bound="TFEModel")
 
 
 def build_headers(user_agent_suffix: str | None = None) -> dict[str, str]:
@@ -81,6 +86,31 @@ def _hydrate(ref: dict[str, Any], model: Any, index: IncludedIndex) -> Any | Non
             # A hydration failure must never break parsing of the parent.
             return model.model_construct(id=rid)
     return model.model_construct(id=rid)
+
+
+def attach_jsonapi(
+    obj: _M,
+    data: dict[str, Any] | None,
+    included: list[dict[str, Any]] | None = None,
+) -> _M:
+    """Stash the raw JSON:API ``relationships`` + ``included`` on a parsed model.
+
+    ``obj`` must derive from ``pytfe.models.TFEModel`` (which provides the
+    private slots and the ``relationships`` / ``included`` / ``included_by`` /
+    ``related`` accessors). ``data`` is the JSON:API resource object (we read its
+    ``relationships`` block); ``included`` is the document's top-level array.
+
+    This is the lossless safety net: related resources — modelled or not — are
+    always reachable raw. No-op-safe when either argument is ``None``. Tracks
+    whether each block was actually present on the wire (``has_relationships`` /
+    ``has_included``) so callers can tell "absent" from "present but empty".
+    """
+    rel = data.get("relationships") if isinstance(data, dict) else None
+    obj._relationships_present = isinstance(data, dict) and "relationships" in data
+    obj._relationships = rel or {}
+    obj._included_present = included is not None
+    obj._included = list(included) if included is not None else []
+    return obj
 
 
 def parse_relationships(

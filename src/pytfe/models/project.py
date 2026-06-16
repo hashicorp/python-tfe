@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 from .common import TagBinding
 from .organization import Organization
 
@@ -14,7 +15,7 @@ if TYPE_CHECKING:
     from .agent import AgentPool
 
 
-class Project(BaseModel):
+class Project(TFEModel):
     model_config = ConfigDict(
         populate_by_name=True, validate_by_name=True, extra="allow"
     )

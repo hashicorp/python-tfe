@@ -7,6 +7,7 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 from .organization import Organization
 from .registry_module import RegistryModule
 from .variable import CategoryType
@@ -37,7 +38,7 @@ class NoCodeVariableOption(BaseModel):
     options: list[str] = Field(default_factory=list)
 
 
-class NoCodeModule(BaseModel):
+class NoCodeModule(TFEModel):
     """Represents a no-code module — a registry module that has been enabled
     for the no-code provisioning workflow.
     """
@@ -144,7 +145,7 @@ class NoCodeWorkspaceUpgradeOptions(BaseModel):
     vars: list[NoCodeWorkspaceVariable] = Field(default_factory=list)
 
 
-class WorkspaceUpgrade(BaseModel):
+class WorkspaceUpgrade(TFEModel):
     """The result of initiating or polling a no-code workspace upgrade."""
 
     model_config = ConfigDict(

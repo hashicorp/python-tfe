@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 if TYPE_CHECKING:
     from pytfe.models.task_stage import TaskStage
 
@@ -39,7 +41,7 @@ class TaskResultStatusTimestamps(BaseModel):
     passed_at: datetime | None = Field(None, alias="passed-at")
 
 
-class TaskResult(BaseModel):
+class TaskResult(TFEModel):
     model_config = ConfigDict(
         populate_by_name=True, validate_by_name=True, extra="allow"
     )

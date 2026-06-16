@@ -5,8 +5,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 
-class SSHKey(BaseModel):
+
+class SSHKey(TFEModel):
     """Represents an SSH key in Terraform Enterprise."""
 
     model_config = ConfigDict(populate_by_name=True, extra="allow")

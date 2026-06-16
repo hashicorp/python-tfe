@@ -13,6 +13,8 @@ from pytfe.models.run import Run
 from pytfe.models.run_task import Stage
 from pytfe.models.task_result import TaskResult
 
+from ._base import TFEModel
+
 
 class TaskStageStatus(str, Enum):
     pending = "pending"
@@ -55,7 +57,7 @@ class Actions(BaseModel):
     is_overridable: bool | None = Field(None, alias="is-overridable")
 
 
-class TaskStage(BaseModel):
+class TaskStage(TFEModel):
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     id: str

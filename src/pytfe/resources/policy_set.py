@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     InvalidNameError,
     InvalidOrgError,
@@ -90,7 +91,7 @@ class PolicySets(_Service):
                 attrs["policies"] = (
                     d.get("relationships", {}).get("policies", {}).get("data", [])
                 )
-                yield PolicySet.model_validate(attrs)
+                yield attach_jsonapi(PolicySet.model_validate(attrs), d)
 
         return _gen()
 
@@ -166,7 +167,7 @@ class PolicySets(_Service):
         attrs["projects"] = relationships_data.get("projects", {}).get("data", [])
         attrs["policies"] = relationships_data.get("policies", {}).get("data", [])
 
-        return PolicySet.model_validate(attrs)
+        return attach_jsonapi(PolicySet.model_validate(attrs), data)
 
     def read(self, policy_set_id: str) -> PolicySet:
         """Read a policy set by its ID."""
@@ -208,7 +209,7 @@ class PolicySets(_Service):
         attrs["projects"] = relationships_data.get("projects", {}).get("data", [])
         attrs["policies"] = relationships_data.get("policies", {}).get("data", [])
 
-        return PolicySet.model_validate(attrs)
+        return attach_jsonapi(PolicySet.model_validate(attrs), data)
 
     def update(self, policy_set_id: str, options: PolicySetUpdateOptions) -> PolicySet:
         """Update an existing policy set."""
@@ -250,7 +251,7 @@ class PolicySets(_Service):
         attrs["projects"] = relationships_data.get("projects", {}).get("data", [])
         attrs["policies"] = relationships_data.get("policies", {}).get("data", [])
 
-        return PolicySet.model_validate(attrs)
+        return attach_jsonapi(PolicySet.model_validate(attrs), data)
 
     def add_policies(
         self, policy_set_id: str, options: PolicySetAddPoliciesOptions

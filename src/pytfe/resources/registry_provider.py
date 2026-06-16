@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     ERR_INVALID_ORG,
 )
@@ -163,4 +164,4 @@ class RegistryProviders(_Service):
             "links": data.get("links"),
         }
 
-        return RegistryProvider(**provider_data)
+        return attach_jsonapi(RegistryProvider(**provider_data), data)

@@ -5,11 +5,12 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 from .policy_set import PolicySet
 from .variable import CategoryType
 
 
-class PolicySetParameter(BaseModel):
+class PolicySetParameter(TFEModel):
     model_config = ConfigDict(
         populate_by_name=True, validate_by_name=True, extra="allow"
     )

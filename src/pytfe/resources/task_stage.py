@@ -6,7 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
-from .._jsonapi import parse_relationships
+from .._jsonapi import attach_jsonapi, parse_relationships
 from ..errors import InvalidRunIDError, InvalidTaskStageIDError
 from ..models.policy_evaluation import PolicyEvaluation
 from ..models.run import Run
@@ -36,7 +36,7 @@ class TaskStages(_Service):
         # lists (not None) for these collections when the relations are absent.
         attributes.setdefault("task_results", [])
         attributes.setdefault("policy_evaluations", [])
-        return TaskStage.model_validate(attributes)
+        return attach_jsonapi(TaskStage.model_validate(attributes), data)
 
     # Read
     def read(self, task_stage_id: str) -> TaskStage:

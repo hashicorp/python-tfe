@@ -6,7 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
-from .._jsonapi import RelationMap, parse_relationships
+from .._jsonapi import RelationMap, attach_jsonapi, parse_relationships
 from ..errors import (
     InvalidOrgError,
     InvalidRunIDError,
@@ -60,7 +60,8 @@ def _run_from(d: dict[str, Any], included: list[dict[str, Any]] | None = None) -
     attr.update(
         parse_relationships(d.get("relationships"), _RUN_REL_MAP, included=included)
     )
-    return Run.model_validate(attr)
+    # Keep raw relationships + included so unmodeled relations are never lost.
+    return attach_jsonapi(Run.model_validate(attr), d, included)
 
 
 class Runs(_Service):

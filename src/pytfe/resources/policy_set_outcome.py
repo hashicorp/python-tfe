@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     InvalidPolicyEvaluationIDError,
     InvalidPolicySetOutcomeIDError,
@@ -67,7 +68,7 @@ class PolicySetOutcomes(_Service):
         path = f"api/v2/policy-set-outcomes/{policy_set_outcome_id}"
         r = self.t.request("GET", path)
         data = r.json().get("data", {})
-        return PolicySetOutcome.model_validate(data)
+        return attach_jsonapi(PolicySetOutcome.model_validate(data), data)
 
     def _policy_set_outcome_from(self, d: dict[str, Any]) -> PolicySetOutcome:
         """Convert API response dict to PolicySetParameter model."""
@@ -76,4 +77,4 @@ class PolicySetOutcomes(_Service):
         attrs["policy-evaluation"] = (
             d.get("relationships", {}).get("policy-evaluation", {}).get("data", {})
         )
-        return PolicySetOutcome.model_validate(attrs)
+        return attach_jsonapi(PolicySetOutcome.model_validate(attrs), d)

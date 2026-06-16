@@ -8,6 +8,8 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 if TYPE_CHECKING:
     from .organization import Organization
     from .team import Team
@@ -28,7 +30,7 @@ class OrgMembershipIncludeOpt(str, Enum):
     TEAMS = "teams"
 
 
-class OrganizationMembership(BaseModel):
+class OrganizationMembership(TFEModel):
     """Represents a Terraform Enterprise organization membership."""
 
     model_config = ConfigDict(populate_by_name=True, extra="allow")

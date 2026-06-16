@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from ..._jsonapi import attach_jsonapi
 from ...errors import ERR_INVALID_NAME
 from ...models.admin_user import AdminUser, AdminUserListOptions
 from ...utils import valid_string_id
@@ -14,7 +15,9 @@ from .._base import _Service
 
 def _parse_admin_user(data: dict[str, Any]) -> AdminUser:
     attrs = data.get("attributes") or {}
-    return AdminUser.model_validate({"id": data.get("id"), **attrs})
+    return attach_jsonapi(
+        AdminUser.model_validate({"id": data.get("id"), **attrs}), data
+    )
 
 
 class _AdminUsers(_Service):

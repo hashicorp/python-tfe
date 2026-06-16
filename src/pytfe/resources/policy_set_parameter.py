@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     InvalidCategoryError,
     InvalidParamIDError,
@@ -134,4 +135,4 @@ class PolicySetParameters(_Service):
         attrs["policy_set"] = (
             d.get("relationships", {}).get("configurable", {}).get("data", {})
         )
-        return PolicySetParameter.model_validate(attrs)
+        return attach_jsonapi(PolicySetParameter.model_validate(attrs), d)

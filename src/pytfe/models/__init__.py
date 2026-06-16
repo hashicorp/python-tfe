@@ -3,6 +3,11 @@
 
 from __future__ import annotations
 
+# ── Core models split out of old types.py ─────────────────────────────────────
+# Adjust these imports to match where you placed them during the split.
+# Common / pagination / enums
+from ._base import TFEModel as TFEModel
+
 # ── TFE admin identity (SAML / SCIM) ──────────────────────────────────────────
 from .admin_identity import (
     AdminSAMLSettings,
@@ -80,10 +85,6 @@ from .comment import (
     Comment,
     CommentCreateOptions,
 )
-
-# ── Core models split out of old types.py ─────────────────────────────────────
-# Adjust these imports to match where you placed them during the split.
-# Common / pagination / enums
 from .common import (
     EffectiveTagBinding,
     Pagination,

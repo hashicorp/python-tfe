@@ -8,11 +8,13 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 if TYPE_CHECKING:
     from .oauth_client import OAuthClient
 
 
-class OAuthToken(BaseModel):
+class OAuthToken(TFEModel):
     """OAuth token represents a VCS configuration including the associated OAuth token."""
 
     model_config = ConfigDict(extra="forbid")

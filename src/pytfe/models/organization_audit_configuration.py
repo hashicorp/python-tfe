@@ -4,6 +4,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 from .organization import Organization
 
 
@@ -86,7 +87,7 @@ class OrganizationAuditConfigTimestamps(BaseModel):
     )
 
 
-class OrganizationAuditConfiguration(BaseModel):
+class OrganizationAuditConfiguration(TFEModel):
     """Organization audit configuration resource."""
 
     model_config = ConfigDict(populate_by_name=True, extra="forbid")

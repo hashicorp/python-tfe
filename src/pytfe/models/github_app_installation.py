@@ -15,6 +15,8 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 
 class GitHubAppInstallationType(str, Enum):
     """Whether the GitHub App is installed against a user account or
@@ -30,7 +32,7 @@ class GitHubAppInstallationType(str, Enum):
     ORGANIZATION = "Organization"
 
 
-class GitHubAppInstallation(BaseModel):
+class GitHubAppInstallation(TFEModel):
     """A GitHub App installation visible to the authenticated user."""
 
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)

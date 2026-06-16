@@ -8,6 +8,8 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 
 class ApplyStatus(str, Enum):
     APPLY_CANCELED = "canceled"
@@ -21,7 +23,7 @@ class ApplyStatus(str, Enum):
     APPLY_UNREACHABLE = "unreachable"
 
 
-class Apply(BaseModel):
+class Apply(TFEModel):
     model_config = ConfigDict(
         populate_by_name=True, validate_by_name=True, extra="allow"
     )

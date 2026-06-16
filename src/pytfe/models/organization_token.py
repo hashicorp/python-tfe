@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 if TYPE_CHECKING:
     pass
 
@@ -16,7 +18,7 @@ class TokenType(str, Enum):
     AUDIT_TRAILS = "audit-trails"
 
 
-class OrganizationToken(BaseModel):
+class OrganizationToken(TFEModel):
     """Organization token represents a Terraform Enterprise organization token."""
 
     model_config = ConfigDict(extra="forbid")

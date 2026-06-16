@@ -7,6 +7,8 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 
 class TeamWorkspaceAccessType(str, Enum):
     READ = "read"
@@ -40,7 +42,7 @@ class TeamWorkspaceSentinelMocksPermission(str, Enum):
     READ = "read"
 
 
-class TeamWorkspaceAccess(BaseModel):
+class TeamWorkspaceAccess(TFEModel):
     """A team's access grant on a workspace (`/api/v2/team-workspaces/{id}`)."""
 
     model_config = ConfigDict(

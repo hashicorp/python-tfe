@@ -8,6 +8,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from ._base import TFEModel
+
 
 class ConfigurationStatus(str, Enum):
     """Configuration version status enumeration."""
@@ -61,7 +63,7 @@ class IngressAttributes(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class ConfigurationVersion(BaseModel):
+class ConfigurationVersion(TFEModel):
     """Configuration version model."""
 
     id: str

@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import InvalidCommentIDError, InvalidRunIDError
 from ..models.comment import Comment, CommentCreateOptions
 from ..utils import valid_string_id
@@ -51,4 +52,4 @@ class Comments(_Service):
         """Parse a Comment from API response data."""
         attrs = dict(data.get("attributes", {}))
         attrs["id"] = data.get("id")
-        return Comment.model_validate(attrs)
+        return attach_jsonapi(Comment.model_validate(attrs), data)

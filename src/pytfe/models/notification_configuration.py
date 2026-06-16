@@ -16,6 +16,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from ._base import TFEModel
+
 
 class NotificationTriggerType(Enum):
     """Represents the different TFE notifications that can be sent as a run's progress transitions between different states."""
@@ -78,7 +80,7 @@ class NotificationConfigurationSubscribableChoice(BaseModel):
     workspace: Any | None = None
 
 
-class NotificationConfiguration(BaseModel):
+class NotificationConfiguration(TFEModel):
     """Represents a Notification Configuration."""
 
     model_config = ConfigDict(
