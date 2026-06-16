@@ -103,7 +103,16 @@ Public HCP Terraform API resources that do not yet have a pytfe client namespace
 | IP ranges | `/api/meta/ip-ranges`. |
 | Metrics service tokens | Metrics endpoint service tokens. |
 | Plan exports | Sentinel mock / plan-export download. Model exists (`models/plan_export.py`). |
+| Stack configuration summary | Builds on the existing stack_configuration resource |
+| Stack deployment | Core Stacks deployment lifecycle |
+| Stack deployment groups | Extends stack_deployment |
+| Stack deployment groups summary | Extends stack_deployment_groups |
+| Stack deployment runs | Exposes deployment run details |
+| Stack deployment steps | Granular deployment step tracking |
+| Stack diagnostic | Diagnostics companion to stack_deployment |
+| Stack state | State surface for deployed stacks |
 | Subscriptions | Organization subscription management. |
+| Team member | - |
 | Terraform actions | Only the Run `invoke_action_addrs` field today; no dedicated resource. |
 | User tokens | Personal (user) API tokens. |
 | VCS events | — |
