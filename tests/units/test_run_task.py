@@ -332,6 +332,14 @@ class TestRunTasks:
             assert result.enabled is True
             assert result.hmac_key == "secret-key"
 
+            # Raw capture: the document's `included` array is now retained on the
+            # escape hatch (was previously dropped), without leaking into dumps.
+            assert result.has_included is True
+            org = result.included_by("organizations", "org-123")
+            assert org is not None
+            assert org["attributes"]["name"] == "test-org"
+            assert "included" not in result.model_dump()
+
         options = RunTaskReadOptions(
             include=[RunTaskIncludeOptions.RUN_TASK_WORKSPACE_TASKS]
         )

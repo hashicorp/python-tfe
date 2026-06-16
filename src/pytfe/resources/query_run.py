@@ -97,7 +97,7 @@ class QueryRuns(_Service):
         attrs = data.get("attributes", {})
         attrs["id"] = data.get("id")
 
-        return attach_jsonapi(QueryRun.model_validate(attrs), data)
+        return attach_jsonapi(QueryRun.model_validate(attrs), data, jd.get("included"))
 
     def read(self, query_run_id: str) -> QueryRun:
         """Read a query run by its ID."""
@@ -111,7 +111,7 @@ class QueryRuns(_Service):
         attrs = data.get("attributes", {})
         attrs["id"] = data.get("id")
 
-        return attach_jsonapi(QueryRun.model_validate(attrs), data)
+        return attach_jsonapi(QueryRun.model_validate(attrs), data, jd.get("included"))
 
     def read_with_options(
         self, query_run_id: str, options: QueryRunReadOptions
@@ -132,7 +132,7 @@ class QueryRuns(_Service):
         attrs = data.get("attributes", {})
         attrs["id"] = data.get("id")
 
-        return attach_jsonapi(QueryRun.model_validate(attrs), data)
+        return attach_jsonapi(QueryRun.model_validate(attrs), data, jd.get("included"))
 
     def logs(self, query_run_id: str) -> io.IOBase:
         """Retrieve the logs for a query run.

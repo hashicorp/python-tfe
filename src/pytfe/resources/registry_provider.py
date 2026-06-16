@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import builtins
 from collections.abc import Iterator
 from typing import Any
 
@@ -98,7 +99,9 @@ class RegistryProviders(_Service):
 
         response = self.t.request("GET", path, params=params)
         response_data = response.json()
-        return self._parse_registry_provider(response_data["data"])
+        return self._parse_registry_provider(
+            response_data["data"], response_data.get("included")
+        )
 
     def delete(self, provider_id: RegistryProviderID) -> None:
         """Delete a registry provider."""
@@ -110,7 +113,11 @@ class RegistryProviders(_Service):
 
         self.t.request("DELETE", path)
 
-    def _parse_registry_provider(self, data: dict[str, Any]) -> RegistryProvider:
+    def _parse_registry_provider(
+        self,
+        data: dict[str, Any],
+        included: builtins.list[dict[str, Any]] | None = None,
+    ) -> RegistryProvider:
         """Parse a registry provider from API response data."""
         if data is None:
             raise ValueError("Cannot parse registry provider: data is None")
@@ -164,4 +171,4 @@ class RegistryProviders(_Service):
             "links": data.get("links"),
         }
 
-        return attach_jsonapi(RegistryProvider(**provider_data), data)
+        return attach_jsonapi(RegistryProvider(**provider_data), data, included)

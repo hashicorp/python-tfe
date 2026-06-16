@@ -88,6 +88,20 @@ class OrganizationCreateOptions(BaseModel):
     data_retention_policy_choice: dict | None = None
 
 
+class OrganizationIncludeOpt(str, Enum):
+    """Available include options for reading an organization."""
+
+    ORGANIZATION_SUBSCRIPTION = "subscription"
+
+
+class OrganizationReadOptions(BaseModel):
+    """Options for reading a single organization."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    include: list[OrganizationIncludeOpt] | None = Field(None, alias="include")
+
+
 class ExecutionMode(str, Enum):
     REMOTE = "remote"
     AGENT = "agent"

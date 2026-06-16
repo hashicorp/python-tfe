@@ -11,6 +11,7 @@ from pytfe.models import (
     TeamCreateOptions,
     TeamIncludeOpt,
     TeamListOptions,
+    TeamReadOptions,
     TeamUpdateOptions,
 )
 from pytfe.resources.team import Teams
@@ -241,11 +242,52 @@ class TestTeams:
         mock_transport.request.assert_called_once_with(
             "GET",
             path="/api/v2/teams/team-789",
+            params={},
         )
 
         assert isinstance(result, Team)
         assert result.id == "team-789"
         assert result.name == "platform-admins"
+
+    def test_read_with_include_hydrates_and_captures(
+        self, teams_service, mock_transport
+    ):
+        """read(include=...) sends the include param, hydrates typed relations
+        from `included`, and captures the raw block (non-breaking escape hatch)."""
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "data": {
+                "id": "team-789",
+                "attributes": {"name": "platform-admins"},
+                "relationships": {
+                    "users": {"data": [{"id": "user-1", "type": "users"}]},
+                },
+            },
+            "included": [
+                {
+                    "id": "user-1",
+                    "type": "users",
+                    "attributes": {"username": "alice"},
+                }
+            ],
+        }
+        mock_transport.request.return_value = mock_response
+
+        result = teams_service.read(
+            "team-789", TeamReadOptions(include=[TeamIncludeOpt.TEAM_USERS])
+        )
+
+        # include param is sent
+        assert mock_transport.request.call_args[1]["params"] == {"include": "users"}
+        # typed hydration from included
+        assert result.users is not None
+        assert result.users[0].username == "alice"
+        # raw capture + non-breaking
+        assert result.has_included is True
+        assert (
+            result.included_by("users", "user-1")["attributes"]["username"] == "alice"
+        )
+        assert "included" not in result.model_dump()
 
     def test_delete_team_validations(self, teams_service):
         """Test delete method validations."""

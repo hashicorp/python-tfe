@@ -7,6 +7,8 @@ from pytfe.models.run_task import Stage as RunTaskStage
 from pytfe.models.task_stage import (
     Stage,
     TaskStage,
+    TaskStageIncludeOpt,
+    TaskStageReadOptions,
     TaskStageStatus,
 )
 from pytfe.resources.task_stage import TaskStages
@@ -143,6 +145,7 @@ def test_read_calls_request_correctly(mocker):
     mock_transport.request.assert_called_once_with(
         "GET",
         "/api/v2/task-stages/ts-123",
+        params={},
     )
 
 
@@ -159,6 +162,51 @@ def test_read_stub_payload(mocker):
     assert isinstance(result, TaskStage)
     assert result.id == "ts-stub-001"
     assert result.stage is None
+
+
+def test_read_with_include_hydrates_and_captures(mocker):
+    """read(include=...) sends the include param, hydrates typed relations from
+    `included`, and captures the raw block (non-breaking escape hatch)."""
+    mock_transport = mocker.Mock()
+    mock_response = mocker.Mock()
+    mock_response.json.return_value = {
+        "data": {
+            "id": "ts-123",
+            "attributes": {"stage": "pre_plan", "status": "pending"},
+            "relationships": {
+                "policy-evaluations": {
+                    "data": [{"id": "pol-1", "type": "policy-evaluations"}]
+                },
+            },
+        },
+        "included": [
+            {
+                "id": "pol-1",
+                "type": "policy-evaluations",
+                "attributes": {"status": "passed"},
+            }
+        ],
+    }
+    mock_transport.request.return_value = mock_response
+
+    service = TaskStages(mock_transport)
+    result = service.read(
+        "ts-123",
+        TaskStageReadOptions(
+            include=[TaskStageIncludeOpt.TASK_STAGE_POLICY_EVALUATIONS]
+        ),
+    )
+
+    assert mock_transport.request.call_args[1]["params"] == {
+        "include": "policy-evaluations"
+    }
+    # typed hydration from included
+    assert len(result.policy_evaluations) == 1
+    assert result.policy_evaluations[0].status == "passed"
+    # raw capture + non-breaking
+    assert result.has_included is True
+    assert result.included_by("policy-evaluations", "pol-1") is not None
+    assert "included" not in result.model_dump()
 
 
 # List method tests

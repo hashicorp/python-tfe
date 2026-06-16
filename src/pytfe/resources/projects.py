@@ -214,9 +214,9 @@ class Projects(_Service):
         else:
             response = self.t.request("GET", path)
 
-        data = response.json()["data"]
+        payload = response.json()
 
-        return self._project_from(data)
+        return self._project_from(payload["data"], payload.get("included"))
 
     def update(self, project_id: str, options: ProjectUpdateOptions) -> Project:
         """Update a project's name and/or description"""
@@ -402,7 +402,11 @@ class Projects(_Service):
         path = f"/api/v2/projects/{project_id}"
         self.t.request("PATCH", path, json_body=payload)
 
-    def _project_from(self, data: dict[str, Any]) -> Project:
+    def _project_from(
+        self,
+        data: dict[str, Any],
+        included: builtins.list[dict[str, Any]] | None = None,
+    ) -> Project:
         """Helper method to create a Project object from API response data"""
         attrs = data.get("attributes", {})
         attrs["id"] = data.get("id")
@@ -420,4 +424,4 @@ class Projects(_Service):
             else None
         )
 
-        return attach_jsonapi(Project.model_validate(attrs), data)
+        return attach_jsonapi(Project.model_validate(attrs), data, included)

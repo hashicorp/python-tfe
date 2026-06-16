@@ -100,6 +100,14 @@ class TeamListOptions(BaseModel):
         return self
 
 
+class TeamReadOptions(BaseModel):
+    """Options for reading a single team."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    include: list[TeamIncludeOpt] | None = Field(None, alias="include")
+
+
 class OrganizationAccessOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 

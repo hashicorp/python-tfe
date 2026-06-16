@@ -8,7 +8,8 @@ from collections.abc import Iterator
 from typing import Any
 
 from .._http import HTTPTransport
-from .._jsonapi import attach_jsonapi
+from .._jsonapi import RelationMap, attach_jsonapi, parse_relationships
+from ..models.project import Project
 from ..models.variable_set import (
     VariableSet,
     VariableSetApplyToProjectsOptions,
@@ -26,7 +27,16 @@ from ..models.variable_set import (
     VariableSetVariableListOptions,
     VariableSetVariableUpdateOptions,
 )
+from ..models.workspace import Workspace
 from ._base import _Service
+
+# Typed relations hydrated from ?include= (workspaces, projects, vars). The
+# polymorphic ``parent`` relation is handled separately. See VariableSetIncludeOpt.
+_VARIABLE_SET_REL_MAP: RelationMap = {
+    "workspaces": Workspace,
+    "projects": Project,
+    "vars": VariableSetVariable,
+}
 
 
 class VariableSets(_Service):
@@ -256,7 +266,7 @@ class VariableSets(_Service):
         response = self.t.request("GET", path, params=params)
         data = response.json()
 
-        return self._parse_variable_set(data["data"])
+        return self._parse_variable_set(data["data"], data.get("included"))
 
     def update(
         self,
@@ -584,7 +594,11 @@ class VariableSets(_Service):
             variable_sets.append(self._parse_variable_set(item))
         return variable_sets
 
-    def _parse_variable_set(self, data: dict[str, Any]) -> VariableSet:
+    def _parse_variable_set(
+        self,
+        data: dict[str, Any],
+        included: builtins.list[dict[str, Any]] | None = None,
+    ) -> VariableSet:
         """Parse a single variable set from API response data.
 
         Args:
@@ -609,58 +623,13 @@ class VariableSets(_Service):
             "updated_at": attrs.get("updated-at"),
         }
 
-        # Build workspaces list - simplified to just contain minimal data
-        workspaces = []
-        if "workspaces" in relationships:
-            ws_data = relationships["workspaces"].get("data", [])
-            if isinstance(ws_data, list):
-                for ws in ws_data:
-                    if "id" in ws:
-                        workspaces.append(
-                            {
-                                "id": ws["id"],
-                                "name": f"workspace-{ws['id']}",  # Placeholder name
-                            }
-                        )
-        parsed_data["workspaces"] = workspaces
+        # workspaces/projects/vars are id-only stubs by default and are filled
+        # from the JSON:API ``included`` array when requested via ?include=.
+        parsed_data.update(
+            parse_relationships(relationships, _VARIABLE_SET_REL_MAP, included=included)
+        )
 
-        # Build projects list - simplified to just contain minimal data
-        projects = []
-        if "projects" in relationships:
-            proj_data = relationships["projects"].get("data", [])
-            if isinstance(proj_data, list):
-                for proj in proj_data:
-                    if "id" in proj:
-                        projects.append(
-                            {
-                                "id": proj["id"],
-                                "name": f"project-{proj['id']}",  # Placeholder name
-                            }
-                        )
-        parsed_data["projects"] = projects
-
-        # Build variables list - simplified to just contain minimal data
-        variables = []
-        if "vars" in relationships:
-            vars_data = relationships["vars"].get("data", [])
-            if isinstance(vars_data, list):
-                for var in vars_data:
-                    if "id" in var:
-                        variables.append(
-                            {
-                                "id": var["id"],
-                                "key": f"var-{var['id']}",  # Placeholder key
-                                "category": "terraform",  # Default category
-                                "variable_set": {
-                                    "id": data.get("id"),
-                                    "name": attrs.get("name", ""),
-                                    "global": attrs.get("global", False),
-                                },
-                            }
-                        )
-        parsed_data["vars"] = variables
-
-        # Handle parent relationship
+        # Handle parent relationship (polymorphic: project | organization).
         parent = None
         if "parent" in relationships:
             parent_data = relationships["parent"].get("data")
@@ -677,7 +646,7 @@ class VariableSets(_Service):
         parsed_data["parent"] = parent
 
         # Use Pydantic model validation to handle aliases properly
-        return attach_jsonapi(VariableSet.model_validate(parsed_data), data)
+        return attach_jsonapi(VariableSet.model_validate(parsed_data), data, included)
 
 
 class VariableSetVariables(_Service):

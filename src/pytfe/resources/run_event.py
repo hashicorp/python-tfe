@@ -6,15 +6,38 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
-from .._jsonapi import attach_jsonapi
+from .._jsonapi import RelationMap, attach_jsonapi, parse_relationships
 from ..errors import InvalidRunEventIDError, InvalidRunIDError
+from ..models.comment import Comment
 from ..models.run_event import (
     RunEvent,
     RunEventListOptions,
     RunEventReadOptions,
 )
-from ..utils import valid_string_id
+from ..models.user import User
+from ..utils import _safe_str, valid_string_id
 from ._base import _Service
+
+# Typed relations hydrated from ?include= (actor, comment); see RunEventIncludeOpt.
+_RUN_EVENT_REL_MAP: RelationMap = {"actor": User, "comment": Comment}
+
+
+def _run_event_from(
+    d: dict[str, Any], included: list[dict[str, Any]] | None = None
+) -> RunEvent:
+    attr = d.get("attributes", {}) or {}
+    rels = parse_relationships(
+        d.get("relationships"), _RUN_EVENT_REL_MAP, included=included
+    )
+    return attach_jsonapi(
+        RunEvent(
+            id=_safe_str(d.get("id")),
+            **{k.replace("-", "_"): v for k, v in attr.items()},
+            **rels,
+        ),
+        d,
+        included,
+    )
 
 
 class RunEvents(_Service):
@@ -30,9 +53,7 @@ class RunEvents(_Service):
         # The run-events endpoint is not paginated; fetch the full set in one request.
         path = f"/api/v2/runs/{run_id}/run-events"
         for item in self._list(path, params=params, paginated=False):
-            attrs = item.get("attributes", {})
-            attrs["id"] = item.get("id")
-            yield attach_jsonapi(RunEvent.model_validate(attrs), item)
+            yield _run_event_from(item)
 
     def read(self, run_event_id: str) -> RunEvent:
         """Read a specific run event by its ID."""
@@ -53,13 +74,4 @@ class RunEvents(_Service):
             params=params,
         )
         payload = r.json()
-        d = payload.get("data", {})
-        attr = d.get("attributes", {}) or {}
-        return attach_jsonapi(
-            RunEvent(
-                id=d.get("id"),
-                **{k.replace("-", "_"): v for k, v in attr.items()},
-            ),
-            d,
-            payload.get("included"),
-        )
+        return _run_event_from(payload.get("data", {}), payload.get("included"))

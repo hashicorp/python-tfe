@@ -31,7 +31,11 @@ from ..utils import _safe_str, valid_string, valid_string_id
 from ._base import _Service
 
 
-def _run_task_from(d: dict[str, Any], org: str | None = None) -> RunTask:
+def _run_task_from(
+    d: dict[str, Any],
+    org: str | None = None,
+    included: list[dict[str, Any]] | None = None,
+) -> RunTask:
     """
     Convert JSON API response data to RunTask object.
 
@@ -124,6 +128,7 @@ def _run_task_from(d: dict[str, Any], org: str | None = None) -> RunTask:
             workspace_run_tasks=workspace_run_tasks,
         ),
         d,
+        included,
     )
 
 
@@ -211,7 +216,8 @@ class RunTasks(_Service):
 
         path = f"/api/v2/tasks/{run_task_id}"
         r = self.t.request("GET", path, params=params)
-        return _run_task_from(r.json()["data"])
+        payload = r.json()
+        return _run_task_from(payload["data"], included=payload.get("included"))
 
     def update(self, run_task_id: str, options: RunTaskUpdateOptions) -> RunTask:
         if not valid_string_id(run_task_id):

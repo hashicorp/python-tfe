@@ -522,6 +522,12 @@ class TestOrganizationMembershipReadWithOptions:
         assert membership is not None
         assert membership.id == "ou-abc123def456"
         assert membership.user is not None
+        # Typed hydration: the user's full body is filled from `included`.
+        assert membership.user.username == "testuser"
+        assert membership.user.email == "user@example.com"
+        # Raw escape hatch is also populated, and never leaks into model_dump().
+        assert membership.has_included is True
+        assert "included" not in membership.model_dump()
 
     def test_read_with_options_include_teams(self, membership_service, mock_transport):
         """Test reading with include teams option."""

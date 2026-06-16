@@ -5,14 +5,24 @@
 ### Relationships
 * Added a lossless JSON:API escape hatch. **Every resource model** now derives from the new `pytfe.models.TFEModel` base and exposes `model.relationships`, `model.included`, `model.included_by(type, id)`, `model.related(name)`, and the `model.has_relationships` / `model.has_included` presence flags (distinguishing "absent on the wire" from "present but empty"). The raw blocks are private attributes — excluded from `model_dump()` **and from equality** — so this is additive and non-breaking; they complement `extra="allow"`, which only retains unknown *attributes*.
   * **`relationships` capture** is wired broadly across the resources whose models are built through a dedicated parser (workspaces, runs, projects, teams, policies, policy sets, stacks, registry, no-code modules, comments, state versions, variable sets, oauth clients, notification configs, org memberships, query runs, admin orgs/runs/users/workspaces, and more), so the raw relationship references are always reachable.
-  * **`included` hydration** (typed relations filled from the document's top-level `included`, and a populated `model.included`) currently applies to the single-resource reads that thread it — `workspaces.read*`, `runs.read*`, `no_code_modules.read_variables`. Other single reads and **all list endpoints** capture `relationships` but not yet `included`; threading `included` through the remaining reads and list pagination is an in-progress follow-up.
+  * **`included` hydration** now comes in two forms, both purely additive:
+    * **Typed hydration** — declared relationship fields are filled from the document's top-level `included` array (and `model.included` is populated). Applies to the single-resource reads of `workspaces`, `runs`, `agent_pools`, `stack_configuration`, `teams`, `task_stages`, `policy_set`, `organization_membership`, `variable_set`, `run_event`, and `no_code_modules.read_variables`. The rule is uniform: **wherever a resource models a relation as a typed field, `?include=<relation>` fills that field** (e.g. `policy_set.current_version`, `organization_membership.user`, `run_event.actor`).
+    * **Raw capture** — `model.included` is populated and `model.related(name)` / `model.included_by(type, id)` resolve to the full related bodies. Applies to the single-resource reads whose includable relations are **not** modelled as typed fields, so there is no typed field to fill: `state_versions`, `agents`, `configuration_version`, `oauth_client`, `organizations`, `projects`, `query_run`, `registry_provider`, and `run_task` reads. (Capturing the raw blocks only populates the private escape hatch — no typed field changes, so this is non-breaking.)
+    * **Not yet wired** — `registry_module`, `run_trigger`, and `policy_check` accept `?include=` only on their *list* endpoints, and **all list endpoints** across the SDK still capture `relationships` but not `included` (the shared top-level `included` array is not yet threaded through list pagination — an in-progress follow-up).
 
-  See [docs/related-resources.md](docs/related-resources.md).
+  See [docs/related-resources.md](docs/related-resources.md) for the per-resource coverage table and a "typed field vs raw accessor" guide.
+
+* Added `?include=` support to three single-resource reads that previously exposed no include option, matching the HCP Terraform API (verified against go-tfe's OpenAPI spec and the live API):
+  * `teams.read(team_id, TeamReadOptions(include=[...]))` — `users`, `organization-memberships` (typed hydration).
+  * `task_stages.read(task_stage_id, TaskStageReadOptions(include=[...]))` — `run`, `run.workspace`, `task-results`, `policy-evaluations` (typed hydration).
+  * `organizations.read(name, OrganizationReadOptions(include=[...]))` — `subscription` (raw capture). The new `options` argument is optional, so existing positional calls are unchanged.
 
 ## Bug Fixes
 
 ### Relationships
 * Fixed `workspaces.read*(..., include=[WorkspaceIncludeOpt.OUTPUTS])` returning outputs with `None` name/value/type. Workspace `outputs` is now hydrated from the JSON:API `included` array through the shared relationship parser (matching go-tfe's `relation,outputs`), instead of a broken special case that read attributes off the id-only relationship references. [#134](https://github.com/hashicorp/python-tfe/issues/134) (the related project-include case, [#74](https://github.com/hashicorp/python-tfe/issues/74), was already resolved by the relationship refactor and is verified covered.)
+* `PolicySetVersion` is now exported from `pytfe.models` and its forward reference to `PolicySet` is resolved via `model_rebuild()`. Previously it was never fully defined, so `policy_set.read*(include=[current_version|newest_version])` silently fell back to an id-only stub instead of hydrating the version's `source`/`created_at`/`status`.
+* `variable_set.read` no longer fabricates placeholder relation values (e.g. `name="workspace-<id>"`, `key="var-<id>"`, `category="terraform"`) for `workspaces`/`projects`/`vars`. Those relations are now id-only stubs by default and hydrate from `included` when requested via `?include=`, like every other typed relation.
 
 # Released
 # v1.1.0

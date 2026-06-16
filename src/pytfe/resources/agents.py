@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any, cast
 
+from .._jsonapi import attach_jsonapi
 from ..models.agent import (
     Agent,
     AgentListOptions,
@@ -139,7 +140,8 @@ class Agents(_Service):
         else:
             response = self.t.request("GET", path)
 
-        data = response.json()["data"]
+        payload = response.json()
+        data = payload["data"]
 
         # Extract agent data from response
         attr = data.get("attributes", {}) or {}
@@ -162,13 +164,17 @@ class Agents(_Service):
             "ip_address": _safe_str(attr.get("ip-address")),
         }
 
-        return Agent(
-            id=_safe_str(agent_data["id"]) or "",
-            name=agent_data["name"],
-            status=_safe_agent_status(agent_data["status"]),
-            version=agent_data["version"],
-            last_ping_at=cast(Any, agent_data["last_ping_at"]),
-            ip_address=agent_data["ip_address"],
+        return attach_jsonapi(
+            Agent(
+                id=_safe_str(agent_data["id"]) or "",
+                name=agent_data["name"],
+                status=_safe_agent_status(agent_data["status"]),
+                version=agent_data["version"],
+                last_ping_at=cast(Any, agent_data["last_ping_at"]),
+                ip_address=agent_data["ip_address"],
+            ),
+            data,
+            payload.get("included"),
         )
 
     def delete(self, agent_id: str) -> None:

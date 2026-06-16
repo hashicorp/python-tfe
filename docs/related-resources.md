@@ -60,6 +60,53 @@ pyTFE handles this on two levels:
    print(list(ws.relationships))   # e.g. ['organization', 'project', 'outputs', ...]
    ```
 
+## Which should I use — the typed field or the raw accessor?
+
+**The one rule:** a typed relationship field always carries **at least the `id`**.
+Pass `?include=<relation>` to fill in the rest.
+
+```python
+from pytfe.models.policy_set import PolicySetReadOptions, PolicySetIncludeOpt
+
+ps = client.policy_sets.read("polset-abc")
+ps.current_version.id        # always present (id-only stub)
+ps.current_version.source    # None — you didn't ask for it
+
+ps = client.policy_sets.read_with_options(
+    "polset-abc",
+    PolicySetReadOptions(include=[PolicySetIncludeOpt.POLICY_SET_CURRENT_VERSION]),
+)
+ps.current_version.source    # now hydrated from `included`
+```
+
+* **Prefer the typed field** (`ps.current_version`, `ws.outputs`, `team.users`,
+  `org_membership.user`, `run_event.actor`) whenever the relation is modelled — it's
+  type-checked and stable, and `?include=<relation>` fills it. This works the *same
+  way for every resource that models the relation*: there are no resources where a
+  typed field silently stays a stub after you `?include=` it.
+* **Use the raw accessors** (`model.related(name)`, `model.included_by(type, id)`)
+  only for relations the SDK does **not** model as a typed field — e.g. an
+  organization's `subscription`, or a workspace `readme`. The data is still returned
+  by `?include=`, just untyped.
+
+You never need both for the same relation: if a typed field exists, `?include=` fills
+it; if it doesn't, the raw accessors are the way in.
+
+## Per-resource coverage
+
+`?include=` support by single-resource `read*` (see each resource's `*IncludeOpt`):
+
+| Behaviour | Resources |
+|---|---|
+| **Typed hydration** — `include` fills the typed field | `workspaces`, `runs`, `agent_pools`, `stack_configuration`, `teams`, `task_stages`, `policy_set`, `organization_membership`, `variable_set`, `run_event`, `no_code_modules.read_variables` |
+| **Raw capture** — relation not modelled as a typed field; reach it via `related()` / `included_by()` | `organizations` (`subscription`), `state_versions`, `agents`, `configuration_version`, `oauth_client`, `projects`, `query_run`, `registry_provider`, `run_task` |
+| **List-only** — `?include=` exists only on the `list` endpoint | `registry_module`, `run_trigger`, `policy_check` |
+
+In every case the **`relationships`** block and the four raw accessors are populated,
+so unmodelled relations are never lost. **List endpoints** currently capture
+`relationships` but not `included` (the page-level `included` array is not yet threaded
+through pagination — in progress).
+
 ## Notes
 
 - The raw blocks are **private attributes**, so they never appear in
@@ -72,6 +119,8 @@ pyTFE handles this on two levels:
 - Accessors are provided by `pytfe.models.TFEModel`, which **every
   resource model** now derives from — so `.relationships` / `.included` /
   `.included_by` / `.related` are available everywhere. They're *populated* on
-  resources parsed through a dedicated parser; other resources expose the
-  accessors but return them empty until their parser is wired to capture the
-  raw blocks.
+  single-resource `read*` calls: the `relationships` block on reads that go
+  through a relationship-capturing parser, and the `included` array whenever you
+  pass `?include=`. **List endpoints** currently populate `relationships` but not
+  `included` — the shared top-level `included` array is not yet threaded through
+  pagination (in progress).
