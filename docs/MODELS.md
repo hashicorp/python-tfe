@@ -41,10 +41,10 @@ class Foo(BaseModel):
 
 | Inherit from | For |
 |---|---|
-| **`TFEModel`** (`pytfe.models`, defined in `models/_base.py`) | **Top-level resource models** — anything returned from a `read`/`list`/`create`/`update` that corresponds to a JSON:API *resource object* (`Workspace`, `Run`, `Project`, `Policy`, `AdminRun`, …). |
+| **`TFEModel`** (`pytfe.models`, defined in `models/_base.py`) | **Top-level resource models**: anything returned from a `read`/`list`/`create`/`update` that corresponds to a JSON:API *resource object* (`Workspace`, `Run`, `Project`, `Policy`, `AdminRun`, …). |
 | **`BaseModel`** | Everything else: `*CreateOptions` / `*UpdateOptions` / `*ListOptions`, nested attribute sub-objects (`WorkspacePermissions`, `VCSRepo`, …), enums, and `*List` envelopes. |
 
-`TFEModel` is **config-light** — it adds no `model_config`, so you still set your own (`extra="allow"`, etc.) exactly as above. What it adds is the lossless related-resource escape hatch: `.relationships`, `.included`, `.included_by(type, id)`, `.related(name)`, and the `.has_relationships` / `.has_included` presence flags. These are private attributes, so they never touch `model_dump()` and add no public fields — inheriting it is additive and non-breaking.
+`TFEModel` is **config-light**: it adds no `model_config`, so you still set your own (`extra="allow"`, etc.) exactly as above. What it adds is the lossless related-resource escape hatch: `.relationships`, `.included`, `.included_by(type, id)`, `.related(name)`, and the `.has_relationships` / `.has_included` presence flags. These are private attributes, so they never touch `model_dump()` and add no public fields, and `TFEModel` also overrides `__eq__` to ignore them, so equality stays identical to a plain `BaseModel`. Inheriting it is additive and non-breaking.
 
 For the accessors to be *populated* (not just present-and-empty), the resource's parser must hand the raw JSON:API resource dict (and any document `included`) to `attach_jsonapi`:
 
@@ -59,6 +59,19 @@ def _foo_from(data, included=None):
 ```
 
 `attach_jsonapi(obj, data, included)` is the one line that captures both raw blocks; pass `included=payload.get("included")` from any `read`/`list` that supports `?include=`. See [related-resources.md](related-resources.md) for the consumer-facing view.
+
+### Why not put it on every model
+
+`TFEModel` is scoped to resource objects on purpose. The escape hatch is only meaningful for things parsed from a JSON:API *resource object* (a thing with a `relationships` block, returned from `read`/`list`/`create`/`update`). Putting it on `*Options`, sub-objects, and `*List` envelopes would cost more than it gives:
+
+* **It does nothing on its own.** The accessors stay empty until a parser calls `attach_jsonapi(...)`. A request/options model is never parsed from a response, so its accessors would be permanently empty and pointless.
+* **It adds a confusing, response-only surface to request objects.** A `WorkspaceReadOptions` is something you *build and send*. Exposing `.relationships`, `.included`, and `.related(...)` on it (always empty) is misleading in code, in docs, and in editor autocomplete.
+* **It reserves names.** `TFEModel` claims `relationships`, `included`, `related`, `included_by`, `has_relationships`, and `has_included`. If a model later needs a field with one of those names, Pydantic warns (`Field name "..." shadows an attribute in parent "TFEModel"`) and the field silently wins, quietly breaking the escape hatch on that model. Keeping non-resource models on `BaseModel` avoids reserving those names where they are not needed.
+* **It changes the public class hierarchy and equality** for many public, downstream-facing models. `TFEModel`'s `__eq__` is intentionally equivalent to `BaseModel`'s for public fields, but there is no reason to swap a custom `__eq__` onto the hundreds of options and sub-object models that behave like plain Pydantic today.
+
+What it does **not** break: `frozen=True` models stay hashable, because Pydantic regenerates `__hash__` for a frozen subclass. The only real failure mode is the name collision above.
+
+Rule of thumb: inherit `TFEModel` when the model is a JSON:API resource you parse *from* a response; use `BaseModel` for everything you *build* (options), *nest* (sub-objects), or *wrap* (`*List` envelopes).
 
 ## Field aliases: JSON:API hyphens → Python snake_case
 
