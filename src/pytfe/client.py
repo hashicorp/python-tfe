@@ -43,6 +43,7 @@ from .resources.policy_set_parameter import PolicySetParameters
 from .resources.policy_set_version import PolicySetVersions
 from .resources.projects import Projects
 from .resources.query_run import QueryRuns
+from .resources.registry import Registry
 from .resources.registry_module import RegistryModules
 from .resources.registry_provider import RegistryProviders
 from .resources.registry_provider_platform import RegistryProviderPlatforms
@@ -142,6 +143,8 @@ class TFEClient:
         self.workspace_run_tasks = WorkspaceRunTasks(self._transport)
         self.registry_modules = RegistryModules(self._transport)
         self.no_code_modules = NoCodeModules(self._transport)
+        # Public Terraform Registry (registry.terraform.io), unauthenticated
+        self.registry = Registry(self._transport)
 
         # HYOK OIDC configurations (AWS / Azure / GCP / Vault)
         self.aws_oidc_configurations = AWSOIDCConfigurations(self._transport)

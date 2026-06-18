@@ -75,12 +75,19 @@ column.
 
 ## Agents, registry, integrations, and other resources
 
+> Two registry surfaces: `client.registry` reads the **public** Terraform
+> Registry (`registry.terraform.io`, unauthenticated), while
+> `client.registry_modules` / `client.registry_providers` (and their version /
+> platform sub-resources) manage your organization's **private** registry on
+> HCP Terraform / TFE. See [registry.md](registry.md).
+
 | Client attribute | Resource class | Common methods | Example | Upstream API docs |
 |---|---|---|---|---|
 | `client.agent_pools` | `AgentPools` | `list`, `read`, `create`, `update`, `delete`, assign/remove workspaces/projects | [agent_pool.py](../../examples/agent_pool.py) | [Agents](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/agents) |
 | `client.agents` | `Agents` | `list`, `read`, `delete` | [agent.py](../../examples/agent.py) | [Agents](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/agents) |
 | `client.agent_tokens` | `AgentTokens` | `list`, `read`, `create`, `delete` | [agent.py](../../examples/agent.py) | [Agent tokens](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/agent-tokens) |
-| `client.registry_modules` | `RegistryModules` | `list`, `read`, `create`, `update`, `delete`, version and upload helpers | [registry_module.py](../../examples/registry_module.py) | [Registry modules](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/private-registry/modules) |
+| `client.registry` | `Registry` | `list_modules`, `search_modules`, `list_latest_for_all_providers`, `latest_for_provider`, `get_module`, `list_versions`, `download_url`, `latest_download_url`, `downloads_summary` | [registry.py](../../examples/registry.py) | [Registry API (public, unauthenticated)](https://developer.hashicorp.com/terraform/registry/api-docs) |
+| `client.registry_modules` | `RegistryModules` | `list`, `read`, `create`, `update`, `delete`, version and upload helpers | [registry_module.py](../../examples/registry_module.py) | [Registry modules (private)](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/private-registry/modules) |
 | `client.no_code_modules` | `NoCodeModules` | `create`, `read`, `update`, `delete`, `read_variables`, `create_workspace`, `upgrade_workspace`, `read_workspace_upgrade`, `confirm_workspace_upgrade` | [no_code_provisioning.py](../../examples/no_code_provisioning.py) | [No-code provisioning](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/no-code-provisioning) |
 | `client.aws_oidc_configurations` | `AWSOIDCConfigurations` | `create`, `read`, `update`, `delete` | [oidc_configurations.py](../../examples/oidc_configurations.py) | [AWS OIDC](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/hold-your-own-key/oidc-configurations/aws) |
 | `client.azure_oidc_configurations` | `AzureOIDCConfigurations` | `create`, `read`, `update`, `delete` | [oidc_configurations.py](../../examples/oidc_configurations.py) | [Azure OIDC](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/hold-your-own-key/oidc-configurations/azure) |
@@ -123,6 +130,7 @@ HCP Terraform (SaaS).
 - [policies.md](policies.md)
 - [run-tasks.md](run-tasks.md)
 - [no-code-provisioning.md](no-code-provisioning.md)
+- [registry.md](registry.md) — public Terraform Registry vs. the private registry
 - [oidc-configurations.md](oidc-configurations.md)
 - [admin-identity.md](admin-identity.md)
 - [organization-defaults-and-token-ttl.md](organization-defaults-and-token-ttl.md)

@@ -480,6 +480,35 @@ class RequiredCIDRBlockError(RequiredFieldMissing):
         super().__init__(message)
 
 
+# Public Terraform Registry (module) errors
+class InvalidModuleNamespaceError(InvalidValues):
+    """Raised when an invalid registry module namespace is provided."""
+
+    def __init__(self, message: str = "invalid value for module namespace"):
+        super().__init__(message)
+
+
+class InvalidModuleNameError(InvalidValues):
+    """Raised when an invalid registry module name is provided."""
+
+    def __init__(self, message: str = "invalid value for module name"):
+        super().__init__(message)
+
+
+class InvalidModuleProviderError(InvalidValues):
+    """Raised when an invalid registry module provider is provided."""
+
+    def __init__(self, message: str = "invalid value for module provider"):
+        super().__init__(message)
+
+
+class InvalidModuleVersionError(InvalidValues):
+    """Raised when an invalid registry module version is provided."""
+
+    def __init__(self, message: str = "invalid value for module version"):
+        super().__init__(message)
+
+
 # Run Event errors
 class InvalidRunEventIDError(InvalidValues):
     """Raised when an invalid run event ID is provided."""
