@@ -8,7 +8,7 @@ resource list is reconciled against the public
 
 **Legend:** ✅ Covered &nbsp;·&nbsp; 🟡 Partial &nbsp;·&nbsp; ❌ Not yet implemented
 
-pytfe implements **66 resource namespaces**. The resources still missing or
+pytfe implements **67 resource namespaces**. The resources still missing or
 partially covered are listed at the bottom of this page.
 
 ## Covered resources
@@ -65,6 +65,7 @@ partially covered are listed at the bottom of this page.
 | | Registry provider platforms | `client.registry_provider_platforms` | ✅ |
 | | Registry provider versions | `client.registry_provider_versions` | ✅ |
 | | No-code modules | `client.no_code_modules` | ✅ |
+| | Public Registry module API (registry.terraform.io) | `client.registry` | ✅ |
 | Agents | Agent pools | `client.agent_pools` | ✅ |
 | | Agents | `client.agents` | ✅ |
 | | Agent tokens | `client.agent_tokens` | ✅ |

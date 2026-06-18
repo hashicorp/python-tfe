@@ -359,6 +359,22 @@ from .query_run import (
     QueryRunVariable,
 )
 
+# ── Public Terraform Registry (module API) ────────────────────────────────────
+from .registry import (
+    PublicRegistryModule,
+    PublicRegistryModuleDetail,
+    PublicRegistryModuleDownloadsSummary,
+    PublicRegistryModuleInput,
+    PublicRegistryModuleListOptions,
+    PublicRegistryModuleOutput,
+    PublicRegistryModuleProviderDependency,
+    PublicRegistryModuleResource,
+    PublicRegistryModuleVersion,
+    PublicRegistryModuleVersions,
+    PublicRegistryPagination,
+    PublicRegistrySearchOptions,
+)
+
 # ── Registry Modules / Providers ──────────────────────────────────────────────
 # (Old: .registry_module_types / .registry_provider_types) → import from real modules
 from .registry_module import (
@@ -791,6 +807,19 @@ __all__ = [
     "Output",
     "ProviderDependency",
     "PublishingMechanism",
+    # Public Terraform Registry (module API)
+    "PublicRegistryModule",
+    "PublicRegistryModuleDetail",
+    "PublicRegistryModuleDownloadsSummary",
+    "PublicRegistryModuleInput",
+    "PublicRegistryModuleListOptions",
+    "PublicRegistryModuleOutput",
+    "PublicRegistryModuleProviderDependency",
+    "PublicRegistryModuleResource",
+    "PublicRegistryModuleVersion",
+    "PublicRegistryModuleVersions",
+    "PublicRegistryPagination",
+    "PublicRegistrySearchOptions",
     "RegistryModule",
     "RegistryModuleCreateOptions",
     "RegistryModuleCreateVersionOptions",

@@ -1,5 +1,5 @@
 # Unreleased
-
+# v1.2.0
 ## Enhancements
 
 ### Relationships
@@ -17,6 +17,7 @@ Related data is now a complete, first-class part of every response. Before, `?in
 * Added `client.plan_exports` — export Terraform plan data (Sentinel mock bundles). `create(options)`, `read(id)`, `delete(id)`, and `download(id)` (returns the `.tar.gz` archive bytes, following the temporary presigned-URL redirect). New models: `PlanExport`, `PlanExportCreateOptions`, `PlanExportStatus`, `PlanExportDataType`, `PlanExportStatusTimestamps`. New errors: `InvalidPlanExportIDError`, `RequiredPlanError`.
 * Added `client.cost_estimates` — read run cost estimates. `read(id)` returns a `CostEstimate`; `logs(id)` returns the estimate's log output text. `CostEstimate`, `CostEstimateStatus`, and `CostEstimateStatusTimestamps` are now exported from `pytfe.models`. New error: `InvalidCostEstimateIDError`.
 * Added IP allowlists (the JSON:API `cidr-range-lists` / `cidr-ranges` resources) as `client.cidr_range_lists` and `client.cidr_ranges`. `cidr_range_lists` supports `list`, `create`, `read`, `update`, `delete`, plus `list_cidr_ranges`, `add_cidr_range`, and `add_agent_pools` / `remove_agent_pools`; `cidr_ranges` supports `read`, `update`, `delete`. New models: `CIDRRangeList`, `CIDRRange`, `EnforcementScope`, and their create/update/list options. New errors: `InvalidCIDRRangeListIDError`, `InvalidCIDRRangeIDError`, `RequiredCIDRBlockError`.
+* Added `client.registry` — a client for the **public Terraform Registry** module API (`registry.terraform.io`). This is a new, unauthenticated surface on a different host (the SDK never sends the bearer token to the registry); `base_url` is configurable for other registries implementing the module registry protocol. Methods: `list_modules`, `search_modules`, `list_latest_for_all_providers`, `latest_for_provider`, `get_module`, `list_versions`, `download_url`, `latest_download_url`, and `downloads_summary`. New models are exported under the `PublicRegistry*` prefix (e.g. `PublicRegistryModule`, `PublicRegistryModuleVersions`, `PublicRegistryModuleDownloadsSummary`). New errors: `InvalidModuleNamespaceError`, `InvalidModuleNameError`, `InvalidModuleProviderError`, `InvalidModuleVersionError`.
 
 ## Bug Fixes
 
