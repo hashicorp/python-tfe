@@ -9,6 +9,7 @@ from .resources.admin import AdminClient
 from .resources.agent_pools import AgentPools
 from .resources.agents import Agents, AgentTokens
 from .resources.apply import Applies
+from .resources.assessment_result import AssessmentResults
 from .resources.cidr_range_list import CIDRRangeLists, CIDRRanges
 from .resources.comment import Comments
 from .resources.configuration_version import ConfigurationVersions
@@ -116,6 +117,8 @@ class TFEClient:
         self.plans = Plans(self._transport)
         self.plan_exports = PlanExports(self._transport)
         self.cost_estimates = CostEstimates(self._transport)
+        # Workspace health assessments (drift detection / continuous validation)
+        self.assessment_results = AssessmentResults(self._transport)
         # Meta endpoint: HCP Terraform / TFE outbound IP ranges
         self.ip_ranges = IPRanges(self._transport)
         # IP allowlists (JSON:API cidr-range-lists / cidr-ranges)

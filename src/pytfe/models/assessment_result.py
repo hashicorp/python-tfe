@@ -5,10 +5,12 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import ConfigDict, Field
+
+from ._base import TFEModel
 
 
-class AssessmentResult(BaseModel):
+class AssessmentResult(TFEModel):
     """Result of a workspace health assessment (drift detection)."""
 
     model_config = ConfigDict(

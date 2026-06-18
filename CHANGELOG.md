@@ -1,5 +1,7 @@
 # Unreleased
+
 # v1.2.0
+
 ## Enhancements
 
 ### Relationships
@@ -18,6 +20,7 @@ Related data is now a complete, first-class part of every response. Before, `?in
 * Added `client.cost_estimates` — read run cost estimates. `read(id)` returns a `CostEstimate`; `logs(id)` returns the estimate's log output text. `CostEstimate`, `CostEstimateStatus`, and `CostEstimateStatusTimestamps` are now exported from `pytfe.models`. New error: `InvalidCostEstimateIDError`.
 * Added IP allowlists (the JSON:API `cidr-range-lists` / `cidr-ranges` resources) as `client.cidr_range_lists` and `client.cidr_ranges`. `cidr_range_lists` supports `list`, `create`, `read`, `update`, `delete`, plus `list_cidr_ranges`, `add_cidr_range`, and `add_agent_pools` / `remove_agent_pools`; `cidr_ranges` supports `read`, `update`, `delete`. New models: `CIDRRangeList`, `CIDRRange`, `EnforcementScope`, and their create/update/list options. New errors: `InvalidCIDRRangeListIDError`, `InvalidCIDRRangeIDError`, `RequiredCIDRBlockError`.
 * Added `client.registry` — a client for the **public Terraform Registry** module API (`registry.terraform.io`). This is a new, unauthenticated surface on a different host (the SDK never sends the bearer token to the registry); `base_url` is configurable for other registries implementing the module registry protocol. Methods: `list_modules`, `search_modules`, `list_latest_for_all_providers`, `latest_for_provider`, `get_module`, `list_versions`, `download_url`, `latest_download_url`, and `downloads_summary`. New models are exported under the `PublicRegistry*` prefix (e.g. `PublicRegistryModule`, `PublicRegistryModuleVersions`, `PublicRegistryModuleDownloadsSummary`). New errors: `InvalidModuleNamespaceError`, `InvalidModuleNameError`, `InvalidModuleProviderError`, `InvalidModuleVersionError`.
+* Added `client.assessment_results` — read workspace health assessment (drift detection / continuous validation) results. `read(id)` returns an `AssessmentResult`; `json_output(id)` and `json_schema(id)` return the underlying JSON plan / provider schema (following the blob redirect, `None` on 204); `log_output(id)` returns the Terraform JSON log as text. `AssessmentResult` is now a `TFEModel`, so its `workspace`/`source` relationships are reachable via `.relationships` / `.related(...)`. New error: `InvalidAssessmentResultIDError`.
 
 ## Bug Fixes
 
@@ -29,8 +32,6 @@ Related data is now a complete, first-class part of every response. Before, `?in
 ### Cost estimates
 * Fixed `CostEstimate` failing to parse real API responses: `status-timestamps` now treats every timestamp as optional (the API only returns the ones that have occurred) and adds the missing `pending-at`, and `error-message` now accepts `null`. Previously an included `cost-estimate` with a null error or partial timestamps would silently collapse to an id-only stub.
 
-### Transport
-* Fixed the shared HTTP client retaining `Set-Cookie` session cookies across requests. The `/api/meta/ip-ranges` endpoint returns an `_atlas_session_data` cookie; once stored, that browser session silently overrode bearer-token auth on every subsequent request, causing spurious `401`/`404` errors. The transport now never persists cookies (this SDK authenticates only with the bearer token). Without this fix, any call to `client.ip_ranges.read()` broke all later authenticated calls on the same client.
 
 # Released
 # v1.1.0
