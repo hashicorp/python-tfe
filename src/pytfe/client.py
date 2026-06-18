@@ -9,10 +9,13 @@ from .resources.admin import AdminClient
 from .resources.agent_pools import AgentPools
 from .resources.agents import Agents, AgentTokens
 from .resources.apply import Applies
+from .resources.cidr_range_list import CIDRRangeLists, CIDRRanges
 from .resources.comment import Comments
 from .resources.configuration_version import ConfigurationVersions
+from .resources.cost_estimate import CostEstimates
 from .resources.explorer import Explorer
 from .resources.github_app_installation import GitHubAppInstallations
+from .resources.ip_ranges import IPRanges
 from .resources.no_code_module import NoCodeModules
 from .resources.notification_configuration import NotificationConfigurations
 from .resources.oauth_client import OAuthClients
@@ -30,6 +33,7 @@ from .resources.organization_tags import OrganizationTags
 from .resources.organization_token import OrganizationTokens
 from .resources.organizations import Organizations
 from .resources.plan import Plans
+from .resources.plan_export import PlanExports
 from .resources.policy import Policies
 from .resources.policy_check import PolicyChecks
 from .resources.policy_evaluation import PolicyEvaluations
@@ -109,6 +113,13 @@ class TFEClient:
         self.notification_configurations = NotificationConfigurations(self._transport)
         self.applies = Applies(self._transport)
         self.plans = Plans(self._transport)
+        self.plan_exports = PlanExports(self._transport)
+        self.cost_estimates = CostEstimates(self._transport)
+        # Meta endpoint: HCP Terraform / TFE outbound IP ranges
+        self.ip_ranges = IPRanges(self._transport)
+        # IP allowlists (JSON:API cidr-range-lists / cidr-ranges)
+        self.cidr_range_lists = CIDRRangeLists(self._transport)
+        self.cidr_ranges = CIDRRanges(self._transport)
         self.organizations = Organizations(self._transport)
         self.organization_memberships = OrganizationMemberships(self._transport)
         self.organization_audit_configurations = OrganizationAuditConfigurations(

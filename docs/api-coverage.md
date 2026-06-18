@@ -8,7 +8,7 @@ resource list is reconciled against the public
 
 **Legend:** ✅ Covered &nbsp;·&nbsp; 🟡 Partial &nbsp;·&nbsp; ❌ Not yet implemented
 
-pytfe implements **61 resource namespaces**. The resources still missing or
+pytfe implements **66 resource namespaces**. The resources still missing or
 partially covered are listed at the bottom of this page.
 
 ## Covered resources
@@ -27,6 +27,8 @@ partially covered are listed at the bottom of this page.
 | | Team workspace access | `client.team_workspace_accesses` | ✅ |
 | | Users | `client.users` | ✅ |
 | | SSH keys | `client.ssh_keys` | ✅ |
+| | IP allowlists (CIDR range lists) | `client.cidr_range_lists` | ✅ |
+| | CIDR ranges | `client.cidr_ranges` | ✅ |
 | Workspaces & config | Workspaces | `client.workspaces` | ✅ |
 | | Workspace resources | `client.workspace_resources` | ✅ |
 | | Projects | `client.projects` | ✅ |
@@ -39,7 +41,9 @@ partially covered are listed at the bottom of this page.
 | | Run events | `client.run_events` | ✅ |
 | | Run triggers | `client.run_triggers` | ✅ |
 | | Plans | `client.plans` | ✅ |
+| | Plan exports | `client.plan_exports` | ✅ |
 | | Applies | `client.applies` | ✅ |
+| | Cost estimates | `client.cost_estimates` | ✅ |
 | | Comments | `client.comments` | ✅ |
 | | Query runs | `client.query_runs` | ✅ |
 | | State versions | `client.state_versions` | ✅ |
@@ -75,6 +79,7 @@ partially covered are listed at the bottom of this page.
 | | Azure OIDC configurations | `client.azure_oidc_configurations` | ✅ |
 | | GCP OIDC configurations | `client.gcp_oidc_configurations` | ✅ |
 | | Vault OIDC configurations | `client.vault_oidc_configurations` | ✅ |
+| Meta | IP ranges | `client.ip_ranges` | ✅ |
 | Admin (TFE site-admin) | Organizations, users, runs, workspaces | `client.admin.organizations` / `.users` / `.runs` / `.workspaces` | ✅ |
 | | Terraform / OPA / Sentinel versions | `client.admin.terraform_versions` / `.opa_versions` / `.sentinel_versions` | ✅ |
 | | SAML / SCIM / SMTP settings + SCIM tokens | `client.admin.saml_settings` / `.scim_settings` / `.scim_tokens` / `.smtp_settings` | ✅ |
@@ -96,15 +101,11 @@ Public HCP Terraform API resources that do not yet have a pytfe client namespace
 | Assessment results | Health-assessment reads. Model exists (`models/assessment_result.py`); surfaced indirectly via `workspace.current_assessment_result`. |
 | Audit trails tokens | Auth tokens for the audit-trail streaming API. |
 | Change requests | — |
-| Cost estimates | Run cost-estimation reads. Model exists (`models/cost_estimate.py`). |
 | Feature sets | Organization feature sets. |
 | GPG keys | Private Registry provider signing keys. |
 | Group member roles | Team member role assignments. |
 | Invoices | Organization billing invoices. |
-| IP allowlists | Organization IP allowlist. |
-| IP ranges | `/api/meta/ip-ranges`. |
 | Metrics service tokens | Metrics endpoint service tokens. |
-| Plan exports | Sentinel mock / plan-export download. Model exists (`models/plan_export.py`). |
 | Stack configuration summary | Builds on the existing stack_configuration resource |
 | Stack deployment | Core Stacks deployment lifecycle |
 | Stack deployment groups | Extends stack_deployment |

@@ -113,6 +113,13 @@ class HTTPTransport:
                 self._sleep(attempt, None)
                 attempt += 1
                 continue
+            # This SDK authenticates with a bearer token, never cookies. Some
+            # endpoints (notably /api/meta/ip-ranges on app.terraform.io) return
+            # a Set-Cookie session cookie; if the shared client retains it, that
+            # session silently overrides bearer auth on subsequent requests and
+            # the API responds 404/401. Never let cookies persist across requests.
+            if self._sync.cookies:
+                self._sync.cookies.clear()
             if resp.status_code in _RETRY_STATUSES and attempt < self.max_retries:
                 retry_after = _parse_retry_after(resp)
                 transport_logger.info(

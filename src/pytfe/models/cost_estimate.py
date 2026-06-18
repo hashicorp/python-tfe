@@ -8,15 +8,17 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 
-class CostEstimate(BaseModel):
+
+class CostEstimate(TFEModel):
     model_config = ConfigDict(
         populate_by_name=True, validate_by_name=True, extra="allow"
     )
 
     id: str
     delta_monthly_cost: str = Field(default="", alias="delta-monthly-cost")
-    error_message: str = Field(default="", alias="error-message")
+    error_message: str | None = Field(default=None, alias="error-message")
     matched_resources_count: int = Field(default=0, alias="matched-resources-count")
     prior_monthly_cost: str = Field(default="", alias="prior-monthly-cost")
     proposed_monthly_cost: str = Field(default="", alias="proposed-monthly-cost")
@@ -42,10 +44,11 @@ class CostEstimateStatusTimestamps(BaseModel):
         populate_by_name=True, validate_by_name=True, extra="allow"
     )
 
-    canceled_at: datetime = Field(..., alias="canceled-at")
-    errored_at: datetime = Field(..., alias="errored-at")
-    finished_at: datetime = Field(..., alias="finished-at")
-    queued_at: datetime = Field(..., alias="queued-at")
-    skipped_due_to_targeting_at: datetime = Field(
-        ..., alias="skipped-due-to-targeting-at"
+    canceled_at: datetime | None = Field(default=None, alias="canceled-at")
+    errored_at: datetime | None = Field(default=None, alias="errored-at")
+    finished_at: datetime | None = Field(default=None, alias="finished-at")
+    pending_at: datetime | None = Field(default=None, alias="pending-at")
+    queued_at: datetime | None = Field(default=None, alias="queued-at")
+    skipped_due_to_targeting_at: datetime | None = Field(
+        default=None, alias="skipped-due-to-targeting-at"
     )

@@ -12,12 +12,24 @@ Related data is now a complete, first-class part of every response. Before, `?in
   * `task_stages.read(task_stage_id, TaskStageReadOptions(include=[...]))`: `run`, `run.workspace`, `task-results`, `policy-evaluations`.
   * `organizations.read(name, OrganizationReadOptions(include=[...]))`: `subscription`. The new `options` argument is optional, so existing calls are unchanged.
 
+### New resources
+* Added `client.ip_ranges` — read HCP Terraform / Terraform Enterprise outbound IP ranges via `GET /api/meta/ip-ranges`. `read(modified_since=None)` returns an `IPRange` (CIDR lists for `api`, `notifications`, `sentinel`, `vcs`), or `None` when an `If-Modified-Since` date is supplied and the ranges are unchanged (HTTP 304). New model: `IPRange`.
+* Added `client.plan_exports` — export Terraform plan data (Sentinel mock bundles). `create(options)`, `read(id)`, `delete(id)`, and `download(id)` (returns the `.tar.gz` archive bytes, following the temporary presigned-URL redirect). New models: `PlanExport`, `PlanExportCreateOptions`, `PlanExportStatus`, `PlanExportDataType`, `PlanExportStatusTimestamps`. New errors: `InvalidPlanExportIDError`, `RequiredPlanError`.
+* Added `client.cost_estimates` — read run cost estimates. `read(id)` returns a `CostEstimate`; `logs(id)` returns the estimate's log output text. `CostEstimate`, `CostEstimateStatus`, and `CostEstimateStatusTimestamps` are now exported from `pytfe.models`. New error: `InvalidCostEstimateIDError`.
+* Added IP allowlists (the JSON:API `cidr-range-lists` / `cidr-ranges` resources) as `client.cidr_range_lists` and `client.cidr_ranges`. `cidr_range_lists` supports `list`, `create`, `read`, `update`, `delete`, plus `list_cidr_ranges`, `add_cidr_range`, and `add_agent_pools` / `remove_agent_pools`; `cidr_ranges` supports `read`, `update`, `delete`. New models: `CIDRRangeList`, `CIDRRange`, `EnforcementScope`, and their create/update/list options. New errors: `InvalidCIDRRangeListIDError`, `InvalidCIDRRangeIDError`, `RequiredCIDRBlockError`.
+
 ## Bug Fixes
 
 ### Relationships
 * Fixed `workspaces.read*(include=[WorkspaceIncludeOpt.OUTPUTS])` returning outputs with `None` name, value, and type. Workspace `outputs` is now filled from the `included` data. [#134](https://github.com/hashicorp/python-tfe/issues/134)
 * Fixed `policy_set.read*(include=[current_version | newest_version])` returning an id-only stub. `PolicySetVersion` is now exported from `pytfe.models` and fully resolved, so the version's `source`, `created_at`, and `status` are populated.
 * Fixed `variable_set.read` inventing placeholder values (such as `name="workspace-<id>"` or `key="var-<id>"`) for `workspaces`, `projects`, and `vars`. These are now id-only stubs by default and fill from `included` when requested.
+
+### Cost estimates
+* Fixed `CostEstimate` failing to parse real API responses: `status-timestamps` now treats every timestamp as optional (the API only returns the ones that have occurred) and adds the missing `pending-at`, and `error-message` now accepts `null`. Previously an included `cost-estimate` with a null error or partial timestamps would silently collapse to an id-only stub.
+
+### Transport
+* Fixed the shared HTTP client retaining `Set-Cookie` session cookies across requests. The `/api/meta/ip-ranges` endpoint returns an `_atlas_session_data` cookie; once stored, that browser session silently overrode bearer-token auth on every subsequent request, causing spurious `401`/`404` errors. The transport now never persists cookies (this SDK authenticates only with the bearer token). Without this fix, any call to `client.ip_ranges.read()` broke all later authenticated calls on the same client.
 
 # Released
 # v1.1.0
