@@ -458,6 +458,14 @@ class InvalidCostEstimateIDError(InvalidValues):
         super().__init__(message)
 
 
+# Assessment result errors
+class InvalidAssessmentResultIDError(InvalidValues):
+    """Raised when an invalid assessment result ID is provided."""
+
+    def __init__(self, message: str = "invalid value for assessment result ID"):
+        super().__init__(message)
+
+
 # IP allowlist (CIDR range list) errors
 class InvalidCIDRRangeListIDError(InvalidValues):
     """Raised when an invalid CIDR range list (IP allowlist) ID is provided."""

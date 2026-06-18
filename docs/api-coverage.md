@@ -8,7 +8,7 @@ resource list is reconciled against the public
 
 **Legend:** ✅ Covered &nbsp;·&nbsp; 🟡 Partial &nbsp;·&nbsp; ❌ Not yet implemented
 
-pytfe implements **67 resource namespaces**. The resources still missing or
+pytfe implements **68 resource namespaces**. The resources still missing or
 partially covered are listed at the bottom of this page.
 
 ## Covered resources
@@ -44,6 +44,7 @@ partially covered are listed at the bottom of this page.
 | | Plan exports | `client.plan_exports` | ✅ |
 | | Applies | `client.applies` | ✅ |
 | | Cost estimates | `client.cost_estimates` | ✅ |
+| | Assessment results | `client.assessment_results` | ✅ |
 | | Comments | `client.comments` | ✅ |
 | | Query runs | `client.query_runs` | ✅ |
 | | State versions | `client.state_versions` | ✅ |
@@ -99,7 +100,6 @@ Public HCP Terraform API resources that do not yet have a pytfe client namespace
 
 | Resource | Notes |
 |---|---|
-| Assessment results | Health-assessment reads. Model exists (`models/assessment_result.py`); surfaced indirectly via `workspace.current_assessment_result`. |
 | Audit trails tokens | Auth tokens for the audit-trail streaming API. |
 | Change requests | — |
 | Feature sets | Organization feature sets. |
