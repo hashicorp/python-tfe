@@ -6,7 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
-from .._jsonapi import parse_relationships
+from .._jsonapi import attach_jsonapi, parse_relationships
 from ..errors import InvalidOrgError, InvalidTeamIDError, InvalidTokenIDError
 from ..models.organization import Organization
 from ..models.team import Team
@@ -146,4 +146,4 @@ class TeamTokens(_Service):
                     organization=Organization.model_construct(id=created_by_data["id"])
                 )
 
-        return TeamToken.model_validate(attrs)
+        return attach_jsonapi(TeamToken.model_validate(attrs), data)

@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..models.registry_provider_platform import (
     RegistryProviderPlatform,
     RegistryProviderPlatformCreateOptions,
@@ -103,4 +104,4 @@ class RegistryProviderPlatforms(_Service):
         if "links" in data:
             attrs["links"] = data["links"]
 
-        return RegistryProviderPlatform.model_validate(attrs)
+        return attach_jsonapi(RegistryProviderPlatform.model_validate(attrs), data)

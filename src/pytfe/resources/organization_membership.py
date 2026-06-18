@@ -3,10 +3,12 @@
 
 from __future__ import annotations
 
+import builtins
 import re
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import RelationMap, attach_jsonapi, parse_relationships
 from ..errors import ERR_INVALID_EMAIL, ERR_INVALID_ORG
 from ..models.organization import Organization
 from ..models.organization_membership import (
@@ -19,6 +21,14 @@ from ..models.team import Team
 from ..models.user import User
 from ..utils import valid_string_id
 from ._base import _Service
+
+# Typed relations hydrated from ?include= (user, teams); organization is always
+# present as a linkage ref. See OrgMembershipIncludeOpt.
+_ORG_MEMBERSHIP_REL_MAP: RelationMap = {
+    "organization": Organization,
+    "user": User,
+    "teams": Team,
+}
 
 
 def _valid_email(email: str) -> bool:
@@ -213,7 +223,7 @@ class OrganizationMemberships(_Service):
         # NotFound exception will be raised by self.t.request if resource doesn't exist
         response = self.t.request("GET", path, params=params)
         data = response.json()
-        return self._parse_membership(data["data"])
+        return self._parse_membership(data["data"], data.get("included"))
 
     def delete(self, organization_membership_id: str) -> None:
         """Delete an organization membership by its ID.
@@ -233,7 +243,11 @@ class OrganizationMemberships(_Service):
         # Make the DELETE request
         self.t.request("DELETE", path)
 
-    def _parse_membership(self, data: dict[str, Any]) -> OrganizationMembership:
+    def _parse_membership(
+        self,
+        data: dict[str, Any],
+        included: builtins.list[dict[str, Any]] | None = None,
+    ) -> OrganizationMembership:
         """Parse a membership from API response data.
 
         Args:
@@ -249,39 +263,22 @@ class OrganizationMemberships(_Service):
         status = attributes.get("status", "active")
         email = attributes.get("email", "")
 
-        # Extract relationships if present
-        relationships = data.get("relationships", {})
+        # organization/user/teams are id-only stubs by default and are filled
+        # from the JSON:API ``included`` array when requested via ?include=.
+        rels = parse_relationships(
+            data.get("relationships"), _ORG_MEMBERSHIP_REL_MAP, included=included
+        )
+        # Historical contract: an empty teams relation stays None (not []).
+        if not rels.get("teams"):
+            rels.pop("teams", None)
 
-        # Parse organization relationship
-        organization = None
-        if "organization" in relationships:
-            org_data = relationships["organization"].get("data")
-            if org_data:
-                organization = Organization(id=org_data.get("id"))
-
-        # Parse user relationship
-        user = None
-        if "user" in relationships:
-            user_data = relationships["user"].get("data")
-            if user_data:
-                user = User(id=user_data.get("id"))
-
-        # Parse teams relationship
-        teams = None
-        if "teams" in relationships:
-            teams_data = relationships["teams"].get("data", [])
-            if teams_data:
-                teams = [Team(id=team.get("id")) for team in teams_data]
-
-        # Handle included data if present (for full user/org objects)
-        # This would be populated when include options are used
-        # For now, keeping it simple with just IDs
-
-        return OrganizationMembership(
-            id=membership_id,
-            status=status,
-            email=email,
-            organization=organization,
-            user=user,
-            teams=teams,
+        return attach_jsonapi(
+            OrganizationMembership(
+                id=membership_id,
+                status=status,
+                email=email,
+                **rels,
+            ),
+            data,
+            included,
         )

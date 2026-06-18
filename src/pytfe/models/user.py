@@ -3,6 +3,8 @@
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 
 class TwoFactor(BaseModel):
     model_config = ConfigDict(
@@ -27,7 +29,7 @@ class UserPermissions(BaseModel):
     can_manage_hcp_account: bool = Field(default=False, alias="can-manage-hcp-account")
 
 
-class User(BaseModel):
+class User(TFEModel):
     model_config = ConfigDict(
         populate_by_name=True, validate_by_name=True, extra="allow"
     )

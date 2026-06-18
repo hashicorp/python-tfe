@@ -6,6 +6,7 @@ from __future__ import annotations
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..errors import InvalidRunTaskIDError
+from ._base import TFEModel
 from .run_task import (
     RunTask,
     Stage,
@@ -14,7 +15,7 @@ from .run_task import (
 from .workspace import Workspace
 
 
-class WorkspaceRunTask(BaseModel):
+class WorkspaceRunTask(TFEModel):
     """Workspace run task model."""
 
     model_config = ConfigDict(

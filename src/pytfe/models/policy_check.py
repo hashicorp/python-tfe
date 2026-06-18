@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 if TYPE_CHECKING:
     from .run import Run
 
@@ -41,7 +43,7 @@ class PolicyCheckIncludeOpt(str, Enum):
     POLICY_CHECK_RUN = "run"
 
 
-class PolicyCheck(BaseModel):
+class PolicyCheck(TFEModel):
     """PolicyCheck represents a Terraform Enterprise policy check."""
 
     model_config = ConfigDict(

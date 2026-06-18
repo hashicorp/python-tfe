@@ -13,6 +13,8 @@ from pytfe.models.run import Run
 from pytfe.models.run_task import Stage
 from pytfe.models.task_result import TaskResult
 
+from ._base import TFEModel
+
 
 class TaskStageStatus(str, Enum):
     pending = "pending"
@@ -55,7 +57,7 @@ class Actions(BaseModel):
     is_overridable: bool | None = Field(None, alias="is-overridable")
 
 
-class TaskStage(BaseModel):
+class TaskStage(TFEModel):
     model_config = ConfigDict(populate_by_name=True, extra="allow")
 
     id: str
@@ -82,3 +84,20 @@ class TaskStageListOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     page_size: int | None = Field(None, alias="page[size]")
+
+
+class TaskStageIncludeOpt(str, Enum):
+    """Available include options for reading a task stage."""
+
+    TASK_STAGE_RUN = "run"
+    TASK_STAGE_RUN_WORKSPACE = "run.workspace"
+    TASK_STAGE_TASK_RESULTS = "task-results"
+    TASK_STAGE_POLICY_EVALUATIONS = "policy-evaluations"
+
+
+class TaskStageReadOptions(BaseModel):
+    """Options for reading a single task stage."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    include: list[TaskStageIncludeOpt] | None = Field(None, alias="include")

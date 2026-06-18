@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     InvalidOrgError,
     InvalidRunTaskCategoryError,
@@ -30,7 +31,11 @@ from ..utils import _safe_str, valid_string, valid_string_id
 from ._base import _Service
 
 
-def _run_task_from(d: dict[str, Any], org: str | None = None) -> RunTask:
+def _run_task_from(
+    d: dict[str, Any],
+    org: str | None = None,
+    included: list[dict[str, Any]] | None = None,
+) -> RunTask:
     """
     Convert JSON API response data to RunTask object.
 
@@ -108,18 +113,22 @@ def _run_task_from(d: dict[str, Any], org: str | None = None) -> RunTask:
                     WorkspaceRunTask(id=_safe_str(item.get("id")))
                 )
 
-    return RunTask(
-        id=id_str,
-        name=name_str,
-        description=_safe_str(attr.get("description")) or None,
-        url=_safe_str(attr.get("url")),
-        category=_safe_str(attr.get("category")),
-        hmac_key=attr.get("hmac-key"),  # Can be None
-        enabled=bool(attr.get("enabled")),
-        global_configuration=global_config,
-        agent_pool=agent_pool,
-        organization=organization,
-        workspace_run_tasks=workspace_run_tasks,
+    return attach_jsonapi(
+        RunTask(
+            id=id_str,
+            name=name_str,
+            description=_safe_str(attr.get("description")) or None,
+            url=_safe_str(attr.get("url")),
+            category=_safe_str(attr.get("category")),
+            hmac_key=attr.get("hmac-key"),  # Can be None
+            enabled=bool(attr.get("enabled")),
+            global_configuration=global_config,
+            agent_pool=agent_pool,
+            organization=organization,
+            workspace_run_tasks=workspace_run_tasks,
+        ),
+        d,
+        included,
     )
 
 
@@ -207,7 +216,8 @@ class RunTasks(_Service):
 
         path = f"/api/v2/tasks/{run_task_id}"
         r = self.t.request("GET", path, params=params)
-        return _run_task_from(r.json()["data"])
+        payload = r.json()
+        return _run_task_from(payload["data"], included=payload.get("included"))
 
     def update(self, run_task_id: str, options: RunTaskUpdateOptions) -> RunTask:
         if not valid_string_id(run_task_id):

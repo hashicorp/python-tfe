@@ -9,7 +9,7 @@ from typing import Any
 
 from pytfe.models.ssh_key import SSHKey
 
-from .._jsonapi import RelationMap, parse_relationships
+from .._jsonapi import RelationMap, attach_jsonapi, parse_relationships
 from ..errors import (
     InvalidOrgError,
     InvalidSSHKeyIDError,
@@ -75,9 +75,9 @@ from ._base import _Service
 
 # Declarative relationship map: wire relation name -> model (attr derived as
 # wire.replace("-", "_")), or an explicit (attr, model) tuple where they diverge.
-# Polymorphic relations (locked-by, data-retention-policy-choice) and the
-# attribute-bearing ``outputs`` relation are handled as special cases in
-# ``_ws_from`` and intentionally left out of this map.
+# Only the genuinely polymorphic relations (locked-by, data-retention-policy-choice,
+# whose target model depends on the reference ``type``) are handled as special
+# cases in ``_ws_from`` and intentionally left out of this map.
 _WORKSPACE_REL_MAP: RelationMap = {
     "organization": Organization,
     "project": Project,
@@ -90,6 +90,10 @@ _WORKSPACE_REL_MAP: RelationMap = {
     "current-assessment-result": AssessmentResult,
     "remote-state-consumers": Workspace,
     "vars": ("variables", Variable),  # wire name diverges from attr
+    # outputs is a JSON:API relation whose attributes live in the ``included``
+    # array (matching go-tfe's `jsonapi:"relation,outputs"`); hydrate it via the
+    # shared path so ?include=outputs populates name/value/type (python-tfe#134).
+    "outputs": WorkspaceOutputs,
 }
 
 
@@ -140,14 +144,6 @@ def _ws_from(
                 locked_by = LockedByChoice.model_validate({"user": lb_data.get("id")})
             elif lb_data.get("type") == "teams":
                 locked_by = LockedByChoice.model_validate({"team": lb_data.get("id")})
-
-    # Map outputs (the only relation whose data carries inline attributes)
-    outputs = []
-    if relationships.get("outputs", {}).get("data"):
-        for output_data in relationships["outputs"].get("data", []):
-            output_attrs = output_data.get("attributes", {})
-            output_attrs["id"] = output_data.get("id", "")
-            outputs.append(WorkspaceOutputs.model_validate(output_attrs))
 
     data_retention_policy_choice: DataRetentionPolicyChoice | None = None
     if relationships.get("data-retention-policy-choice", {}).get("data"):
@@ -209,12 +205,13 @@ def _ws_from(
         parse_relationships(relationships, _WORKSPACE_REL_MAP, included=included)
     )
 
-    # Special-case relations that don't fit the generic (attr, Model) map.
-    attr["outputs"] = outputs
+    # Special-case (polymorphic) relations that don't fit the generic map.
     attr["locked_by"] = locked_by
     attr["data_retention_policy_choice"] = data_retention_policy_choice
 
-    return Workspace.model_validate(attr)
+    # Keep the raw relationships + included so related resources we don't model
+    # are never lost (reachable via ws.relationships / ws.included / ws.related).
+    return attach_jsonapi(Workspace.model_validate(attr), d, included)
 
 
 class Workspaces(_Service):

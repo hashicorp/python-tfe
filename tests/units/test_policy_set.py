@@ -206,6 +206,76 @@ class TestPolicySets:
         call_kwargs = mock_transport.request.call_args[1]
         assert call_kwargs.get("params") is not None
 
+    def test_read_with_options_hydrates_typed_relation(self, service, mock_transport):
+        """read_with_options(include=current_version) hydrates the typed
+        `current_version` field from `included` (covers the PolicySetVersion
+        model_rebuild) and also populates the raw escape hatch."""
+        from pytfe.models.policy_set import PolicySetIncludeOpt
+
+        data = self._policy_set_data("ps-inc")
+        data["relationships"]["current-version"] = {
+            "data": {"id": "polsetver-1", "type": "policy-set-versions"}
+        }
+        mock_response = Mock()
+        mock_response.json.return_value = {
+            "data": data,
+            "included": [
+                {
+                    "id": "polsetver-1",
+                    "type": "policy-set-versions",
+                    "attributes": {
+                        "source": "tfe-api",
+                        "created-at": "2024-01-01T00:00:00Z",
+                    },
+                }
+            ],
+        }
+        mock_transport.request.return_value = mock_response
+
+        options = PolicySetReadOptions(
+            include=[PolicySetIncludeOpt.POLICY_SET_CURRENT_VERSION]
+        )
+        ps = service.read_with_options("ps-inc", options)
+
+        # Typed hydration: current_version is a fully-populated PolicySetVersion.
+        assert ps.current_version is not None
+        assert ps.current_version.id == "polsetver-1"
+        assert ps.current_version.source is not None
+        assert ps.current_version.created_at is not None
+        # Raw escape hatch is also populated and never leaks into model_dump().
+        assert ps.has_included is True
+        assert "included" not in ps.model_dump()
+
+    def test_read_without_include_current_version_is_stub(
+        self, service, mock_transport
+    ):
+        """Non-breaking: without ?include=, a present relation is an id-only stub."""
+        data = self._policy_set_data("ps-stub")
+        data["relationships"]["current-version"] = {
+            "data": {"id": "polsetver-9", "type": "policy-set-versions"}
+        }
+        mock_response = Mock()
+        mock_response.json.return_value = {"data": data}
+        mock_transport.request.return_value = mock_response
+
+        ps = service.read("ps-stub")
+
+        assert ps.current_version is not None
+        assert ps.current_version.id == "polsetver-9"
+        assert ps.current_version.source is None  # not hydrated without include
+        assert ps.has_included is False
+
+    def test_read_without_include_has_no_included(self, service, mock_transport):
+        """Without ?include=, included stays absent (present-vs-empty tracked)."""
+        mock_response = Mock()
+        mock_response.json.return_value = {"data": self._policy_set_data("ps-bare")}
+        mock_transport.request.return_value = mock_response
+
+        ps = service.read("ps-bare")
+
+        assert ps.has_included is False
+        assert ps.included == []
+
     # ──────────────────────────────────────────────────────────────────────────
     # create()
     # ──────────────────────────────────────────────────────────────────────────

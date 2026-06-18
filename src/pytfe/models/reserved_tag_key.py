@@ -7,8 +7,10 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 
-class ReservedTagKey(BaseModel):
+
+class ReservedTagKey(TFEModel):
     """Represents a reserved tag key in Terraform Enterprise."""
 
     model_config = ConfigDict(populate_by_name=True, extra="allow")

@@ -7,9 +7,10 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..errors import RequiredCommentBodyError
 from ..utils import valid_string
+from ._base import TFEModel
 
 
-class Comment(BaseModel):
+class Comment(TFEModel):
     model_config = ConfigDict(
         populate_by_name=True, validate_by_name=True, extra="allow"
     )

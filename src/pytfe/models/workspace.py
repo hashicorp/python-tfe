@@ -21,6 +21,7 @@ from ..errors import (
     UnsupportedOperationsError,
 )
 from ..utils import has_tags_regex_defined, is_valid_workspace_name, valid_string
+from ._base import TFEModel
 from .assessment_result import AssessmentResult
 from .common import EffectiveTagBinding, Tag, TagBinding
 from .configuration_version import ConfigurationVersion
@@ -124,7 +125,7 @@ class VCSRepo(BaseModel):
     source_directory: str | None = Field(default=None, alias="source-directory")
 
 
-class Workspace(BaseModel):
+class Workspace(TFEModel):
     model_config = ConfigDict(
         populate_by_name=True, validate_by_name=True, extra="allow"
     )

@@ -8,6 +8,7 @@ from collections.abc import Iterator
 from datetime import datetime
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     InvalidRunTriggerIDError,
     InvalidRunTriggerTypeError,
@@ -68,14 +69,17 @@ def _run_trigger_from(d: dict[str, Any], org: str | None = None) -> RunTrigger:
         else datetime.now()
     )
 
-    return RunTrigger(
-        id=id_str,
-        created_at=created_at,
-        sourceable_name=sourceable_name_str,
-        workspace_name=workspace_name_str,
-        sourceable=sourceable,
-        sourceable_choice=sourceable_choice,
-        workspace=workspace,
+    return attach_jsonapi(
+        RunTrigger(
+            id=id_str,
+            created_at=created_at,
+            sourceable_name=sourceable_name_str,
+            workspace_name=workspace_name_str,
+            sourceable=sourceable,
+            sourceable_choice=sourceable_choice,
+            workspace=workspace,
+        ),
+        d,
     )
 
 

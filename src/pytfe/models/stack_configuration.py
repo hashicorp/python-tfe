@@ -8,6 +8,7 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 from .configuration_version import IngressAttributes
 from .stack import Stack
 
@@ -50,7 +51,7 @@ class StackConfigurationIncludeOps(str, Enum):
     STACK_DIAGNOSTICS = "stack_diagnostics"
 
 
-class StackConfiguration(BaseModel):
+class StackConfiguration(TFEModel):
     """StackConfiguration represents a snapshot of a stack's configuration."""
 
     model_config = ConfigDict(

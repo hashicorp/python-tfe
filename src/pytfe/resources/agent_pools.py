@@ -9,6 +9,7 @@ agent pools, including CRUD operations and workspace assignments.
 
 from __future__ import annotations
 
+import builtins
 from collections.abc import Iterator
 from typing import Any
 
@@ -16,7 +17,7 @@ from pytfe.models.organization import Organization
 from pytfe.models.project import Project
 from pytfe.models.workspace import Workspace
 
-from .._jsonapi import parse_relationships
+from .._jsonapi import attach_jsonapi, parse_relationships
 from ..errors import (
     InvalidAgentPoolIDError,
     InvalidOrgError,
@@ -136,9 +137,10 @@ class AgentPools(_Service):
             payload["data"]["relationships"] = relationships
 
         response = self.t.request("POST", path, json_body=payload)
-        data = response.json()["data"]
+        payload = response.json()
+        data = payload["data"]
 
-        return self._parse_agent_pool_from(data)
+        return self._parse_agent_pool_from(data, payload.get("included"))
 
     def read(
         self, agent_pool_id: str, options: AgentPoolReadOptions | None = None
@@ -170,9 +172,10 @@ class AgentPools(_Service):
         else:
             response = self.t.request("GET", path)
 
-        data = response.json()["data"]
+        payload = response.json()
+        data = payload["data"]
 
-        return self._parse_agent_pool_from(data)
+        return self._parse_agent_pool_from(data, payload.get("included"))
 
     def update(self, agent_pool_id: str, options: AgentPoolUpdateOptions) -> AgentPool:
         """Update an agent pool's properties.
@@ -235,9 +238,10 @@ class AgentPools(_Service):
             payload["data"]["relationships"] = relationships
 
         response = self.t.request("PATCH", path, json_body=payload)
-        data = response.json()["data"]
+        payload = response.json()
+        data = payload["data"]
 
-        return self._parse_agent_pool_from(data)
+        return self._parse_agent_pool_from(data, payload.get("included"))
 
     def delete(self, agent_pool_id: str) -> None:
         """Delete an agent pool.
@@ -302,9 +306,10 @@ class AgentPools(_Service):
             }
         }
         response = self.t.request("PATCH", path, json_body=payload)
-        data = response.json()["data"]
+        payload = response.json()
+        data = payload["data"]
 
-        return self._parse_agent_pool_from(data)
+        return self._parse_agent_pool_from(data, payload.get("included"))
 
     def remove_from_workspaces(
         self, agent_pool_id: str, options: AgentPoolRemoveFromWorkspacesOptions
@@ -354,9 +359,10 @@ class AgentPools(_Service):
             }
         }
         response = self.t.request("PATCH", path, json_body=payload)
-        data = response.json()["data"]
+        payload = response.json()
+        data = payload["data"]
 
-        return self._parse_agent_pool_from(data)
+        return self._parse_agent_pool_from(data, payload.get("included"))
 
     def assign_to_projects(
         self, agent_pool_id: str, options: AgentPoolAssignToProjectsOptions
@@ -398,11 +404,16 @@ class AgentPools(_Service):
             }
         }
         response = self.t.request("PATCH", path, json_body=payload)
-        data = response.json()["data"]
+        payload = response.json()
+        data = payload["data"]
 
-        return self._parse_agent_pool_from(data)
+        return self._parse_agent_pool_from(data, payload.get("included"))
 
-    def _parse_agent_pool_from(self, data: dict[str, Any]) -> AgentPool:
+    def _parse_agent_pool_from(
+        self,
+        data: dict[str, Any],
+        included: builtins.list[dict[str, Any]] | None = None,
+    ) -> AgentPool:
         """Helper method to parse agent pool data from API response."""
         attr = data.get("attributes", {})
         attr["id"] = data.get("id")
@@ -417,6 +428,7 @@ class AgentPools(_Service):
                     "excluded-workspaces": Workspace,
                     "allowed-projects": Project,
                 },
+                included=included,
             )
         )
-        return AgentPool.model_validate(attr)
+        return attach_jsonapi(AgentPool.model_validate(attr), data, included)

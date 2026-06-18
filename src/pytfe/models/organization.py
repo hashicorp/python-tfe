@@ -9,6 +9,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
+from ._base import TFEModel
+
 
 class OrganizationUpdateOptions(BaseModel):
     # populate_by_name lets existing callers keep passing snake_case
@@ -86,6 +88,20 @@ class OrganizationCreateOptions(BaseModel):
     data_retention_policy_choice: dict | None = None
 
 
+class OrganizationIncludeOpt(str, Enum):
+    """Available include options for reading an organization."""
+
+    ORGANIZATION_SUBSCRIPTION = "subscription"
+
+
+class OrganizationReadOptions(BaseModel):
+    """Options for reading a single organization."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    include: list[OrganizationIncludeOpt] | None = Field(None, alias="include")
+
+
 class ExecutionMode(str, Enum):
     REMOTE = "remote"
     AGENT = "agent"
@@ -100,7 +116,7 @@ class RunStatus(str, Enum):
     ERRORED = "errored"
 
 
-class Organization(BaseModel):
+class Organization(TFEModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     name: str | None = None

@@ -7,11 +7,12 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 from .organization import Organization
 from .policy_types import EnforcementLevel, PolicyKind
 
 
-class Policy(BaseModel):
+class Policy(TFEModel):
     model_config = ConfigDict(
         populate_by_name=True, validate_by_name=True, extra="allow"
     )

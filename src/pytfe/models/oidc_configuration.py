@@ -24,6 +24,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from ._base import TFEModel
 from .organization import Organization
 
 
@@ -39,7 +40,7 @@ def _non_empty_role_arn(value: str) -> str:
 # ---------------------------------------------------------------------------
 
 
-class AWSOIDCConfiguration(BaseModel):
+class AWSOIDCConfiguration(TFEModel):
     """An AWS OIDC configuration record on HCP Terraform."""
 
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
@@ -80,7 +81,7 @@ class AWSOIDCConfigurationUpdateOptions(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class AzureOIDCConfiguration(BaseModel):
+class AzureOIDCConfiguration(TFEModel):
     """An Azure OIDC configuration record on HCP Terraform."""
 
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
@@ -118,7 +119,7 @@ class AzureOIDCConfigurationUpdateOptions(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class GCPOIDCConfiguration(BaseModel):
+class GCPOIDCConfiguration(TFEModel):
     """A GCP OIDC configuration record on HCP Terraform."""
 
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
@@ -164,7 +165,7 @@ class GCPOIDCConfigurationUpdateOptions(BaseModel):
 # ---------------------------------------------------------------------------
 
 
-class VaultOIDCConfiguration(BaseModel):
+class VaultOIDCConfiguration(TFEModel):
     """A Vault OIDC configuration record on HCP Terraform.
 
     Field-name mappings:

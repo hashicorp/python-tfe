@@ -3,10 +3,12 @@
 
 from __future__ import annotations
 
+import builtins
 from collections.abc import Iterator
 from typing import Any
 from urllib.parse import quote
 
+from .._jsonapi import attach_jsonapi
 from ..errors import ERR_INVALID_OAUTH_CLIENT_ID, ERR_INVALID_ORG
 from ..models.oauth_client import (
     OAuthClient,
@@ -101,9 +103,9 @@ class OAuthClients(_Service):
             params["include"] = ",".join([opt.value for opt in options.include])
 
         response = self.t.request("GET", path, params=params)
-        data = response.json()["data"]
+        payload = response.json()
 
-        return self._parse_oauth_client(data)
+        return self._parse_oauth_client(payload["data"], payload.get("included"))
 
     def update(
         self, oauth_client_id: str, options: OAuthClientUpdateOptions
@@ -161,7 +163,11 @@ class OAuthClients(_Service):
         path = f"/api/v2/oauth-clients/{quote(oauth_client_id)}/relationships/projects"
         self.t.request("DELETE", path, json_body={"data": options.projects})
 
-    def _parse_oauth_client(self, data: dict[str, Any]) -> OAuthClient:
+    def _parse_oauth_client(
+        self,
+        data: dict[str, Any],
+        included: builtins.list[dict[str, Any]] | None = None,
+    ) -> OAuthClient:
         """Parse OAuth client data from API response."""
         oauth_client = OAuthClient(
             id=data.get("id"),
@@ -183,4 +189,4 @@ class OAuthClients(_Service):
         if "projects" in relationships:
             oauth_client.projects = relationships["projects"].get("data", [])
 
-        return oauth_client
+        return attach_jsonapi(oauth_client, data, included)

@@ -11,6 +11,7 @@ from pytfe.models import (
     WorkspaceResourceListOptions,
 )
 
+from .._jsonapi import attach_jsonapi
 from ._base import _Service
 
 
@@ -18,17 +19,22 @@ def _workspace_resource_from(data: dict[str, Any]) -> WorkspaceResource:
     """Convert API response data to WorkspaceResource model."""
     attributes = data.get("attributes", {})
 
-    return WorkspaceResource(
-        id=data.get("id", ""),
-        address=attributes.get("address", ""),
-        name=attributes.get("name", ""),
-        created_at=attributes.get("created-at", ""),
-        updated_at=attributes.get("updated-at", ""),
-        module=attributes.get("module", ""),
-        provider=attributes.get("provider", ""),
-        provider_type=attributes.get("provider-type", ""),
-        modified_by_state_version_id=attributes.get("modified-by-state-version-id", ""),
-        name_index=attributes.get("name-index"),
+    return attach_jsonapi(
+        WorkspaceResource(
+            id=data.get("id", ""),
+            address=attributes.get("address", ""),
+            name=attributes.get("name", ""),
+            created_at=attributes.get("created-at", ""),
+            updated_at=attributes.get("updated-at", ""),
+            module=attributes.get("module", ""),
+            provider=attributes.get("provider", ""),
+            provider_type=attributes.get("provider-type", ""),
+            modified_by_state_version_id=attributes.get(
+                "modified-by-state-version-id", ""
+            ),
+            name_index=attributes.get("name-index"),
+        ),
+        data,
     )
 
 

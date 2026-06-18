@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import RelationMap, attach_jsonapi, parse_relationships
 from ..errors import (
     InvalidNameError,
     InvalidOrgError,
@@ -16,6 +17,8 @@ from ..errors import (
     WorkspaceMinimumLimitError,
     WorkspaceRequiredError,
 )
+from ..models.organization import Organization
+from ..models.policy import Policy
 from ..models.policy_set import (
     PolicySet,
     PolicySetAddPoliciesOptions,
@@ -33,8 +36,40 @@ from ..models.policy_set import (
     PolicySetRemoveWorkspacesOptions,
     PolicySetUpdateOptions,
 )
+from ..models.policy_set_version import PolicySetVersion
+from ..models.project import Project
+from ..models.workspace import Workspace
 from ..utils import valid_string, valid_string_id
 from ._base import _Service
+
+# Wire relation name -> model; the python attr is derived as wire.replace("-","_"),
+# which matches every PolicySet relation field. Threading ``included`` makes
+# ?include= hydrate these typed fields (workspaces, projects, policies, versions,
+# exclusions) instead of leaving id-only stubs.
+_POLICY_SET_REL_MAP: RelationMap = {
+    "organization": Organization,
+    "workspaces": Workspace,
+    "projects": Project,
+    "policies": Policy,
+    "newest-version": PolicySetVersion,
+    "current-version": PolicySetVersion,
+    "workspace-exclusions": Workspace,
+    "project-exclusions": Project,
+}
+
+
+def _policy_set_from(
+    data: dict[str, Any], included: list[dict[str, Any]] | None = None
+) -> PolicySet:
+    """Parse a PolicySet, hydrating typed relations from ``included``."""
+    attrs = dict(data.get("attributes", {}) or {})
+    attrs["id"] = data.get("id")
+    attrs.update(
+        parse_relationships(
+            data.get("relationships"), _POLICY_SET_REL_MAP, included=included
+        )
+    )
+    return attach_jsonapi(PolicySet.model_validate(attrs), data, included)
 
 
 class PolicySets(_Service):
@@ -66,31 +101,7 @@ class PolicySets(_Service):
 
         def _gen() -> Iterator[PolicySet]:
             for d in self._list(path, params=params):
-                attrs = d.get("attributes", {})
-                attrs["id"] = d.get("id")
-                attrs["organization"] = d.get("relationships", {}).get(
-                    "organization", {}
-                )
-                attrs["workspace_exclusions"] = (
-                    d.get("relationships", {})
-                    .get("workspace-exclusions", {})
-                    .get("data", [])
-                )
-                attrs["project_exclusions"] = (
-                    d.get("relationships", {})
-                    .get("project-exclusions", {})
-                    .get("data", [])
-                )
-                attrs["workspaces"] = (
-                    d.get("relationships", {}).get("workspaces", {}).get("data", [])
-                )
-                attrs["projects"] = (
-                    d.get("relationships", {}).get("projects", {}).get("data", [])
-                )
-                attrs["policies"] = (
-                    d.get("relationships", {}).get("policies", {}).get("data", [])
-                )
-                yield PolicySet.model_validate(attrs)
+                yield _policy_set_from(d)
 
         return _gen()
 
@@ -149,24 +160,7 @@ class PolicySets(_Service):
             json_body=payload,
         )
         jd = r.json()
-        data = jd.get("data", {})
-        attrs = data.get("attributes", {})
-        attrs["id"] = data.get("id")
-
-        # Handle relationships in response
-        relationships_data = data.get("relationships", {})
-        attrs["organization"] = relationships_data.get("organization", {})
-        attrs["workspace_exclusions"] = relationships_data.get(
-            "workspace-exclusions", {}
-        ).get("data", [])
-        attrs["project_exclusions"] = relationships_data.get(
-            "project-exclusions", {}
-        ).get("data", [])
-        attrs["workspaces"] = relationships_data.get("workspaces", {}).get("data", [])
-        attrs["projects"] = relationships_data.get("projects", {}).get("data", [])
-        attrs["policies"] = relationships_data.get("policies", {}).get("data", [])
-
-        return PolicySet.model_validate(attrs)
+        return _policy_set_from(jd.get("data", {}), jd.get("included"))
 
     def read(self, policy_set_id: str) -> PolicySet:
         """Read a policy set by its ID."""
@@ -191,24 +185,7 @@ class PolicySets(_Service):
             params=params,
         )
         jd = r.json()
-        data = jd.get("data", {})
-        attrs = data.get("attributes", {})
-        attrs["id"] = data.get("id")
-
-        # Handle relationships in response
-        relationships_data = data.get("relationships", {})
-        attrs["organization"] = relationships_data.get("organization", {})
-        attrs["workspace_exclusions"] = relationships_data.get(
-            "workspace-exclusions", {}
-        ).get("data", [])
-        attrs["project_exclusions"] = relationships_data.get(
-            "project-exclusions", {}
-        ).get("data", [])
-        attrs["workspaces"] = relationships_data.get("workspaces", {}).get("data", [])
-        attrs["projects"] = relationships_data.get("projects", {}).get("data", [])
-        attrs["policies"] = relationships_data.get("policies", {}).get("data", [])
-
-        return PolicySet.model_validate(attrs)
+        return _policy_set_from(jd.get("data", {}), jd.get("included"))
 
     def update(self, policy_set_id: str, options: PolicySetUpdateOptions) -> PolicySet:
         """Update an existing policy set."""
@@ -233,24 +210,7 @@ class PolicySets(_Service):
             json_body=payload,
         )
         jd = r.json()
-        data = jd.get("data", {})
-        attrs = data.get("attributes", {})
-        attrs["id"] = data.get("id")
-
-        # Handle relationships in response
-        relationships_data = data.get("relationships", {})
-        attrs["organization"] = relationships_data.get("organization", {})
-        attrs["workspace_exclusions"] = relationships_data.get(
-            "workspace-exclusions", {}
-        ).get("data", [])
-        attrs["project_exclusions"] = relationships_data.get(
-            "project-exclusions", {}
-        ).get("data", [])
-        attrs["workspaces"] = relationships_data.get("workspaces", {}).get("data", [])
-        attrs["projects"] = relationships_data.get("projects", {}).get("data", [])
-        attrs["policies"] = relationships_data.get("policies", {}).get("data", [])
-
-        return PolicySet.model_validate(attrs)
+        return _policy_set_from(jd.get("data", {}), jd.get("included"))
 
     def add_policies(
         self, policy_set_id: str, options: PolicySetAddPoliciesOptions

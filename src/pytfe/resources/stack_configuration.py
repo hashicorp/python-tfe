@@ -3,12 +3,13 @@
 
 from __future__ import annotations
 
+import builtins
 from collections.abc import Iterator
 from typing import Any
 
 from pytfe.models.configuration_version import IngressAttributes
 
-from .._jsonapi import parse_relationships
+from .._jsonapi import attach_jsonapi, parse_relationships
 from ..models.stack import Stack
 from ..models.stack_configuration import (
     StackConfiguration,
@@ -76,10 +77,15 @@ class StackConfigurations(_Service):
         if options and options.include:
             params["include"] = ",".join([i.value for i in options.include])
         r = self.t.request("GET", path=path, params=params)
-        data = r.json().get("data", {})
-        return self._stack_configuration_from(data)
+        payload = r.json()
+        data = payload.get("data", {})
+        return self._stack_configuration_from(data, payload.get("included"))
 
-    def _stack_configuration_from(self, data: dict[str, Any]) -> StackConfiguration:
+    def _stack_configuration_from(
+        self,
+        data: dict[str, Any],
+        included: builtins.list[dict[str, Any]] | None = None,
+    ) -> StackConfiguration:
         """Parse a StackConfiguration from API response data."""
         attrs = dict(data.get("attributes", {}))
         attrs["id"] = data.get("id")
@@ -87,6 +93,7 @@ class StackConfigurations(_Service):
             parse_relationships(
                 data.get("relationships"),
                 {"stack": Stack, "ingress-attributes": IngressAttributes},
+                included=included,
             )
         )
-        return StackConfiguration.model_validate(attrs)
+        return attach_jsonapi(StackConfiguration.model_validate(attrs), data, included)

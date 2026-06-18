@@ -75,7 +75,9 @@ partially covered are listed at the bottom of this page.
 | | Azure OIDC configurations | `client.azure_oidc_configurations` | ✅ |
 | | GCP OIDC configurations | `client.gcp_oidc_configurations` | ✅ |
 | | Vault OIDC configurations | `client.vault_oidc_configurations` | ✅ |
-| Admin | SAML / SCIM / SMTP / token-TTL settings | `client.admin` | ✅ |
+| Admin (TFE site-admin) | Organizations, users, runs, workspaces | `client.admin.organizations` / `.users` / `.runs` / `.workspaces` | ✅ |
+| | Terraform / OPA / Sentinel versions | `client.admin.terraform_versions` / `.opa_versions` / `.sentinel_versions` | ✅ |
+| | SAML / SCIM / SMTP settings + SCIM tokens | `client.admin.saml_settings` / `.scim_settings` / `.scim_tokens` / `.smtp_settings` | ✅ |
 
 ## Partial coverage
 
@@ -117,8 +119,6 @@ Public HCP Terraform API resources that do not yet have a pytfe client namespace
 | User tokens | Personal (user) API tokens. |
 | VCS events | — |
 
-### Terraform Enterprise only (separate admin API)
-
-| Resource | Notes |
-|---|---|
-| Site-admin | TFE site-admin endpoints (admin organizations, users, runs, workspaces, Terraform / OPA / Sentinel versions). Not part of the public HCP Terraform API. |
+> Note: the TFE site-admin API (`/api/v2/admin/*`, TFE-only — not part of the
+> public HCP Terraform API) **is** implemented under `client.admin` (see the
+> Admin rows above).

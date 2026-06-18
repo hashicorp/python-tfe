@@ -6,6 +6,7 @@ from __future__ import annotations
 import time
 from collections.abc import Iterator
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     InvalidPolicyCheckIDError,
     InvalidRunIDError,
@@ -39,7 +40,7 @@ class PolicyChecks(_Service):
             attrs = item.get("attributes", {})
             attrs["id"] = item.get("id")
             attrs["run"] = item.get("relationships", {}).get("run", {}).get("data")
-            yield PolicyCheck.model_validate(attrs)
+            yield attach_jsonapi(PolicyCheck.model_validate(attrs), item)
 
     def read(self, policy_check_id: str) -> PolicyCheck:
         """Read a policy check by its ID."""
@@ -54,7 +55,7 @@ class PolicyChecks(_Service):
         attrs = d.get("attributes", {})
         attrs["id"] = d.get("id")
         attrs["run"] = d.get("relationships", {}).get("run", {}).get("data")
-        return PolicyCheck.model_validate(attrs)
+        return attach_jsonapi(PolicyCheck.model_validate(attrs), d)
 
     def override(self, policy_check_id: str) -> PolicyCheck:
         """Override a soft-mandatory or warning policy."""
@@ -69,7 +70,7 @@ class PolicyChecks(_Service):
         attrs = d.get("attributes", {})
         attrs["id"] = d.get("id")
         attrs["run"] = d.get("relationships", {}).get("run", {}).get("data")
-        return PolicyCheck.model_validate(attrs)
+        return attach_jsonapi(PolicyCheck.model_validate(attrs), d)
 
     def logs(self, policy_check_id: str) -> str:
         """Logs retrieves the logs of a policy check."""

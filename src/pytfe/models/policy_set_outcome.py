@@ -5,10 +5,11 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 from .policy_evaluation import PolicyEvaluation, PolicyResultCount
 
 
-class PolicySetOutcome(BaseModel):
+class PolicySetOutcome(TFEModel):
     """PolicySetOutcome represents outcome of the policy set that are part of the policy evaluation"""
 
     model_config = ConfigDict(

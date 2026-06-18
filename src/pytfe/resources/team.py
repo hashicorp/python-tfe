@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import builtins
 from collections.abc import Iterator
+from typing import Any
 
-from .._jsonapi import parse_relationships
+from .._jsonapi import attach_jsonapi, parse_relationships
 from ..errors import (
     ERR_INVALID_ORG,
     InvalidTeamIDError,
@@ -13,6 +14,7 @@ from ..models.team import (
     Team,
     TeamCreateOptions,
     TeamListOptions,
+    TeamReadOptions,
     TeamUpdateOptions,
 )
 from ..models.user import User
@@ -38,16 +40,21 @@ class Teams(_Service):
         for item in self._list(path, params=params):
             yield self._team_from(item)
 
-    def _team_from(self, data: dict) -> Team:
+    def _team_from(
+        self,
+        data: dict,
+        included: builtins.list[dict[str, Any]] | None = None,
+    ) -> Team:
         attrs = data.get("attributes", {})
         attrs["id"] = data.get("id")
         attrs.update(
             parse_relationships(
                 data.get("relationships"),
                 {"users": User, "organization-memberships": OrganizationMembership},
+                included=included,
             )
         )
-        return Team.model_validate(attrs)
+        return attach_jsonapi(Team.model_validate(attrs), data, included)
 
     def create(self, organization: str, options: TeamCreateOptions) -> Team:
         """Create a new team in the given organization."""
@@ -77,16 +84,20 @@ class Teams(_Service):
         data = r.json().get("data", {})
         return self._team_from(data)
 
-    def read(self, team_id: str) -> Team:
+    def read(self, team_id: str, options: TeamReadOptions | None = None) -> Team:
         """Read a single team by its ID."""
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
+        params: dict[str, str] = {}
+        if options and options.include:
+            params["include"] = ",".join([opt.value for opt in options.include])
         r = self.t.request(
             "GET",
             path=f"/api/v2/teams/{team_id}",
+            params=params,
         )
-        data = r.json().get("data", {})
-        return self._team_from(data)
+        payload = r.json()
+        return self._team_from(payload.get("data", {}), payload.get("included"))
 
     def delete(self, team_id: str) -> None:
         """Delete a team by its ID."""

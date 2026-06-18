@@ -16,6 +16,7 @@ from ..errors import (
     InvalidValues,
 )
 from ..utils import valid_string_id
+from ._base import TFEModel
 
 
 class RegistryName(Enum):
@@ -39,7 +40,7 @@ class RegistryProviderPermissions(BaseModel):
     model_config = {"populate_by_name": True}
 
 
-class RegistryProvider(BaseModel):
+class RegistryProvider(TFEModel):
     """Registry provider model."""
 
     id: str

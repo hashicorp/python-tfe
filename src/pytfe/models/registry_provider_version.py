@@ -14,6 +14,7 @@ from ..errors import (
     RequiredPrivateRegistryError,
 )
 from ..utils import valid_string_id
+from ._base import TFEModel
 from .registry_provider import (
     RegistryName,
     RegistryProvider,
@@ -35,7 +36,7 @@ class RegistryProviderVersionPermissions(BaseModel):
     can_upload_asset: bool = Field(alias="can-upload-asset")
 
 
-class RegistryProviderVersion(BaseModel):
+class RegistryProviderVersion(TFEModel):
     """Registry provider version model."""
 
     model_config = ConfigDict(

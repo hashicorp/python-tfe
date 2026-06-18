@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from ..._jsonapi import attach_jsonapi
 from ...errors import ERR_INVALID_NAME
 from ...models.admin_organization import (
     AdminOrganization,
@@ -20,7 +21,9 @@ _ADMIN_ORG_TYPE = "organizations"
 
 def _parse_admin_organization(data: dict[str, Any]) -> AdminOrganization:
     attrs = data.get("attributes") or {}
-    return AdminOrganization.model_validate({"id": data.get("id"), **attrs})
+    return attach_jsonapi(
+        AdminOrganization.model_validate({"id": data.get("id"), **attrs}), data
+    )
 
 
 class _AdminOrganizations(_Service):

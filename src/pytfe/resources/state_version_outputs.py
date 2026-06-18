@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..models.state_version_output import (
     StateVersionOutput,
     StateVersionOutputsListOptions,
@@ -36,9 +37,12 @@ class StateVersionOutputs(_Service):
         d = r.json()["data"]
         attr = d.get("attributes", {}) or {}
 
-        return StateVersionOutput(
-            id=_safe_str(d.get("id")),
-            **{k.replace("-", "_"): v for k, v in attr.items()},
+        return attach_jsonapi(
+            StateVersionOutput(
+                id=_safe_str(d.get("id")),
+                **{k.replace("-", "_"): v for k, v in attr.items()},
+            ),
+            d,
         )
 
     def read_current(
@@ -61,7 +65,10 @@ class StateVersionOutputs(_Service):
 
         for d in self._list(path, params=params):
             attr = d.get("attributes", {}) or {}
-            yield StateVersionOutput(
-                id=_safe_str(d.get("id")),
-                **{k.replace("-", "_"): v for k, v in attr.items()},
+            yield attach_jsonapi(
+                StateVersionOutput(
+                    id=_safe_str(d.get("id")),
+                    **{k.replace("-", "_"): v for k, v in attr.items()},
+                ),
+                d,
             )

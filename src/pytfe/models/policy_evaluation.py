@@ -8,6 +8,7 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 from .policy_types import PolicyKind
 
 
@@ -24,7 +25,7 @@ class PolicyEvaluationStatus(str, Enum):
     POLICYEVALUATIONOVERRIDDEN = "overridden"
 
 
-class PolicyEvaluation(BaseModel):
+class PolicyEvaluation(TFEModel):
     """PolicyEvaluation represents the policy evaluations that are part of the task stage."""
 
     model_config = ConfigDict(

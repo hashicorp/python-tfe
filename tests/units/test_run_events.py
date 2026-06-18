@@ -235,6 +235,39 @@ class TestRunEvents:
             assert result.id == "re-read-456"
             assert result.action == "discarded"
 
+    def test_read_run_event_hydrates_actor_from_included(self, run_events_service):
+        """read_with_options(include=actor) hydrates the typed `actor` field
+        from `included` (was previously never populated)."""
+        mock_response_data = {
+            "data": {
+                "id": "re-actor-1",
+                "attributes": {"action": "created"},
+                "relationships": {"actor": {"data": {"id": "user-1", "type": "users"}}},
+            },
+            "included": [
+                {
+                    "id": "user-1",
+                    "type": "users",
+                    "attributes": {"username": "alice", "email": "a@example.com"},
+                }
+            ],
+        }
+        mock_response = Mock()
+        mock_response.json.return_value = mock_response_data
+
+        with patch.object(run_events_service, "t") as mock_transport:
+            mock_transport.request.return_value = mock_response
+
+            options = RunEventReadOptions(include=[RunEventIncludeOpt.RUN_EVENT_ACTOR])
+            result = run_events_service.read_with_options("re-actor-1", options)
+
+            # Typed hydration of the actor (User) from `included`.
+            assert result.actor is not None
+            assert result.actor.username == "alice"
+            # Raw escape hatch populated; never leaks into model_dump().
+            assert result.has_included is True
+            assert "included" not in result.model_dump()
+
     def test_read_run_event_invalid_id(self, run_events_service):
         """Test read with invalid run event ID."""
 

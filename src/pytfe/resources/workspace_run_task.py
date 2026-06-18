@@ -7,6 +7,7 @@ from collections.abc import Iterator
 from typing import Any
 from urllib.parse import quote
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     InvalidWorkspaceIDError,
     InvalidWorkspaceRunTaskIDError,
@@ -40,7 +41,7 @@ def _workspace_run_task_from(data: dict[str, Any]) -> WorkspaceRunTask:
             id=_safe_str(workspace_data.get("id"))
         )
 
-    return WorkspaceRunTask.model_validate(attributes)
+    return attach_jsonapi(WorkspaceRunTask.model_validate(attributes), data)
 
 
 class WorkspaceRunTasks(_Service):

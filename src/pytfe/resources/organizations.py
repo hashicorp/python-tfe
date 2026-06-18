@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     ERR_INVALID_NAME,
     ERR_INVALID_ORG,
@@ -28,6 +29,7 @@ from ..models.organization import (
     OrganizationCreateOptions,
     OrganizationDefaultSettings,
     OrganizationDefaultSettingsUpdateOptions,
+    OrganizationReadOptions,
     OrganizationUpdateOptions,
     ReadRunQueueOptions,
     RunQueue,
@@ -40,7 +42,9 @@ def _safe_str(v: Any, default: str = "") -> str:
     return v if isinstance(v, str) else (str(v) if v is not None else default)
 
 
-def _parse_org(data: dict[str, Any]) -> Organization:
+def _parse_org(
+    data: dict[str, Any], included: list[dict[str, Any]] | None = None
+) -> Organization:
     """Parse a JSON:API ``data`` block into an :class:`Organization`.
 
     Handles two things the legacy ``Organization(**attrs)`` shortcut
@@ -63,7 +67,7 @@ def _parse_org(data: dict[str, Any]) -> Organization:
     if pool_rel and pool_rel.get("id"):
         org_data["default_agent_pool"] = {"id": pool_rel["id"]}
 
-    return Organization.model_validate(org_data)
+    return attach_jsonapi(Organization.model_validate(org_data), data, included)
 
 
 class Organizations(_Service):
@@ -109,9 +113,15 @@ class Organizations(_Service):
         for item in self._list("/api/v2/organizations"):
             yield _parse_org(item)
 
-    def read(self, name: str) -> Organization:
-        r = self.t.request("GET", f"/api/v2/organizations/{name}")
-        return _parse_org(r.json()["data"])
+    def read(
+        self, name: str, options: OrganizationReadOptions | None = None
+    ) -> Organization:
+        params: dict[str, str] = {}
+        if options and options.include:
+            params["include"] = ",".join([opt.value for opt in options.include])
+        r = self.t.request("GET", f"/api/v2/organizations/{name}", params=params)
+        payload = r.json()
+        return _parse_org(payload["data"], payload.get("included"))
 
     # ---- Organization default settings (provider parity) -----------------
     #

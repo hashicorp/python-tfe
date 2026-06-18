@@ -32,6 +32,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 # 2 years in milliseconds — the documented default the upstream applies
 # when no per-token policy is set. Exported for callers who want to
 # reset to defaults without recomputing.
@@ -50,7 +52,7 @@ class TokenPolicyType(str, Enum):
     AUDIT_TRAILS = "audit_trails"
 
 
-class OrgTokenTTLPolicy(BaseModel):
+class OrgTokenTTLPolicy(TFEModel):
     """One token-type / max-TTL entry as returned by the list endpoint."""
 
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)

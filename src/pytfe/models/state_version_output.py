@@ -7,8 +7,10 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 
-class StateVersionOutput(BaseModel):
+
+class StateVersionOutput(TFEModel):
     model_config = ConfigDict(
         populate_by_name=True, validate_by_name=True, extra="allow"
     )

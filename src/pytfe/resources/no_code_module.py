@@ -6,7 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
-from .._jsonapi import build_included_index, parse_relationships
+from .._jsonapi import attach_jsonapi, build_included_index, parse_relationships
 from ..errors import (
     InvalidNoCodeModuleIDError,
     InvalidOrgError,
@@ -130,7 +130,7 @@ def _no_code_module_from(
             if ref.get("id")
         ]
 
-    return module
+    return attach_jsonapi(module, data, included)
 
 
 def _workspace_upgrade_from(data: dict[str, Any]) -> WorkspaceUpgrade:
@@ -144,7 +144,7 @@ def _workspace_upgrade_from(data: dict[str, Any]) -> WorkspaceUpgrade:
         "message": attrs.get("message"),
     }
     upgrade_attrs.update(parse_relationships(relationships, {"workspace": Workspace}))
-    return WorkspaceUpgrade.model_validate(upgrade_attrs)
+    return attach_jsonapi(WorkspaceUpgrade.model_validate(upgrade_attrs), data)
 
 
 class NoCodeModules(_Service):

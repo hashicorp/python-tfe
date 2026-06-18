@@ -5,6 +5,8 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 
 class AdminOrganizationListOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
@@ -13,7 +15,7 @@ class AdminOrganizationListOptions(BaseModel):
     page_size: int | None = Field(default=None, alias="page[size]")
 
 
-class AdminOrganization(BaseModel):
+class AdminOrganization(TFEModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
     id: str | None = None
     name: str | None = None

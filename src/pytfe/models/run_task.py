@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from pydantic import BaseModel, Field
 
 from ..models.common import Pagination
+from ._base import TFEModel
 from .agent import AgentPool
 from .organization import Organization
 
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
     from .workspace_run_task import WorkspaceRunTask
 
 
-class RunTask(BaseModel):
+class RunTask(TFEModel):
     id: str
     name: str | None = None
     description: str | None = None

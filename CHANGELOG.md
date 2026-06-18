@@ -1,5 +1,24 @@
 # Unreleased
 
+## Enhancements
+
+### Relationships
+Related data is now a complete, first-class part of every response. Before, `?include=` often did not actually fill the related fields it returned, and anything the SDK did not model as a typed field was dropped on the floor. Now the full set of related resources the API hands back is always available to you: typed where pytfe models it, raw where it does not. The practical win is that **you are no longer limited to the relationships pytfe has added typed support for.** You can read any related resource in a response without dropping to manual HTTP or waiting for a new SDK release.
+
+* `?include=` now fills in related data. When the SDK models a relation as a typed field (for example `workspace.outputs`, `policy_set.current_version`, `organization_membership.user`, `run_event.actor`), passing `?include=<relation>` fills that field with the real record instead of an id-only stub.
+* Relations the SDK does **not** model are no longer lost. Every top-level resource model now derives from a new `pytfe.models.TFEModel` base and gains read-only accessors for the raw JSON:API data the API returned: `model.relationships`, `model.included`, `model.related(name)`, `model.included_by(type, id)`, and the `model.has_relationships` and `model.has_included` flags. So when a relation has no typed field of its own (for example an organization's `subscription`, or a workspace `readme`), `?include=` still returns it and you reach it with `model.related("subscription")` or `model.included_by(type, id)`. These accessors are read-only extras that never appear in `model_dump()` or affect equality, so this is additive and non-breaking. List endpoints expose the relationship refs but do not yet fill `included`. See [docs/related-resources.md](docs/related-resources.md) for the per-resource table and a "typed field vs raw accessor" guide.
+* Added `?include=` support to three reads that previously had no include option, matching the HCP Terraform API:
+  * `teams.read(team_id, TeamReadOptions(include=[...]))`: `users`, `organization-memberships`.
+  * `task_stages.read(task_stage_id, TaskStageReadOptions(include=[...]))`: `run`, `run.workspace`, `task-results`, `policy-evaluations`.
+  * `organizations.read(name, OrganizationReadOptions(include=[...]))`: `subscription`. The new `options` argument is optional, so existing calls are unchanged.
+
+## Bug Fixes
+
+### Relationships
+* Fixed `workspaces.read*(include=[WorkspaceIncludeOpt.OUTPUTS])` returning outputs with `None` name, value, and type. Workspace `outputs` is now filled from the `included` data. [#134](https://github.com/hashicorp/python-tfe/issues/134)
+* Fixed `policy_set.read*(include=[current_version | newest_version])` returning an id-only stub. `PolicySetVersion` is now exported from `pytfe.models` and fully resolved, so the version's `source`, `created_at`, and `status` are populated.
+* Fixed `variable_set.read` inventing placeholder values (such as `name="workspace-<id>"` or `key="var-<id>"`) for `workspaces`, `projects`, and `vars`. These are now id-only stubs by default and fill from `included` when requested.
+
 # Released
 # v1.1.0
 

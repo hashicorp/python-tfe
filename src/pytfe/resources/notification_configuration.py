@@ -12,6 +12,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     InvalidOrgError,
     ValidationError,
@@ -202,4 +203,4 @@ class NotificationConfigurations(_Service):
             users_data = relationships["users"].get("data", [])
             attributes["email-users"] = users_data
 
-        return NotificationConfiguration(attributes)
+        return attach_jsonapi(NotificationConfiguration(attributes), data)

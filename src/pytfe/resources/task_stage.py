@@ -3,15 +3,16 @@
 
 from __future__ import annotations
 
+import builtins
 from collections.abc import Iterator
 from typing import Any
 
-from .._jsonapi import parse_relationships
+from .._jsonapi import attach_jsonapi, parse_relationships
 from ..errors import InvalidRunIDError, InvalidTaskStageIDError
 from ..models.policy_evaluation import PolicyEvaluation
 from ..models.run import Run
 from ..models.task_result import TaskResult
-from ..models.task_stage import TaskStage, TaskStageListOptions
+from ..models.task_stage import TaskStage, TaskStageListOptions, TaskStageReadOptions
 from ..utils import _safe_str, valid_string_id
 from ._base import _Service
 
@@ -19,7 +20,11 @@ from ._base import _Service
 class TaskStages(_Service):
     """TaskStages provides access to task stage endpoints."""
 
-    def _parse_task_stage(self, data: dict[str, Any]) -> TaskStage:
+    def _parse_task_stage(
+        self,
+        data: dict[str, Any],
+        included: builtins.list[dict[str, Any]] | None = None,
+    ) -> TaskStage:
         attributes = data.get("attributes", {})
         attributes["id"] = _safe_str(data.get("id"))
         attributes.update(
@@ -30,27 +35,35 @@ class TaskStages(_Service):
                     "task-results": TaskResult,
                     "policy-evaluations": PolicyEvaluation,
                 },
+                included=included,
             )
         )
         # Preserve the historical contract: parsed task stages expose empty
         # lists (not None) for these collections when the relations are absent.
         attributes.setdefault("task_results", [])
         attributes.setdefault("policy_evaluations", [])
-        return TaskStage.model_validate(attributes)
+        return attach_jsonapi(TaskStage.model_validate(attributes), data, included)
 
     # Read
-    def read(self, task_stage_id: str) -> TaskStage:
+    def read(
+        self, task_stage_id: str, options: TaskStageReadOptions | None = None
+    ) -> TaskStage:
         if not valid_string_id(task_stage_id):
             raise InvalidTaskStageIDError()
+
+        params: dict[str, str] = {}
+        if options and options.include:
+            params["include"] = ",".join([opt.value for opt in options.include])
 
         response = self.t.request(
             "GET",
             f"/api/v2/task-stages/{task_stage_id}",
+            params=params,
         )
 
-        data = response.json().get("data", {})
+        payload = response.json()
 
-        return self._parse_task_stage(data)
+        return self._parse_task_stage(payload.get("data", {}), payload.get("included"))
 
     # List
     def list(

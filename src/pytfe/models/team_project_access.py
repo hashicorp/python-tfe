@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from ..errors import ERR_REQUIRED_PROJECT, InvalidProjectIDError, RequiredTeamError
 from ..utils import valid_string_id
+from ._base import TFEModel
 from .project import Project
 from .team import Team
 
@@ -115,7 +116,7 @@ class TeamProjectAccessWorkspacePermissions(BaseModel):
     run_tasks: bool = Field(default=False, alias="run-tasks")
 
 
-class TeamProjectAccess(BaseModel):
+class TeamProjectAccess(TFEModel):
     """TeamProjectAccess represents a project access for a team"""
 
     model_config = ConfigDict(

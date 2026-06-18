@@ -7,6 +7,7 @@ import io
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     InvalidQueryRunIDError,
     InvalidWorkspaceIDError,
@@ -56,7 +57,7 @@ class QueryRuns(_Service):
         for item in self._list(path, params=params):
             attrs = item.get("attributes", {})
             attrs["id"] = item.get("id")
-            yield QueryRun.model_validate(attrs)
+            yield attach_jsonapi(QueryRun.model_validate(attrs), item)
 
     def create(self, options: QueryRunCreateOptions) -> QueryRun:
         """Create a new query run."""
@@ -96,7 +97,7 @@ class QueryRuns(_Service):
         attrs = data.get("attributes", {})
         attrs["id"] = data.get("id")
 
-        return QueryRun.model_validate(attrs)
+        return attach_jsonapi(QueryRun.model_validate(attrs), data, jd.get("included"))
 
     def read(self, query_run_id: str) -> QueryRun:
         """Read a query run by its ID."""
@@ -110,7 +111,7 @@ class QueryRuns(_Service):
         attrs = data.get("attributes", {})
         attrs["id"] = data.get("id")
 
-        return QueryRun.model_validate(attrs)
+        return attach_jsonapi(QueryRun.model_validate(attrs), data, jd.get("included"))
 
     def read_with_options(
         self, query_run_id: str, options: QueryRunReadOptions
@@ -131,7 +132,7 @@ class QueryRuns(_Service):
         attrs = data.get("attributes", {})
         attrs["id"] = data.get("id")
 
-        return QueryRun.model_validate(attrs)
+        return attach_jsonapi(QueryRun.model_validate(attrs), data, jd.get("included"))
 
     def logs(self, query_run_id: str) -> io.IOBase:
         """Retrieve the logs for a query run.

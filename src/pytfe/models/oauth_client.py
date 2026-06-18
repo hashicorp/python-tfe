@@ -8,6 +8,8 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 
 class ServiceProviderType(str, Enum):
     """VCS service provider types."""
@@ -32,7 +34,7 @@ class OAuthClientIncludeOpt(str, Enum):
     PROJECTS = "projects"
 
 
-class OAuthClient(BaseModel):
+class OAuthClient(TFEModel):
     """OAuth client represents a connection between an organization and a VCS provider."""
 
     id: str | None = None

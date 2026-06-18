@@ -8,6 +8,7 @@ from enum import Enum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
 from .organization import Organization
 from .project import Project
 from .variable import CategoryType
@@ -30,7 +31,7 @@ class Parent(BaseModel):
     project: Project | None = None
 
 
-class VariableSet(BaseModel):
+class VariableSet(TFEModel):
     """Represents a Terraform Enterprise variable set."""
 
     model_config = ConfigDict(
@@ -53,7 +54,7 @@ class VariableSet(BaseModel):
     parent: Parent | None = None
 
 
-class VariableSetVariable(BaseModel):
+class VariableSetVariable(TFEModel):
     """Represents a variable within a variable set."""
 
     id: str | None = None

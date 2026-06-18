@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ._base import TFEModel
+
 if TYPE_CHECKING:
     from .policy_set import PolicySet
 
@@ -61,7 +63,7 @@ class PolicySetIngressAttributes(BaseModel):
     identifier: str | None = Field(None, alias="identifier")
 
 
-class PolicySetVersion(BaseModel):
+class PolicySetVersion(TFEModel):
     """PolicySetVersion represents a Terraform Enterprise Policy Set Version"""
 
     model_config = ConfigDict(

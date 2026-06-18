@@ -3,6 +3,11 @@
 
 from __future__ import annotations
 
+# ── Core models split out of old types.py ─────────────────────────────────────
+# Adjust these imports to match where you placed them during the split.
+# Common / pagination / enums
+from ._base import TFEModel as TFEModel
+
 # ── TFE admin identity (SAML / SCIM) ──────────────────────────────────────────
 from .admin_identity import (
     AdminSAMLSettings,
@@ -80,10 +85,6 @@ from .comment import (
     Comment,
     CommentCreateOptions,
 )
-
-# ── Core models split out of old types.py ─────────────────────────────────────
-# Adjust these imports to match where you placed them during the split.
-# Common / pagination / enums
 from .common import (
     EffectiveTagBinding,
     Pagination,
@@ -210,6 +211,8 @@ from .organization import (
     OrganizationCreateOptions,
     OrganizationDefaultSettings,
     OrganizationDefaultSettingsUpdateOptions,
+    OrganizationIncludeOpt,
+    OrganizationReadOptions,
     OrganizationUpdateOptions,
     ReadRunQueueOptions,
     RunQueue,
@@ -297,6 +300,7 @@ from .policy_set_parameter import (
     PolicySetParameterListOptions,
     PolicySetParameterUpdateOptions,
 )
+from .policy_set_version import PolicySetVersion
 from .policy_types import (
     EnforcementLevel,
     PolicyKind,
@@ -502,7 +506,7 @@ from .task_result import (
     TaskResultStatus,
     TaskResultStatusTimestamps,
 )
-from .task_stage import TaskStage
+from .task_stage import TaskStage, TaskStageIncludeOpt, TaskStageReadOptions
 from .team import (
     OrganizationAccess,
     Team,
@@ -510,6 +514,7 @@ from .team import (
     TeamIncludeOpt,
     TeamListOptions,
     TeamPermissions,
+    TeamReadOptions,
     TeamUpdateOptions,
 )
 from .team_project_access import (
@@ -836,6 +841,8 @@ __all__ = [
     "OrganizationCreateOptions",
     "OrganizationDefaultSettings",
     "OrganizationDefaultSettingsUpdateOptions",
+    "OrganizationIncludeOpt",
+    "OrganizationReadOptions",
     "OrganizationUpdateOptions",
     # Org-token TTL policy
     "DEFAULT_MAX_TTL_MS",
@@ -868,6 +875,7 @@ __all__ = [
     "TeamCreateOptions",
     "TeamIncludeOpt",
     "TeamListOptions",
+    "TeamReadOptions",
     "TeamUpdateOptions",
     # Team Tokens
     "CreatedByChoice",
@@ -971,6 +979,8 @@ __all__ = [
     "RunEventReadOptions",
     # Task Stage & Task Result
     "TaskStage",
+    "TaskStageIncludeOpt",
+    "TaskStageReadOptions",
     "TaskResult",
     # Comments
     "Comment",
@@ -1036,6 +1046,7 @@ __all__ = [
     "PolicySet",
     "PolicySetIncludeOpt",
     "PolicySetList",
+    "PolicySetVersion",
     "PolicySetAddPoliciesOptions",
     "PolicySetAddProjectsOptions",
     "PolicySetAddWorkspacesOptions",
@@ -1117,6 +1128,10 @@ __all__ = [
 
 # Rebuild models with forward references after all models are loaded
 PolicyCheck.model_rebuild()
+PolicySetVersion.model_rebuild(
+    raise_errors=False,
+    _types_namespace={"PolicySet": PolicySet},
+)
 RegistryProvider.model_rebuild()
 RegistryProviderVersion.model_rebuild()
 RegistryProviderPlatform.model_rebuild()

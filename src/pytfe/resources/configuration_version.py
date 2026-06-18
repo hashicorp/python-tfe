@@ -3,10 +3,12 @@
 
 from __future__ import annotations
 
+import builtins
 import io
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import (
     ERR_INVALID_CONFIG_VERSION_ID,
     ERR_INVALID_WORKSPACE_ID,
@@ -123,7 +125,9 @@ class ConfigurationVersions(_Service):
 
         response = self.t.request("GET", path, params=params)
         response_data = response.json()
-        return self._parse_configuration_version(response_data["data"])
+        return self._parse_configuration_version(
+            response_data["data"], response_data.get("included")
+        )
 
     def upload(self, upload_url: str, path: str) -> None:
         """Upload configuration files from a directory path."""
@@ -253,7 +257,9 @@ class ConfigurationVersions(_Service):
         self.t.request("POST", path)
 
     def _parse_configuration_version(
-        self, data: dict[str, Any]
+        self,
+        data: dict[str, Any],
+        included: builtins.list[dict[str, Any]] | None = None,
     ) -> ConfigurationVersion:
         """Parse a configuration version from API response data."""
         if data is None:
@@ -286,4 +292,4 @@ class ConfigurationVersions(_Service):
             "links": data.get("links"),
         }
 
-        return ConfigurationVersion(**cv_data)
+        return attach_jsonapi(ConfigurationVersion(**cv_data), data, included)

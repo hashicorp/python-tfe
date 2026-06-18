@@ -6,6 +6,7 @@ from __future__ import annotations
 from collections.abc import Iterator
 from typing import Any
 
+from .._jsonapi import attach_jsonapi
 from ..errors import InvalidTeamIDError, InvalidWorkspaceIDError, TFEError
 from ..models.team_workspace_access import (
     TeamWorkspaceAccess,
@@ -33,7 +34,7 @@ def _parse(data: dict[str, Any]) -> TeamWorkspaceAccess:
         attributes["team-id"] = team_data["id"]
     if workspace_data.get("id"):
         attributes["workspace-id"] = workspace_data["id"]
-    return TeamWorkspaceAccess.model_validate(attributes)
+    return attach_jsonapi(TeamWorkspaceAccess.model_validate(attributes), data)
 
 
 def _attributes_payload(model_dict: dict[str, Any]) -> dict[str, Any]:
