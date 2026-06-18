@@ -57,7 +57,9 @@ def _query_params(options: Any) -> dict[str, Any]:
     if options is None:
         return {}
     dumped = options.model_dump(by_alias=True, exclude_none=True, mode="json")
-    return {k: (str(v).lower() if isinstance(v, bool) else v) for k, v in dumped.items()}
+    return {
+        k: (str(v).lower() if isinstance(v, bool) else v) for k, v in dumped.items()
+    }
 
 
 class Registry(_Service):
@@ -75,7 +77,11 @@ class Registry(_Service):
         self.base_url = (base_url or DEFAULT_REGISTRY_URL).rstrip("/")
 
     def _get(
-        self, path: str, *, params: dict[str, Any] | None = None, allow_redirects: bool = True
+        self,
+        path: str,
+        *,
+        params: dict[str, Any] | None = None,
+        allow_redirects: bool = True,
     ) -> Any:
         return self.t.request(
             "GET",
@@ -148,9 +154,7 @@ class Registry(_Service):
     ) -> PublicRegistryModule:
         """Read a specific version of a module for a single provider."""
         self._validate(namespace, name, provider, version)
-        body = self._get(
-            f"/v1/modules/{namespace}/{name}/{provider}/{version}"
-        ).json()
+        body = self._get(f"/v1/modules/{namespace}/{name}/{provider}/{version}").json()
         return PublicRegistryModule.model_validate(body)
 
     def list_versions(
@@ -162,9 +166,7 @@ class Registry(_Service):
         dependency modules the registry also returns are not included.
         """
         self._validate(namespace, name, provider)
-        body = self._get(
-            f"/v1/modules/{namespace}/{name}/{provider}/versions"
-        ).json()
+        body = self._get(f"/v1/modules/{namespace}/{name}/{provider}/versions").json()
         modules = (body or {}).get("modules") or [] if isinstance(body, dict) else []
         if not modules:
             return PublicRegistryModuleVersions()
@@ -183,9 +185,7 @@ class Registry(_Service):
         )
         return self._x_terraform_get(resp)
 
-    def latest_download_url(
-        self, namespace: str, name: str, provider: str
-    ) -> str:
+    def latest_download_url(self, namespace: str, name: str, provider: str) -> str:
         """Return the latest version's source location (``X-Terraform-Get``).
 
         The endpoint 302-redirects to the versioned download; the redirect is
