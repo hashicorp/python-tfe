@@ -44,9 +44,7 @@ class AssessmentResults(_Service):
         """Read an assessment result by its ID."""
         if not valid_string_id(assessment_result_id):
             raise InvalidAssessmentResultIDError()
-        r = self.t.request(
-            "GET", f"/api/v2/assessment-results/{assessment_result_id}"
-        )
+        r = self.t.request("GET", f"/api/v2/assessment-results/{assessment_result_id}")
         body = r.json()
         data = (body or {}).get("data") or {} if isinstance(body, dict) else {}
         included = body.get("included") if isinstance(body, dict) else None

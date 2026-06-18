@@ -53,7 +53,10 @@ class TestRegistry:
 
     def test_list_modules_paginates_and_strips_auth(self, service, mock_transport):
         page1 = self._json(
-            {"meta": {"next_offset": 2}, "modules": [{"id": "a/b/c/1"}, {"id": "a/b/c/2"}]}
+            {
+                "meta": {"next_offset": 2},
+                "modules": [{"id": "a/b/c/1"}, {"id": "a/b/c/2"}],
+            }
         )
         page2 = self._json({"meta": {}, "modules": [{"id": "a/b/c/3"}]})
         mock_transport.request.side_effect = [page1, page2]

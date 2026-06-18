@@ -64,9 +64,11 @@ def main():
     ce = client.cost_estimates.read(ce_id)
     print(f"ID: {ce.id}")
     print(f"Status: {ce.status}")
-    print(f"Resources: {ce.resources_count} "
-          f"(matched={ce.matched_resources_count}, "
-          f"unmatched={ce.unmatched_resources_count})")
+    print(
+        f"Resources: {ce.resources_count} "
+        f"(matched={ce.matched_resources_count}, "
+        f"unmatched={ce.unmatched_resources_count})"
+    )
     print(f"Prior monthly cost:    {ce.prior_monthly_cost}")
     print(f"Proposed monthly cost: {ce.proposed_monthly_cost}")
     print(f"Delta monthly cost:    {ce.delta_monthly_cost}")

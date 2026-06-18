@@ -52,7 +52,9 @@ def main() -> int:
     if args.search:
         _print_header(f"Searching modules for: {args.search}")
         opts = PublicRegistrySearchOptions(provider=args.provider)
-        for m in itertools.islice(registry.search_modules(args.search, opts), args.limit):
+        for m in itertools.islice(
+            registry.search_modules(args.search, opts), args.limit
+        ):
             print(f"  {m.id:50}  downloads={m.downloads}  verified={m.verified}")
         return 0
 
@@ -75,8 +77,10 @@ def main() -> int:
 
     _print_header("Download metrics")
     summary = registry.downloads_summary(args.namespace, args.name, args.provider)
-    print(f"  week={summary.week} month={summary.month} "
-          f"year={summary.year} total={summary.total}")
+    print(
+        f"  week={summary.week} month={summary.month} "
+        f"year={summary.year} total={summary.total}"
+    )
 
     return 0
 

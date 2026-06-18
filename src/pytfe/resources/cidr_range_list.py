@@ -135,8 +135,7 @@ class CIDRRangeLists(_Service):
         if not valid_string_id(cidr_range_list_id):
             raise InvalidCIDRRangeListIDError()
         path = (
-            f"/api/v2/cidr-range-lists/{cidr_range_list_id}"
-            "/relationships/cidr-ranges"
+            f"/api/v2/cidr-range-lists/{cidr_range_list_id}/relationships/cidr-ranges"
         )
         for item in self._list(path):
             yield _cidr_range_from(item)
@@ -216,9 +215,7 @@ class CIDRRanges(_Service):
         body = r.json()
         return _cidr_range_from(body["data"], body.get("included"))
 
-    def update(
-        self, cidr_range_id: str, options: CIDRRangeUpdateOptions
-    ) -> CIDRRange:
+    def update(self, cidr_range_id: str, options: CIDRRangeUpdateOptions) -> CIDRRange:
         """Update a CIDR range by its ID."""
         if not valid_string_id(cidr_range_id):
             raise InvalidCIDRRangeIDError()

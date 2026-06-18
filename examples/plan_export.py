@@ -18,9 +18,7 @@ def _print_header(title: str):
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Plan exports demo for python-tfe SDK"
-    )
+    parser = argparse.ArgumentParser(description="Plan exports demo for python-tfe SDK")
     parser.add_argument(
         "--address", default=os.getenv("TFE_ADDRESS", "https://app.terraform.io")
     )
