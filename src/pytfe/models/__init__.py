@@ -81,6 +81,18 @@ from .agent import (
     AgentTokenListOptions,
 )
 from .assessment_result import AssessmentResult
+
+# ── IP allowlists (CIDR range lists) ──────────────────────────────────────────
+from .cidr_range_list import (
+    CIDRRange,
+    CIDRRangeCreateOptions,
+    CIDRRangeList,
+    CIDRRangeListCreateOptions,
+    CIDRRangeListListOptions,
+    CIDRRangeListUpdateOptions,
+    CIDRRangeUpdateOptions,
+    EnforcementScope,
+)
 from .comment import (
     Comment,
     CommentCreateOptions,
@@ -106,6 +118,13 @@ from .configuration_version import (
     ConfigurationVersionUpload,
     ConfigVerIncludeOpt,
     IngressAttributes,
+)
+
+# ── Cost Estimates ────────────────────────────────────────────────────────────
+from .cost_estimate import (
+    CostEstimate,
+    CostEstimateStatus,
+    CostEstimateStatusTimestamps,
 )
 
 # Data retention policy family
@@ -136,6 +155,9 @@ from .github_app_installation import (
     GitHubAppInstallationListOptions,
     GitHubAppInstallationType,
 )
+
+# ── IP Ranges ─────────────────────────────────────────────────────────────────
+from .ip_range import IPRange
 
 # ── Notification Configurations ───────────────────────────────────────────────
 from .no_code_module import (
@@ -246,6 +268,15 @@ from .organization_token import (
     OrganizationTokenDeleteOptions,
     OrganizationTokenReadOptions,
     TokenType,
+)
+
+# ── Plan Exports ──────────────────────────────────────────────────────────────
+from .plan_export import (
+    PlanExport,
+    PlanExportCreateOptions,
+    PlanExportDataType,
+    PlanExportStatus,
+    PlanExportStatusTimestamps,
 )
 from .policy import (
     Policy,
@@ -985,6 +1016,27 @@ __all__ = [
     # Comments
     "Comment",
     "CommentCreateOptions",
+    # Cost estimates
+    "CostEstimate",
+    "CostEstimateStatus",
+    "CostEstimateStatusTimestamps",
+    # Plan exports
+    "PlanExport",
+    "PlanExportCreateOptions",
+    "PlanExportDataType",
+    "PlanExportStatus",
+    "PlanExportStatusTimestamps",
+    # IP ranges
+    "IPRange",
+    # IP allowlists (CIDR range lists)
+    "CIDRRange",
+    "CIDRRangeCreateOptions",
+    "CIDRRangeList",
+    "CIDRRangeListCreateOptions",
+    "CIDRRangeListListOptions",
+    "CIDRRangeListUpdateOptions",
+    "CIDRRangeUpdateOptions",
+    "EnforcementScope",
     # Run tasks
     "RunTask",
     "RunTaskIncludeOptions",

@@ -435,6 +435,51 @@ class InvalidApplyIDError(InvalidValues):
         super().__init__(message)
 
 
+# Plan export errors
+class InvalidPlanExportIDError(InvalidValues):
+    """Raised when an invalid plan export ID is provided."""
+
+    def __init__(self, message: str = "invalid value for plan export ID"):
+        super().__init__(message)
+
+
+class RequiredPlanError(RequiredFieldMissing):
+    """Raised when a plan is required but was not provided."""
+
+    def __init__(self, message: str = "plan is required"):
+        super().__init__(message)
+
+
+# Cost estimate errors
+class InvalidCostEstimateIDError(InvalidValues):
+    """Raised when an invalid cost estimate ID is provided."""
+
+    def __init__(self, message: str = "invalid value for cost estimate ID"):
+        super().__init__(message)
+
+
+# IP allowlist (CIDR range list) errors
+class InvalidCIDRRangeListIDError(InvalidValues):
+    """Raised when an invalid CIDR range list (IP allowlist) ID is provided."""
+
+    def __init__(self, message: str = "invalid value for CIDR range list ID"):
+        super().__init__(message)
+
+
+class InvalidCIDRRangeIDError(InvalidValues):
+    """Raised when an invalid CIDR range ID is provided."""
+
+    def __init__(self, message: str = "invalid value for CIDR range ID"):
+        super().__init__(message)
+
+
+class RequiredCIDRBlockError(RequiredFieldMissing):
+    """Raised when a CIDR block is required but was not provided."""
+
+    def __init__(self, message: str = "cidr-block is required"):
+        super().__init__(message)
+
+
 # Run Event errors
 class InvalidRunEventIDError(InvalidValues):
     """Raised when an invalid run event ID is provided."""
