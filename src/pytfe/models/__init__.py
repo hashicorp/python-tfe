@@ -166,6 +166,9 @@ from .hyok_configuration import (
     OIDCConfigurationType,
 )
 
+# ── Invoices (billing) ────────────────────────────────────────────────────────
+from .invoice import Invoice
+
 # ── IP Ranges ─────────────────────────────────────────────────────────────────
 from .ip_range import IPRange
 
@@ -551,6 +554,9 @@ from .state_version_output import (
     StateVersionOutput,
     StateVersionOutputsListOptions,
 )
+
+# ── Subscriptions (billing) ───────────────────────────────────────────────────
+from .subscription import Subscription
 
 # ── Task Result ───────────────────────────────────────────────────────────────
 from .task_result import (
@@ -1067,6 +1073,9 @@ __all__ = [
     "PlanExportStatusTimestamps",
     # IP ranges
     "IPRange",
+    # Billing
+    "Invoice",
+    "Subscription",
     # HYOK configurations
     "HYOKConfiguration",
     "HYOKConfigurationCreateOptions",

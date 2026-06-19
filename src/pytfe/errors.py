@@ -481,6 +481,14 @@ class RequiredKEKIDError(RequiredFieldMissing):
         super().__init__(message)
 
 
+# Subscription errors
+class InvalidSubscriptionIDError(InvalidValues):
+    """Raised when an invalid subscription ID is provided."""
+
+    def __init__(self, message: str = "invalid value for subscription ID"):
+        super().__init__(message)
+
+
 # IP allowlist (CIDR range list) errors
 class InvalidCIDRRangeListIDError(InvalidValues):
     """Raised when an invalid CIDR range list (IP allowlist) ID is provided."""
