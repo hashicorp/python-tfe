@@ -34,6 +34,7 @@ class TeamTokens(_Service):
             The created :class:`TeamToken`.
 
         Raises:
+            InvalidTeamIDError: If ``team_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:

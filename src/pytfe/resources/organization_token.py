@@ -107,6 +107,7 @@ class OrganizationTokens(_Service):
             The :class:`OrganizationToken`.
 
         Raises:
+            ValueError: If ``organization`` is not a valid organization name.
             TFEError: If the API request fails.
 
         Example:
@@ -168,6 +169,7 @@ class OrganizationTokens(_Service):
             None.
 
         Raises:
+            ValueError: If ``organization`` is not a valid organization name.
             TFEError: If the API request fails.
 
         Example:

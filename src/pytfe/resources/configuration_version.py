@@ -181,6 +181,7 @@ class ConfigurationVersions(_Service):
             The :class:`ConfigurationVersion`.
 
         Raises:
+            ValueError: If ``cv_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
@@ -270,8 +271,11 @@ class ConfigurationVersions(_Service):
 
         Example:
             >>> import io
-            >>> archive = io.BytesIO(gzipped_tar_bytes)
-            >>> client.configuration_versions.upload_tar_gzip(upload_url, archive)
+            >>> version = client.configuration_versions.create("ws-YnyXLq9fy38afEeb")
+            >>> with open("terraform.tar.gz", "rb") as fh:
+            ...     client.configuration_versions.upload_tar_gzip(
+            ...         version.upload_url, io.BytesIO(fh.read())
+            ...     )
         """
         # Get the binary content from the archive
         if hasattr(archive, "getvalue"):
@@ -425,6 +429,7 @@ class ConfigurationVersions(_Service):
             None.
 
         Raises:
+            ValueError: If ``cv_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
@@ -444,6 +449,7 @@ class ConfigurationVersions(_Service):
             None.
 
         Raises:
+            ValueError: If ``cv_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
@@ -463,6 +469,7 @@ class ConfigurationVersions(_Service):
             None.
 
         Raises:
+            ValueError: If ``cv_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:

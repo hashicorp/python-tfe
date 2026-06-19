@@ -206,6 +206,7 @@ class Runs(_Service):
             The :class:`Run`.
 
         Raises:
+            InvalidRunIDError: If ``run_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
