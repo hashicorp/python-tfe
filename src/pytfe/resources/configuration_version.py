@@ -34,7 +34,30 @@ class ConfigurationVersions(_Service):
     def list(
         self, workspace_id: str, options: ConfigurationVersionListOptions | None = None
     ) -> Iterator[ConfigurationVersion]:
-        """List all configuration versions of a workspace."""
+        """List configuration versions for a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            options: Optional pagination and include options, as a
+                :class:`ConfigurationVersionListOptions`.
+
+        Returns:
+            A single-use ``Iterator[ConfigurationVersion]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            ValueError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import ConfigurationVersionListOptions
+            >>> versions = client.configuration_versions.list(
+            ...     "ws-YnyXLq9fy38afEeb",
+            ...     ConfigurationVersionListOptions(page_size=20),
+            ... )
+            >>> for version in versions:
+            ...     print(version.id, version.status)
+        """
         if not valid_string_id(workspace_id):
             raise ValueError(ERR_INVALID_WORKSPACE_ID)
 
@@ -59,7 +82,27 @@ class ConfigurationVersions(_Service):
         workspace_id: str,
         options: ConfigurationVersionCreateOptions | None = None,
     ) -> ConfigurationVersion:
-        """Create a new configuration version."""
+        """Create a configuration version for a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            options: Optional create settings, as a
+                :class:`ConfigurationVersionCreateOptions`.
+
+        Returns:
+            The created :class:`ConfigurationVersion`.
+
+        Raises:
+            ValueError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import ConfigurationVersionCreateOptions
+            >>> version = client.configuration_versions.create(
+            ...     "ws-YnyXLq9fy38afEeb",
+            ...     ConfigurationVersionCreateOptions(auto_queue_runs=True),
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise ValueError(ERR_INVALID_WORKSPACE_ID)
 
@@ -91,7 +134,29 @@ class ConfigurationVersions(_Service):
     def create_for_registry_module(
         self, module_id: dict[str, str]
     ) -> ConfigurationVersion:
-        """Create a configuration version for a registry module (BETA)."""
+        """Create a configuration version for a registry module test run.
+
+        Args:
+            module_id: Registry module identifiers, including ``organization``,
+                ``registry_name``, ``namespace``, ``name``, and ``provider``.
+
+        Returns:
+            The created :class:`ConfigurationVersion`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> version = client.configuration_versions.create_for_registry_module(
+            ...     {
+            ...         "organization": "my-org",
+            ...         "registry_name": "private",
+            ...         "namespace": "networking",
+            ...         "name": "vpc",
+            ...         "provider": "aws",
+            ...     }
+            ... )
+        """
         # This function creates configuration versions for test runs on registry modules
         # Path format: /api/v2/organizations/{org}/registry-modules/{registry_name}/{namespace}/{name}/provider/{provider}/test-runs
         org_name = module_id["organization"]
@@ -107,13 +172,50 @@ class ConfigurationVersions(_Service):
         return self._parse_configuration_version(response_data["data"])
 
     def read(self, cv_id: str) -> ConfigurationVersion:
-        """Read a configuration version by its ID."""
+        """Read a configuration version by its ID.
+
+        Args:
+            cv_id: The configuration version ID (e.g. ``"cv-xxxxxxxx"``).
+
+        Returns:
+            The :class:`ConfigurationVersion`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> version = client.configuration_versions.read("cv-ntv3HbhJqvFzamy7")
+            >>> print(version.status)
+        """
         return self.read_with_options(cv_id, None)
 
     def read_with_options(
         self, cv_id: str, options: ConfigurationVersionReadOptions | None = None
     ) -> ConfigurationVersion:
-        """Read a configuration version by its ID with options."""
+        """Read a configuration version by its ID with include options.
+
+        Args:
+            cv_id: The configuration version ID (e.g. ``"cv-xxxxxxxx"``).
+            options: Optional include options, as a
+                :class:`ConfigurationVersionReadOptions`.
+
+        Returns:
+            The :class:`ConfigurationVersion`.
+
+        Raises:
+            ValueError: If ``cv_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import ConfigVerIncludeOpt
+            >>> from pytfe.models import ConfigurationVersionReadOptions
+            >>> version = client.configuration_versions.read_with_options(
+            ...     "cv-ntv3HbhJqvFzamy7",
+            ...     ConfigurationVersionReadOptions(
+            ...         include=[ConfigVerIncludeOpt.INGRESS_ATTRIBUTES]
+            ...     ),
+            ... )
+        """
         if not valid_string_id(cv_id):
             raise ValueError(ERR_INVALID_CONFIG_VERSION_ID)
 
@@ -130,12 +232,47 @@ class ConfigurationVersions(_Service):
         )
 
     def upload(self, upload_url: str, path: str) -> None:
-        """Upload configuration files from a directory path."""
+        """Upload configuration files to a configuration version upload URL.
+
+        Args:
+            upload_url: The presigned upload URL from the configuration version.
+            path: The local directory path to package and upload.
+
+        Returns:
+            None.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> version = client.configuration_versions.create("ws-YnyXLq9fy38afEeb")
+            >>> client.configuration_versions.upload(version.upload_url, "./terraform")
+        """
         body = pack_contents(path)
         self.upload_tar_gzip(upload_url, body)
 
     def upload_tar_gzip(self, upload_url: str, archive: io.IOBase) -> None:
-        """Upload a tar gzip archive to the configuration version upload URL."""
+        """Upload a tar.gz archive to a configuration version upload URL.
+
+        Args:
+            upload_url: The presigned upload URL from the configuration version.
+            archive: A file-like object containing gzipped tar archive bytes.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``archive`` is not a readable file-like object.
+            NotFound: If the upload URL is not found or has expired.
+            AuthError: If the token has no permission to upload to this URL.
+            ServerError: If the upload server returns a server error.
+            TFEError: If the upload fails or the API request fails.
+
+        Example:
+            >>> import io
+            >>> archive = io.BytesIO(gzipped_tar_bytes)
+            >>> client.configuration_versions.upload_tar_gzip(upload_url, archive)
+        """
         # Get the binary content from the archive
         if hasattr(archive, "getvalue"):
             # BytesIO case
@@ -187,7 +324,21 @@ class ConfigurationVersions(_Service):
             raise TFEError(f"Upload failed: {str(e)}") from e
 
     def archive(self, cv_id: str) -> None:
-        """Archive a configuration version."""
+        """Archive a configuration version.
+
+        Args:
+            cv_id: The configuration version ID (e.g. ``"cv-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``cv_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.configuration_versions.archive("cv-ntv3HbhJqvFzamy7")
+        """
         if not valid_string_id(cv_id):
             raise ValueError(ERR_INVALID_CONFIG_VERSION_ID)
 
@@ -195,7 +346,22 @@ class ConfigurationVersions(_Service):
         self.t.request("POST", path)
 
     def download(self, cv_id: str) -> bytes:
-        """Download a configuration version."""
+        """Download a configuration version archive.
+
+        Args:
+            cv_id: The configuration version ID (e.g. ``"cv-xxxxxxxx"``).
+
+        Returns:
+            The raw bytes (the SDK follows the storage/redirect URL for you).
+
+        Raises:
+            ValueError: If ``cv_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> archive = client.configuration_versions.download("cv-ntv3HbhJqvFzamy7")
+            >>> len(archive)
+        """
         if not valid_string_id(cv_id):
             raise ValueError(ERR_INVALID_CONFIG_VERSION_ID)
 
@@ -204,12 +370,25 @@ class ConfigurationVersions(_Service):
         return response.content
 
     def ingress_attributes(self, cv_id: str) -> IngressAttributes | None:
-        """Get the VCS ingress attributes for a configuration version.
+        """Get VCS ingress attributes for a configuration version.
 
-        Returns ``None`` if the configuration version was not created from a
-        VCS connection (so has no ingress data). The API responds with
-        ``null`` for API-driven CVs and with 404 for some older TFE
-        instances.
+        Args:
+            cv_id: The configuration version ID (e.g. ``"cv-xxxxxxxx"``).
+
+        Returns:
+            The :class:`IngressAttributes`, or ``None`` when the configuration version
+            was not created from VCS, the API returns ``null``, or older TFE returns
+            404 for missing ingress data.
+
+        Raises:
+            ValueError: If ``cv_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> ingress = client.configuration_versions.ingress_attributes(
+            ...     "cv-ntv3HbhJqvFzamy7"
+            ... )
+            >>> print(ingress.branch if ingress else "api-driven")
         """
         if not valid_string_id(cv_id):
             raise ValueError(ERR_INVALID_CONFIG_VERSION_ID)
@@ -237,15 +416,60 @@ class ConfigurationVersions(_Service):
         return IngressAttributes.model_validate(attributes)
 
     def soft_delete_backing_data(self, cv_id: str) -> None:
-        """Soft delete backing data for a configuration version (Enterprise only)."""
+        """Soft delete backing data for a configuration version.
+
+        Args:
+            cv_id: The configuration version ID (e.g. ``"cv-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.configuration_versions.soft_delete_backing_data(
+            ...     "cv-ntv3HbhJqvFzamy7"
+            ... )
+        """
         self._manage_backing_data(cv_id, "soft_delete_backing_data")
 
     def restore_backing_data(self, cv_id: str) -> None:
-        """Restore backing data for a configuration version (Enterprise only)."""
+        """Restore backing data for a configuration version.
+
+        Args:
+            cv_id: The configuration version ID (e.g. ``"cv-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.configuration_versions.restore_backing_data(
+            ...     "cv-ntv3HbhJqvFzamy7"
+            ... )
+        """
         self._manage_backing_data(cv_id, "restore_backing_data")
 
     def permanently_delete_backing_data(self, cv_id: str) -> None:
-        """Permanently delete backing data for a configuration version (Enterprise only)."""
+        """Permanently delete backing data for a configuration version.
+
+        Args:
+            cv_id: The configuration version ID (e.g. ``"cv-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.configuration_versions.permanently_delete_backing_data(
+            ...     "cv-ntv3HbhJqvFzamy7"
+            ... )
+        """
         self._manage_backing_data(cv_id, "permanently_delete_backing_data")
 
     def _manage_backing_data(self, cv_id: str, action: str) -> None:

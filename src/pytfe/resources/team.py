@@ -26,7 +26,25 @@ class Teams(_Service):
     def list(
         self, organization: str, options: TeamListOptions | None = None
     ) -> Iterator[Team]:
-        """List all teams in the given organization."""
+        """List all teams in the given organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Pagination, filter, and include options, as a
+                :class:`TeamListOptions`.
+
+        Returns:
+            A single-use ``Iterator[Team]``. Wrap with ``list(...)`` to materialize
+            the results or iterate more than once.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for team in client.teams.list("my-org"):
+            ...     print(team.id, team.name)
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
         params = (
@@ -57,7 +75,25 @@ class Teams(_Service):
         return attach_jsonapi(Team.model_validate(attrs), data, included)
 
     def create(self, organization: str, options: TeamCreateOptions) -> Team:
-        """Create a new team in the given organization."""
+        """Create a new team in the given organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Team creation settings, as a :class:`TeamCreateOptions`.
+
+        Returns:
+            The :class:`Team`.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import TeamCreateOptions
+            >>> team = client.teams.create(
+            ...     "my-org", TeamCreateOptions(name="platform")
+            ... )
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
         attributes = options.model_dump(by_alias=True, exclude_none=True)
@@ -71,7 +107,25 @@ class Teams(_Service):
         return self._team_from(data)
 
     def update(self, team_id: str, options: TeamUpdateOptions) -> Team:
-        """Update a team by its ID."""
+        """Update a team by its ID.
+
+        Args:
+            team_id: The team ID (e.g. ``"team-xxxxxxxx"``).
+            options: Team update settings, as a :class:`TeamUpdateOptions`.
+
+        Returns:
+            The :class:`Team`.
+
+        Raises:
+            InvalidTeamIDError: If ``team_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import TeamUpdateOptions
+            >>> team = client.teams.update(
+            ...     "team-789", TeamUpdateOptions(name="platform-admins")
+            ... )
+        """
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
         attributes = options.model_dump(by_alias=True, exclude_none=True)
@@ -85,7 +139,23 @@ class Teams(_Service):
         return self._team_from(data)
 
     def read(self, team_id: str, options: TeamReadOptions | None = None) -> Team:
-        """Read a single team by its ID."""
+        """Read a single team by its ID.
+
+        Args:
+            team_id: The team ID (e.g. ``"team-xxxxxxxx"``).
+            options: Include options, as a :class:`TeamReadOptions`.
+
+        Returns:
+            The :class:`Team`.
+
+        Raises:
+            InvalidTeamIDError: If ``team_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> team = client.teams.read("team-789")
+            >>> print(team.name)
+        """
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
         params: dict[str, str] = {}
@@ -100,7 +170,21 @@ class Teams(_Service):
         return self._team_from(payload.get("data", {}), payload.get("included"))
 
     def delete(self, team_id: str) -> None:
-        """Delete a team by its ID."""
+        """Delete a team by its ID.
+
+        Args:
+            team_id: The team ID (e.g. ``"team-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidTeamIDError: If ``team_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.teams.delete("team-789")
+        """
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
         self.t.request(
@@ -114,7 +198,23 @@ class Teams(_Service):
     # ------------------------------------------------------------------
 
     def add_users(self, team_id: str, usernames: builtins.list[str]) -> None:
-        """Add users to a team by username."""
+        """Add users to a team by username.
+
+        Args:
+            team_id: The team ID (e.g. ``"team-xxxxxxxx"``).
+            usernames: Usernames to add to the team (e.g. ``["alice", "bob"]``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidTeamIDError: If ``team_id`` is not a valid resource ID.
+            ValueError: If ``usernames`` is empty or contains blank values.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.teams.add_users("team-789", ["alice", "bob"])
+        """
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
         if not usernames:
@@ -130,7 +230,23 @@ class Teams(_Service):
         return None
 
     def remove_users(self, team_id: str, usernames: builtins.list[str]) -> None:
-        """Remove users from a team by username."""
+        """Remove users from a team by username.
+
+        Args:
+            team_id: The team ID (e.g. ``"team-xxxxxxxx"``).
+            usernames: Usernames to remove from the team (e.g. ``["alice"]``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidTeamIDError: If ``team_id`` is not a valid resource ID.
+            ValueError: If ``usernames`` is empty or contains blank values.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.teams.remove_users("team-789", ["alice"])
+        """
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
         if not usernames:
@@ -148,7 +264,25 @@ class Teams(_Service):
     def add_organization_memberships(
         self, team_id: str, organization_membership_ids: builtins.list[str]
     ) -> None:
-        """Add users to a team by organization membership id."""
+        """Add organization memberships to a team by membership ID.
+
+        Args:
+            team_id: The team ID (e.g. ``"team-xxxxxxxx"``).
+            organization_membership_ids: Organization membership IDs to add
+                (e.g. ``["ou-xxxxxxxx"]``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidTeamIDError: If ``team_id`` is not a valid resource ID.
+            ValueError: If no organization membership IDs are supplied or one is
+                invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.teams.add_organization_memberships("team-789", ["ou-123"])
+        """
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
         if not organization_membership_ids:
@@ -171,7 +305,25 @@ class Teams(_Service):
     def remove_organization_memberships(
         self, team_id: str, organization_membership_ids: builtins.list[str]
     ) -> None:
-        """Remove users from a team by organization membership id."""
+        """Remove organization memberships from a team by membership ID.
+
+        Args:
+            team_id: The team ID (e.g. ``"team-xxxxxxxx"``).
+            organization_membership_ids: Organization membership IDs to remove
+                (e.g. ``["ou-xxxxxxxx"]``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidTeamIDError: If ``team_id`` is not a valid resource ID.
+            ValueError: If no organization membership IDs are supplied or one is
+                invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.teams.remove_organization_memberships("team-789", ["ou-123"])
+        """
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
         if not organization_membership_ids:
@@ -194,11 +346,23 @@ class Teams(_Service):
     def list_users(self, team_id: str) -> Iterator[User]:
         """List the users that belong to a team.
 
-        Implemented via ``GET /teams/{id}?include=users`` — the API has no
-        dedicated paginated endpoint for team users, so all results arrive
-        in a single response. The signature still returns an iterator to
-        stay consistent with the other ``list_*`` methods in the SDK; wrap
-        the result in ``list(...)`` if you need a materialized list.
+        Implemented via ``GET /teams/{id}?include=users`` because the API has no
+        dedicated paginated endpoint for team users.
+
+        Args:
+            team_id: The team ID (e.g. ``"team-xxxxxxxx"``).
+
+        Returns:
+            A single-use ``Iterator[User]``. Wrap with ``list(...)`` to materialize
+            the results or iterate more than once.
+
+        Raises:
+            InvalidTeamIDError: If ``team_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for user in client.teams.list_users("team-789"):
+            ...     print(user.username)
         """
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
@@ -226,10 +390,29 @@ class Teams(_Service):
     ) -> Iterator[OrganizationMembership]:
         """List the organization memberships that belong to a team.
 
-        Uses the dedicated paginated endpoint
-        ``GET /teams/{id}/relationships/organization-memberships`` so
-        callers get server-side pagination, filtering by status /
-        service-account flag, and sort.
+        Uses the dedicated paginated relationship endpoint and supports filtering
+        by status, service-account flag, and sort.
+
+        Args:
+            team_id: The team ID (e.g. ``"team-xxxxxxxx"``).
+            status: Optional membership status filter (e.g. ``"active"``).
+            is_service_account: Optional service-account filter.
+            sort: Optional sort expression (e.g. ``"email"``).
+
+        Returns:
+            A single-use ``Iterator[OrganizationMembership]``. Wrap with
+            ``list(...)`` to materialize the results or iterate more than once.
+
+        Raises:
+            InvalidTeamIDError: If ``team_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> memberships = client.teams.list_organization_memberships(
+            ...     "team-789", status="active"
+            ... )
+            >>> for membership in memberships:
+            ...     print(membership.id)
         """
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()

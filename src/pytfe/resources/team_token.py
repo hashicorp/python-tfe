@@ -25,9 +25,20 @@ class TeamTokens(_Service):
     """Service for managing team authentication tokens."""
 
     def create(self, team_id: str) -> TeamToken:
-        """
-        Create a new team token using the legacy creation behavior, which creates a token without a description
-        or regenerates the existing, descriptionless token.
+        """Create or regenerate a legacy descriptionless team token.
+
+        Args:
+            team_id: The team ID (e.g. ``"team-xxxxxxxx"``).
+
+        Returns:
+            The created :class:`TeamToken`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> token = client.team_tokens.create("team-8U4yZ6bYbDZYQ1GH")
+            >>> print(token.token)
         """
         return self.create_with_options(team_id=team_id)
 
@@ -36,10 +47,25 @@ class TeamTokens(_Service):
         team_id: str,
         options: TeamTokenCreateOptions | None = None,
     ) -> TeamToken:
-        """
-        CreateWithOptions creates a team token, with options. If no description is provided, it uses the legacy
-        creation behavior, which regenerates the descriptionless token if it already exists. Otherwise, it create
-        a new token with the given unique description, allowing for the creation of multiple team tokens.
+        """Create a team token with optional description and expiry.
+
+        Args:
+            team_id: The team ID (e.g. ``"team-xxxxxxxx"``).
+            options: Optional token attributes, as a :class:`TeamTokenCreateOptions`.
+
+        Returns:
+            The created :class:`TeamToken`.
+
+        Raises:
+            InvalidTeamIDError: If ``team_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import TeamTokenCreateOptions
+            >>> token = client.team_tokens.create_with_options(
+            ...     "team-8U4yZ6bYbDZYQ1GH",
+            ...     TeamTokenCreateOptions(description="CI deploy token"),
+            ... )
         """
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
@@ -73,7 +99,22 @@ class TeamTokens(_Service):
         return self._team_token_from(data)
 
     def read(self, team_id: str) -> TeamToken:
-        """Read the legacy (descriptionless) team token by team ID."""
+        """Read the legacy descriptionless team token by team ID.
+
+        Args:
+            team_id: The team ID (e.g. ``"team-xxxxxxxx"``).
+
+        Returns:
+            The :class:`TeamToken`.
+
+        Raises:
+            InvalidTeamIDError: If ``team_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> token = client.team_tokens.read("team-8U4yZ6bYbDZYQ1GH")
+            >>> print(token.id)
+        """
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
         r = self.t.request("GET", path=f"/api/v2/teams/{team_id}/authentication-token")
@@ -81,7 +122,22 @@ class TeamTokens(_Service):
         return self._team_token_from(data)
 
     def read_by_id(self, token_id: str) -> TeamToken:
-        """Read a team token by its token ID."""
+        """Read a team token by its token ID.
+
+        Args:
+            token_id: The authentication token ID (e.g. ``"at-xxxxxxxx"``).
+
+        Returns:
+            The :class:`TeamToken`.
+
+        Raises:
+            InvalidTokenIDError: If ``token_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> token = client.team_tokens.read_by_id("at-abc123")
+            >>> print(token.description)
+        """
         if not valid_string_id(token_id):
             raise InvalidTokenIDError()
         r = self.t.request("GET", path=f"/api/v2/authentication-tokens/{token_id}")
@@ -93,7 +149,28 @@ class TeamTokens(_Service):
         organization: str,
         options: TeamTokenListOptions | None = None,
     ) -> Iterator[TeamToken]:
-        """List all team tokens for the given organization."""
+        """List team tokens in an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Optional filters and page size, as a :class:`TeamTokenListOptions`.
+
+        Returns:
+            A single-use ``Iterator[TeamToken]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import TeamTokenListOptions
+            >>> tokens = client.team_tokens.list(
+            ...     "my-org", TeamTokenListOptions(query="platform")
+            ... )
+            >>> for token in tokens:
+            ...     print(token.id, token.description)
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         path = f"/api/v2/organizations/{organization}/team-tokens"
@@ -109,14 +186,42 @@ class TeamTokens(_Service):
             yield self._team_token_from(item)
 
     def delete(self, team_id: str) -> None:
-        """Delete the legacy team token by team ID."""
+        """Delete the legacy descriptionless team token by team ID.
+
+        Args:
+            team_id: The team ID (e.g. ``"team-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidTeamIDError: If ``team_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.team_tokens.delete("team-8U4yZ6bYbDZYQ1GH")
+        """
         if not valid_string_id(team_id):
             raise InvalidTeamIDError()
         self.t.request("DELETE", path=f"/api/v2/teams/{team_id}/authentication-token")
         return None
 
     def delete_by_id(self, token_id: str) -> None:
-        """Delete a team token by its token ID."""
+        """Delete a team token by its token ID.
+
+        Args:
+            token_id: The authentication token ID (e.g. ``"at-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidTokenIDError: If ``token_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.team_tokens.delete_by_id("at-abc123")
+        """
         if not valid_string_id(token_id):
             raise InvalidTokenIDError()
         self.t.request("DELETE", path=f"/api/v2/authentication-tokens/{token_id}")

@@ -87,6 +87,30 @@ class RunTriggers(_Service):
     def list(
         self, workspace_id: str, options: RunTriggerListOptions | None = None
     ) -> Iterator[RunTrigger]:
+        """List run triggers for a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            options: The required run-trigger filters, as a
+                :class:`RunTriggerListOptions`.
+
+        Returns:
+            A single-use ``Iterator[RunTrigger]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            RequiredRunTriggerListOpsError: If ``options`` is not supplied.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RunTriggerFilterOp, RunTriggerListOptions
+            >>> options = RunTriggerListOptions(
+            ...     run_trigger_type=RunTriggerFilterOp.RUN_TRIGGER_OUTBOUND
+            ... )
+            >>> for trigger in client.run_triggers.list("ws-4j8p6jX1w33MiDC7", options):
+            ...     print(trigger.id, trigger.sourceable_name)
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if not options:
@@ -112,6 +136,30 @@ class RunTriggers(_Service):
             yield rt
 
     def create(self, workspace_id: str, options: RunTriggerCreateOptions) -> RunTrigger:
+        """Create a run trigger for a workspace.
+
+        Args:
+            workspace_id: The destination workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            options: The source workspace relationship, as a
+                :class:`RunTriggerCreateOptions`.
+
+        Returns:
+            The :class:`RunTrigger`.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            RequiredSourceableError: If ``options.sourceable`` is not supplied.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RunTriggerCreateOptions, Workspace
+            >>> trigger = client.run_triggers.create(
+            ...     "ws-4j8p6jX1w33MiDC7",
+            ...     RunTriggerCreateOptions(
+            ...         sourceable=Workspace.model_construct(id="ws-W2iULzoRNB5YHXXA")
+            ...     ),
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if options.sourceable is None:
@@ -136,6 +184,22 @@ class RunTriggers(_Service):
         return rt
 
     def read(self, run_trigger_id: str) -> RunTrigger:
+        """Read a run trigger by ID.
+
+        Args:
+            run_trigger_id: The run trigger ID (e.g. ``"rt-xxxxxxxx"``).
+
+        Returns:
+            The :class:`RunTrigger`.
+
+        Raises:
+            InvalidRunTriggerIDError: If ``run_trigger_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> trigger = client.run_triggers.read("rt-4j8p6jX1w33MiDC7")
+            >>> print(trigger.workspace_name)
+        """
         if not valid_string_id(run_trigger_id):
             raise InvalidRunTriggerIDError()
         path = f"/api/v2/run-triggers/{run_trigger_id}"
@@ -145,6 +209,21 @@ class RunTriggers(_Service):
         return rt
 
     def delete(self, run_trigger_id: str) -> None:
+        """Delete a run trigger by ID.
+
+        Args:
+            run_trigger_id: The run trigger ID (e.g. ``"rt-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidRunTriggerIDError: If ``run_trigger_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.run_triggers.delete("rt-4j8p6jX1w33MiDC7")
+        """
         if not valid_string_id(run_trigger_id):
             raise InvalidRunTriggerIDError()
         path = f"/api/v2/run-triggers/{run_trigger_id}"
@@ -156,6 +235,27 @@ class RunTriggers(_Service):
         filter_param: RunTriggerFilterOp,
         include_param: builtins.list[RunTriggerIncludeOp],
     ) -> None:
+        """Validate run trigger filter and include compatibility.
+
+        Args:
+            filter_param: The run trigger filter, as a :class:`RunTriggerFilterOp`.
+            include_param: Include relationships, as a list of
+                :class:`RunTriggerIncludeOp` values.
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidRunTriggerTypeError: If ``filter_param`` is invalid.
+            UnsupportedRunTriggerTypeError: If includes are used with a non-inbound
+                run trigger filter.
+
+        Example:
+            >>> from pytfe.models import RunTriggerFilterOp
+            >>> client.run_triggers.validate_run_trigger_filter_param(
+            ...     RunTriggerFilterOp.RUN_TRIGGER_OUTBOUND, []
+            ... )
+        """
         if filter_param not in RunTriggerFilterOp:
             raise InvalidRunTriggerTypeError()
         if len(include_param) > 0:
@@ -164,6 +264,18 @@ class RunTriggers(_Service):
         return None
 
     def backfill_deprecated_sourceable(self, rt: RunTrigger) -> None:
+        """Backfill the deprecated sourceable field from sourceable_choice.
+
+        Args:
+            rt: The run trigger to mutate, as a :class:`RunTrigger`.
+
+        Returns:
+            None.
+
+        Example:
+            >>> trigger = client.run_triggers.read("rt-4j8p6jX1w33MiDC7")
+            >>> client.run_triggers.backfill_deprecated_sourceable(trigger)
+        """
         if rt.sourceable or not rt.sourceable_choice:
             return
 

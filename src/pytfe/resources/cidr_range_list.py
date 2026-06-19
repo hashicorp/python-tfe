@@ -58,7 +58,25 @@ class CIDRRangeLists(_Service):
     def list(
         self, organization: str, options: CIDRRangeListListOptions | None = None
     ) -> Iterator[CIDRRangeList]:
-        """List the IP allowlists for an organization."""
+        """List IP allowlists for an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Optional search and pagination options, as a
+                :class:`CIDRRangeListListOptions`.
+
+        Returns:
+            A single-use ``Iterator[CIDRRangeList]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for allowlist in client.cidr_range_lists.list("my-org"):
+            ...     print(allowlist.id, allowlist.name)
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         params = (
@@ -73,7 +91,30 @@ class CIDRRangeLists(_Service):
     def create(
         self, organization: str, options: CIDRRangeListCreateOptions
     ) -> CIDRRangeList:
-        """Create an IP allowlist in an organization."""
+        """Create an IP allowlist in an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: The allowlist settings, as a
+                :class:`CIDRRangeListCreateOptions`.
+
+        Returns:
+            The created :class:`CIDRRangeList`.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import CIDRRangeListCreateOptions, EnforcementScope
+            >>> allowlist = client.cidr_range_lists.create(
+            ...     "my-org",
+            ...     CIDRRangeListCreateOptions(
+            ...         name="Office Network",
+            ...         enforcement_scope=EnforcementScope.SELECTED_AGENT_POOLS,
+            ...     ),
+            ... )
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         payload = {
@@ -93,7 +134,22 @@ class CIDRRangeLists(_Service):
         return _cidr_range_list_from(body["data"], body.get("included"))
 
     def read(self, cidr_range_list_id: str) -> CIDRRangeList:
-        """Read an IP allowlist by its ID."""
+        """Read an IP allowlist by its ID.
+
+        Args:
+            cidr_range_list_id: The IP allowlist ID (e.g. ``"crl-xxxxxxxx"``).
+
+        Returns:
+            The :class:`CIDRRangeList`.
+
+        Raises:
+            InvalidCIDRRangeListIDError: If ``cidr_range_list_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> allowlist = client.cidr_range_lists.read("crl-xKw8dxQPqVQRZmCe")
+            >>> print(allowlist.name)
+        """
         if not valid_string_id(cidr_range_list_id):
             raise InvalidCIDRRangeListIDError()
         r = self.t.request("GET", f"/api/v2/cidr-range-lists/{cidr_range_list_id}")
@@ -103,7 +159,27 @@ class CIDRRangeLists(_Service):
     def update(
         self, cidr_range_list_id: str, options: CIDRRangeListUpdateOptions
     ) -> CIDRRangeList:
-        """Update an IP allowlist by its ID."""
+        """Update an IP allowlist by its ID.
+
+        Args:
+            cidr_range_list_id: The IP allowlist ID (e.g. ``"crl-xxxxxxxx"``).
+            options: The allowlist updates, as a
+                :class:`CIDRRangeListUpdateOptions`.
+
+        Returns:
+            The updated :class:`CIDRRangeList`.
+
+        Raises:
+            InvalidCIDRRangeListIDError: If ``cidr_range_list_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import CIDRRangeListUpdateOptions
+            >>> allowlist = client.cidr_range_lists.update(
+            ...     "crl-xKw8dxQPqVQRZmCe",
+            ...     CIDRRangeListUpdateOptions(name="Office Network"),
+            ... )
+        """
         if not valid_string_id(cidr_range_list_id):
             raise InvalidCIDRRangeListIDError()
         attributes = options.model_dump(by_alias=True, exclude_none=True, mode="json")
@@ -125,13 +201,46 @@ class CIDRRangeLists(_Service):
         return _cidr_range_list_from(body["data"], body.get("included"))
 
     def delete(self, cidr_range_list_id: str) -> None:
-        """Delete an IP allowlist by its ID."""
+        """Delete an IP allowlist by its ID.
+
+        Args:
+            cidr_range_list_id: The IP allowlist ID (e.g. ``"crl-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidCIDRRangeListIDError: If ``cidr_range_list_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.cidr_range_lists.delete("crl-xKw8dxQPqVQRZmCe")
+        """
         if not valid_string_id(cidr_range_list_id):
             raise InvalidCIDRRangeListIDError()
         self.t.request("DELETE", f"/api/v2/cidr-range-lists/{cidr_range_list_id}")
 
     def list_cidr_ranges(self, cidr_range_list_id: str) -> Iterator[CIDRRange]:
-        """List the CIDR ranges attached to an IP allowlist."""
+        """List CIDR ranges attached to an IP allowlist.
+
+        Args:
+            cidr_range_list_id: The IP allowlist ID (e.g. ``"crl-xxxxxxxx"``).
+
+        Returns:
+            A single-use ``Iterator[CIDRRange]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidCIDRRangeListIDError: If ``cidr_range_list_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> ranges = client.cidr_range_lists.list_cidr_ranges(
+            ...     "crl-xKw8dxQPqVQRZmCe"
+            ... )
+            >>> for cidr_range in ranges:
+            ...     print(cidr_range.cidr_block)
+        """
         if not valid_string_id(cidr_range_list_id):
             raise InvalidCIDRRangeListIDError()
         path = (
@@ -143,7 +252,26 @@ class CIDRRangeLists(_Service):
     def add_cidr_range(
         self, cidr_range_list_id: str, options: CIDRRangeCreateOptions
     ) -> CIDRRange:
-        """Add a CIDR range to an IP allowlist."""
+        """Add a CIDR range to an IP allowlist.
+
+        Args:
+            cidr_range_list_id: The IP allowlist ID (e.g. ``"crl-xxxxxxxx"``).
+            options: The CIDR range settings, as a :class:`CIDRRangeCreateOptions`.
+
+        Returns:
+            The created :class:`CIDRRange`.
+
+        Raises:
+            InvalidCIDRRangeListIDError: If ``cidr_range_list_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import CIDRRangeCreateOptions
+            >>> cidr_range = client.cidr_range_lists.add_cidr_range(
+            ...     "crl-xKw8dxQPqVQRZmCe",
+            ...     CIDRRangeCreateOptions(cidr_block="192.168.1.0/24"),
+            ... )
+        """
         if not valid_string_id(cidr_range_list_id):
             raise InvalidCIDRRangeListIDError()
         payload = {
@@ -165,7 +293,25 @@ class CIDRRangeLists(_Service):
     def add_agent_pools(
         self, cidr_range_list_id: str, agent_pool_ids: builtins.list[str]
     ) -> None:
-        """Associate agent pools with an IP allowlist."""
+        """Associate agent pools with an IP allowlist.
+
+        Args:
+            cidr_range_list_id: The IP allowlist ID (e.g. ``"crl-xxxxxxxx"``).
+            agent_pool_ids: The agent pool IDs (e.g. ``["apool-xxxxxxxx"]``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidCIDRRangeListIDError: If ``cidr_range_list_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.cidr_range_lists.add_agent_pools(
+            ...     "crl-xKw8dxQPqVQRZmCe",
+            ...     ["apool-abc123"],
+            ... )
+        """
         if not valid_string_id(cidr_range_list_id):
             raise InvalidCIDRRangeListIDError()
         payload = {"data": self._agent_pool_refs(agent_pool_ids)}
@@ -178,7 +324,25 @@ class CIDRRangeLists(_Service):
     def remove_agent_pools(
         self, cidr_range_list_id: str, agent_pool_ids: builtins.list[str]
     ) -> None:
-        """Remove the association between agent pools and an IP allowlist."""
+        """Remove agent pool associations from an IP allowlist.
+
+        Args:
+            cidr_range_list_id: The IP allowlist ID (e.g. ``"crl-xxxxxxxx"``).
+            agent_pool_ids: The agent pool IDs (e.g. ``["apool-xxxxxxxx"]``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidCIDRRangeListIDError: If ``cidr_range_list_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.cidr_range_lists.remove_agent_pools(
+            ...     "crl-xKw8dxQPqVQRZmCe",
+            ...     ["apool-abc123"],
+            ... )
+        """
         if not valid_string_id(cidr_range_list_id):
             raise InvalidCIDRRangeListIDError()
         payload = {"data": self._agent_pool_refs(agent_pool_ids)}
@@ -208,7 +372,22 @@ class CIDRRanges(_Service):
     """Service for managing individual CIDR ranges within IP allowlists."""
 
     def read(self, cidr_range_id: str) -> CIDRRange:
-        """Read a CIDR range by its ID."""
+        """Read a CIDR range by its ID.
+
+        Args:
+            cidr_range_id: The CIDR range ID (e.g. ``"cidr-xxxxxxxx"``).
+
+        Returns:
+            The :class:`CIDRRange`.
+
+        Raises:
+            InvalidCIDRRangeIDError: If ``cidr_range_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> cidr_range = client.cidr_ranges.read("cidr-6huHpM7asDp7TaiP")
+            >>> print(cidr_range.cidr_block)
+        """
         if not valid_string_id(cidr_range_id):
             raise InvalidCIDRRangeIDError()
         r = self.t.request("GET", f"/api/v2/cidr-ranges/{cidr_range_id}")
@@ -216,7 +395,26 @@ class CIDRRanges(_Service):
         return _cidr_range_from(body["data"], body.get("included"))
 
     def update(self, cidr_range_id: str, options: CIDRRangeUpdateOptions) -> CIDRRange:
-        """Update a CIDR range by its ID."""
+        """Update a CIDR range by its ID.
+
+        Args:
+            cidr_range_id: The CIDR range ID (e.g. ``"cidr-xxxxxxxx"``).
+            options: The CIDR range updates, as a :class:`CIDRRangeUpdateOptions`.
+
+        Returns:
+            The updated :class:`CIDRRange`.
+
+        Raises:
+            InvalidCIDRRangeIDError: If ``cidr_range_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import CIDRRangeUpdateOptions
+            >>> cidr_range = client.cidr_ranges.update(
+            ...     "cidr-6huHpM7asDp7TaiP",
+            ...     CIDRRangeUpdateOptions(cidr_block="192.168.2.0/24"),
+            ... )
+        """
         if not valid_string_id(cidr_range_id):
             raise InvalidCIDRRangeIDError()
         payload = {
@@ -234,7 +432,21 @@ class CIDRRanges(_Service):
         return _cidr_range_from(body["data"], body.get("included"))
 
     def delete(self, cidr_range_id: str) -> None:
-        """Delete a CIDR range by its ID."""
+        """Delete a CIDR range by its ID.
+
+        Args:
+            cidr_range_id: The CIDR range ID (e.g. ``"cidr-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidCIDRRangeIDError: If ``cidr_range_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.cidr_ranges.delete("cidr-6huHpM7asDp7TaiP")
+        """
         if not valid_string_id(cidr_range_id):
             raise InvalidCIDRRangeIDError()
         self.t.request("DELETE", f"/api/v2/cidr-ranges/{cidr_range_id}")

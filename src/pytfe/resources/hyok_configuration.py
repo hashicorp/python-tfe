@@ -67,7 +67,28 @@ class HYOKConfigurations(_Service):
         organization: str,
         options: HYOKConfigurationListOptions | None = None,
     ) -> Iterator[HYOKConfiguration]:
-        """List the HYOK configurations for an organization."""
+        """List the HYOK configurations for an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Optional pagination controls, as a
+                :class:`HYOKConfigurationListOptions`.
+
+        Returns:
+            A single-use ``Iterator[HYOKConfiguration]``. Wrap with
+            ``list(...)`` to materialize the results or iterate more than once.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import HYOKConfigurationListOptions
+            >>> for config in client.hyok_configurations.list(
+            ...     "my-org", HYOKConfigurationListOptions(page_size=20)
+            ... ):
+            ...     print(config.id, config.status)
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         params = (
@@ -82,7 +103,32 @@ class HYOKConfigurations(_Service):
     def create(
         self, organization: str, options: HYOKConfigurationCreateOptions
     ) -> HYOKConfiguration:
-        """Create a HYOK configuration in an organization."""
+        """Create a HYOK configuration in an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: HYOK key, agent pool, and OIDC settings, as a
+                :class:`HYOKConfigurationCreateOptions`.
+
+        Returns:
+            The :class:`HYOKConfiguration`.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import HYOKConfigurationCreateOptions
+            >>> from pytfe.models import OIDCConfigurationType
+            >>> config = client.hyok_configurations.create(
+            ...     "my-org",
+            ...     HYOKConfigurationCreateOptions(
+            ...         name="prod-key", kek_id="key1", agent_pool_id="apool-x",
+            ...         oidc_configuration_id="voidc-x",
+            ...         oidc_configuration_type=OIDCConfigurationType.VAULT,
+            ...     ),
+            ... )
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         attributes: dict[str, Any] = {"name": options.name, "kek-id": options.kek_id}
@@ -121,7 +167,24 @@ class HYOKConfigurations(_Service):
         return _hyok_from(body["data"], body.get("included"))
 
     def read(self, hyok_configuration_id: str) -> HYOKConfiguration:
-        """Read a HYOK configuration by its ID."""
+        """Read a HYOK configuration by its ID.
+
+        Args:
+            hyok_configuration_id: The HYOK configuration ID (e.g.
+                ``"hyokc-xxxxxxxx"``).
+
+        Returns:
+            The :class:`HYOKConfiguration`.
+
+        Raises:
+            InvalidHYOKConfigurationIDError: If ``hyok_configuration_id`` is not a valid
+                resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> config = client.hyok_configurations.read("hyokc-L4CxAJEEn8vEUEkj")
+            >>> print(config.name)
+        """
         if not valid_string_id(hyok_configuration_id):
             raise InvalidHYOKConfigurationIDError()
         r = self.t.request(
@@ -136,17 +199,47 @@ class HYOKConfigurations(_Service):
         The configuration must be **revoked** first — the API rejects deleting a
         configuration whose key may still be in use (call ``revoke`` and wait for
         ``status == revoked``).
+
+        Args:
+            hyok_configuration_id: The HYOK configuration ID (e.g.
+                ``"hyokc-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidHYOKConfigurationIDError: If ``hyok_configuration_id`` is not a valid
+                resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.hyok_configurations.delete("hyokc-L4CxAJEEn8vEUEkj")
         """
         if not valid_string_id(hyok_configuration_id):
             raise InvalidHYOKConfigurationIDError()
         self.t.request("DELETE", f"/api/v2/hyok-configurations/{hyok_configuration_id}")
 
     def revoke(self, hyok_configuration_id: str) -> None:
-        """Revoke a HYOK configuration (stop using its key).
+        """Revoke a HYOK configuration.
 
         Triggers an async revocation (HTTP 202); poll ``read(...).status`` until
         it reaches ``revoked``. A configuration must be revoked before it can be
         deleted.
+
+        Args:
+            hyok_configuration_id: The HYOK configuration ID (e.g.
+                ``"hyokc-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidHYOKConfigurationIDError: If ``hyok_configuration_id`` is not a valid
+                resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.hyok_configurations.revoke("hyokc-L4CxAJEEn8vEUEkj")
         """
         if not valid_string_id(hyok_configuration_id):
             raise InvalidHYOKConfigurationIDError()
@@ -160,7 +253,22 @@ class HYOKConfigurations(_Service):
         """Test a persisted HYOK configuration's key access.
 
         Triggers an async test (HTTP 202/204); poll ``read(...).status`` to
-        observe the result (``testing`` → ``available`` / ``test_failed``).
+        observe the result (``testing`` -> ``available`` / ``test_failed``).
+
+        Args:
+            hyok_configuration_id: The HYOK configuration ID (e.g.
+                ``"hyokc-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidHYOKConfigurationIDError: If ``hyok_configuration_id`` is not a valid
+                resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.hyok_configurations.test("hyokc-L4CxAJEEn8vEUEkj")
         """
         if not valid_string_id(hyok_configuration_id):
             raise InvalidHYOKConfigurationIDError()

@@ -29,7 +29,22 @@ class StateVersionOutputs(_Service):
     """
 
     def read(self, output_id: str) -> StateVersionOutput:
-        """Read a specific state version output by ID."""
+        """Read a specific state version output by ID.
+
+        Args:
+            output_id: The state version output ID (e.g. ``"wsout-xxxxxxxx"``).
+
+        Returns:
+            The :class:`StateVersionOutput`.
+
+        Raises:
+            ValueError: If ``output_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> output = client.state_version_outputs.read("wsout-1")
+            >>> print(output.name, output.value)
+        """
         if not valid_string_id(output_id):
             raise ValueError("invalid output id")
 
@@ -50,9 +65,29 @@ class StateVersionOutputs(_Service):
         workspace_id: str,
         options: StateVersionOutputsListOptions | None = None,
     ) -> Iterator[StateVersionOutput]:
-        """
-        Read outputs for the workspace's current state version.
-        Note: sensitive outputs are returned with null values by the API.
+        """Read outputs for the workspace's current state version.
+
+        Sensitive outputs are returned by the API with ``null`` values.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            options: Pagination options, as a :class:`StateVersionOutputsListOptions`.
+
+        Returns:
+            A single-use ``Iterator[StateVersionOutput]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            ValueError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import StateVersionOutputsListOptions
+            >>> outputs = client.state_version_outputs.read_current(
+            ...     "ws-123", StateVersionOutputsListOptions(page_size=5)
+            ... )
+            >>> for output in outputs:
+            ...     print(output.name)
         """
         if not valid_string_id(workspace_id):
             raise ValueError("invalid workspace id")

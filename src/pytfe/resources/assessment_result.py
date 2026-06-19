@@ -41,7 +41,23 @@ class AssessmentResults(_Service):
     """Service for reading workspace health assessment results."""
 
     def read(self, assessment_result_id: str) -> AssessmentResult:
-        """Read an assessment result by its ID."""
+        """Read an assessment result by ID.
+
+        Args:
+            assessment_result_id: The assessment result ID
+                (e.g. ``"asmtres-xxxxxxxx"``).
+
+        Returns:
+            The :class:`AssessmentResult`.
+
+        Raises:
+            InvalidAssessmentResultIDError: If ``assessment_result_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> result = client.assessment_results.read("asmtres-UG5rE9L1373hMYMA")
+            >>> print(result.succeeded)
+        """
         if not valid_string_id(assessment_result_id):
             raise InvalidAssessmentResultIDError()
         r = self.t.request("GET", f"/api/v2/assessment-results/{assessment_result_id}")
@@ -51,13 +67,28 @@ class AssessmentResults(_Service):
         return _assessment_result_from(data, included)
 
     def json_output(self, assessment_result_id: str) -> dict[str, Any] | None:
-        """Return the JSON plan output for an assessment result.
+        """Read the JSON plan output for an assessment result.
 
-        Only available once the assessment has succeeded and produced JSON
-        output. Returns ``None`` when output is not yet ready (HTTP 204); the
-        transport raises (e.g. ``NotFound``) when the assessment produced no
-        output, such as when it did not succeed. Requires a user/team token with
-        workspace admin access.
+        Only available once the assessment has succeeded and produced JSON output.
+        Requires a user or team token with workspace admin access.
+
+        Args:
+            assessment_result_id: The assessment result ID
+                (e.g. ``"asmtres-xxxxxxxx"``).
+
+        Returns:
+            The ``dict[str, Any]``, or ``None`` when output is not yet ready
+            (HTTP 204) or the blob response is not JSON.
+
+        Raises:
+            InvalidAssessmentResultIDError: If ``assessment_result_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> output = client.assessment_results.json_output(
+            ...     "asmtres-UG5rE9L1373hMYMA"
+            ... )
+            >>> print(output is None)
         """
         if not valid_string_id(assessment_result_id):
             raise InvalidAssessmentResultIDError()
@@ -67,11 +98,27 @@ class AssessmentResults(_Service):
         return self._as_json(resp)
 
     def json_schema(self, assessment_result_id: str) -> dict[str, Any] | None:
-        """Return the JSON provider schema for an assessment result.
+        """Read the JSON provider schema for an assessment result.
 
-        Returns ``None`` when the schema is not yet ready (HTTP 204); the
-        transport raises when the assessment produced no schema (e.g. it did not
-        succeed). Requires a user/team token with workspace admin access.
+        Requires a user or team token with workspace admin access.
+
+        Args:
+            assessment_result_id: The assessment result ID
+                (e.g. ``"asmtres-xxxxxxxx"``).
+
+        Returns:
+            The ``dict[str, Any]``, or ``None`` when the schema is not yet ready
+            (HTTP 204) or the blob response is not JSON.
+
+        Raises:
+            InvalidAssessmentResultIDError: If ``assessment_result_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> schema = client.assessment_results.json_schema(
+            ...     "asmtres-UG5rE9L1373hMYMA"
+            ... )
+            >>> print(schema is None)
         """
         if not valid_string_id(assessment_result_id):
             raise InvalidAssessmentResultIDError()
@@ -81,10 +128,27 @@ class AssessmentResults(_Service):
         return self._as_json(resp)
 
     def log_output(self, assessment_result_id: str) -> str:
-        """Return the Terraform JSON log output for an assessment result as text.
+        """Read the Terraform JSON log output for an assessment result.
 
-        Returns an empty string when there is no log output yet (HTTP 204).
-        Requires a user/team token with workspace admin access.
+        Requires a user or team token with workspace admin access.
+
+        Args:
+            assessment_result_id: The assessment result ID
+                (e.g. ``"asmtres-xxxxxxxx"``).
+
+        Returns:
+            The ``str``; returns an empty string when there is no log output yet
+            (HTTP 204).
+
+        Raises:
+            InvalidAssessmentResultIDError: If ``assessment_result_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> log = client.assessment_results.log_output(
+            ...     "asmtres-UG5rE9L1373hMYMA"
+            ... )
+            >>> print(log[:80])
         """
         if not valid_string_id(assessment_result_id):
             raise InvalidAssessmentResultIDError()

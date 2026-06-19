@@ -153,9 +153,47 @@ class AWSOIDCConfigurations(_OIDCConfigurationsBase[AWSOIDCConfiguration]):
     def create(
         self, organization: str, options: AWSOIDCConfigurationCreateOptions
     ) -> AWSOIDCConfiguration:
+        """Create an AWS OIDC configuration.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: The AWS configuration attributes, as a
+                :class:`AWSOIDCConfigurationCreateOptions`.
+
+        Returns:
+            The created :class:`AWSOIDCConfiguration`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AWSOIDCConfigurationCreateOptions
+            >>> config = client.aws_oidc_configurations.create(
+            ...     "my-org",
+            ...     AWSOIDCConfigurationCreateOptions(
+            ...         role_arn="arn:aws:iam::111122223333:role/tfc"
+            ...     ),
+            ... )
+        """
         return self._create(organization, options)
 
     def read(self, oidc_configuration_id: str) -> AWSOIDCConfiguration:
+        """Read an AWS OIDC configuration by its ID.
+
+        Args:
+            oidc_configuration_id: The OIDC configuration ID
+                (e.g. ``"oidc-xxxxxxxx"``).
+
+        Returns:
+            The :class:`AWSOIDCConfiguration`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> config = client.aws_oidc_configurations.read("oidc-aws-1")
+            >>> print(config.id)
+        """
         return self._read(oidc_configuration_id)
 
     def update(
@@ -163,9 +201,47 @@ class AWSOIDCConfigurations(_OIDCConfigurationsBase[AWSOIDCConfiguration]):
         oidc_configuration_id: str,
         options: AWSOIDCConfigurationUpdateOptions,
     ) -> AWSOIDCConfiguration:
+        """Update an AWS OIDC configuration.
+
+        Args:
+            oidc_configuration_id: The OIDC configuration ID
+                (e.g. ``"oidc-xxxxxxxx"``).
+            options: The changed AWS attributes, as a
+                :class:`AWSOIDCConfigurationUpdateOptions`.
+
+        Returns:
+            The updated :class:`AWSOIDCConfiguration`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AWSOIDCConfigurationUpdateOptions
+            >>> config = client.aws_oidc_configurations.update(
+            ...     "oidc-aws-1",
+            ...     AWSOIDCConfigurationUpdateOptions(
+            ...         role_arn="arn:aws:iam::111122223333:role/tfc-updated"
+            ...     ),
+            ... )
+        """
         return self._update(oidc_configuration_id, options)
 
     def delete(self, oidc_configuration_id: str) -> None:
+        """Delete an AWS OIDC configuration by its ID.
+
+        Args:
+            oidc_configuration_id: The OIDC configuration ID
+                (e.g. ``"oidc-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.aws_oidc_configurations.delete("oidc-aws-1")
+        """
         self._delete(oidc_configuration_id)
 
 
@@ -183,9 +259,49 @@ class AzureOIDCConfigurations(_OIDCConfigurationsBase[AzureOIDCConfiguration]):
     def create(
         self, organization: str, options: AzureOIDCConfigurationCreateOptions
     ) -> AzureOIDCConfiguration:
+        """Create an Azure OIDC configuration.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: The Azure configuration attributes, as a
+                :class:`AzureOIDCConfigurationCreateOptions`.
+
+        Returns:
+            The created :class:`AzureOIDCConfiguration`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AzureOIDCConfigurationCreateOptions
+            >>> config = client.azure_oidc_configurations.create(
+            ...     "my-org",
+            ...     AzureOIDCConfigurationCreateOptions(
+            ...         client_id="client-uuid",
+            ...         subscription_id="sub-uuid",
+            ...         tenant_id="tenant-uuid",
+            ...     ),
+            ... )
+        """
         return self._create(organization, options)
 
     def read(self, oidc_configuration_id: str) -> AzureOIDCConfiguration:
+        """Read an Azure OIDC configuration by its ID.
+
+        Args:
+            oidc_configuration_id: The OIDC configuration ID
+                (e.g. ``"oidc-xxxxxxxx"``).
+
+        Returns:
+            The :class:`AzureOIDCConfiguration`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> config = client.azure_oidc_configurations.read("oidc-azure-1")
+            >>> print(config.id)
+        """
         return self._read(oidc_configuration_id)
 
     def update(
@@ -193,9 +309,45 @@ class AzureOIDCConfigurations(_OIDCConfigurationsBase[AzureOIDCConfiguration]):
         oidc_configuration_id: str,
         options: AzureOIDCConfigurationUpdateOptions,
     ) -> AzureOIDCConfiguration:
+        """Update an Azure OIDC configuration.
+
+        Args:
+            oidc_configuration_id: The OIDC configuration ID
+                (e.g. ``"oidc-xxxxxxxx"``).
+            options: The changed Azure attributes, as a
+                :class:`AzureOIDCConfigurationUpdateOptions`.
+
+        Returns:
+            The updated :class:`AzureOIDCConfiguration`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AzureOIDCConfigurationUpdateOptions
+            >>> config = client.azure_oidc_configurations.update(
+            ...     "oidc-azure-1",
+            ...     AzureOIDCConfigurationUpdateOptions(client_id="new-client-uuid"),
+            ... )
+        """
         return self._update(oidc_configuration_id, options)
 
     def delete(self, oidc_configuration_id: str) -> None:
+        """Delete an Azure OIDC configuration by its ID.
+
+        Args:
+            oidc_configuration_id: The OIDC configuration ID
+                (e.g. ``"oidc-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.azure_oidc_configurations.delete("oidc-azure-1")
+        """
         self._delete(oidc_configuration_id)
 
 
@@ -213,9 +365,49 @@ class GCPOIDCConfigurations(_OIDCConfigurationsBase[GCPOIDCConfiguration]):
     def create(
         self, organization: str, options: GCPOIDCConfigurationCreateOptions
     ) -> GCPOIDCConfiguration:
+        """Create a GCP OIDC configuration.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: The GCP configuration attributes, as a
+                :class:`GCPOIDCConfigurationCreateOptions`.
+
+        Returns:
+            The created :class:`GCPOIDCConfiguration`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import GCPOIDCConfigurationCreateOptions
+            >>> config = client.gcp_oidc_configurations.create(
+            ...     "my-org",
+            ...     GCPOIDCConfigurationCreateOptions(
+            ...         service_account_email="tfc@project.iam.gserviceaccount.com",
+            ...         project_number="123456789012",
+            ...         workload_provider_name="projects/123/locations/global",
+            ...     ),
+            ... )
+        """
         return self._create(organization, options)
 
     def read(self, oidc_configuration_id: str) -> GCPOIDCConfiguration:
+        """Read a GCP OIDC configuration by its ID.
+
+        Args:
+            oidc_configuration_id: The OIDC configuration ID
+                (e.g. ``"oidc-xxxxxxxx"``).
+
+        Returns:
+            The :class:`GCPOIDCConfiguration`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> config = client.gcp_oidc_configurations.read("oidc-gcp-1")
+            >>> print(config.id)
+        """
         return self._read(oidc_configuration_id)
 
     def update(
@@ -223,9 +415,47 @@ class GCPOIDCConfigurations(_OIDCConfigurationsBase[GCPOIDCConfiguration]):
         oidc_configuration_id: str,
         options: GCPOIDCConfigurationUpdateOptions,
     ) -> GCPOIDCConfiguration:
+        """Update a GCP OIDC configuration.
+
+        Args:
+            oidc_configuration_id: The OIDC configuration ID
+                (e.g. ``"oidc-xxxxxxxx"``).
+            options: The changed GCP attributes, as a
+                :class:`GCPOIDCConfigurationUpdateOptions`.
+
+        Returns:
+            The updated :class:`GCPOIDCConfiguration`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import GCPOIDCConfigurationUpdateOptions
+            >>> config = client.gcp_oidc_configurations.update(
+            ...     "oidc-gcp-1",
+            ...     GCPOIDCConfigurationUpdateOptions(
+            ...         service_account_email="new@project.iam.gserviceaccount.com"
+            ...     ),
+            ... )
+        """
         return self._update(oidc_configuration_id, options)
 
     def delete(self, oidc_configuration_id: str) -> None:
+        """Delete a GCP OIDC configuration by its ID.
+
+        Args:
+            oidc_configuration_id: The OIDC configuration ID
+                (e.g. ``"oidc-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.gcp_oidc_configurations.delete("oidc-gcp-1")
+        """
         self._delete(oidc_configuration_id)
 
 
@@ -243,9 +473,47 @@ class VaultOIDCConfigurations(_OIDCConfigurationsBase[VaultOIDCConfiguration]):
     def create(
         self, organization: str, options: VaultOIDCConfigurationCreateOptions
     ) -> VaultOIDCConfiguration:
+        """Create a Vault OIDC configuration.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: The Vault configuration attributes, as a
+                :class:`VaultOIDCConfigurationCreateOptions`.
+
+        Returns:
+            The created :class:`VaultOIDCConfiguration`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import VaultOIDCConfigurationCreateOptions
+            >>> config = client.vault_oidc_configurations.create(
+            ...     "my-org",
+            ...     VaultOIDCConfigurationCreateOptions(
+            ...         address="https://vault.example.com", role_name="tfc"
+            ...     ),
+            ... )
+        """
         return self._create(organization, options)
 
     def read(self, oidc_configuration_id: str) -> VaultOIDCConfiguration:
+        """Read a Vault OIDC configuration by its ID.
+
+        Args:
+            oidc_configuration_id: The OIDC configuration ID
+                (e.g. ``"oidc-xxxxxxxx"``).
+
+        Returns:
+            The :class:`VaultOIDCConfiguration`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> config = client.vault_oidc_configurations.read("oidc-vault-1")
+            >>> print(config.id)
+        """
         return self._read(oidc_configuration_id)
 
     def update(
@@ -253,7 +521,43 @@ class VaultOIDCConfigurations(_OIDCConfigurationsBase[VaultOIDCConfiguration]):
         oidc_configuration_id: str,
         options: VaultOIDCConfigurationUpdateOptions,
     ) -> VaultOIDCConfiguration:
+        """Update a Vault OIDC configuration.
+
+        Args:
+            oidc_configuration_id: The OIDC configuration ID
+                (e.g. ``"oidc-xxxxxxxx"``).
+            options: The changed Vault attributes, as a
+                :class:`VaultOIDCConfigurationUpdateOptions`.
+
+        Returns:
+            The updated :class:`VaultOIDCConfiguration`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import VaultOIDCConfigurationUpdateOptions
+            >>> config = client.vault_oidc_configurations.update(
+            ...     "oidc-vault-1",
+            ...     VaultOIDCConfigurationUpdateOptions(role_name="tfc-updated"),
+            ... )
+        """
         return self._update(oidc_configuration_id, options)
 
     def delete(self, oidc_configuration_id: str) -> None:
+        """Delete a Vault OIDC configuration by its ID.
+
+        Args:
+            oidc_configuration_id: The OIDC configuration ID
+                (e.g. ``"oidc-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.vault_oidc_configurations.delete("oidc-vault-1")
+        """
         self._delete(oidc_configuration_id)

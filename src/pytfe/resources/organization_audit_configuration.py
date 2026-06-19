@@ -19,7 +19,23 @@ class OrganizationAuditConfigurations(_Service):
     """Organization audit configuration service."""
 
     def read(self, organization: str) -> OrganizationAuditConfiguration:
-        """Read an organization's audit configuration by organization name."""
+        """Read an organization's audit configuration.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            The :class:`OrganizationAuditConfiguration`.
+
+        Raises:
+            ValueError: If ``organization`` is invalid, or if the response format
+                is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> config = client.organization_audit_configurations.read("my-org")
+            >>> print(config.audit_trails.enabled if config.audit_trails else None)
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
 
@@ -33,7 +49,23 @@ class OrganizationAuditConfigurations(_Service):
         return self._parse_audit_configuration(data)
 
     def test(self, organization: str) -> OrganizationAuditConfigurationTest:
-        """Send a test audit event for an organization."""
+        """Send a test audit event for an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            The :class:`OrganizationAuditConfigurationTest`.
+
+        Raises:
+            ValueError: If ``organization`` is invalid, or if the response format
+                is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> result = client.organization_audit_configurations.test("my-org")
+            >>> print(result.request_id)
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
 
@@ -50,7 +82,31 @@ class OrganizationAuditConfigurations(_Service):
         organization: str,
         options: OrganizationAuditConfigurationOptions,
     ) -> OrganizationAuditConfiguration:
-        """Update an organization's audit configuration."""
+        """Update an organization's audit configuration.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: The audit configuration settings, as a
+                :class:`OrganizationAuditConfigurationOptions`.
+
+        Returns:
+            The updated :class:`OrganizationAuditConfiguration`.
+
+        Raises:
+            ValueError: If ``organization`` is invalid, or if the response format
+                is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import OrganizationAuditConfigAuditTrails
+            >>> from pytfe.models import OrganizationAuditConfigurationOptions
+            >>> config = client.organization_audit_configurations.update(
+            ...     "my-org",
+            ...     OrganizationAuditConfigurationOptions(
+            ...         audit_trails=OrganizationAuditConfigAuditTrails(enabled=True)
+            ...     ),
+            ... )
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
 

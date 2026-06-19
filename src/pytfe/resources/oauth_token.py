@@ -24,7 +24,28 @@ class OAuthTokens(_Service):
     def list(
         self, organization: str, options: OAuthTokenListOptions | None = None
     ) -> Iterator[OAuthToken]:
-        """List all the OAuth tokens for a given organization."""
+        """List OAuth tokens for an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Optional pagination options, as a
+                :class:`OAuthTokenListOptions`.
+
+        Returns:
+            A single-use ``Iterator[OAuthToken]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import OAuthTokenListOptions
+            >>> for token in client.oauth_tokens.list(
+            ...     "my-org", OAuthTokenListOptions(page_size=50)
+            ... ):
+            ...     print(token.id, token.service_provider_user)
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
 
@@ -39,7 +60,23 @@ class OAuthTokens(_Service):
             yield self._parse_oauth_token(item)
 
     def read(self, oauth_token_id: str) -> OAuthToken:
-        """Read an OAuth token by its ID."""
+        """Read an OAuth token by its ID.
+
+        Args:
+            oauth_token_id: The OAuth token ID (e.g. ``"ot-xxxxxxxx"``).
+
+        Returns:
+            The :class:`OAuthToken`.
+
+        Raises:
+            ValueError: If ``oauth_token_id`` is not a valid resource ID, or if the
+                response is missing the expected ``data`` member.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> token = client.oauth_tokens.read("ot-qV12JnZxR47n3XgN")
+            >>> print(token.has_ssh_key)
+        """
         if not valid_string_id(oauth_token_id):
             raise ValueError(ERR_INVALID_OAUTH_TOKEN_ID)
 
@@ -55,7 +92,28 @@ class OAuthTokens(_Service):
     def update(
         self, oauth_token_id: str, options: OAuthTokenUpdateOptions
     ) -> OAuthToken:
-        """Update an existing OAuth token."""
+        """Update an OAuth token's SSH private key.
+
+        Args:
+            oauth_token_id: The OAuth token ID (e.g. ``"ot-xxxxxxxx"``).
+            options: The OAuth token update options, as a
+                :class:`OAuthTokenUpdateOptions`.
+
+        Returns:
+            The :class:`OAuthToken`.
+
+        Raises:
+            ValueError: If ``oauth_token_id`` is not a valid resource ID, or if the
+                response is missing the expected ``data`` member.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import OAuthTokenUpdateOptions
+            >>> token = client.oauth_tokens.update(
+            ...     "ot-qV12JnZxR47n3XgN",
+            ...     OAuthTokenUpdateOptions(private_ssh_key="-----BEGIN RSA PRIVATE KEY-----"),
+            ... )
+        """
         if not valid_string_id(oauth_token_id):
             raise ValueError(ERR_INVALID_OAUTH_TOKEN_ID)
 
@@ -79,7 +137,21 @@ class OAuthTokens(_Service):
         raise ValueError("Invalid response format")
 
     def delete(self, oauth_token_id: str) -> None:
-        """Delete an OAuth token by its ID."""
+        """Delete an OAuth token by its ID.
+
+        Args:
+            oauth_token_id: The OAuth token ID (e.g. ``"ot-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``oauth_token_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.oauth_tokens.delete("ot-qV12JnZxR47n3XgN")
+        """
         if not valid_string_id(oauth_token_id):
             raise ValueError(ERR_INVALID_OAUTH_TOKEN_ID)
 

@@ -136,6 +136,25 @@ class RunTasks(_Service):
     def list(
         self, organization_id: str, options: RunTaskListOptions | None = None
     ) -> Iterator[RunTask]:
+        """List run tasks in an organization.
+
+        Args:
+            organization_id: The organization name (e.g. ``"my-org"``).
+            options: Optional pagination and include settings, as a
+                :class:`RunTaskListOptions`.
+
+        Returns:
+            A single-use ``Iterator[RunTask]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidOrgError: If ``organization_id`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for task in client.run_tasks.list("my-org"):
+            ...     print(task.id, task.name)
+        """
         if not valid_string_id(organization_id):
             raise InvalidOrgError()
 
@@ -155,6 +174,34 @@ class RunTasks(_Service):
             yield _run_task_from(item, organization_id)
 
     def create(self, organization_id: str, options: RunTaskCreateOptions) -> RunTask:
+        """Create a run task in an organization.
+
+        Args:
+            organization_id: The organization name (e.g. ``"my-org"``).
+            options: The run task creation settings, as a
+                :class:`RunTaskCreateOptions`.
+
+        Returns:
+            The created :class:`RunTask`.
+
+        Raises:
+            InvalidOrgError: If ``organization_id`` is not a valid organization name.
+            RequiredNameError: If ``options.name`` is empty.
+            InvalidRunTaskURLError: If ``options.url`` is empty.
+            InvalidRunTaskCategoryError: If ``options.category`` is not ``"task"``.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RunTaskCreateOptions
+            >>> task = client.run_tasks.create(
+            ...     "my-org",
+            ...     RunTaskCreateOptions(
+            ...         name="security-scan",
+            ...         url="https://example.com/run-task",
+            ...         category="task",
+            ...     ),
+            ... )
+        """
         if not valid_string_id(organization_id):
             raise InvalidOrgError()
         if not valid_string(options.name):
@@ -203,11 +250,45 @@ class RunTasks(_Service):
         return _run_task_from(r.json()["data"], organization_id)
 
     def read(self, run_task_id: str) -> RunTask:
+        """Read a run task by ID.
+
+        Args:
+            run_task_id: The run task ID (e.g. ``"task-xxxxxxxx"``).
+
+        Returns:
+            The :class:`RunTask`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> task = client.run_tasks.read("task-123")
+            >>> print(task.name)
+        """
         return self.read_with_options(run_task_id)
 
     def read_with_options(
         self, run_task_id: str, options: RunTaskReadOptions | None = None
     ) -> RunTask:
+        """Read a run task by ID with include options.
+
+        Args:
+            run_task_id: The run task ID (e.g. ``"task-xxxxxxxx"``).
+            options: Optional include settings, as a :class:`RunTaskReadOptions`.
+
+        Returns:
+            The :class:`RunTask`.
+
+        Raises:
+            InvalidRunTaskIDError: If ``run_task_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RunTaskReadOptions
+            >>> task = client.run_tasks.read_with_options(
+            ...     "task-123", RunTaskReadOptions()
+            ... )
+        """
         if not valid_string_id(run_task_id):
             raise InvalidRunTaskIDError()
         params: dict[str, str] = {}
@@ -220,6 +301,29 @@ class RunTasks(_Service):
         return _run_task_from(payload["data"], included=payload.get("included"))
 
     def update(self, run_task_id: str, options: RunTaskUpdateOptions) -> RunTask:
+        """Update a run task by ID.
+
+        Args:
+            run_task_id: The run task ID (e.g. ``"task-xxxxxxxx"``).
+            options: The run task fields to update, as a
+                :class:`RunTaskUpdateOptions`.
+
+        Returns:
+            The :class:`RunTask`.
+
+        Raises:
+            InvalidRunTaskIDError: If ``run_task_id`` is not a valid resource ID.
+            RequiredNameError: If ``options.name`` is empty when provided.
+            InvalidRunTaskURLError: If ``options.url`` is empty when provided.
+            InvalidRunTaskCategoryError: If ``options.category`` is not ``"task"``.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RunTaskUpdateOptions
+            >>> task = client.run_tasks.update(
+            ...     "task-123", RunTaskUpdateOptions(name="security-scan")
+            ... )
+        """
         if not valid_string_id(run_task_id):
             raise InvalidRunTaskIDError("Invalid run task ID")
         if options.name is not None and not valid_string(options.name):
@@ -269,6 +373,21 @@ class RunTasks(_Service):
         return _run_task_from(r.json()["data"])
 
     def delete(self, run_task_id: str) -> None:
+        """Delete a run task by ID.
+
+        Args:
+            run_task_id: The run task ID (e.g. ``"task-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidRunTaskIDError: If ``run_task_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.run_tasks.delete("task-123")
+        """
         if not valid_string_id(run_task_id):
             raise InvalidRunTaskIDError()
         self.t.request("DELETE", f"/api/v2/tasks/{run_task_id}")

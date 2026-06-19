@@ -48,14 +48,24 @@ class WorkspaceResourcesService(_Service):
     def list(
         self, workspace_id: str, options: WorkspaceResourceListOptions | None = None
     ) -> Iterator[WorkspaceResource]:
-        """List workspace resources for a given workspace.
+        """List resources in a workspace state.
 
         Args:
-            workspace_id: The ID of the workspace to list resources for
-            options: Optional query parameters for filtering and pagination
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            options: Optional pagination settings, as a
+                :class:`WorkspaceResourceListOptions`.
 
-        Yields:
-            WorkspaceResource objects
+        Returns:
+            A single-use ``Iterator[WorkspaceResource]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            ValueError: If ``workspace_id`` is empty.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for resource in client.workspace_resources.list("ws-abc123"):
+            ...     print(resource.address)
         """
         if not workspace_id or not workspace_id.strip():
             raise ValueError("workspace_id is required")

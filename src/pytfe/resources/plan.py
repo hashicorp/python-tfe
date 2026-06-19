@@ -25,7 +25,22 @@ def _plan_from_jsonapi(d: dict[str, Any]) -> Plan:
 
 class Plans(_Service):
     def read(self, plan_id: str) -> Plan:
-        """Read a specific plan by its ID."""
+        """Read a plan by its ID.
+
+        Args:
+            plan_id: The plan ID (e.g. ``"plan-xxxxxxxx"``).
+
+        Returns:
+            The :class:`Plan`.
+
+        Raises:
+            InvalidPlanIDError: If ``plan_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> plan = client.plans.read("plan-123")
+            >>> print(plan.status)
+        """
         if not valid_string_id(plan_id):
             raise InvalidPlanIDError()
 
@@ -36,20 +51,44 @@ class Plans(_Service):
         return _plan_from_jsonapi(r.json()["data"])
 
     def read_for_run(self, run_id: str) -> Plan:
-        """Read the plan belonging to a run, via the run id."""
+        """Read the plan for a run.
+
+        Args:
+            run_id: The run ID (e.g. ``"run-xxxxxxxx"``).
+
+        Returns:
+            The :class:`Plan`.
+
+        Raises:
+            InvalidRunIDError: If ``run_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> plan = client.plans.read_for_run("run-CZcmD7eagjhyX0vN")
+            >>> print(plan.id)
+        """
         if not valid_string_id(run_id):
             raise InvalidRunIDError()
         r = self.t.request("GET", f"/api/v2/runs/{run_id}/plan")
         return _plan_from_jsonapi(r.json()["data"])
 
     def logs(self, plan_id: str) -> str:
-        """Get logs for a specific plan.
+        """Get logs for a plan.
 
         Args:
-            plan_id: Plan ID to get logs for
+            plan_id: The plan ID (e.g. ``"plan-xxxxxxxx"``).
 
         Returns:
-            Log content as string (placeholder implementation)
+            The ``str`` log content.
+
+        Raises:
+            InvalidPlanIDError: If ``plan_id`` is not a valid resource ID.
+            ValueError: If the plan does not have a log URL.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> logs = client.plans.logs("plan-123")
+            >>> print(logs)
         """
         # Validate plan ID
         if not valid_string_id(plan_id):
@@ -99,19 +138,50 @@ class Plans(_Service):
         return {"data": data}
 
     def read_json_output(self, plan_id: str) -> dict[str, Any] | None:
-        """Get the JSON execution plan for a specific plan by its ID.
+        """Read the JSON execution plan for a plan.
 
-        Returns the JSON representation of the Terraform execution plan,
-        or ``None`` if the plan has not yet completed (HTTP 204).
+        Args:
+            plan_id: The plan ID (e.g. ``"plan-xxxxxxxx"``).
+
+        Returns:
+            The ``dict[str, Any]`` (the SDK follows the storage/redirect URL
+            for you), or ``None`` when the API returns HTTP 204 for an
+            incomplete plan, or when the parsed body is empty; inline non-JSON
+            responses also return ``None``.
+
+        Raises:
+            InvalidPlanIDError: If ``plan_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> output = client.plans.read_json_output("plan-123")
+            >>> print(output["format_version"] if output else "not ready")
         """
         if not valid_string_id(plan_id):
             raise InvalidPlanIDError()
         return self._follow_json_output_redirect(f"/api/v2/plans/{plan_id}/json-output")
 
     def read_json_output_for_run(self, run_id: str) -> dict[str, Any] | None:
-        """Get the JSON execution plan for a run, via the run id.
+        """Read the JSON execution plan for a run.
 
-        Returns ``None`` if the plan has not yet completed (HTTP 204).
+        Args:
+            run_id: The run ID (e.g. ``"run-xxxxxxxx"``).
+
+        Returns:
+            The ``dict[str, Any]`` (the SDK follows the storage/redirect URL
+            for you), or ``None`` when the API returns HTTP 204 for an
+            incomplete plan, or when the parsed body is empty; inline non-JSON
+            responses also return ``None``.
+
+        Raises:
+            InvalidRunIDError: If ``run_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> output = client.plans.read_json_output_for_run(
+            ...     "run-CZcmD7eagjhyX0vN"
+            ... )
+            >>> print(output["format_version"] if output else "not ready")
         """
         if not valid_string_id(run_id):
             raise InvalidRunIDError()
@@ -120,9 +190,26 @@ class Plans(_Service):
         )
 
     def read_json_schema_for_run(self, run_id: str) -> dict[str, Any] | None:
-        """Get the provider JSON schema corresponding to a plan, via the run id.
+        """Read the provider JSON schema for a run's plan.
 
-        Returns ``None`` if the plan has not yet completed (HTTP 204).
+        Args:
+            run_id: The run ID (e.g. ``"run-xxxxxxxx"``).
+
+        Returns:
+            The ``dict[str, Any]`` (the SDK follows the storage/redirect URL
+            for you), or ``None`` when the API returns HTTP 204 for an
+            incomplete plan, or when the parsed body is empty; inline non-JSON
+            responses also return ``None``.
+
+        Raises:
+            InvalidRunIDError: If ``run_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> schema = client.plans.read_json_schema_for_run(
+            ...     "run-CZcmD7eagjhyX0vN"
+            ... )
+            >>> print(schema.keys() if schema else "not ready")
         """
         if not valid_string_id(run_id):
             raise InvalidRunIDError()

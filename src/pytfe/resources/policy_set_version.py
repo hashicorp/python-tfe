@@ -21,7 +21,22 @@ class PolicySetVersions(_Service):
     """
 
     def create(self, policy_set_id: str) -> PolicySetVersion:
-        """Create is used to create a new Policy Set Version."""
+        """Create a new policy set version.
+
+        Args:
+            policy_set_id: The policy set ID (e.g. ``"polset-xxxxxxxx"``).
+
+        Returns:
+            The :class:`PolicySetVersion`.
+
+        Raises:
+            InvalidPolicySetIDError: If ``policy_set_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> version = client.policy_set_versions.create("polset-123")
+            >>> print(version.id)
+        """
         if not valid_string_id(policy_set_id):
             raise InvalidPolicySetIDError()
         r = self.t.request(
@@ -43,7 +58,24 @@ class PolicySetVersions(_Service):
         )
 
     def read(self, policy_set_version_id: str) -> PolicySetVersion:
-        """Read is used to read a Policy Set Version by its ID."""
+        """Read a policy set version by its ID.
+
+        Args:
+            policy_set_version_id: The policy set version ID
+                (e.g. ``"polsetver-xxxxxxxx"``).
+
+        Returns:
+            The :class:`PolicySetVersion`.
+
+        Raises:
+            InvalidPolicySetIDError: If ``policy_set_version_id`` is not a valid
+                resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> version = client.policy_set_versions.read("polsetver-1")
+            >>> print(version.status)
+        """
         if not valid_string_id(policy_set_version_id):
             raise InvalidPolicySetIDError()
         r = self.t.request(
@@ -65,10 +97,28 @@ class PolicySetVersions(_Service):
         )
 
     def upload(self, policy_set_version: PolicySetVersion, file_path: str) -> None:
-        """
-        Upload uploads policy files. It takes a Policy Set Version and a path
-        to the set of sentinel files, which will be packaged by hashicorp/go-slug
-        before being uploaded.
+        """Upload policy files for a policy set version.
+
+        The SDK packages ``file_path`` with ``hashicorp/go-slug`` compatible
+        packing before uploading the archive to the version's upload link.
+
+        Args:
+            policy_set_version: The policy set version returned by
+                :meth:`create`, as a :class:`PolicySetVersion`.
+            file_path: The local directory path containing policy files
+                (e.g. ``"./policies"``).
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``policy_set_version`` has no upload link or the link is
+                empty.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> version = client.policy_set_versions.create("polset-123")
+            >>> client.policy_set_versions.upload(version, "./policies")
         """
         # Extract upload URL from policy set version links
         if not policy_set_version.links or "upload" not in policy_set_version.links:

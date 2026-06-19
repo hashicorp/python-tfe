@@ -50,15 +50,23 @@ class AgentPools(_Service):
         """List agent pools in an organization.
 
         Args:
-            organization: Organization name
-            options: Optional parameters for filtering and pagination
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Optional filters and includes, as a :class:`AgentPoolListOptions`.
 
         Returns:
-            Iterator of AgentPool objects
+            A single-use ``Iterator[AgentPool]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
 
         Raises:
-            ValueError: If organization name is invalid
-            TFEError: If API request fails
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AgentPoolListOptions
+            >>> for pool in client.agent_pools.list(
+            ...     "my-org", AgentPoolListOptions(query="builders")
+            ... ):
+            ...     print(pool.id, pool.name)
         """
         if not valid_string_id(organization):
             raise InvalidOrgError()
@@ -85,18 +93,26 @@ class AgentPools(_Service):
             yield self._parse_agent_pool_from(item)
 
     def create(self, organization: str, options: AgentPoolCreateOptions) -> AgentPool:
-        """Create a new agent pool in an organization.
+        """Create an agent pool in an organization.
 
         Args:
-            organization: Organization name
-            options: Agent pool creation options
+            organization: The organization name (e.g. ``"my-org"``).
+            options: The agent pool configuration, as a
+                :class:`AgentPoolCreateOptions`.
 
         Returns:
-            Created AgentPool object
+            The :class:`AgentPool`.
 
         Raises:
-            ValueError: If parameters are invalid
-            TFEError: If API request fails
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AgentPoolCreateOptions
+            >>> pool = client.agent_pools.create(
+            ...     "my-org",
+            ...     AgentPoolCreateOptions(name="builders", organization_scoped=True),
+            ... )
         """
         if not valid_string_id(organization):
             raise InvalidOrgError()
@@ -145,18 +161,22 @@ class AgentPools(_Service):
     def read(
         self, agent_pool_id: str, options: AgentPoolReadOptions | None = None
     ) -> AgentPool:
-        """Get a specific agent pool by ID.
+        """Read an agent pool by ID.
 
         Args:
-            agent_pool_id: Agent pool ID
-            options: Optional parameters for including related resources
+            agent_pool_id: The agent pool ID (e.g. ``"apool-xxxxxxxx"``).
+            options: Optional includes, as a :class:`AgentPoolReadOptions`.
 
         Returns:
-            AgentPool object
+            The :class:`AgentPool`.
 
         Raises:
-            ValueError: If agent_pool_id is invalid
-            TFEError: If API request fails
+            InvalidAgentPoolIDError: If ``agent_pool_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> pool = client.agent_pools.read("apool-4j8p6jX1w33MiDC7")
+            >>> print(pool.name)
         """
         if not valid_string_id(agent_pool_id):
             raise InvalidAgentPoolIDError()
@@ -178,18 +198,25 @@ class AgentPools(_Service):
         return self._parse_agent_pool_from(data, payload.get("included"))
 
     def update(self, agent_pool_id: str, options: AgentPoolUpdateOptions) -> AgentPool:
-        """Update an agent pool's properties.
+        """Update an agent pool by ID.
 
         Args:
-            agent_pool_id: Agent pool ID
-            options: Agent pool update options
+            agent_pool_id: The agent pool ID (e.g. ``"apool-xxxxxxxx"``).
+            options: The agent pool updates, as a :class:`AgentPoolUpdateOptions`.
 
         Returns:
-            Updated AgentPool object
+            The :class:`AgentPool`.
 
         Raises:
-            ValueError: If parameters are invalid
-            TFEError: If API request fails
+            InvalidAgentPoolIDError: If ``agent_pool_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AgentPoolUpdateOptions
+            >>> pool = client.agent_pools.update(
+            ...     "apool-4j8p6jX1w33MiDC7",
+            ...     AgentPoolUpdateOptions(name="builders-east"),
+            ... )
         """
 
         if not valid_string_id(agent_pool_id):
@@ -244,14 +271,20 @@ class AgentPools(_Service):
         return self._parse_agent_pool_from(data, payload.get("included"))
 
     def delete(self, agent_pool_id: str) -> None:
-        """Delete an agent pool.
+        """Delete an agent pool by ID.
 
         Args:
-            agent_pool_id: Agent pool ID
+            agent_pool_id: The agent pool ID (e.g. ``"apool-xxxxxxxx"``).
+
+        Returns:
+            None.
 
         Raises:
-            ValueError: If agent_pool_id is invalid
-            TFEError: If API request fails
+            InvalidAgentPoolIDError: If ``agent_pool_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.agent_pools.delete("apool-4j8p6jX1w33MiDC7")
         """
         if not valid_string_id(agent_pool_id):
             raise InvalidAgentPoolIDError()
@@ -262,22 +295,33 @@ class AgentPools(_Service):
     def assign_to_workspaces(
         self, agent_pool_id: str, options: AgentPoolAssignToWorkspacesOptions
     ) -> AgentPool:
-        """Assign an agent pool to workspaces by updating the allowed-workspaces
-        relationship via PATCH /agent-pools/:id.
+        """Assign an agent pool to a complete workspace allowlist.
 
-        The provided workspace IDs become the new complete list of allowed
-        workspaces for this pool (full replacement, not append).
+        The provided workspace IDs replace the allowed-workspaces relationship; they
+        are not appended to the existing list.
 
         Args:
-            agent_pool_id: Agent pool ID
-            options: Assignment options containing workspace IDs
+            agent_pool_id: The agent pool ID (e.g. ``"apool-xxxxxxxx"``).
+            options: The workspace IDs to allow, as a
+                :class:`AgentPoolAssignToWorkspacesOptions`.
 
         Returns:
-            Updated AgentPool object
+            The :class:`AgentPool`.
 
         Raises:
-            ValueError: If parameters are invalid
-            TFEError: If API request fails
+            InvalidAgentPoolIDError: If ``agent_pool_id`` is not a valid resource ID.
+            RequiredWorkspaceError: If no workspace IDs are supplied.
+            InvalidWorkspaceIDError: If any workspace ID is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AgentPoolAssignToWorkspacesOptions
+            >>> pool = client.agent_pools.assign_to_workspaces(
+            ...     "apool-4j8p6jX1w33MiDC7",
+            ...     AgentPoolAssignToWorkspacesOptions(
+            ...         workspace_ids=["ws-4j8p6jX1w33MiDC7"]
+            ...     ),
+            ... )
         """
         if not valid_string_id(agent_pool_id):
             raise InvalidAgentPoolIDError()
@@ -314,23 +358,34 @@ class AgentPools(_Service):
     def remove_from_workspaces(
         self, agent_pool_id: str, options: AgentPoolRemoveFromWorkspacesOptions
     ) -> AgentPool:
-        """Exclude workspaces from an agent pool by updating the excluded-workspaces
-        relationship via PATCH /agent-pools/:id.
+        """Replace an agent pool's excluded workspace list.
 
-        Use this for organization-scoped pools where most workspaces are allowed
-        but you want to block specific ones.  The provided list becomes the new
-        complete excluded-workspaces list (full replacement, not append).
+        Use this for organization-scoped pools where most workspaces are allowed but
+        specific workspaces should be blocked. The provided workspace IDs replace the
+        excluded-workspaces relationship; they are not appended to the existing list.
 
         Args:
-            agent_pool_id: Agent pool ID
-            options: Removal options containing workspace IDs to exclude
+            agent_pool_id: The agent pool ID (e.g. ``"apool-xxxxxxxx"``).
+            options: The workspace IDs to exclude, as a
+                :class:`AgentPoolRemoveFromWorkspacesOptions`.
 
         Returns:
-            Updated AgentPool object
+            The :class:`AgentPool`.
 
         Raises:
-            ValueError: If parameters are invalid
-            TFEError: If API request fails
+            InvalidAgentPoolIDError: If ``agent_pool_id`` is not a valid resource ID.
+            RequiredWorkspaceError: If no workspace IDs are supplied.
+            InvalidWorkspaceIDError: If any workspace ID is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AgentPoolRemoveFromWorkspacesOptions
+            >>> pool = client.agent_pools.remove_from_workspaces(
+            ...     "apool-4j8p6jX1w33MiDC7",
+            ...     AgentPoolRemoveFromWorkspacesOptions(
+            ...         workspace_ids=["ws-4j8p6jX1w33MiDC7"]
+            ...     ),
+            ... )
         """
         if not valid_string_id(agent_pool_id):
             raise InvalidAgentPoolIDError()
@@ -367,15 +422,31 @@ class AgentPools(_Service):
     def assign_to_projects(
         self, agent_pool_id: str, options: AgentPoolAssignToProjectsOptions
     ) -> AgentPool:
-        """Assign an agent pool to projects by updating the allowed-projects
-        relationship via PATCH /agent-pools/:id.
+        """Assign an agent pool to a complete project allowlist.
 
-        The provided project IDs become the new complete list of allowed
-        projects for this pool (full replacement, not append).
+        The provided project IDs replace the allowed-projects relationship; they are
+        not appended to the existing list.
 
         Args:
-            agent_pool_id: Agent pool ID
-            options: Assignment options containing project IDs
+            agent_pool_id: The agent pool ID (e.g. ``"apool-xxxxxxxx"``).
+            options: The project IDs to allow, as a
+                :class:`AgentPoolAssignToProjectsOptions`.
+
+        Returns:
+            The :class:`AgentPool`.
+
+        Raises:
+            InvalidAgentPoolIDError: If ``agent_pool_id`` is not a valid resource ID.
+            RequiredProjectError: If no project IDs are supplied.
+            InvalidProjectIDError: If any project ID is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AgentPoolAssignToProjectsOptions
+            >>> pool = client.agent_pools.assign_to_projects(
+            ...     "apool-4j8p6jX1w33MiDC7",
+            ...     AgentPoolAssignToProjectsOptions(project_ids=["prj-4j8p6jX1w33MiDC7"]),
+            ... )
         """
         if not valid_string_id(agent_pool_id):
             raise InvalidAgentPoolIDError()

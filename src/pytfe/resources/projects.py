@@ -128,7 +128,25 @@ class Projects(_Service):
     def list(
         self, organization: str, options: ProjectListOptions | None = None
     ) -> Iterator[Project]:
-        """List projects in an organization"""
+        """List projects in an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Optional filters and pagination, as a :class:`ProjectListOptions`.
+
+        Returns:
+            A single-use ``Iterator[Project]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import ProjectListOptions
+            >>> options = ProjectListOptions(page_size=20)
+            >>> for project in client.projects.list("my-org", options):
+            ...     print(project.id, project.name)
+        """
         # Validate inputs
         validate_project_list_options(organization)
 
@@ -155,7 +173,24 @@ class Projects(_Service):
             yield self._project_from(item)
 
     def create(self, organization: str, options: ProjectCreateOptions) -> Project:
-        """Create a new project in an organization"""
+        """Create a project in an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: The project settings, as a :class:`ProjectCreateOptions`.
+
+        Returns:
+            The created :class:`Project`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import ProjectCreateOptions
+            >>> project = client.projects.create(
+            ...     "my-org", ProjectCreateOptions(name="Platform")
+            ... )
+        """
         # Validate inputs
         validate_project_create_options(organization, options)
 
@@ -199,7 +234,23 @@ class Projects(_Service):
     def read(
         self, project_id: str, include: builtins.list[str] | None = None
     ) -> Project:
-        """Get a specific project by ID"""
+        """Read a project by its ID.
+
+        Args:
+            project_id: The project ID (e.g. ``"prj-xxxxxxxx"``).
+            include: Related resources to include, such as ``["default-agent-pool"]``.
+
+        Returns:
+            The :class:`Project`.
+
+        Raises:
+            ValueError: If ``project_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> project = client.projects.read("prj-123")
+            >>> print(project.name)
+        """
         # Validate inputs
         if not valid_string_id(project_id):
             raise ValueError("Project ID is required and must be valid")
@@ -219,7 +270,24 @@ class Projects(_Service):
         return self._project_from(payload["data"], payload.get("included"))
 
     def update(self, project_id: str, options: ProjectUpdateOptions) -> Project:
-        """Update a project's name and/or description"""
+        """Update a project.
+
+        Args:
+            project_id: The project ID (e.g. ``"prj-xxxxxxxx"``).
+            options: The project fields to change, as a :class:`ProjectUpdateOptions`.
+
+        Returns:
+            The updated :class:`Project`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import ProjectUpdateOptions
+            >>> project = client.projects.update(
+            ...     "prj-123", ProjectUpdateOptions(description="Shared services")
+            ... )
+        """
         # Validate inputs
         validate_project_update_options(project_id, options)
 
@@ -261,7 +329,21 @@ class Projects(_Service):
         return self._project_from(data)
 
     def delete(self, project_id: str) -> None:
-        """Delete a project"""
+        """Delete a project.
+
+        Args:
+            project_id: The project ID (e.g. ``"prj-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``project_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.projects.delete("prj-123")
+        """
         # Validate inputs
         if not valid_string_id(project_id):
             raise ValueError("Project ID is required and must be valid")
@@ -274,8 +356,23 @@ class Projects(_Service):
     ) -> None:
         """Move one or more workspaces into a project.
 
-        The caller must have permission to move each workspace out of its
-        current project and into the target project.
+        The caller must have permission to move each workspace out of its current
+        project and into the target project.
+
+        Args:
+            project_id: The destination project ID (e.g. ``"prj-xxxxxxxx"``).
+            workspace_ids: Workspace IDs to move (e.g. ``["ws-xxxxxxxx"]``).
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``project_id`` or any workspace ID is invalid, or no
+                workspace IDs are provided.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.projects.move_workspaces("prj-123", ["ws-abc123"])
         """
         if not valid_string_id(project_id):
             raise ValueError("Project ID is required and must be valid")
@@ -293,7 +390,22 @@ class Projects(_Service):
         return None
 
     def list_tag_bindings(self, project_id: str) -> builtins.list[TagBinding]:
-        """List tag bindings for a project"""
+        """List tag bindings for a project.
+
+        Args:
+            project_id: The project ID (e.g. ``"prj-xxxxxxxx"``).
+
+        Returns:
+            A ``list[TagBinding]``.
+
+        Raises:
+            ValueError: If ``project_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> tags = client.projects.list_tag_bindings("prj-123")
+            >>> print(tags[0].key)
+        """
         # Validate inputs
         if not valid_string_id(project_id):
             raise ValueError("Project ID is required and must be valid")
@@ -317,7 +429,23 @@ class Projects(_Service):
     def list_effective_tag_bindings(
         self, project_id: str
     ) -> Iterator[EffectiveTagBinding]:
-        """List effective tag bindings for a project."""
+        """List effective tag bindings for a project.
+
+        Args:
+            project_id: The project ID (e.g. ``"prj-xxxxxxxx"``).
+
+        Returns:
+            A single-use ``Iterator[EffectiveTagBinding]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            ValueError: If ``project_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for tag in client.projects.list_effective_tag_bindings("prj-123"):
+            ...     print(tag.key, tag.value)
+        """
         if not valid_string_id(project_id):
             raise ValueError("Project ID is required and must be valid")
 
@@ -336,18 +464,30 @@ class Projects(_Service):
     def add_tag_bindings(
         self, project_id: str, options: ProjectAddTagBindingsOptions
     ) -> builtins.list[TagBinding]:
-        """Add or update tag bindings on a project
+        """Add or update tag bindings on a project.
 
         This endpoint adds key-value tag bindings to an existing project or updates
-        existing tag binding values. It cannot be used to remove tag bindings.
-        This operation is additive.
+        existing tag binding values. It cannot remove tag bindings.
 
-        Constraints:
-        - A project can have up to 10 tags
-        - Keys can have up to 128 characters
-        - Values can have up to 256 characters
-        - Keys/values support alphanumeric chars and symbols: _, ., =, +, -, @, :
-        - Cannot use hc: and hcp: as key prefixes
+        Args:
+            project_id: The project ID (e.g. ``"prj-xxxxxxxx"``).
+            options: Tag bindings to add, as a :class:`ProjectAddTagBindingsOptions`.
+
+        Returns:
+            A ``list[TagBinding]``.
+
+        Raises:
+            ValueError: If ``project_id`` is invalid or no tag bindings are provided.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import ProjectAddTagBindingsOptions, TagBinding
+            >>> options = ProjectAddTagBindingsOptions(
+            ...     tag_bindings=[TagBinding(key="env", value="prod")]
+            ... )
+            >>> tags = client.projects.add_tag_bindings(
+            ...     "prj-123", options
+            ... )
         """
         # Validate inputs
         if not valid_string_id(project_id):
@@ -387,7 +527,21 @@ class Projects(_Service):
         return tag_bindings
 
     def delete_tag_bindings(self, project_id: str) -> None:
-        """Delete all tag bindings from a project"""
+        """Delete all tag bindings from a project.
+
+        Args:
+            project_id: The project ID (e.g. ``"prj-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``project_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.projects.delete_tag_bindings("prj-123")
+        """
         # Validate inputs
         if not valid_string_id(project_id):
             raise ValueError("Project ID is required and must be valid")

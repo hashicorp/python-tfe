@@ -55,15 +55,23 @@ class Agents(_Service):
         """List agents in an agent pool.
 
         Args:
-            agent_pool_id: Agent pool ID
-            options: Optional parameters for filtering and pagination
+            agent_pool_id: The agent pool ID (e.g. ``"apool-xxxxxxxx"``).
+            options: Optional filters and pagination, as a :class:`AgentListOptions`.
 
         Returns:
-            Iterator of Agent objects
+            A single-use ``Iterator[Agent]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
 
         Raises:
-            ValueError: If agent_pool_id is invalid
-            TFEError: If API request fails
+            ValueError: If ``agent_pool_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AgentListOptions, AgentStatus
+            >>> for agent in client.agents.list(
+            ...     "apool-123456789abcdef0", AgentListOptions(status=AgentStatus.IDLE)
+            ... ):
+            ...     print(agent.id, agent.status)
         """
         if not valid_string_id(agent_pool_id):
             raise ValueError("Agent pool ID is required and must be valid")
@@ -113,18 +121,22 @@ class Agents(_Service):
             )
 
     def read(self, agent_id: str, options: AgentReadOptions | None = None) -> Agent:
-        """Get a specific agent by ID.
+        """Read an agent by its ID.
 
         Args:
-            agent_id: Agent ID
-            options: Optional parameters for including related resources
+            agent_id: The agent ID (e.g. ``"agent-xxxxxxxx"``).
+            options: Related resources to include, as a :class:`AgentReadOptions`.
 
         Returns:
-            Agent object
+            The :class:`Agent`.
 
         Raises:
-            ValueError: If agent_id is invalid
-            TFEError: If API request fails
+            ValueError: If ``agent_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> agent = client.agents.read("agent-123456789abcdef0")
+            >>> print(agent.name)
         """
         if not valid_string_id(agent_id):
             raise ValueError("Agent ID is required and must be valid")
@@ -181,11 +193,17 @@ class Agents(_Service):
         """Delete an agent.
 
         Args:
-            agent_id: Agent ID
+            agent_id: The agent ID (e.g. ``"agent-xxxxxxxx"``).
+
+        Returns:
+            None.
 
         Raises:
-            ValueError: If agent_id is invalid
-            TFEError: If API request fails
+            ValueError: If ``agent_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.agents.delete("agent-123456789abcdef0")
         """
         if not valid_string_id(agent_id):
             raise ValueError("Agent ID is required and must be valid")
@@ -203,15 +221,20 @@ class AgentTokens(_Service):
         """List agent tokens for an agent pool.
 
         Args:
-            agent_pool_id: Agent pool ID
-            options: Optional parameters for pagination
+            agent_pool_id: The agent pool ID (e.g. ``"apool-xxxxxxxx"``).
+            options: Optional pagination, as a :class:`AgentTokenListOptions`.
 
         Returns:
-            Iterator of AgentToken objects
+            A single-use ``Iterator[AgentToken]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
 
         Raises:
-            ValueError: If agent_pool_id is invalid
-            TFEError: If API request fails
+            ValueError: If ``agent_pool_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for token in client.agent_tokens.list("apool-123456789abcdef0"):
+            ...     print(token.id, token.description)
         """
         if not valid_string_id(agent_pool_id):
             raise ValueError("Agent pool ID is required and must be valid")
@@ -251,18 +274,25 @@ class AgentTokens(_Service):
     def create(
         self, agent_pool_id: str, options: AgentTokenCreateOptions
     ) -> AgentToken:
-        """Create a new agent token for an agent pool.
+        """Create an agent token for an agent pool.
 
         Args:
-            agent_pool_id: Agent pool ID
-            options: Token creation options
+            agent_pool_id: The agent pool ID (e.g. ``"apool-xxxxxxxx"``).
+            options: The token description, as a :class:`AgentTokenCreateOptions`.
 
         Returns:
-            Created AgentToken object (includes token value)
+            The created :class:`AgentToken` with its one-time token value.
 
         Raises:
-            ValueError: If parameters are invalid
-            TFEError: If API request fails
+            ValueError: If ``agent_pool_id`` is invalid or the description is empty.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AgentTokenCreateOptions
+            >>> options = AgentTokenCreateOptions(description="ci-runner")
+            >>> token = client.agent_tokens.create(
+            ...     "apool-123456789abcdef0", options
+            ... )
         """
         if not valid_string_id(agent_pool_id):
             raise ValueError("Agent pool ID is required and must be valid")
@@ -299,17 +329,21 @@ class AgentTokens(_Service):
         )
 
     def read(self, agent_token_id: str) -> AgentToken:
-        """Get a specific agent token by ID.
+        """Read an agent token by its ID.
 
         Args:
-            agent_token_id: Agent token ID
+            agent_token_id: The agent token ID (e.g. ``"at-xxxxxxxx"``).
 
         Returns:
-            AgentToken object (without token value for security)
+            The :class:`AgentToken` without the secret token value.
 
         Raises:
-            ValueError: If agent_token_id is invalid
-            TFEError: If API request fails
+            ValueError: If ``agent_token_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> token = client.agent_tokens.read("at-123456789abcdef0")
+            >>> print(token.description)
         """
         if not valid_string_id(agent_token_id):
             raise ValueError("Agent token ID is required and must be valid")
@@ -342,11 +376,17 @@ class AgentTokens(_Service):
         """Delete an agent token.
 
         Args:
-            agent_token_id: Agent token ID
+            agent_token_id: The agent token ID (e.g. ``"at-xxxxxxxx"``).
+
+        Returns:
+            None.
 
         Raises:
-            ValueError: If agent_token_id is invalid
-            TFEError: If API request fails
+            ValueError: If ``agent_token_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.agent_tokens.delete("at-123456789abcdef0")
         """
         if not valid_string_id(agent_token_id):
             raise ValueError("Agent token ID is required and must be valid")

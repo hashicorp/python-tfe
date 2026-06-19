@@ -29,7 +29,25 @@ class PolicyChecks(_Service):
     def list(
         self, run_id: str, options: PolicyCheckListOptions | None = None
     ) -> Iterator[PolicyCheck]:
-        """List all policy checks of the given run."""
+        """List policy checks for the given run.
+
+        Args:
+            run_id: The run ID (e.g. ``"run-veDoQbv6xh6TbnJD"``).
+            options: Optional includes and pagination, as a
+                :class:`PolicyCheckListOptions`.
+
+        Returns:
+            A single-use ``Iterator[PolicyCheck]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidRunIDError: If ``run_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for check in client.policy_checks.list("run-veDoQbv6xh6TbnJD"):
+            ...     print(check.id, check.status)
+        """
         if not valid_string_id(run_id):
             raise InvalidRunIDError()
         params = (
@@ -43,7 +61,24 @@ class PolicyChecks(_Service):
             yield attach_jsonapi(PolicyCheck.model_validate(attrs), item)
 
     def read(self, policy_check_id: str) -> PolicyCheck:
-        """Read a policy check by its ID."""
+        """Read a policy check by its ID.
+
+        Args:
+            policy_check_id: The policy check ID
+                (e.g. ``"polchk-9VYRc9bpfJEsnwum"``).
+
+        Returns:
+            The :class:`PolicyCheck`.
+
+        Raises:
+            InvalidPolicyCheckIDError: If ``policy_check_id`` is not a valid
+                resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> check = client.policy_checks.read("polchk-9VYRc9bpfJEsnwum")
+            >>> print(check.status)
+        """
         if not valid_string_id(policy_check_id):
             raise InvalidPolicyCheckIDError()
         r = self.t.request(
@@ -58,7 +93,24 @@ class PolicyChecks(_Service):
         return attach_jsonapi(PolicyCheck.model_validate(attrs), d)
 
     def override(self, policy_check_id: str) -> PolicyCheck:
-        """Override a soft-mandatory or warning policy."""
+        """Override a soft-mandatory or warning policy check.
+
+        Args:
+            policy_check_id: The policy check ID
+                (e.g. ``"polchk-EasPB4Srx5NAiWAU"``).
+
+        Returns:
+            The :class:`PolicyCheck`.
+
+        Raises:
+            InvalidPolicyCheckIDError: If ``policy_check_id`` is not a valid
+                resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> check = client.policy_checks.override("polchk-EasPB4Srx5NAiWAU")
+            >>> print(check.status)
+        """
         if not valid_string_id(policy_check_id):
             raise InvalidPolicyCheckIDError()
         r = self.t.request(
@@ -73,7 +125,24 @@ class PolicyChecks(_Service):
         return attach_jsonapi(PolicyCheck.model_validate(attrs), d)
 
     def logs(self, policy_check_id: str) -> str:
-        """Logs retrieves the logs of a policy check."""
+        """Read the logs for a completed policy check.
+
+        Args:
+            policy_check_id: The policy check ID
+                (e.g. ``"polchk-9VYRc9bpfJEsnwum"``).
+
+        Returns:
+            The policy check logs as a string.
+
+        Raises:
+            InvalidPolicyCheckIDError: If ``policy_check_id`` is not a valid
+                resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> logs = client.policy_checks.logs("polchk-9VYRc9bpfJEsnwum")
+            >>> print(logs)
+        """
         if not valid_string_id(policy_check_id):
             raise InvalidPolicyCheckIDError()
 

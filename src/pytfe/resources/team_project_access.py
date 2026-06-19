@@ -28,7 +28,27 @@ from ._base import _Service
 
 class TeamProjectAccesses(_Service):
     def add(self, options: TeamProjectAccessAddOptions) -> TeamProjectAccess:
-        """Add a team access for a project."""
+        """Add team access for a project.
+
+        Args:
+            options: The team, project, and permissions, as a
+                :class:`TeamProjectAccessAddOptions`.
+
+        Returns:
+            The created :class:`TeamProjectAccess`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import Project, Team, TeamProjectAccessAddOptions
+            >>> options = TeamProjectAccessAddOptions(
+            ...     access="read", team=Team(id="team-1"), project=Project(id="prj-1")
+            ... )
+            >>> access = client.team_project_accesses.add(
+            ...     options
+            ... )
+        """
         attributes = options.model_dump(
             by_alias=True, exclude_none=True, exclude={"team", "project"}
         )
@@ -116,7 +136,31 @@ class TeamProjectAccesses(_Service):
     def update(
         self, team_project_access_id: str, options: TeamProjectAccessUpdateOptions
     ) -> TeamProjectAccess:
-        """Update a team access for a project."""
+        """Update team access for a project.
+
+        Args:
+            team_project_access_id: The team project access ID (e.g.
+                ``"tprj-xxxxxxxx"``).
+            options: The permission fields to change, as a
+                :class:`TeamProjectAccessUpdateOptions`.
+
+        Returns:
+            The updated :class:`TeamProjectAccess`.
+
+        Raises:
+            InvalidTeamProjectAccessIDError: If ``team_project_access_id`` is not a
+                valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import TeamProjectAccessUpdateOptions
+            >>> options = TeamProjectAccessUpdateOptions(
+            ...     access="write"
+            ... )
+            >>> access = client.team_project_accesses.update(
+            ...     "tprj-123", options
+            ... )
+        """
         if not valid_string_id(team_project_access_id):
             raise InvalidTeamProjectAccessIDError()
         attributes = options.model_dump(by_alias=True, exclude_none=True)
@@ -135,7 +179,24 @@ class TeamProjectAccesses(_Service):
         return self._team_project_access_from(data)
 
     def read(self, team_project_access_id: str) -> TeamProjectAccess:
-        """Read a team access for a project."""
+        """Read team access for a project.
+
+        Args:
+            team_project_access_id: The team project access ID (e.g.
+                ``"tprj-xxxxxxxx"``).
+
+        Returns:
+            The :class:`TeamProjectAccess`.
+
+        Raises:
+            InvalidTeamProjectAccessIDError: If ``team_project_access_id`` is not a
+                valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> access = client.team_project_accesses.read("tprj-123")
+            >>> print(access.access)
+        """
         if not valid_string_id(team_project_access_id):
             raise InvalidTeamProjectAccessIDError()
         r = self.t.request(
@@ -148,14 +209,49 @@ class TeamProjectAccesses(_Service):
     def list(
         self, options: TeamProjectAccessListOptions
     ) -> Iterator[TeamProjectAccess]:
-        """List team accesses for projects."""
+        """List team accesses for projects.
+
+        Args:
+            options: Required filters and pagination, as a
+                :class:`TeamProjectAccessListOptions`.
+
+        Returns:
+            A single-use ``Iterator[TeamProjectAccess]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import TeamProjectAccessListOptions
+            >>> for access in client.team_project_accesses.list(
+            ...     TeamProjectAccessListOptions(project_id="prj-123")
+            ... ):
+            ...     print(access.id)
+        """
         params = options.model_dump(by_alias=True, exclude_none=True)
         path = "/api/v2/team-projects"
         for item in self._list(path, params=params):
             yield self._team_project_access_from(item)
 
     def remove(self, team_project_access_id: str) -> None:
-        """Remove a team access for a project."""
+        """Remove team access for a project.
+
+        Args:
+            team_project_access_id: The team project access ID (e.g.
+                ``"tprj-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidTeamProjectAccessIDError: If ``team_project_access_id`` is not a
+                valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.team_project_accesses.remove("tprj-123")
+        """
         if not valid_string_id(team_project_access_id):
             raise InvalidTeamProjectAccessIDError()
         self.t.request(

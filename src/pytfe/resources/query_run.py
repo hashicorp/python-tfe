@@ -28,20 +28,24 @@ class QueryRuns(_Service):
     def list(
         self, workspace_id: str, options: QueryRunListOptions | None = None
     ) -> Iterator[QueryRun]:
-        """Iterate through all query runs for the given workspace.
-
-        This method automatically handles pagination and yields QueryRun objects one at a time.
+        """List query runs for a workspace.
 
         Args:
-            workspace_id: The ID of the workspace
-            options: Optional list options (page_size, include, etc.)
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            options: Optional pagination and include options, as a
+                :class:`QueryRunListOptions`.
 
-        Yields:
-            QueryRun objects one at a time
+        Returns:
+            A single-use ``Iterator[QueryRun]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
 
         Example:
-            for query_run in client.query_runs.list(workspace_id):
-                print(f"Query Run: {query_run.id} - Status: {query_run.status}")
+            >>> for query_run in client.query_runs.list("ws-abc123"):
+            ...     print(query_run.id, query_run.status)
         """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
@@ -60,7 +64,26 @@ class QueryRuns(_Service):
             yield attach_jsonapi(QueryRun.model_validate(attrs), item)
 
     def create(self, options: QueryRunCreateOptions) -> QueryRun:
-        """Create a new query run."""
+        """Create a query run.
+
+        Args:
+            options: The query run settings, as a :class:`QueryRunCreateOptions`.
+
+        Returns:
+            The created :class:`QueryRun`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import QueryRunCreateOptions, QueryRunSource
+            >>> query_run = client.query_runs.create(
+            ...     QueryRunCreateOptions(
+            ...         source=QueryRunSource.API,
+            ...         workspace_id="ws-abc123",
+            ...     )
+            ... )
+        """
         attrs = options.model_dump(by_alias=True, exclude_none=True)
 
         # Build relationships
@@ -100,7 +123,22 @@ class QueryRuns(_Service):
         return attach_jsonapi(QueryRun.model_validate(attrs), data, jd.get("included"))
 
     def read(self, query_run_id: str) -> QueryRun:
-        """Read a query run by its ID."""
+        """Read a query run by its ID.
+
+        Args:
+            query_run_id: The query run ID (e.g. ``"qr-xxxxxxxx"``).
+
+        Returns:
+            The :class:`QueryRun`.
+
+        Raises:
+            InvalidQueryRunIDError: If ``query_run_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> query_run = client.query_runs.read("qr-123abc456def")
+            >>> print(query_run.status)
+        """
         if not valid_string_id(query_run_id):
             raise InvalidQueryRunIDError()
 
@@ -116,7 +154,26 @@ class QueryRuns(_Service):
     def read_with_options(
         self, query_run_id: str, options: QueryRunReadOptions
     ) -> QueryRun:
-        """Read a query run with additional options."""
+        """Read a query run by its ID with include options.
+
+        Args:
+            query_run_id: The query run ID (e.g. ``"qr-xxxxxxxx"``).
+            options: Include options, as a :class:`QueryRunReadOptions`.
+
+        Returns:
+            The :class:`QueryRun`.
+
+        Raises:
+            InvalidQueryRunIDError: If ``query_run_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import QueryRunIncludeOpt, QueryRunReadOptions
+            >>> query_run = client.query_runs.read_with_options(
+            ...     "qr-123abc456def",
+            ...     QueryRunReadOptions(include=[QueryRunIncludeOpt.CREATED_BY]),
+            ... )
+        """
         if not valid_string_id(query_run_id):
             raise InvalidQueryRunIDError()
 
@@ -135,9 +192,22 @@ class QueryRuns(_Service):
         return attach_jsonapi(QueryRun.model_validate(attrs), data, jd.get("included"))
 
     def logs(self, query_run_id: str) -> io.IOBase:
-        """Retrieve the logs for a query run.
+        """Retrieve logs for a query run.
 
-        Returns an IO stream that can be read to get the log content.
+        Args:
+            query_run_id: The query run ID (e.g. ``"qr-xxxxxxxx"``).
+
+        Returns:
+            The ``IOBase`` stream containing the log bytes.
+
+        Raises:
+            InvalidQueryRunIDError: If ``query_run_id`` is not a valid resource ID.
+            ValueError: If the query run does not have a log URL.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> stream = client.query_runs.logs("qr-123abc456def")
+            >>> stream.read().decode()
         """
         if not valid_string_id(query_run_id):
             raise InvalidQueryRunIDError()
@@ -157,7 +227,18 @@ class QueryRuns(_Service):
     def cancel(self, query_run_id: str) -> None:
         """Cancel a query run.
 
-        Returns 202 on success with empty body.
+        Args:
+            query_run_id: The query run ID (e.g. ``"qr-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidQueryRunIDError: If ``query_run_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.query_runs.cancel("qr-123abc456def")
         """
         if not valid_string_id(query_run_id):
             raise InvalidQueryRunIDError()
@@ -170,7 +251,18 @@ class QueryRuns(_Service):
     def force_cancel(self, query_run_id: str) -> None:
         """Force cancel a query run.
 
-        Returns 202 on success with empty body.
+        Args:
+            query_run_id: The query run ID (e.g. ``"qr-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidQueryRunIDError: If ``query_run_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.query_runs.force_cancel("qr-123abc456def")
         """
         if not valid_string_id(query_run_id):
             raise InvalidQueryRunIDError()

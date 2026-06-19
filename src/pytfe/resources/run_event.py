@@ -44,7 +44,24 @@ class RunEvents(_Service):
     def list(
         self, run_id: str, options: RunEventListOptions | None = None
     ) -> Iterator[RunEvent]:
-        """List all the run events of the given run."""
+        """List run events for a run.
+
+        Args:
+            run_id: The run ID (e.g. ``"run-xxxxxxxx"``).
+            options: Optional include options, as a :class:`RunEventListOptions`.
+
+        Returns:
+            A single-use ``Iterator[RunEvent]``. Wrap with ``list(...)`` to materialize
+            the results or iterate more than once.
+
+        Raises:
+            InvalidRunIDError: If ``run_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for event in client.run_events.list("run-CZcmD7eagjhyX0vN"):
+            ...     print(event.action, event.description)
+        """
         if not valid_string_id(run_id):
             raise InvalidRunIDError()
         params: dict[str, Any] = {}
@@ -56,13 +73,46 @@ class RunEvents(_Service):
             yield _run_event_from(item)
 
     def read(self, run_event_id: str) -> RunEvent:
-        """Read a specific run event by its ID."""
+        """Read a run event by its ID.
+
+        Args:
+            run_event_id: The run event ID (e.g. ``"re-xxxxxxxx"``).
+
+        Returns:
+            The :class:`RunEvent`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> event = client.run_events.read("re-read-123")
+            >>> print(event.action)
+        """
         return self.read_with_options(run_event_id)
 
     def read_with_options(
         self, run_event_id: str, options: RunEventReadOptions | None = None
     ) -> RunEvent:
-        """Read a specific run event by its ID with the given options."""
+        """Read a run event by its ID with include options.
+
+        Args:
+            run_event_id: The run event ID (e.g. ``"re-xxxxxxxx"``).
+            options: Optional include options, as a :class:`RunEventReadOptions`.
+
+        Returns:
+            The :class:`RunEvent`.
+
+        Raises:
+            InvalidRunEventIDError: If ``run_event_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RunEventIncludeOpt, RunEventReadOptions
+            >>> event = client.run_events.read_with_options(
+            ...     "re-read-456",
+            ...     RunEventReadOptions(include=[RunEventIncludeOpt.RUN_EVENT_ACTOR]),
+            ... )
+        """
         if not valid_string_id(run_event_id):
             raise InvalidRunEventIDError()
         params: dict[str, Any] = {}

@@ -30,7 +30,28 @@ class StackConfigurations(_Service):
         options: StackConfigurationCreateOptions | None = None,
         source: StackConfigurationSource = StackConfigurationSource.MANUAL,
     ) -> StackConfiguration:
-        """Create a stack configuration for the given stack."""
+        """Create a stack configuration for the given stack.
+
+        Args:
+            stack_id: The stack ID (e.g. ``"st-xyz789"``).
+            options: Optional creation settings, as a
+                :class:`StackConfigurationCreateOptions`.
+            source: How to source the configuration, as a
+                :class:`StackConfigurationSource`.
+
+        Returns:
+            The created :class:`StackConfiguration`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import StackConfigurationCreateOptions
+            >>> config = client.stack_configurations.create(
+            ...     "st-xyz789",
+            ...     StackConfigurationCreateOptions(speculative_enabled=True),
+            ... )
+        """
         path = f"/api/v2/stacks/{stack_id}/stack-configurations"
         params: dict[str, str] = {}
         if source != StackConfigurationSource.MANUAL:
@@ -55,7 +76,24 @@ class StackConfigurations(_Service):
         stack_id: str,
         options: StackConfigurationListOptions | None = None,
     ) -> Iterator[StackConfiguration]:
-        """List stack configurations for the given stack."""
+        """List stack configurations for the given stack.
+
+        Args:
+            stack_id: The stack ID (e.g. ``"st-xyz789"``).
+            options: Optional pagination and includes, as a
+                :class:`StackConfigurationListOptions`.
+
+        Returns:
+            A single-use ``Iterator[StackConfiguration]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for config in client.stack_configurations.list("st-xyz789"):
+            ...     print(config.id, config.status)
+        """
         path = f"/api/v2/stacks/{stack_id}/stack-configurations"
         params: dict[str, Any] = {}
         if options:
@@ -71,7 +109,23 @@ class StackConfigurations(_Service):
         stack_configuration_id: str,
         options: StackConfigurationReadOptions | None = None,
     ) -> StackConfiguration:
-        """Read a stack configuration by its ID."""
+        """Read a stack configuration by its ID.
+
+        Args:
+            stack_configuration_id: The stack configuration ID (e.g. ``"stc-abc123"``).
+            options: Optional related resources, as a
+                :class:`StackConfigurationReadOptions`.
+
+        Returns:
+            The :class:`StackConfiguration`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> config = client.stack_configurations.read("stc-abc123")
+            >>> print(config.sequence_number)
+        """
         path = f"/api/v2/stack-configurations/{stack_configuration_id}"
         params: dict[str, str] = {}
         if options and options.include:

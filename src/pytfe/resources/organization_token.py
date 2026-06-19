@@ -22,13 +22,17 @@ class OrganizationTokens(_Service):
         """Create a new organization token, replacing any existing token.
 
         Args:
-            organization: The organization name or ID
+            organization: The organization name (e.g. ``"my-org"``).
 
         Returns:
-            OrganizationToken: The created organization token
+            The :class:`OrganizationToken`.
 
         Raises:
-            ValueError: If the organization name is invalid
+            TFEError: If the API request fails.
+
+        Example:
+            >>> token = client.organization_tokens.create("my-org")
+            >>> print(token.id)
         """
         return self.create_with_options(organization)
 
@@ -37,17 +41,27 @@ class OrganizationTokens(_Service):
         organization: str,
         options: OrganizationTokenCreateOptions | None = None,
     ) -> OrganizationToken:
-        """Create a new organization token with options, replacing any existing token.
+        """Create a new organization token with options.
 
         Args:
-            organization: The organization name or ID
-            options: Options for creating the token
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Token creation options, as a
+                :class:`OrganizationTokenCreateOptions`.
 
         Returns:
-            OrganizationToken: The created organization token
+            The :class:`OrganizationToken`.
 
         Raises:
-            ValueError: If the organization name is invalid
+            ValueError: If ``organization`` is invalid or the response shape is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from datetime import datetime
+            >>> from pytfe.models import OrganizationTokenCreateOptions
+            >>> token = client.organization_tokens.create_with_options(
+            ...     "my-org",
+            ...     OrganizationTokenCreateOptions(expired_at=datetime(2027, 1, 1)),
+            ... )
         """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
@@ -84,16 +98,20 @@ class OrganizationTokens(_Service):
         raise ValueError("Invalid response format")
 
     def read(self, organization: str) -> OrganizationToken:
-        """Read an organization token.
+        """Read the organization token.
 
         Args:
-            organization: The organization name or ID
+            organization: The organization name (e.g. ``"my-org"``).
 
         Returns:
-            OrganizationToken: The organization token
+            The :class:`OrganizationToken`.
 
         Raises:
-            ValueError: If the organization name is invalid
+            TFEError: If the API request fails.
+
+        Example:
+            >>> token = client.organization_tokens.read("my-org")
+            >>> print(token.description)
         """
         return self.read_with_options(organization, None)
 
@@ -102,17 +120,25 @@ class OrganizationTokens(_Service):
         organization: str,
         options: OrganizationTokenReadOptions | None = None,
     ) -> OrganizationToken:
-        """Read an organization token with options.
+        """Read the organization token with options.
 
         Args:
-            organization: The organization name or ID
-            options: Options for reading the token
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Token read options, as a :class:`OrganizationTokenReadOptions`.
 
         Returns:
-            OrganizationToken: The organization token
+            The :class:`OrganizationToken`.
 
         Raises:
-            ValueError: If the organization name is invalid
+            ValueError: If ``organization`` is invalid or the response shape is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import OrganizationTokenReadOptions, TokenType
+            >>> token = client.organization_tokens.read_with_options(
+            ...     "my-org",
+            ...     OrganizationTokenReadOptions(token_type=TokenType.AUDIT_TRAILS),
+            ... )
         """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
@@ -133,13 +159,19 @@ class OrganizationTokens(_Service):
         raise ValueError("Invalid response format")
 
     def delete(self, organization: str) -> None:
-        """Delete an organization token.
+        """Delete the organization token.
 
         Args:
-            organization: The organization name or ID
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            None.
 
         Raises:
-            ValueError: If the organization name is invalid
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.organization_tokens.delete("my-org")
         """
         return self.delete_with_options(organization, None)
 
@@ -148,14 +180,26 @@ class OrganizationTokens(_Service):
         organization: str,
         options: OrganizationTokenDeleteOptions | None = None,
     ) -> None:
-        """Delete an organization token with options.
+        """Delete the organization token with options.
 
         Args:
-            organization: The organization name or ID
-            options: Options for deleting the token
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Token delete options, as a
+                :class:`OrganizationTokenDeleteOptions`.
+
+        Returns:
+            None.
 
         Raises:
-            ValueError: If the organization name is invalid
+            ValueError: If ``organization`` is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import OrganizationTokenDeleteOptions, TokenType
+            >>> client.organization_tokens.delete_with_options(
+            ...     "my-org",
+            ...     OrganizationTokenDeleteOptions(token_type=TokenType.AUDIT_TRAILS),
+            ... )
         """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)

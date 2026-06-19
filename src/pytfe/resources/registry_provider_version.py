@@ -33,7 +33,40 @@ class RegistryProviderVersions(_Service):
         provider_id: RegistryProviderID,
         options: RegistryProviderVersionCreateOptions,
     ) -> RegistryProviderVersion:
-        """Create a registry provider version"""
+        """Create a private registry provider version.
+
+        Args:
+            provider_id: The provider identifier, as a :class:`RegistryProviderID`.
+            options: The version attributes, as a
+                :class:`RegistryProviderVersionCreateOptions`.
+
+        Returns:
+            The created :class:`RegistryProviderVersion`.
+
+        Raises:
+            RequiredPrivateRegistryError: If ``provider_id`` is not for the private
+                registry.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import (
+            ...     RegistryName,
+            ...     RegistryProviderID,
+            ...     RegistryProviderVersionCreateOptions,
+            ... )
+            >>> provider_id = RegistryProviderID(
+            ...     organization_name="my-org",
+            ...     registry_name=RegistryName.PRIVATE,
+            ...     namespace="my-namespace",
+            ...     name="my-provider",
+            ... )
+            >>> version = client.registry_provider_versions.create(
+            ...     provider_id,
+            ...     RegistryProviderVersionCreateOptions(
+            ...         version="1.0.0", key_id="gpg-key-123", protocols=["5.0"]
+            ...     ),
+            ... )
+        """
         if provider_id.registry_name != RegistryName.PRIVATE:
             raise RequiredPrivateRegistryError()
         path = f"/api/v2/organizations/{provider_id.organization_name}/registry-providers/{provider_id.registry_name.value}/{provider_id.namespace}/{provider_id.name}/versions"
@@ -79,14 +112,60 @@ class RegistryProviderVersions(_Service):
         provider_id: RegistryProviderID,
         options: RegistryProviderVersionListOptions | None = None,
     ) -> Iterator[RegistryProviderVersion]:
-        """List registry provider versions"""
+        """List private registry provider versions.
+
+        Args:
+            provider_id: The provider identifier, as a :class:`RegistryProviderID`.
+            options: Optional pagination settings, as a
+                :class:`RegistryProviderVersionListOptions`.
+
+        Returns:
+            A single-use ``Iterator[RegistryProviderVersion]``. Wrap with
+            ``list(...)`` to materialize the results or iterate more than once.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryName, RegistryProviderID
+            >>> provider_id = RegistryProviderID(
+            ...     organization_name="my-org",
+            ...     registry_name=RegistryName.PRIVATE,
+            ...     namespace="my-namespace",
+            ...     name="my-provider",
+            ... )
+            >>> for version in client.registry_provider_versions.list(provider_id):
+            ...     print(version.version)
+        """
         path = f"/api/v2/organizations/{provider_id.organization_name}/registry-providers/{provider_id.registry_name.value}/{provider_id.namespace}/{provider_id.name}/versions"
         params = options.model_dump(by_alias=True) if options else {}
         for item in self._list(path=path, params=params):
             yield self._registry_provider_version_from(item)
 
     def read(self, version_id: RegistryProviderVersionID) -> RegistryProviderVersion:
-        """Read a specific registry provider version"""
+        """Read a private registry provider version.
+
+        Args:
+            version_id: The provider version identifier, as a
+                :class:`RegistryProviderVersionID`.
+
+        Returns:
+            The :class:`RegistryProviderVersion`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryName, RegistryProviderVersionID
+            >>> version_id = RegistryProviderVersionID(
+            ...     organization_name="my-org",
+            ...     registry_name=RegistryName.PRIVATE,
+            ...     namespace="my-namespace",
+            ...     name="my-provider",
+            ...     version="1.0.0",
+            ... )
+            >>> version = client.registry_provider_versions.read(version_id)
+        """
         path = f"/api/v2/organizations/{version_id.organization_name}/registry-providers/{version_id.registry_name.value}/{version_id.namespace}/{version_id.name}/versions/{version_id.version}"
         r = self.t.request(
             "GET",
@@ -96,7 +175,29 @@ class RegistryProviderVersions(_Service):
         return self._registry_provider_version_from(data)
 
     def delete(self, version_id: RegistryProviderVersionID) -> None:
-        """Delete a specific registry provider version"""
+        """Delete a private registry provider version.
+
+        Args:
+            version_id: The provider version identifier, as a
+                :class:`RegistryProviderVersionID`.
+
+        Returns:
+            None.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryName, RegistryProviderVersionID
+            >>> version_id = RegistryProviderVersionID(
+            ...     organization_name="my-org",
+            ...     registry_name=RegistryName.PRIVATE,
+            ...     namespace="my-namespace",
+            ...     name="my-provider",
+            ...     version="1.0.0",
+            ... )
+            >>> client.registry_provider_versions.delete(version_id)
+        """
         path = f"/api/v2/organizations/{version_id.organization_name}/registry-providers/{version_id.registry_name.value}/{version_id.namespace}/{version_id.name}/versions/{version_id.version}"
         self.t.request(
             "DELETE",

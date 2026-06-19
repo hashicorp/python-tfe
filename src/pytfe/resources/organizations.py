@@ -72,12 +72,48 @@ def _parse_org(
 
 class Organizations(_Service):
     def delete(self, name: str) -> None:
+        """Delete an organization by name.
+
+        Args:
+            name: The organization name (e.g. ``"my-org"``) to delete.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``name`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.organizations.delete("my-org")
+        """
         if not valid_string_id(name):
             raise ValueError(ERR_INVALID_ORG)
         self.t.request("DELETE", f"/api/v2/organizations/{name}")
         return None
 
     def update(self, name: str, options: OrganizationUpdateOptions) -> Organization:
+        """Update an organization by name.
+
+        Args:
+            name: The organization name (e.g. ``"my-org"``) to update.
+            options: The organization fields to update, as an
+                :class:`OrganizationUpdateOptions`.
+
+        Returns:
+            The :class:`Organization`.
+
+        Raises:
+            ValueError: If ``name`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import OrganizationUpdateOptions
+            >>> org = client.organizations.update(
+            ...     "my-org",
+            ...     OrganizationUpdateOptions(email="ops@example.com"),
+            ... )
+        """
         if not valid_string_id(name):
             raise ValueError(ERR_INVALID_ORG)
         body = {
@@ -97,6 +133,24 @@ class Organizations(_Service):
         return _parse_org(r.json()["data"])
 
     def create(self, options: OrganizationCreateOptions) -> Organization:
+        """Create a new organization.
+
+        Args:
+            options: The organization creation settings, as an
+                :class:`OrganizationCreateOptions`.
+
+        Returns:
+            The created :class:`Organization`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import OrganizationCreateOptions
+            >>> org = client.organizations.create(
+            ...     OrganizationCreateOptions(name="my-org", email="ops@example.com")
+            ... )
+        """
         Organizations.validate(options)
         body = {
             "data": {
@@ -110,12 +164,42 @@ class Organizations(_Service):
         return _parse_org(r.json()["data"])
 
     def list(self) -> Iterator[Organization]:
+        """List organizations visible to the current token.
+
+        Returns:
+            A single-use ``Iterator[Organization]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for org in client.organizations.list():
+            ...     print(org.name)
+        """
         for item in self._list("/api/v2/organizations"):
             yield _parse_org(item)
 
     def read(
         self, name: str, options: OrganizationReadOptions | None = None
     ) -> Organization:
+        """Read an organization by name.
+
+        Args:
+            name: The organization name (e.g. ``"my-org"``) to read.
+            options: Optional include settings, as an
+                :class:`OrganizationReadOptions`.
+
+        Returns:
+            The :class:`Organization`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> org = client.organizations.read("my-org")
+            >>> print(org.email)
+        """
         params: dict[str, str] = {}
         if options and options.include:
             params["include"] = ",".join([opt.value for opt in options.include])
@@ -148,7 +232,22 @@ class Organizations(_Service):
         )
 
     def read_default_settings(self, organization: str) -> OrganizationDefaultSettings:
-        """Read the org's default execution mode and default agent pool."""
+        """Read an organization's default settings.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            The :class:`OrganizationDefaultSettings`.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> settings = client.organizations.read_default_settings("my-org")
+            >>> print(settings.default_execution_mode)
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
         r = self.t.request("GET", f"/api/v2/organizations/{organization}")
@@ -159,9 +258,29 @@ class Organizations(_Service):
         organization: str,
         options: OrganizationDefaultSettingsUpdateOptions,
     ) -> OrganizationDefaultSettings:
-        """Patch only the default-settings fields on the org. Cross-field
-        validation (``default_agent_pool_id`` requires ``agent`` execution
-        mode) is enforced at options construction time, not here.
+        """Update an organization's default settings.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: The default settings to update, as an
+                :class:`OrganizationDefaultSettingsUpdateOptions`.
+
+        Returns:
+            The :class:`OrganizationDefaultSettings`.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import OrganizationDefaultSettingsUpdateOptions
+            >>> settings = client.organizations.update_default_settings(
+            ...     "my-org",
+            ...     OrganizationDefaultSettingsUpdateOptions(
+            ...         default_execution_mode="agent",
+            ...         default_agent_pool_id="apool-xxxxxxxx",
+            ...     ),
+            ... )
         """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
@@ -177,12 +296,24 @@ class Organizations(_Service):
         return self._parse_default_settings(r.json()["data"])
 
     def reset_default_settings(self, organization: str) -> OrganizationDefaultSettings:
-        """Reset to ``remote`` execution and clear any default agent pool.
+        """Reset an organization's default settings.
 
-        Convenience over :meth:`update_default_settings` — equivalent to
-        calling it with ``default_execution_mode="remote"`` and
-        ``default_agent_pool_id=None`` explicitly (the latter is sent as
-        wire ``null`` so any existing pool is unlinked).
+        Convenience over :meth:`update_default_settings` — equivalent to calling it
+        with ``default_execution_mode="remote"`` and
+        ``default_agent_pool_id=None`` explicitly.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            The :class:`OrganizationDefaultSettings`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> settings = client.organizations.reset_default_settings("my-org")
+            >>> print(settings.default_agent_pool_id)
         """
         # mypy reads the Pydantic-synthesised __init__ as accepting only
         # the wire-aliased kwargs (``default-execution-mode``) and not
@@ -198,7 +329,24 @@ class Organizations(_Service):
 
     @staticmethod
     def validate(opts: OrganizationCreateOptions) -> None:
-        """Validate organization creation options."""
+        """Validate organization creation options.
+
+        Args:
+            opts: The organization creation settings, as an
+                :class:`OrganizationCreateOptions`.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If the required name or email is missing or invalid.
+
+        Example:
+            >>> from pytfe.models import OrganizationCreateOptions
+            >>> client.organizations.validate(
+            ...     OrganizationCreateOptions(name="my-org", email="ops@example.com")
+            ... )
+        """
         if not valid_string(opts.name):
             raise ValueError(ERR_REQUIRED_NAME)
         if not valid_string_id(opts.name):
@@ -207,7 +355,22 @@ class Organizations(_Service):
             raise ValueError(ERR_REQUIRED_EMAIL)
 
     def read_capacity(self, organization: str) -> Capacity:
-        """Read the currently used capacity of an organization."""
+        """Read an organization's currently used capacity.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            The :class:`Capacity`.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> capacity = client.organizations.read_capacity("my-org")
+            >>> print(capacity.pending, capacity.running)
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
 
@@ -223,7 +386,22 @@ class Organizations(_Service):
         return c
 
     def read_entitlements(self, organization: str) -> Entitlements:
-        """Read the entitlements of an organization."""
+        """Read an organization's entitlement set.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            The :class:`Entitlements`.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> entitlements = client.organizations.read_entitlements("my-org")
+            >>> print(entitlements.stacks)
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
 
@@ -243,7 +421,25 @@ class Organizations(_Service):
     def read_run_queue(
         self, organization: str, options: ReadRunQueueOptions
     ) -> RunQueue:
-        """Read the current run queue of an organization."""
+        """Read an organization's current run queue.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Pagination settings, as a :class:`ReadRunQueueOptions`.
+
+        Returns:
+            The :class:`RunQueue`.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import ReadRunQueueOptions
+            >>> queue = client.organizations.read_run_queue(
+            ...     "my-org", ReadRunQueueOptions(page_size=20)
+            ... )
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
 
@@ -289,10 +485,26 @@ class Organizations(_Service):
     def read_data_retention_policy_choice(
         self, organization: str
     ) -> DataRetentionPolicyChoice | None:
-        """Read an organization's data retention policy choice (polymorphic).
+        """Read an organization's data retention policy choice.
 
-        Note: This functionality is only available in Terraform Enterprise.
-        Returns None if no data retention policy is configured.
+        This Terraform Enterprise-only endpoint returns the configured polymorphic
+        policy choice.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            The :class:`DataRetentionPolicyChoice`, or ``None`` if no policy is
+            configured, the policy is not found, or the policy lookup fails.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+
+        Example:
+            >>> choice = client.organizations.read_data_retention_policy_choice(
+            ...     "my-org"
+            ... )
+            >>> print(choice is None)
         """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
@@ -348,10 +560,29 @@ class Organizations(_Service):
     def set_data_retention_policy(
         self, organization: str, options: DataRetentionPolicySetOptions
     ) -> DataRetentionPolicy:
-        """Set an organization's data retention policy.
+        """Set an organization's legacy data retention policy.
 
-        Deprecated: Use set_data_retention_policy_delete_older instead.
-        Note: This functionality is only available in Terraform Enterprise versions v202311-1 and v202312-1.
+        Deprecated: use :meth:`set_data_retention_policy_delete_older` instead.
+        This Terraform Enterprise-only endpoint applies to TFE v202311-1 and
+        v202312-1.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: The legacy policy settings, as a
+                :class:`DataRetentionPolicySetOptions`.
+
+        Returns:
+            The :class:`DataRetentionPolicy`.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import DataRetentionPolicySetOptions
+            >>> policy = client.organizations.set_data_retention_policy(
+            ...     "my-org", DataRetentionPolicySetOptions(delete_older_than_n_days=90)
+            ... )
         """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
@@ -382,9 +613,30 @@ class Organizations(_Service):
     def set_data_retention_policy_delete_older(
         self, organization: str, options: DataRetentionPolicyDeleteOlderSetOptions
     ) -> DataRetentionPolicyDeleteOlder:
-        """Set an organization's data retention policy to delete data older than a certain number of days.
+        """Set an organization to delete data older than a threshold.
 
-        Note: This functionality is only available in Terraform Enterprise.
+        This functionality is only available in Terraform Enterprise.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: The delete-older policy settings, as a
+                :class:`DataRetentionPolicyDeleteOlderSetOptions`.
+
+        Returns:
+            The :class:`DataRetentionPolicyDeleteOlder`.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import DataRetentionPolicyDeleteOlderSetOptions
+            >>> policy = client.organizations.set_data_retention_policy_delete_older(
+            ...     "my-org",
+            ...     DataRetentionPolicyDeleteOlderSetOptions(
+            ...         delete_older_than_n_days=90
+            ...     ),
+            ... )
         """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
@@ -415,9 +667,27 @@ class Organizations(_Service):
     def set_data_retention_policy_dont_delete(
         self, organization: str, options: DataRetentionPolicyDontDeleteSetOptions
     ) -> DataRetentionPolicyDontDelete:
-        """Set an organization's data retention policy to explicitly not delete data.
+        """Set an organization to retain data indefinitely.
 
-        Note: This functionality is only available in Terraform Enterprise.
+        This functionality is only available in Terraform Enterprise.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: The do-not-delete policy settings, as a
+                :class:`DataRetentionPolicyDontDeleteSetOptions`.
+
+        Returns:
+            The :class:`DataRetentionPolicyDontDelete`.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import DataRetentionPolicyDontDeleteSetOptions
+            >>> policy = client.organizations.set_data_retention_policy_dont_delete(
+            ...     "my-org", DataRetentionPolicyDontDeleteSetOptions()
+            ... )
         """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
@@ -439,7 +709,20 @@ class Organizations(_Service):
     def delete_data_retention_policy(self, organization: str) -> None:
         """Delete an organization's data retention policy.
 
-        Note: This functionality is only available in Terraform Enterprise.
+        This functionality is only available in Terraform Enterprise.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.organizations.delete_data_retention_policy("my-org")
         """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)

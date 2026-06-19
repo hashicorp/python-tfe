@@ -38,7 +38,26 @@ class Invoices(_Service):
     """Service for reading organization billing invoices (HCP Terraform only)."""
 
     def list(self, organization: str) -> Iterator[Invoice]:
-        """List an organization's previous invoices (cursor-paginated)."""
+        """List an organization's previous invoices.
+
+        The API uses cursor pagination; the SDK follows the continuation cursor until
+        all invoices have been yielded.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            A single-use ``Iterator[Invoice]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for invoice in client.invoices.list("my-org"):
+            ...     print(invoice.number, invoice.total)
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         path = f"/api/v2/organizations/{organization}/invoices"
@@ -56,11 +75,22 @@ class Invoices(_Service):
                 return
 
     def read_next(self, organization: str) -> Invoice | None:
-        """Read the organization's next (upcoming) invoice.
+        """Read the organization's next upcoming invoice.
 
-        Returns ``None`` when there is no upcoming invoice (for example, the
-        organization is not on a credit-card-billed plan) — the API responds
-        ``200`` with a ``null`` body in that case.
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            The :class:`Invoice` or ``None`` when there is no upcoming invoice (for
+            example, the API responds ``200`` with a ``null`` body).
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> invoice = client.invoices.read_next("my-org")
+            >>> print(invoice.number if invoice else "no upcoming invoice")
         """
         if not valid_string_id(organization):
             raise InvalidOrgError()

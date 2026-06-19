@@ -26,7 +26,24 @@ class Variables(_Service):
     def list(
         self, workspace_id: str, options: VariableListOptions | None = None
     ) -> Iterator[Variable]:
-        """List all the variables associated with the given workspace (doesn't include variables inherited from varsets)."""
+        """List workspace variables, excluding variables inherited from variable sets.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            options: Reserved for future filters, as a :class:`VariableListOptions`.
+
+        Returns:
+            A single-use ``Iterator[Variable]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            ValueError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for variable in client.variables.list("ws-6fHMCom98SDXSQUv"):
+            ...     print(variable.key, variable.category)
+        """
         if not valid_string_id(workspace_id):
             raise ValueError(ERR_INVALID_WORKSPACE_ID)
 
@@ -49,7 +66,24 @@ class Variables(_Service):
     def list_all(
         self, workspace_id: str, options: VariableListOptions | None = None
     ) -> Iterator[Variable]:
-        """ListAll the variables associated with the given workspace including variables inherited from varsets."""
+        """List all workspace variables, including inherited variable-set variables.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            options: Reserved for future filters, as a :class:`VariableListOptions`.
+
+        Returns:
+            A single-use ``Iterator[Variable]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            ValueError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> inherited = list(client.variables.list_all("ws-6fHMCom98SDXSQUv"))
+            >>> print(len(inherited))
+        """
         if not valid_string_id(workspace_id):
             raise ValueError(ERR_INVALID_WORKSPACE_ID)
 
@@ -68,7 +102,29 @@ class Variables(_Service):
             yield Variable(**variable_data)
 
     def create(self, workspace_id: str, options: VariableCreateOptions) -> Variable:
-        """Create is used to create a new variable."""
+        """Create a new workspace variable.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            options: The variable attributes, as a :class:`VariableCreateOptions`.
+
+        Returns:
+            The created :class:`Variable`.
+
+        Raises:
+            ValueError: If ``workspace_id`` is invalid, ``key`` is missing, or
+                ``category`` is missing.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import CategoryType, VariableCreateOptions
+            >>> variable = client.variables.create(
+            ...     "ws-6fHMCom98SDXSQUv",
+            ...     VariableCreateOptions(
+            ...         key="TF_LOG", value="INFO", category=CategoryType.ENV
+            ...     ),
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise ValueError(ERR_INVALID_WORKSPACE_ID)
 
@@ -99,7 +155,26 @@ class Variables(_Service):
         return Variable(**variable_data)
 
     def read(self, workspace_id: str, variable_id: str) -> Variable:
-        """Read a variable by its ID."""
+        """Read a workspace variable by its ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            variable_id: The variable ID (e.g. ``"var-xxxxxxxx"``).
+
+        Returns:
+            The :class:`Variable`.
+
+        Raises:
+            ValueError: If ``workspace_id`` or ``variable_id`` is not a valid
+                resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> variable = client.variables.read(
+            ...     "ws-6fHMCom98SDXSQUv", "var-N4b1qYNSuNsPzHhM"
+            ... )
+            >>> print(variable.key)
+        """
         if not valid_string_id(workspace_id):
             raise ValueError(ERR_INVALID_WORKSPACE_ID)
         if not valid_string_id(variable_id):
@@ -121,7 +196,30 @@ class Variables(_Service):
     def update(
         self, workspace_id: str, variable_id: str, options: VariableUpdateOptions
     ) -> Variable:
-        """Update values of an existing variable."""
+        """Update an existing workspace variable.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            variable_id: The variable ID (e.g. ``"var-xxxxxxxx"``).
+            options: The changed variable attributes, as a
+                :class:`VariableUpdateOptions`.
+
+        Returns:
+            The updated :class:`Variable`.
+
+        Raises:
+            ValueError: If ``workspace_id`` or ``variable_id`` is not a valid
+                resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import VariableUpdateOptions
+            >>> variable = client.variables.update(
+            ...     "ws-6fHMCom98SDXSQUv",
+            ...     "var-N4b1qYNSuNsPzHhM",
+            ...     VariableUpdateOptions(value="DEBUG"),
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise ValueError(ERR_INVALID_WORKSPACE_ID)
         if not valid_string_id(variable_id):
@@ -150,7 +248,25 @@ class Variables(_Service):
         return Variable(**variable_data)
 
     def delete(self, workspace_id: str, variable_id: str) -> None:
-        """Delete a variable by its ID."""
+        """Delete a workspace variable by its ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            variable_id: The variable ID (e.g. ``"var-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``workspace_id`` or ``variable_id`` is not a valid
+                resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.variables.delete(
+            ...     "ws-6fHMCom98SDXSQUv", "var-N4b1qYNSuNsPzHhM"
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise ValueError(ERR_INVALID_WORKSPACE_ID)
         if not valid_string_id(variable_id):

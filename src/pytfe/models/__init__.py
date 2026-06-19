@@ -338,6 +338,7 @@ from .policy_set import (
     PolicySetRemoveWorkspacesOptions,
     PolicySetUpdateOptions,
 )
+from .policy_set_outcome import PolicySetOutcomeListOptions
 from .policy_set_parameter import (
     PolicySetParameter,
     PolicySetParameterCreateOptions,
@@ -547,6 +548,7 @@ from .state_version import (
     StateVersion,
     StateVersionCreateOptions,
     StateVersionCurrentOptions,
+    StateVersionIncludeOpt,
     StateVersionListOptions,
     StateVersionReadOptions,
 )
@@ -1168,6 +1170,8 @@ __all__ = [
     "PolicySetRemoveProjectsOptions",
     "PolicySetRemoveProjectExclusionsOptions",
     "PolicySetUpdateOptions",
+    # Policy Set Outcomes (BETA)
+    "PolicySetOutcomeListOptions",
     # Policy Set Parameters
     "PolicySetParameter",
     "PolicySetParameterCreateOptions",
@@ -1196,6 +1200,7 @@ __all__ = [
     "StateVersion",
     "StateVersionCreateOptions",
     "StateVersionCurrentOptions",
+    "StateVersionIncludeOpt",
     "StateVersionListOptions",
     "StateVersionReadOptions",
     # State Version Outputs

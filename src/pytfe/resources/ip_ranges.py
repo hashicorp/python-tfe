@@ -23,6 +23,20 @@ class IPRanges(_Service):
         When ``modified_since`` is provided, an ``If-Modified-Since`` request
         header is sent; if the ranges have not changed since that time the API
         replies ``304 Not Modified`` and this returns ``None``.
+
+        Args:
+            modified_since: Optional timestamp for ``If-Modified-Since``; naive
+                datetimes are treated as UTC.
+
+        Returns:
+            The :class:`IPRange`, or ``None`` if the API returns ``304 Not Modified``.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> ranges = client.ip_ranges.read()
+            >>> print(ranges.api if ranges else "unchanged")
         """
         headers: dict[str, str] = {"Accept": "application/json, */*"}
         if modified_since is not None:

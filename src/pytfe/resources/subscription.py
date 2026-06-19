@@ -50,7 +50,22 @@ class Subscriptions(_Service):
     """Service for reading organization subscriptions (HCP Terraform only)."""
 
     def read_for_organization(self, organization: str) -> Subscription:
-        """Read the subscription for an organization."""
+        """Read the subscription for an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            The :class:`Subscription`.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> subscription = client.subscriptions.read_for_organization("my-org")
+            >>> print(subscription.is_active)
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         r = self.t.request("GET", f"/api/v2/organizations/{organization}/subscription")
@@ -58,7 +73,22 @@ class Subscriptions(_Service):
         return _subscription_from(body["data"], body.get("included"))
 
     def read(self, subscription_id: str) -> Subscription:
-        """Read a subscription by its ID."""
+        """Read a subscription by its ID.
+
+        Args:
+            subscription_id: The subscription ID (e.g. ``"sub-xxxxxxxx"``).
+
+        Returns:
+            The :class:`Subscription`.
+
+        Raises:
+            InvalidSubscriptionIDError: If ``subscription_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> subscription = client.subscriptions.read("sub-kyjptCZYXQ6amEVu")
+            >>> print(subscription.runs_ceiling)
+        """
         if not valid_string_id(subscription_id):
             raise InvalidSubscriptionIDError()
         r = self.t.request("GET", f"/api/v2/subscriptions/{subscription_id}")

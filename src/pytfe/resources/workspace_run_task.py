@@ -50,7 +50,28 @@ class WorkspaceRunTasks(_Service):
     def create(
         self, workspace_id: str, options: WorkspaceRunTaskCreateOptions
     ) -> WorkspaceRunTask:
-        """Attach a run task to a workspace."""
+        """Attach a run task to a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            options: The workspace run task settings, as a
+                :class:`WorkspaceRunTaskCreateOptions`.
+
+        Returns:
+            The created :class:`WorkspaceRunTask`.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RunTask, WorkspaceRunTaskCreateOptions
+            >>> options = WorkspaceRunTaskCreateOptions(
+            ...     enforcement_level="advisory",
+            ...     run_task=RunTask.model_construct(id="task-123"),
+            ... )
+            >>> task = client.workspace_run_tasks.create("ws-123", options)
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -78,7 +99,25 @@ class WorkspaceRunTasks(_Service):
         workspace_id: str,
         options: WorkspaceRunTaskListOptions | None = None,
     ) -> Iterator[WorkspaceRunTask]:
-        """List all workspace run tasks for a workspace."""
+        """List run tasks attached to a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            options: Optional pagination options, as a
+                :class:`WorkspaceRunTaskListOptions`.
+
+        Returns:
+            A single-use ``Iterator[WorkspaceRunTask]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for task in client.workspace_run_tasks.list("ws-123"):
+            ...     print(task.id, task.enforcement_level)
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -88,7 +127,24 @@ class WorkspaceRunTasks(_Service):
             yield _workspace_run_task_from(item)
 
     def read(self, workspace_id: str, workspace_task_id: str) -> WorkspaceRunTask:
-        """Read a workspace run task by ID."""
+        """Read a workspace run task by its ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            workspace_task_id: The workspace run task ID (e.g. ``"wst-xxxxxxxx"``).
+
+        Returns:
+            The :class:`WorkspaceRunTask`.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            InvalidWorkspaceRunTaskIDError: If ``workspace_task_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> task = client.workspace_run_tasks.read("ws-123", "wst-1")
+            >>> print(task.stages)
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if not valid_string_id(workspace_task_id):
@@ -106,7 +162,30 @@ class WorkspaceRunTasks(_Service):
         workspace_task_id: str,
         options: WorkspaceRunTaskUpdateOptions,
     ) -> WorkspaceRunTask:
-        """Update a workspace run task by ID."""
+        """Update a workspace run task by its ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            workspace_task_id: The workspace run task ID (e.g. ``"wst-xxxxxxxx"``).
+            options: The workspace run task updates, as a
+                :class:`WorkspaceRunTaskUpdateOptions`.
+
+        Returns:
+            The updated :class:`WorkspaceRunTask`.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            InvalidWorkspaceRunTaskIDError: If ``workspace_task_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import WorkspaceRunTaskUpdateOptions
+            >>> task = client.workspace_run_tasks.update(
+            ...     "ws-123",
+            ...     "wst-1",
+            ...     WorkspaceRunTaskUpdateOptions(enforcement_level="mandatory"),
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if not valid_string_id(workspace_task_id):
@@ -130,7 +209,23 @@ class WorkspaceRunTasks(_Service):
         return _workspace_run_task_from(response.json()["data"])
 
     def delete(self, workspace_id: str, workspace_task_id: str) -> None:
-        """Delete a workspace run task by ID."""
+        """Delete a workspace run task by its ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            workspace_task_id: The workspace run task ID (e.g. ``"wst-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            InvalidWorkspaceRunTaskIDError: If ``workspace_task_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.workspace_run_tasks.delete("ws-123", "wst-1")
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if not valid_string_id(workspace_task_id):

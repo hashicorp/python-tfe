@@ -34,6 +34,24 @@ def _parse_admin_run(data: dict[str, Any]) -> AdminRun:
 
 class _AdminRuns(_Service):
     def list(self, options: AdminRunListOptions | None = None) -> Iterator[AdminRun]:
+        """List Terraform Enterprise admin runs.
+
+        Args:
+            options: Optional filters and pagination, as a :class:`AdminRunListOptions`.
+
+        Returns:
+            A single-use ``Iterator[AdminRun]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AdminRunListOptions
+            >>> runs = client.admin.runs.list(AdminRunListOptions(run_status="planned"))
+            >>> for run in runs:
+            ...     print(run.id, run.workspace_id)
+        """
         params: dict[str, Any] = {}
         if options:
             if options.run_status:
@@ -48,6 +66,21 @@ class _AdminRuns(_Service):
             yield _parse_admin_run(item)
 
     def force_cancel(self, run_id: str) -> None:
+        """Forcefully cancel a Terraform Enterprise admin run.
+
+        Args:
+            run_id: The run ID (e.g. ``"run-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``run_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.admin.runs.force_cancel("run-CZcmD7eagjhyX0vN")
+        """
         if not valid_string_id(run_id):
             raise ValueError(ERR_INVALID_NAME)
         self.t.request("POST", f"/api/v2/admin/runs/{run_id}/actions/force-cancel")

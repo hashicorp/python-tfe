@@ -13,7 +13,22 @@ from ._base import _Service
 
 class Applies(_Service):
     def read(self, apply_id: str) -> Apply:
-        """Read a specific apply by its ID."""
+        """Read an apply by its ID.
+
+        Args:
+            apply_id: The apply ID (e.g. ``"apply-xxxxxxxx"``).
+
+        Returns:
+            The :class:`Apply`.
+
+        Raises:
+            InvalidApplyIDError: If ``apply_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> apply = client.applies.read("apply-123")
+            >>> print(apply.status)
+        """
         if not valid_string_id(apply_id):
             raise InvalidApplyIDError()
 
@@ -29,7 +44,23 @@ class Applies(_Service):
         )
 
     def logs(self, apply_id: str) -> str:
-        """Get logs for a specific apply"""
+        """Get logs for an apply.
+
+        Args:
+            apply_id: The apply ID (e.g. ``"apply-xxxxxxxx"``).
+
+        Returns:
+            The log text.
+
+        Raises:
+            InvalidApplyIDError: If ``apply_id`` is not a valid resource ID.
+            ValueError: If the apply does not have a log URL.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> logs = client.applies.logs("apply-123")
+            >>> print(logs)
+        """
         # Validate apply ID
         if not valid_string_id(apply_id):
             raise InvalidApplyIDError()
@@ -57,11 +88,23 @@ class Applies(_Service):
     def errored_state(self, apply_id: str) -> bytes:
         """Recover the raw state bytes from an apply that failed during state upload.
 
-        The TFE endpoint returns a 307 redirect to a signed object-storage URL.
-        We follow it manually so the API bearer token is not forwarded to the
-        third-party blob host.
+        The TFE endpoint returns a redirect to object storage; the SDK follows that
+        storage URL for you. Raises NotFound if the apply has no recoverable errored
+        state.
 
-        Raises NotFound if the apply has no recoverable errored state.
+        Args:
+            apply_id: The apply ID (e.g. ``"apply-xxxxxxxx"``).
+
+        Returns:
+            The raw bytes (the SDK follows the storage/redirect URL for you).
+
+        Raises:
+            InvalidApplyIDError: If ``apply_id`` is not a valid resource ID.
+            TFEError: If the API request fails or the redirect lacks a Location header.
+
+        Example:
+            >>> state = client.applies.errored_state("apply-123")
+            >>> print(len(state))
         """
         if not valid_string_id(apply_id):
             raise InvalidApplyIDError()
