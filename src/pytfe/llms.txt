@@ -1,0 +1,74 @@
+# pytfe
+
+> Official Python SDK for the HCP Terraform and Terraform Enterprise (TFE) V2 API.
+> A single `TFEClient` exposes ~70 resource namespaces (workspaces, runs, plans,
+> applies, variables, teams, projects, policies, state versions, the registry, and
+> a TFE `admin` namespace). Synchronous, fully type-hinted (ships `py.typed`),
+> built on httpx + Pydantic v2.
+
+This file orients an AI agent or MCP server that has `pytfe` installed. For the
+complete, always-accurate API surface (every resource, method, and signature),
+call `pytfe.describe()` at runtime — do not rely on a hardcoded list here.
+
+## Install
+
+    pip install pytfe
+
+## Quickstart
+
+    from pytfe import TFEClient, TFEConfig
+
+    # Explicit config (recommended). Falls back to TFE_ADDRESS / TFE_TOKEN env vars.
+    with TFEClient(TFEConfig(address="https://app.terraform.io", token="...")) as tfe:
+        for ws in tfe.workspaces.list("my-org"):
+            print(ws.id, ws.name)
+
+The client is the composition root: construct it once, then reach every resource
+through a namespaced attribute and call standard verbs on it:
+
+    tfe.<resource>.<verb>(<identifiers...>, <options>)
+    tfe.workspaces.read("my-workspace", organization="my-org")
+    tfe.runs.create(RunCreateOptions(workspace_id="ws-..."))
+
+## Conventions (read before generating code)
+
+- Verbs: `list`, `read`, `create`, `update`, `delete`, plus `add_*` / `remove_*`
+  for relationships. Identifiers come first, the options model comes last.
+- `list` / `list_*` return a single-use `Iterator[X]` (pagination is handled
+  transparently). Wrap with `list(...)` to materialize.
+- Write methods take a typed Pydantic `*Options` model (e.g. `WorkspaceCreateOptions`).
+  Each options model exposes JSON Schema via `model_json_schema()` — ideal for
+  building MCP tool definitions.
+- Errors raise typed `pytfe.errors.TFEError` subclasses (e.g. `NotFound`,
+  `AuthError`, `InvalidWorkspaceIDError`). Catch `TFEError` to catch them all.
+- Logging is silent by default. Opt in with `PYTFE_LOG=debug` or
+  `pytfe.setup_logging()`. Bearer tokens and secrets are auto-redacted.
+- Use the client as a context manager (or call `tfe.close()`) to release the
+  pooled HTTP connection.
+
+## Discovery (machine-readable)
+
+    import pytfe
+
+    manifest = pytfe.describe()      # {sdk, version, client, resource_count, resources{...}}
+    list(manifest["resources"])      # every resource namespace
+    manifest["resources"]["runs"]["methods"]   # methods + signatures + summaries
+
+    print(pytfe.llms_txt())          # this document, from the installed package
+
+`pytfe.describe()` makes no network calls; it introspects the client wiring.
+
+## Top-level exports
+
+- `TFEClient` — the client / composition root.
+- `TFEConfig` — auth, timeout, retry, proxy, TLS settings.
+- `errors` — typed exception hierarchy (`TFEError` + subclasses).
+- `models` — Pydantic request/response models and `*Options` types.
+- `setup_logging` — opt-in stdlib logging configuration.
+- `describe`, `llms_txt` — discovery helpers (this section).
+
+## More (GitHub repository, not shipped in the wheel)
+
+- README and docs: https://github.com/hashicorp/python-tfe
+- Runnable examples (one per resource): https://github.com/hashicorp/python-tfe/tree/main/examples
+- Upstream API reference: https://developer.hashicorp.com/terraform/cloud-docs/api-docs
