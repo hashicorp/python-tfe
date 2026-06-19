@@ -156,6 +156,16 @@ from .github_app_installation import (
     GitHubAppInstallationType,
 )
 
+# ── HYOK configurations ───────────────────────────────────────────────────────
+from .hyok_configuration import (
+    HYOKConfiguration,
+    HYOKConfigurationCreateOptions,
+    HYOKConfigurationListOptions,
+    HYOKConfigurationStatus,
+    HYOKKMSOptions,
+    OIDCConfigurationType,
+)
+
 # ── IP Ranges ─────────────────────────────────────────────────────────────────
 from .ip_range import IPRange
 
@@ -1057,6 +1067,13 @@ __all__ = [
     "PlanExportStatusTimestamps",
     # IP ranges
     "IPRange",
+    # HYOK configurations
+    "HYOKConfiguration",
+    "HYOKConfigurationCreateOptions",
+    "HYOKConfigurationListOptions",
+    "HYOKConfigurationStatus",
+    "HYOKKMSOptions",
+    "OIDCConfigurationType",
     # IP allowlists (CIDR range lists)
     "CIDRRange",
     "CIDRRangeCreateOptions",
