@@ -25,9 +25,10 @@ Related data is now a complete, first-class part of every response. Before, `?in
 * Added `client.assessment_results` — read workspace health assessment (drift detection / continuous validation) results. `read(id)` returns an `AssessmentResult`; `json_output(id)` and `json_schema(id)` return the underlying JSON plan / provider schema (following the blob redirect, `None` on 204); `log_output(id)` returns the Terraform JSON log as text. `AssessmentResult` is now a `TFEModel`, so its `workspace`/`source` relationships are reachable via `.relationships` / `.related(...)`. New error: `InvalidAssessmentResultIDError`.
 * Added `client.hyok_configurations` — manage HYOK (Hold Your Own Key) configurations. `list(org)`, `create(org, options)`, `read(id)`, `delete(id)`, `test(id)`, and `revoke(id)`. A HYOK configuration ties an OIDC configuration (`client.*_oidc_configurations`) and an agent pool to a customer-controlled KMS key; this is the parent resource for the per-cloud OIDC configs. A configuration must be revoked before it can be deleted. New models: `HYOKConfiguration`, `HYOKConfigurationCreateOptions`, `HYOKConfigurationStatus`, `HYOKKMSOptions`, `OIDCConfigurationType`. New errors: `InvalidHYOKConfigurationIDError`, `RequiredKEKIDError`.
 
-### Discovery for AI agents, MCP servers, and tooling
-The installed package is now self-describing, so a consumer can enumerate the
-SDK without hardcoding resource names or browsing the GitHub repo.
+### Discovery for AI agents and tooling
+The installed package is now self-describing, so a consumer (including an AI
+agent or other tooling working only from `site-packages/pytfe`) can enumerate and
+drive the SDK without hardcoding resource names or browsing the GitHub repo.
 
 * `pytfe.describe()` returns a machine-readable manifest of the API surface —
   every resource namespace on `TFEClient`, its public methods, signatures, and
@@ -35,6 +36,27 @@ SDK without hardcoding resource names or browsing the GitHub repo.
   calls (a throwaway client with an empty config is used purely to introspect
   the wiring) and the result is JSON-serializable. Each method's `*Options`
   model still exposes JSON Schema via `model_json_schema()`.
+* `pytfe.tool_schemas()` returns tool-calling definitions —
+  `{name, resource, method, description, input_schema}` per method, where
+  `input_schema` is a JSON Schema object composed of the method's positional
+  identifiers plus its `*Options` model. Network-free and JSON-serializable, for
+  use with an MCP server or any LLM tool framework, and generated from the
+  installed package so new/updated resources appear automatically. The
+  definitions cover the whole SDK surface — including destructive, file-upload,
+  and secret-bearing methods — so a consumer that *executes* them should default
+  to read-only, allowlist mutations, and avoid logging secret arguments;
+  `tool_schemas()` itself only describes the surface and never makes a call.
+* `pytfe.llms_txt()` returns a concise, agent-oriented orientation guide that
+  now ships inside the wheel at `pytfe/llms.txt` (alongside `py.typed`).
+* `TFEClient` gained a comprehensive class docstring (resource namespaces,
+  quickstart, conventions) so `help(TFEClient)` and IDE hover are useful, and
+  it is now a context manager: `with TFEClient(...) as tfe: ...` closes the
+  pooled HTTP connection automatically. `close()` is documented and idempotent.
+
+### Packaging
+* The source distribution (sdist) now includes `examples/`, `CHANGELOG.md`, and
+  `AGENTS.md` so source consumers get the full example and changelog context.
+  The wheel is unchanged (examples remain non-importable).
 
 
 ## Bug Fixes
