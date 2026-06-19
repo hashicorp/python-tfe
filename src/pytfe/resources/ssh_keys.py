@@ -26,7 +26,27 @@ class SSHKeys(_Service):
     def list(
         self, organization: str, options: SSHKeyListOptions | None = None
     ) -> Iterator[SSHKey]:
-        """List SSH keys for the given organization."""
+        """List SSH keys for the given organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Optional pagination controls, as a :class:`SSHKeyListOptions`.
+
+        Returns:
+            A single-use ``Iterator[SSHKey]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import SSHKeyListOptions
+            >>> for key in client.ssh_keys.list(
+            ...     "my-org", SSHKeyListOptions(page_size=20)
+            ... ):
+            ...     print(key.id, key.name)
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
 
@@ -38,7 +58,27 @@ class SSHKeys(_Service):
             yield SSHKey.model_validate(attrs)
 
     def create(self, organization: str, options: SSHKeyCreateOptions) -> SSHKey:
-        """Create a new SSH key for the given organization."""
+        """Create a new SSH key for the given organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: SSH key name and private key text, as a
+                :class:`SSHKeyCreateOptions`.
+
+        Returns:
+            The :class:`SSHKey`.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import SSHKeyCreateOptions
+            >>> key = client.ssh_keys.create(
+            ...     "my-org",
+            ...     SSHKeyCreateOptions(name="deploy-key", value=private_key_pem),
+            ... )
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
 
@@ -62,7 +102,22 @@ class SSHKeys(_Service):
         return self._parse_ssh_key(data)
 
     def read(self, ssh_key_id: str) -> SSHKey:
-        """Read an SSH key by its ID."""
+        """Read an SSH key by its ID.
+
+        Args:
+            ssh_key_id: The SSH key ID (e.g. ``"sshkey-xxxxxxxx"``).
+
+        Returns:
+            The :class:`SSHKey`.
+
+        Raises:
+            InvalidSSHKeyIDError: If ``ssh_key_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> key = client.ssh_keys.read("sshkey-123")
+            >>> print(key.name)
+        """
         if not valid_string_id(ssh_key_id):
             raise InvalidSSHKeyIDError()
 
@@ -74,7 +129,25 @@ class SSHKeys(_Service):
         return self._parse_ssh_key(data)
 
     def update(self, ssh_key_id: str, options: SSHKeyUpdateOptions) -> SSHKey:
-        """Update an SSH key."""
+        """Update an SSH key.
+
+        Args:
+            ssh_key_id: The SSH key ID (e.g. ``"sshkey-xxxxxxxx"``).
+            options: SSH key fields to update, as a :class:`SSHKeyUpdateOptions`.
+
+        Returns:
+            The :class:`SSHKey`.
+
+        Raises:
+            InvalidSSHKeyIDError: If ``ssh_key_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import SSHKeyUpdateOptions
+            >>> key = client.ssh_keys.update(
+            ...     "sshkey-123", SSHKeyUpdateOptions(name="deploy-key-v2")
+            ... )
+        """
         if not valid_string_id(ssh_key_id):
             raise InvalidSSHKeyIDError()
 
@@ -98,7 +171,21 @@ class SSHKeys(_Service):
         return self._parse_ssh_key(data)
 
     def delete(self, ssh_key_id: str) -> None:
-        """Delete an SSH key."""
+        """Delete an SSH key.
+
+        Args:
+            ssh_key_id: The SSH key ID (e.g. ``"sshkey-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidSSHKeyIDError: If ``ssh_key_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.ssh_keys.delete("sshkey-123")
+        """
         if not valid_string_id(ssh_key_id):
             raise InvalidSSHKeyIDError()
 

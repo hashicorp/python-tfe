@@ -28,7 +28,34 @@ class RegistryProviderPlatforms(_Service):
         version_id: RegistryProviderVersionID,
         options: RegistryProviderPlatformCreateOptions,
     ) -> RegistryProviderPlatform:
-        """Create a registry provider platform"""
+        """Create a registry provider platform for a provider version.
+
+        Args:
+            version_id: The registry provider version identifier, as a
+                :class:`RegistryProviderVersionID`.
+            options: The platform metadata, as a
+                :class:`RegistryProviderPlatformCreateOptions`.
+
+        Returns:
+            The :class:`RegistryProviderPlatform`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryName, RegistryProviderVersionID
+            >>> from pytfe.models import RegistryProviderPlatformCreateOptions
+            >>> version_id = RegistryProviderVersionID(
+            ...     organization_name="my-org", registry_name=RegistryName.PRIVATE,
+            ...     namespace="my-org", name="aws", version="1.0.0",
+            ... )
+            >>> platform = client.registry_provider_platforms.create(
+            ...     version_id,
+            ...     RegistryProviderPlatformCreateOptions(
+            ...         os="linux", arch="amd64", shasum="abc123", filename="provider.zip",
+            ...     ),
+            ... )
+        """
         path = f"/api/v2/organizations/{version_id.organization_name}/registry-providers/{version_id.registry_name.value}/{version_id.namespace}/{version_id.name}/versions/{version_id.version}/platforms"
         attributes = options.model_dump(by_alias=True, exclude_none=True)
         payload = {
@@ -46,7 +73,30 @@ class RegistryProviderPlatforms(_Service):
         version_id: RegistryProviderVersionID,
         options: RegistryProviderPlatformListOptions | None = None,
     ) -> Iterator[RegistryProviderPlatform]:
-        """List registry provider platforms for a specific version"""
+        """List registry provider platforms for a provider version.
+
+        Args:
+            version_id: The registry provider version identifier, as a
+                :class:`RegistryProviderVersionID`.
+            options: Optional pagination options, as a
+                :class:`RegistryProviderPlatformListOptions`.
+
+        Returns:
+            A single-use ``Iterator[RegistryProviderPlatform]``. Wrap with
+            ``list(...)`` to materialize the results or iterate more than once.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryName, RegistryProviderVersionID
+            >>> version_id = RegistryProviderVersionID(
+            ...     organization_name="my-org", registry_name=RegistryName.PRIVATE,
+            ...     namespace="my-org", name="aws", version="1.0.0",
+            ... )
+            >>> for platform in client.registry_provider_platforms.list(version_id):
+            ...     print(platform.os, platform.arch)
+        """
         path = (
             f"/api/v2/organizations/{version_id.organization_name}"
             f"/registry-providers/{version_id.registry_name.value}"
@@ -58,7 +108,27 @@ class RegistryProviderPlatforms(_Service):
             yield self._registry_provider_platform_from(item)
 
     def read(self, platform_id: RegistryProviderPlatformID) -> RegistryProviderPlatform:
-        """Read a specific registry provider platform"""
+        """Read a registry provider platform by ID.
+
+        Args:
+            platform_id: The registry provider platform identifier, as a
+                :class:`RegistryProviderPlatformID`.
+
+        Returns:
+            The :class:`RegistryProviderPlatform`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryName, RegistryProviderPlatformID
+            >>> platform_id = RegistryProviderPlatformID(
+            ...     organization_name="my-org", registry_name=RegistryName.PRIVATE,
+            ...     namespace="my-org", name="aws", version="1.0.0",
+            ...     os="linux", arch="amd64",
+            ... )
+            >>> platform = client.registry_provider_platforms.read(platform_id)
+        """
         path = (
             f"/api/v2/organizations/{platform_id.organization_name}"
             f"/registry-providers/{platform_id.registry_name.value}"
@@ -71,7 +141,27 @@ class RegistryProviderPlatforms(_Service):
         return self._registry_provider_platform_from(data)
 
     def delete(self, platform_id: RegistryProviderPlatformID) -> None:
-        """Delete a specific registry provider platform"""
+        """Delete a registry provider platform by ID.
+
+        Args:
+            platform_id: The registry provider platform identifier, as a
+                :class:`RegistryProviderPlatformID`.
+
+        Returns:
+            None.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryName, RegistryProviderPlatformID
+            >>> platform_id = RegistryProviderPlatformID(
+            ...     organization_name="my-org", registry_name=RegistryName.PRIVATE,
+            ...     namespace="my-org", name="aws", version="1.0.0",
+            ...     os="linux", arch="amd64",
+            ... )
+            >>> client.registry_provider_platforms.delete(platform_id)
+        """
         path = (
             f"/api/v2/organizations/{platform_id.organization_name}"
             f"/registry-providers/{platform_id.registry_name.value}"

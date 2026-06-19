@@ -42,7 +42,27 @@ class RegistryModules(_Service):
     def list(
         self, organization: str, options: RegistryModuleListOptions | None = None
     ) -> Iterator[RegistryModule]:
-        """List all the registry modules within an organization."""
+        """List registry modules within an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Options for the request, as a :class:`RegistryModuleListOptions`.
+
+        Returns:
+            A single-use ``Iterator[RegistryModule]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryModuleListOptions
+            >>> for module in client.registry_modules.list(
+            ...     "my-org", RegistryModuleListOptions(provider="aws")
+            ... ):
+            ...     print(module.id, module.name)
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
 
@@ -71,10 +91,27 @@ class RegistryModules(_Service):
             yield self._parse_registry_module(item)
 
     def list_commits(self, module_id: RegistryModuleID) -> CommitList:
-        """List the commits for the registry module.
+        """List commits for a registry module's connected VCS repository.
 
         This returns the latest 20 commits for the connected VCS repo.
-        Pagination is not applicable due to inconsistent support from the VCS providers.
+        Pagination is not applicable due to inconsistent support from the VCS
+        providers.
+
+        Args:
+            module_id: The registry module identifier, as a :class:`RegistryModuleID`.
+
+        Returns:
+            The :class:`CommitList`.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryModuleID
+            >>> commits = client.registry_modules.list_commits(
+            ...     RegistryModuleID(organization="my-org", name="vpc", provider="aws")
+            ... )
         """
         if not self._validate_module_id(module_id):
             raise ValueError("Invalid module ID")
@@ -94,7 +131,26 @@ class RegistryModules(_Service):
     def create(
         self, organization: str, options: RegistryModuleCreateOptions
     ) -> RegistryModule:
-        """Create a registry module without a VCS repo."""
+        """Create a registry module without a VCS repository.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Registry module name, provider, and registry settings, as a
+                :class:`RegistryModuleCreateOptions`.
+
+        Returns:
+            The :class:`RegistryModule`.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryModuleCreateOptions
+            >>> module = client.registry_modules.create(
+            ...     "my-org", RegistryModuleCreateOptions(name="vpc", provider="aws")
+            ... )
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
 
@@ -117,7 +173,28 @@ class RegistryModules(_Service):
     def create_version(
         self, module_id: RegistryModuleID, options: RegistryModuleCreateVersionOptions
     ) -> RegistryModuleVersion:
-        """Create a registry module version."""
+        """Create a registry module version.
+
+        Args:
+            module_id: The registry module identifier, as a :class:`RegistryModuleID`.
+            options: Version and optional commit SHA, as a
+                :class:`RegistryModuleCreateVersionOptions`.
+
+        Returns:
+            The :class:`RegistryModuleVersion`.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryModuleCreateVersionOptions
+            >>> from pytfe.models import RegistryModuleID
+            >>> version = client.registry_modules.create_version(
+            ...     RegistryModuleID(organization="my-org", name="vpc", provider="aws"),
+            ...     RegistryModuleCreateVersionOptions(version="1.2.3"),
+            ... )
+        """
         if not self._validate_module_id(module_id):
             raise ValueError("Invalid module ID")
 
@@ -140,7 +217,32 @@ class RegistryModules(_Service):
     def create_with_vcs_connection(
         self, options: RegistryModuleCreateWithVCSConnectionOptions
     ) -> RegistryModule:
-        """Create and publish a registry module with a VCS repo."""
+        """Create and publish a registry module with a VCS repository.
+
+        Args:
+            options: VCS repository settings and optional test config, as a
+                :class:`RegistryModuleCreateWithVCSConnectionOptions`.
+
+        Returns:
+            The :class:`RegistryModule`.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryModuleCreateWithVCSConnectionOptions
+            >>> from pytfe.models import RegistryModuleVCSRepoOptions
+            >>> module = client.registry_modules.create_with_vcs_connection(
+            ...     RegistryModuleCreateWithVCSConnectionOptions(
+            ...         vcs_repo=RegistryModuleVCSRepoOptions(
+            ...             identifier="my-org/terraform-aws-vpc",
+            ...             display_identifier="my-org/terraform-aws-vpc",
+            ...             organization_name="my-org",
+            ...         )
+            ...     )
+            ... )
+        """
         if not self._validate_create_with_vcs_options(options):
             raise ValueError("Invalid VCS connection options")
 
@@ -175,7 +277,24 @@ class RegistryModules(_Service):
         return self._parse_registry_module(data)
 
     def read(self, module_id: RegistryModuleID) -> RegistryModule:
-        """Read a specific registry module."""
+        """Read a specific registry module.
+
+        Args:
+            module_id: The registry module identifier, as a :class:`RegistryModuleID`.
+
+        Returns:
+            The :class:`RegistryModule`.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryModuleID
+            >>> module = client.registry_modules.read(
+            ...     RegistryModuleID(id="mod-xxxxxxxx")
+            ... )
+        """
         if not self._validate_module_id(module_id):
             raise ValueError("Invalid module ID")
 
@@ -199,7 +318,26 @@ class RegistryModules(_Service):
     def read_version(
         self, module_id: RegistryModuleID, version: str
     ) -> RegistryModuleVersion:
-        """Read a registry module version."""
+        """Read a registry module version.
+
+        Args:
+            module_id: The registry module identifier, as a :class:`RegistryModuleID`.
+            version: The registry module version (e.g. ``"1.2.3"``).
+
+        Returns:
+            The :class:`RegistryModuleVersion`.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryModuleID
+            >>> version = client.registry_modules.read_version(
+            ...     RegistryModuleID(organization="my-org", name="vpc", provider="aws"),
+            ...     "1.2.3",
+            ... )
+        """
         if not self._validate_module_id(module_id):
             raise ValueError("Invalid module ID")
 
@@ -221,7 +359,7 @@ class RegistryModules(_Service):
     def list_versions(
         self, module_id: RegistryModuleID
     ) -> Iterator[RegistryModuleVersion]:
-        """List all versions of a registry module.
+        """List versions of a registry module.
 
         This method intentionally fetches eagerly and returns ``iter(list)``
         instead of the canonical ``for x in self._list(...): yield ...``
@@ -234,6 +372,22 @@ class RegistryModules(_Service):
 
         See ``docs/ITERATORS.md`` for the convention and when it's OK to
         deviate from it.
+
+        Args:
+            module_id: The registry module identifier, as a :class:`RegistryModuleID`.
+
+        Returns:
+            A single-use ``Iterator[RegistryModuleVersion]``. Wrap with
+            ``list(...)`` to materialize the results or iterate more than once.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+
+        Example:
+            >>> from pytfe.models import RegistryModuleID
+            >>> versions = list(client.registry_modules.list_versions(
+            ...     RegistryModuleID(organization="my-org", name="vpc", provider="aws")
+            ... ))
         """
         if not self._validate_module_id(module_id):
             raise ValueError("Invalid module ID")
@@ -293,7 +447,28 @@ class RegistryModules(_Service):
     def read_terraform_registry_module(
         self, module_id: RegistryModuleID, version: str
     ) -> TerraformRegistryModule:
-        """Read a registry module from the Terraform Registry."""
+        """Read module metadata from the Terraform Registry API.
+
+        Args:
+            module_id: The registry module identifier, as a :class:`RegistryModuleID`.
+            version: The registry module version (e.g. ``"1.2.3"``).
+
+        Returns:
+            The :class:`TerraformRegistryModule`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryModuleID, RegistryName
+            >>> module = client.registry_modules.read_terraform_registry_module(
+            ...     RegistryModuleID(
+            ...         namespace="terraform-aws-modules", name="vpc",
+            ...         provider="aws", registry_name=RegistryName.PUBLIC,
+            ...     ),
+            ...     "5.0.0",
+            ... )
+        """
         if module_id.registry_name == RegistryName.PUBLIC:
             path = (
                 f"/api/registry/public/v1/modules/{module_id.namespace}/"
@@ -311,10 +486,24 @@ class RegistryModules(_Service):
         return TerraformRegistryModule(**data)
 
     def delete(self, organization: str, name: str) -> None:
-        """Delete the entire registry module.
+        """Delete the entire registry module by organization and name.
 
-        Warning: This method is deprecated and will be removed from a future version.
-        Use delete_by_name instead.
+        Warning: This method is deprecated and will be removed from a future
+        version. Use ``delete_by_name`` instead.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            name: The registry module name (e.g. ``"vpc"``).
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.registry_modules.delete("my-org", "vpc")
         """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
@@ -326,7 +515,24 @@ class RegistryModules(_Service):
         self.t.request("POST", path, json_body={})
 
     def delete_by_name(self, module_id: RegistryModuleID) -> None:
-        """Delete the entire registry module by name."""
+        """Delete the entire registry module by name.
+
+        Args:
+            module_id: The registry module identifier, as a :class:`RegistryModuleID`.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryModuleID
+            >>> client.registry_modules.delete_by_name(
+            ...     RegistryModuleID(organization="my-org", name="vpc", provider="aws")
+            ... )
+        """
         if not self._validate_module_id(module_id):
             raise ValueError("Invalid module ID")
 
@@ -337,7 +543,24 @@ class RegistryModules(_Service):
         self.t.request("POST", path, json_body={})
 
     def delete_provider(self, module_id: RegistryModuleID) -> None:
-        """Delete a specified provider for the given module along with all its versions."""
+        """Delete a provider and all versions for a registry module.
+
+        Args:
+            module_id: The registry module identifier, as a :class:`RegistryModuleID`.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryModuleID
+            >>> client.registry_modules.delete_provider(
+            ...     RegistryModuleID(organization="my-org", name="vpc", provider="aws")
+            ... )
+        """
         if not self._validate_module_id(module_id):
             raise ValueError("Invalid module ID")
 
@@ -348,7 +571,26 @@ class RegistryModules(_Service):
         self.t.request("POST", path, json_body={})
 
     def delete_version(self, module_id: RegistryModuleID, version: str) -> None:
-        """Delete a specified version for the given provider of the module."""
+        """Delete a specific version of a registry module provider.
+
+        Args:
+            module_id: The registry module identifier, as a :class:`RegistryModuleID`.
+            version: The registry module version (e.g. ``"1.2.3"``).
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryModuleID
+            >>> client.registry_modules.delete_version(
+            ...     RegistryModuleID(organization="my-org", name="vpc", provider="aws"),
+            ...     "1.2.3",
+            ... )
+        """
         if not self._validate_module_id(module_id):
             raise ValueError("Invalid module ID")
 
@@ -365,7 +607,27 @@ class RegistryModules(_Service):
     def update(
         self, module_id: RegistryModuleID, options: RegistryModuleUpdateOptions
     ) -> RegistryModule:
-        """Update properties of a registry module."""
+        """Update properties of a registry module.
+
+        Args:
+            module_id: The registry module identifier, as a :class:`RegistryModuleID`.
+            options: Registry module fields to update, as a
+                :class:`RegistryModuleUpdateOptions`.
+
+        Returns:
+            The :class:`RegistryModule`.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryModuleID, RegistryModuleUpdateOptions
+            >>> module = client.registry_modules.update(
+            ...     RegistryModuleID(organization="my-org", name="vpc", provider="aws"),
+            ...     RegistryModuleUpdateOptions(no_code=True),
+            ... )
+        """
         if not self._validate_module_id(module_id):
             raise ValueError("Invalid module ID")
 
@@ -391,10 +653,26 @@ class RegistryModules(_Service):
         return self._parse_registry_module(data)
 
     def upload(self, rmv: RegistryModuleVersion, path: str) -> None:
-        """Upload Terraform configuration files for the provided registry module version.
+        """Upload Terraform configuration files for a module version.
 
-        It requires a path to the configuration files on disk, which will be packaged
-        before being uploaded.
+        It requires a path to the configuration files on disk, which will be
+        packaged before being uploaded.
+
+        Args:
+            rmv: The registry module version with an upload link, as a
+                :class:`RegistryModuleVersion`.
+            path: The local configuration directory path (e.g. ``"./module"``).
+
+        Returns:
+            None.
+
+        Raises:
+            NotImplementedError: This method does not implement packaging yet.
+            ValueError: If an argument or options value is invalid.
+
+        Example:
+            >>> version = client.registry_modules.create_version(module_id, options)
+            >>> client.registry_modules.upload(version, "./module")
         """
         upload_url = rmv.links.get("upload")
         if not upload_url:
@@ -411,8 +689,24 @@ class RegistryModules(_Service):
 
         Any stream implementing io.IOBase can be passed into this method.
 
-        Note: This method does not validate the content being uploaded and is therefore
-        the caller's responsibility to ensure the raw content is a valid Terraform configuration.
+        Note: This method does not validate the content being uploaded and is
+        therefore the caller's responsibility to ensure the raw content is a
+        valid Terraform configuration.
+
+        Args:
+            upload_url: The upload URL from a registry module version link.
+            archive: The tar gzip archive stream, as an :class:`io.IOBase`.
+
+        Returns:
+            None.
+
+        Raises:
+            httpx.HTTPStatusError: If the upload request returns an error status.
+
+        Example:
+            >>> import io
+            >>> archive = io.BytesIO(tar_gzip_bytes)
+            >>> client.registry_modules.upload_tar_gzip(upload_url, archive)
         """
         # Use the httpx client for direct upload to external URL
         response = self.t._sync.put(upload_url, content=archive.read())

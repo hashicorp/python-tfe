@@ -34,7 +34,25 @@ class PolicySetParameters(_Service):
     def list(
         self, policy_set_id: str, options: PolicySetParameterListOptions | None = None
     ) -> Iterator[PolicySetParameter]:
-        """List all the parameters associated with the given policy-set."""
+        """List parameters for a policy set.
+
+        Args:
+            policy_set_id: The policy set ID (e.g. ``"polset-xxxxxxxx"``).
+            options: Optional pagination controls, as a
+                :class:`PolicySetParameterListOptions`.
+
+        Returns:
+            A single-use ``Iterator[PolicySetParameter]``. Wrap with ``list(...)``
+            to materialize the results or iterate more than once.
+
+        Raises:
+            InvalidPolicySetIDError: If ``policy_set_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for parameter in client.policy_set_parameters.list("polset-123"):
+            ...     print(parameter.id, parameter.key)
+        """
         if not valid_string_id(policy_set_id):
             raise InvalidPolicySetIDError()
         params = options.model_dump(by_alias=True, exclude_none=True) if options else {}
@@ -45,7 +63,32 @@ class PolicySetParameters(_Service):
     def create(
         self, policy_set_id: str, options: PolicySetParameterCreateOptions
     ) -> PolicySetParameter:
-        """Create is used to create a new parameter."""
+        """Create a parameter on a policy set.
+
+        Args:
+            policy_set_id: The policy set ID (e.g. ``"polset-xxxxxxxx"``).
+            options: Parameter key, value, category, and sensitivity, as a
+                :class:`PolicySetParameterCreateOptions`.
+
+        Returns:
+            The created :class:`PolicySetParameter`.
+
+        Raises:
+            InvalidPolicySetIDError: If ``policy_set_id`` is not a valid resource ID.
+            RequiredKeyError: If ``options.key`` is missing or empty.
+            RequiredCategoryError: If ``options.category`` is missing.
+            InvalidCategoryError: If ``options.category`` is not ``policy-set``.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import CategoryType, PolicySetParameterCreateOptions
+            >>> parameter = client.policy_set_parameters.create(
+            ...     "polset-123",
+            ...     PolicySetParameterCreateOptions(
+            ...         key="environment", value="prod", category=CategoryType.POLICY_SET
+            ...     ),
+            ... )
+        """
         if not valid_string_id(policy_set_id):
             raise InvalidPolicySetIDError()
 
@@ -73,7 +116,24 @@ class PolicySetParameters(_Service):
         return self._policy_set_parameter_from(data)
 
     def read(self, policy_set_id: str, parameter_id: str) -> PolicySetParameter:
-        """Read a parameter by its ID."""
+        """Read a policy set parameter by its ID.
+
+        Args:
+            policy_set_id: The policy set ID (e.g. ``"polset-xxxxxxxx"``).
+            parameter_id: The policy set parameter ID (e.g. ``"var-xxxxxxxx"``).
+
+        Returns:
+            The :class:`PolicySetParameter`.
+
+        Raises:
+            InvalidPolicySetIDError: If ``policy_set_id`` is not a valid resource ID.
+            InvalidParamIDError: If ``parameter_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> parameter = client.policy_set_parameters.read("polset-123", "var-789")
+            >>> print(parameter.key)
+        """
         if not valid_string_id(policy_set_id):
             raise InvalidPolicySetIDError()
 
@@ -93,7 +153,29 @@ class PolicySetParameters(_Service):
         parameter_id: str,
         options: PolicySetParameterUpdateOptions,
     ) -> PolicySetParameter:
-        """Update values of an existing parameter."""
+        """Update a policy set parameter by its ID.
+
+        Args:
+            policy_set_id: The policy set ID (e.g. ``"polset-xxxxxxxx"``).
+            parameter_id: The policy set parameter ID (e.g. ``"var-xxxxxxxx"``).
+            options: Parameter attributes to update, as a
+                :class:`PolicySetParameterUpdateOptions`.
+
+        Returns:
+            The updated :class:`PolicySetParameter`.
+
+        Raises:
+            InvalidPolicySetIDError: If ``policy_set_id`` is not a valid resource ID.
+            InvalidParamIDError: If ``parameter_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import PolicySetParameterUpdateOptions
+            >>> parameter = client.policy_set_parameters.update(
+            ...     "polset-123", "var-789",
+            ...     PolicySetParameterUpdateOptions(value="staging"),
+            ... )
+        """
         if not valid_string_id(policy_set_id):
             raise InvalidPolicySetIDError()
 
@@ -116,7 +198,23 @@ class PolicySetParameters(_Service):
         return self._policy_set_parameter_from(data)
 
     def delete(self, policy_set_id: str, parameter_id: str) -> None:
-        """Delete a parameter by its ID."""
+        """Delete a policy set parameter by its ID.
+
+        Args:
+            policy_set_id: The policy set ID (e.g. ``"polset-xxxxxxxx"``).
+            parameter_id: The policy set parameter ID (e.g. ``"var-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidPolicySetIDError: If ``policy_set_id`` is not a valid resource ID.
+            InvalidParamIDError: If ``parameter_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.policy_set_parameters.delete("polset-123", "var-789")
+        """
         if not valid_string_id(policy_set_id):
             raise InvalidPolicySetIDError()
 

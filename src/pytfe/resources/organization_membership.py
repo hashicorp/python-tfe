@@ -57,17 +57,25 @@ class OrganizationMemberships(_Service):
         organization: str,
         options: OrganizationMembershipCreateOptions,
     ) -> OrganizationMembership:
-        """Create an organization membership with the given options.
+        """Create an organization membership invitation.
 
         Args:
-            organization: The name of the organization
-            options: The options for creating the organization membership
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Email address and optional teams, as a
+                :class:`OrganizationMembershipCreateOptions`.
 
         Returns:
-            The created OrganizationMembership
+            The created :class:`OrganizationMembership`.
 
         Raises:
-            ValueError: If organization name is invalid or options are invalid
+            ValueError: If ``organization`` or ``options.email`` is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import OrganizationMembershipCreateOptions
+            >>> membership = client.organization_memberships.create(
+            ...     "my-org", OrganizationMembershipCreateOptions(email="dev@example.com")
+            ... )
         """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
@@ -112,17 +120,24 @@ class OrganizationMemberships(_Service):
         organization: str,
         options: OrganizationMembershipListOptions | None = None,
     ) -> Iterator[OrganizationMembership]:
-        """List all the organization memberships of the given organization.
+        """List organization memberships in an organization.
 
         Args:
-            organization: The name of the organization
-            options: Optional filters and pagination options
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Optional filters, includes, and pagination, as a
+                :class:`OrganizationMembershipListOptions`.
 
-        Yields:
-            OrganizationMembership instances one at a time
+        Returns:
+            A single-use ``Iterator[OrganizationMembership]``. Wrap with
+            ``list(...)`` to materialize the results or iterate more than once.
 
         Raises:
-            ValueError: If organization name is invalid or email filters are invalid
+            ValueError: If ``organization`` or an email filter is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for membership in client.organization_memberships.list("my-org"):
+            ...     print(membership.id, membership.email)
         """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
@@ -168,14 +183,18 @@ class OrganizationMemberships(_Service):
         """Read an organization membership by its ID.
 
         Args:
-            organization_membership_id: The ID of the organization membership to read
+            organization_membership_id: The organization membership ID
+                (e.g. ``"ou-xxxxxxxx"``).
 
         Returns:
-            The OrganizationMembership
+            The :class:`OrganizationMembership`.
 
         Raises:
-            ValueError: If organization membership ID is invalid
-            NotFound: If the resource is not found
+            TFEError: If the API request fails.
+
+        Example:
+            >>> membership = client.organization_memberships.read("ou-abc123def456")
+            >>> print(membership.email)
         """
         return self.read_with_options(
             organization_membership_id, OrganizationMembershipReadOptions()
@@ -186,18 +205,26 @@ class OrganizationMemberships(_Service):
         organization_membership_id: str,
         options: OrganizationMembershipReadOptions | None = None,
     ) -> OrganizationMembership:
-        """Read an organization membership by ID with options.
+        """Read an organization membership by its ID with options.
 
         Args:
-            organization_membership_id: The ID of the organization membership to read
-            options: Read options including include parameters
+            organization_membership_id: The organization membership ID
+                (e.g. ``"ou-xxxxxxxx"``).
+            options: Optional include controls, as a
+                :class:`OrganizationMembershipReadOptions`.
 
         Returns:
-            The OrganizationMembership with requested included data
+            The :class:`OrganizationMembership`.
 
         Raises:
-            ValueError: If organization membership ID is invalid
-            NotFound: If the resource is not found
+            ValueError: If ``organization_membership_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import OrganizationMembershipReadOptions
+            >>> membership = client.organization_memberships.read_with_options(
+            ...     "ou-abc123def456", OrganizationMembershipReadOptions()
+            ... )
         """
         if not valid_string_id(organization_membership_id):
             raise ValueError("invalid organization membership ID")
@@ -229,10 +256,18 @@ class OrganizationMemberships(_Service):
         """Delete an organization membership by its ID.
 
         Args:
-            organization_membership_id: The ID of the organization membership to delete
+            organization_membership_id: The organization membership ID
+                (e.g. ``"ou-xxxxxxxx"``).
+
+        Returns:
+            None.
 
         Raises:
-            ValueError: If organization membership ID is invalid
+            ValueError: If ``organization_membership_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.organization_memberships.delete("ou-abc123def456")
         """
         if not valid_string_id(organization_membership_id):
             raise ValueError("invalid organization membership ID")

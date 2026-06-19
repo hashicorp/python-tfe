@@ -192,7 +192,27 @@ class Explorer(_Service):
     def query(
         self, organization: str, options: ExplorerQueryOptions
     ) -> Iterator[ExplorerRow]:
-        """Execute an Explorer query and iterate result rows across all pages."""
+        """Execute an Explorer query.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Query type, fields, filters, sorting, and pagination, as a
+                :class:`ExplorerQueryOptions`.
+
+        Returns:
+            A single-use ``Iterator[ExplorerRow]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import ExplorerQueryOptions, ExplorerViewType
+            >>> rows = client.explorer.query(
+            ...     "my-org", ExplorerQueryOptions(view_type=ExplorerViewType.WORKSPACES)
+            ... )
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         path = f"/api/v2/organizations/{organization}/explorer"
@@ -200,7 +220,26 @@ class Explorer(_Service):
             yield _parse_row(item)
 
     def export_csv(self, organization: str, options: ExplorerQueryOptions) -> str:
-        """Run an Explorer query and return CSV text from the export endpoint."""
+        """Export an Explorer query as CSV text.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Query type, fields, filters, sorting, and pagination, as a
+                :class:`ExplorerQueryOptions`.
+
+        Returns:
+            The CSV text.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import ExplorerQueryOptions, ExplorerViewType
+            >>> csv_text = client.explorer.export_csv(
+            ...     "my-org", ExplorerQueryOptions(view_type=ExplorerViewType.WORKSPACES)
+            ... )
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         path = f"/api/v2/organizations/{organization}/explorer/export/csv"
@@ -208,7 +247,23 @@ class Explorer(_Service):
         return resp.text
 
     def list_saved_views(self, organization: str) -> Iterator[ExplorerSavedView]:
-        """Iterate all saved Explorer views in an organization."""
+        """List saved Explorer views in an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            A single-use ``Iterator[ExplorerSavedView]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for view in client.explorer.list_saved_views("my-org"):
+            ...     print(view.id, view.name)
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         path = f"/api/v2/organizations/{organization}/explorer/views"
@@ -218,7 +273,31 @@ class Explorer(_Service):
     def create_saved_view(
         self, organization: str, options: ExplorerSavedViewCreateOptions
     ) -> ExplorerSavedView:
-        """Create a saved Explorer view."""
+        """Create a saved Explorer view.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Saved view name and query, as a
+                :class:`ExplorerSavedViewCreateOptions`.
+
+        Returns:
+            The created :class:`ExplorerSavedView`.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import ExplorerSavedQuery, ExplorerSavedViewCreateOptions
+            >>> from pytfe.models import ExplorerViewType
+            >>> view = client.explorer.create_saved_view(
+            ...     "my-org",
+            ...     ExplorerSavedViewCreateOptions(
+            ...         name="Workspaces", query_type=ExplorerViewType.WORKSPACES,
+            ...         query=ExplorerSavedQuery(query_type=ExplorerViewType.WORKSPACES),
+            ...     ),
+            ... )
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         body = {
@@ -233,7 +312,24 @@ class Explorer(_Service):
         return _parse_saved_view(data)
 
     def read_saved_view(self, organization: str, view_id: str) -> ExplorerSavedView:
-        """Read one saved Explorer view by id."""
+        """Read a saved Explorer view by its ID.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            view_id: The saved Explorer view ID (e.g. ``"view-xxxxxxxx"``).
+
+        Returns:
+            The :class:`ExplorerSavedView`.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            InvalidExplorerSavedViewIDError: If ``view_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> view = client.explorer.read_saved_view("my-org", "view-123")
+            >>> print(view.name)
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(view_id):
@@ -249,7 +345,33 @@ class Explorer(_Service):
         view_id: str,
         options: ExplorerSavedViewUpdateOptions,
     ) -> ExplorerSavedView:
-        """Replace attributes of an existing saved Explorer view."""
+        """Update a saved Explorer view.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            view_id: The saved Explorer view ID (e.g. ``"view-xxxxxxxx"``).
+            options: Replacement saved view attributes, as a
+                :class:`ExplorerSavedViewUpdateOptions`.
+
+        Returns:
+            The updated :class:`ExplorerSavedView`.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            InvalidExplorerSavedViewIDError: If ``view_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import ExplorerSavedQuery, ExplorerSavedViewUpdateOptions
+            >>> from pytfe.models import ExplorerViewType
+            >>> view = client.explorer.update_saved_view(
+            ...     "my-org", "view-123",
+            ...     ExplorerSavedViewUpdateOptions(
+            ...         name="Workspaces",
+            ...         query=ExplorerSavedQuery(query_type=ExplorerViewType.WORKSPACES),
+            ...     ),
+            ... )
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(view_id):
@@ -267,7 +389,23 @@ class Explorer(_Service):
         return _parse_saved_view(data)
 
     def delete_saved_view(self, organization: str, view_id: str) -> None:
-        """Delete a saved Explorer view."""
+        """Delete a saved Explorer view.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            view_id: The saved Explorer view ID (e.g. ``"view-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            InvalidExplorerSavedViewIDError: If ``view_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.explorer.delete_saved_view("my-org", "view-123")
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(view_id):
@@ -278,7 +416,25 @@ class Explorer(_Service):
     def saved_view_results(
         self, organization: str, view_id: str
     ) -> Iterator[ExplorerRow]:
-        """Execute a saved view and iterate result rows across all pages."""
+        """Execute a saved Explorer view.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            view_id: The saved Explorer view ID (e.g. ``"view-xxxxxxxx"``).
+
+        Returns:
+            A single-use ``Iterator[ExplorerRow]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            InvalidExplorerSavedViewIDError: If ``view_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for row in client.explorer.saved_view_results("my-org", "view-123"):
+            ...     print(row.id, row.attributes)
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(view_id):
@@ -288,7 +444,23 @@ class Explorer(_Service):
             yield _parse_row(item)
 
     def saved_view_results_csv(self, organization: str, view_id: str) -> str:
-        """Return CSV text for a saved view from the dedicated export endpoint."""
+        """Export saved Explorer view results as CSV text.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            view_id: The saved Explorer view ID (e.g. ``"view-xxxxxxxx"``).
+
+        Returns:
+            The CSV text.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            InvalidExplorerSavedViewIDError: If ``view_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> csv_text = client.explorer.saved_view_results_csv("my-org", "view-123")
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(view_id):

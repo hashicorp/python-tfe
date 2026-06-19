@@ -48,6 +48,23 @@ class TaskStages(_Service):
     def read(
         self, task_stage_id: str, options: TaskStageReadOptions | None = None
     ) -> TaskStage:
+        """Read a task stage by ID.
+
+        Args:
+            task_stage_id: The task stage ID (e.g. ``"ts-xxxxxxxx"``).
+            options: Optional include settings, as a :class:`TaskStageReadOptions`.
+
+        Returns:
+            The :class:`TaskStage`.
+
+        Raises:
+            InvalidTaskStageIDError: If ``task_stage_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> stage = client.task_stages.read("ts-123")
+            >>> print(stage.status)
+        """
         if not valid_string_id(task_stage_id):
             raise InvalidTaskStageIDError()
 
@@ -69,6 +86,24 @@ class TaskStages(_Service):
     def list(
         self, run_id: str, options: TaskStageListOptions | None = None
     ) -> Iterator[TaskStage]:
+        """List task stages for a run.
+
+        Args:
+            run_id: The run ID (e.g. ``"run-xxxxxxxx"``).
+            options: Optional pagination settings, as a :class:`TaskStageListOptions`.
+
+        Returns:
+            A single-use ``Iterator[TaskStage]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidRunIDError: If ``run_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for stage in client.task_stages.list("run-CZcmD7eagjhyX0vN"):
+            ...     print(stage.id, stage.stage)
+        """
         if not valid_string_id(run_id):
             raise InvalidRunIDError()
 
@@ -84,9 +119,24 @@ class TaskStages(_Service):
         task_stage_id: str,
         comment: str | None = None,
     ) -> TaskStage:
-        """
+        """Override a task stage for a run.
+
         **Note: This function is still in BETA and subject to change.**
-        Override a task stage for a run.
+
+        Args:
+            task_stage_id: The task stage ID (e.g. ``"ts-xxxxxxxx"``).
+            comment: Optional override comment.
+
+        Returns:
+            The :class:`TaskStage`.
+
+        Raises:
+            InvalidTaskStageIDError: If ``task_stage_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> stage = client.task_stages.override("ts-123", comment="Approved")
+            >>> print(stage.status)
         """
         if not valid_string_id(task_stage_id):
             raise InvalidTaskStageIDError()

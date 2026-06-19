@@ -40,6 +40,26 @@ class GitHubAppInstallations(_Service):
     def list(
         self, options: GitHubAppInstallationListOptions | None = None
     ) -> Iterator[GitHubAppInstallation]:
+        """List GitHub App installations visible to the authenticated user.
+
+        Args:
+            options: Optional installation filters, as a
+                :class:`GitHubAppInstallationListOptions`.
+
+        Returns:
+            A single-use ``Iterator[GitHubAppInstallation]``. Wrap with
+            ``list(...)`` to materialize the results or iterate more than once.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import GitHubAppInstallationListOptions
+            >>> for installation in client.github_app_installations.list(
+            ...     GitHubAppInstallationListOptions(name="my-github-org")
+            ... ):
+            ...     print(installation.id, installation.installation_id)
+        """
         # Endpoint is not documented as paginated; we fetch a single page
         # and yield from it rather than going through the paginating
         # ``self._list`` helper which would add unwanted page[] params.
@@ -53,6 +73,26 @@ class GitHubAppInstallations(_Service):
             yield _parse(item)
 
     def read(self, github_app_installation_id: str) -> GitHubAppInstallation:
+        """Read a GitHub App installation by its HCP Terraform ID.
+
+        Args:
+            github_app_installation_id: The GitHub App installation ID (e.g.
+                ``"ghainst-xxxxxxxx"``).
+
+        Returns:
+            The :class:`GitHubAppInstallation`.
+
+        Raises:
+            InvalidGitHubAppInstallationIDError: If ``github_app_installation_id`` is
+                not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> installation = client.github_app_installations.read(
+            ...     "ghainst-xxxxxxxx"
+            ... )
+            >>> print(installation.name)
+        """
         if not valid_string_id(github_app_installation_id):
             raise InvalidGitHubAppInstallationIDError()
         # Note: read uses the singular path segment ``installation`` (not

@@ -32,7 +32,26 @@ class OrganizationTags(_Service):
         organization: str,
         options: OrganizationTagsListOptions | None = None,
     ) -> Iterator[OrganizationTag]:
-        """List all tags within an organization."""
+        """List all tags within an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Optional tag filters, as a :class:`OrganizationTagsListOptions`.
+
+        Returns:
+            A single-use ``Iterator[OrganizationTag]``. Wrap with ``list(...)``
+            to materialize the results or iterate more than once.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+
+        Example:
+            >>> from pytfe.models import OrganizationTagsListOptions
+            >>> for tag in client.organization_tags.list(
+            ...     "my-org", OrganizationTagsListOptions(query="env")
+            ... ):
+            ...     print(tag.id, tag.name)
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
         return self._iter_tags(organization, options)
@@ -52,7 +71,25 @@ class OrganizationTags(_Service):
         organization: str,
         options: OrganizationTagsDeleteOptions,
     ) -> None:
-        """Delete tags from an organization."""
+        """Delete tags from an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Tag IDs to delete, as a :class:`OrganizationTagsDeleteOptions`.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import OrganizationTagsDeleteOptions
+            >>> client.organization_tags.delete(
+            ...     "my-org", OrganizationTagsDeleteOptions(ids=["tag-1"])
+            ... )
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
 
@@ -70,7 +107,28 @@ class OrganizationTags(_Service):
     def add_workspaces(
         self, organization: str, tag: str, options: AddWorkspacesToTagOptions
     ) -> None:
-        """Associate workspaces with an organization tag."""
+        """Associate workspaces with an organization tag.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            tag: The organization tag ID (e.g. ``"tag-xxxxxxxx"``).
+            options: Workspace IDs to associate, as a
+                :class:`AddWorkspacesToTagOptions`.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If an argument or options value is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AddWorkspacesToTagOptions
+            >>> client.organization_tags.add_workspaces(
+            ...     "my-org", "tag-1",
+            ...     AddWorkspacesToTagOptions(workspace_ids=["ws-xxxxxxxx"]),
+            ... )
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
         if not valid_string_id(tag):

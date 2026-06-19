@@ -29,7 +29,24 @@ class Policies(_Service):
     def list(
         self, organization: str, options: PolicyListOptions | None = None
     ) -> Iterator[Policy]:
-        """Iterate all the policies of the given organization."""
+        """List all policies in the given organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Pagination and filter options, as a :class:`PolicyListOptions`.
+
+        Returns:
+            A single-use ``Iterator[Policy]``. Wrap with ``list(...)`` to materialize
+            the results or iterate more than once.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for policy in client.policies.list("my-org"):
+            ...     print(policy.id, policy.name)
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
 
@@ -52,7 +69,38 @@ class Policies(_Service):
         return _gen()
 
     def create(self, organization: str, options: PolicyCreateOptions) -> Policy:
-        """Create a new policy in the given organization."""
+        """Create a new policy in the given organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Policy creation settings, as a :class:`PolicyCreateOptions`.
+
+        Returns:
+            The :class:`Policy`.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            RequiredNameError: If ``options.name`` is missing or blank.
+            InvalidNameError: If ``options.name`` is not a valid policy name.
+            RequiredQueryError: If an OPA policy is missing ``options.query``.
+            RequiredEnforceError: If ``options.enforcement_level`` is missing.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import (
+            ...     EnforcementLevel,
+            ...     PolicyCreateOptions,
+            ...     PolicyKind,
+            ... )
+            >>> policy = client.policies.create(
+            ...     "my-org",
+            ...     PolicyCreateOptions(
+            ...         name="cost-policy",
+            ...         kind=PolicyKind.SENTINEL,
+            ...         enforcement_level=EnforcementLevel.ENFORCEMENT_HARD,
+            ...     ),
+            ... )
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         valid = self._valid_create_options(options)
@@ -76,7 +124,22 @@ class Policies(_Service):
         return attach_jsonapi(Policy.model_validate(attrs), d)
 
     def read(self, policy_id: str) -> Policy:
-        """Read a specific policy by its ID."""
+        """Read a specific policy by its ID.
+
+        Args:
+            policy_id: The policy ID (e.g. ``"pol-xxxxxxxx"``).
+
+        Returns:
+            The :class:`Policy`.
+
+        Raises:
+            InvalidPolicyIDError: If ``policy_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> policy = client.policies.read("pol-789")
+            >>> print(policy.name)
+        """
         if not valid_string_id(policy_id):
             raise InvalidPolicyIDError
         r = self.t.request(
@@ -91,7 +154,28 @@ class Policies(_Service):
         return attach_jsonapi(Policy.model_validate(attrs), d)
 
     def update(self, policy_id: str, options: PolicyUpdateOptions) -> Policy:
-        """Update an existing policy by its ID."""
+        """Update an existing policy by its ID.
+
+        Args:
+            policy_id: The policy ID (e.g. ``"pol-xxxxxxxx"``).
+            options: Policy update settings, as a :class:`PolicyUpdateOptions`.
+
+        Returns:
+            The :class:`Policy`.
+
+        Raises:
+            InvalidPolicyIDError: If ``policy_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import EnforcementLevel, PolicyUpdateOptions
+            >>> policy = client.policies.update(
+            ...     "pol-789",
+            ...     PolicyUpdateOptions(
+            ...         enforcement_level=EnforcementLevel.ENFORCEMENT_SOFT
+            ...     ),
+            ... )
+        """
         if not valid_string_id(policy_id):
             raise InvalidPolicyIDError
         payload = {
@@ -113,7 +197,21 @@ class Policies(_Service):
         return attach_jsonapi(Policy.model_validate(attrs), d)
 
     def delete(self, policy_id: str) -> None:
-        """Delete a specific policy by its ID."""
+        """Delete a specific policy by its ID.
+
+        Args:
+            policy_id: The policy ID (e.g. ``"pol-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidPolicyIDError: If ``policy_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.policies.delete("pol-789")
+        """
         if not valid_string_id(policy_id):
             raise InvalidPolicyIDError
         self.t.request(
@@ -123,7 +221,22 @@ class Policies(_Service):
         return None
 
     def upload(self, policy_id: str, content: bytes) -> None:
-        """Upload the policy content of the policy."""
+        """Upload policy content for a policy.
+
+        Args:
+            policy_id: The policy ID (e.g. ``"pol-xxxxxxxx"``).
+            content: The raw policy file bytes to upload.
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidPolicyIDError: If ``policy_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.policies.upload("pol-789", b"main = rule { true }")
+        """
         if not valid_string_id(policy_id):
             raise InvalidPolicyIDError
 
@@ -137,7 +250,22 @@ class Policies(_Service):
         return None
 
     def download(self, policy_id: str) -> bytes:
-        """Download the policy content of the policy."""
+        """Download policy content for a policy.
+
+        Args:
+            policy_id: The policy ID (e.g. ``"pol-xxxxxxxx"``).
+
+        Returns:
+            The raw bytes (the SDK follows the storage/redirect URL for you).
+
+        Raises:
+            InvalidPolicyIDError: If ``policy_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> content = client.policies.download("pol-789")
+            >>> print(content.decode())
+        """
         if not valid_string_id(policy_id):
             raise InvalidPolicyIDError
         r = self.t.request(

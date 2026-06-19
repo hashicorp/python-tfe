@@ -29,6 +29,20 @@ class CostEstimates(_Service):
 
         Cost estimates have no list endpoint; find an ID in a run's
         ``relationships.cost-estimate``.
+
+        Args:
+            cost_estimate_id: The cost estimate ID (e.g. ``"ce-xxxxxxxx"``).
+
+        Returns:
+            The :class:`CostEstimate`.
+
+        Raises:
+            InvalidCostEstimateIDError: If ``cost_estimate_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> cost_estimate = client.cost_estimates.read("ce-BPvFFrYCqRV6qVBK")
+            >>> print(cost_estimate.status)
         """
         if not valid_string_id(cost_estimate_id):
             raise InvalidCostEstimateIDError()
@@ -42,10 +56,24 @@ class CostEstimates(_Service):
         return _cost_estimate_from(data or {}, body.get("included"))
 
     def logs(self, cost_estimate_id: str) -> str:
-        """Read a cost estimate's logs (its ``/output``) as text.
+        """Read a cost estimate's logs as text.
 
         Logs are produced once the estimate finishes running; reading them
         before then may return an empty body.
+
+        Args:
+            cost_estimate_id: The cost estimate ID (e.g. ``"ce-xxxxxxxx"``).
+
+        Returns:
+            The log output as text.
+
+        Raises:
+            InvalidCostEstimateIDError: If ``cost_estimate_id`` is not valid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> logs = client.cost_estimates.logs("ce-BPvFFrYCqRV6qVBK")
+            >>> print(logs)
         """
         if not valid_string_id(cost_estimate_id):
             raise InvalidCostEstimateIDError()

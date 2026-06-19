@@ -73,9 +73,25 @@ class StateVersions(_Service):
     def list(
         self, options: StateVersionListOptions | None = None
     ) -> Iterator[StateVersion]:
-        """
-        GET /state-versions
-        Accepts filters for organization and workspace and standard pagination.
+        """List state versions with optional organization and workspace filters.
+
+        Args:
+            options: Pagination and filter options, as a
+                :class:`StateVersionListOptions`.
+
+        Returns:
+            A single-use ``Iterator[StateVersion]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import StateVersionListOptions
+            >>> for state_version in client.state_versions.list(
+            ...     StateVersionListOptions(organization="my-org", workspace="api")
+            ... ):
+            ...     print(state_version.id, state_version.serial)
         """
         params = options.model_dump(by_alias=True, exclude_none=True) if options else {}
         path = f"/api/v2/state-versions{self._encode_query(params)}"
@@ -85,7 +101,22 @@ class StateVersions(_Service):
             yield attach_jsonapi(StateVersion.model_validate(attrs), d)
 
     def read(self, state_version_id: str) -> StateVersion:
-        """Read a state version by ID."""
+        """Read a state version by its ID.
+
+        Args:
+            state_version_id: The state version ID (e.g. ``"sv-xxxxxxxx"``).
+
+        Returns:
+            The :class:`StateVersion`.
+
+        Raises:
+            ValueError: If ``state_version_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> state_version = client.state_versions.read("sv-read-1")
+            >>> print(state_version.status)
+        """
         if not valid_string_id(state_version_id):
             raise ValueError("invalid state version id")
 
@@ -106,7 +137,26 @@ class StateVersions(_Service):
     def read_with_options(
         self, state_version_id: str, options: StateVersionReadOptions
     ) -> StateVersion:
-        """Read a state version with include options (?include=outputs,run,created_by,...)."""
+        """Read a state version by its ID with included relationships.
+
+        Args:
+            state_version_id: The state version ID (e.g. ``"sv-xxxxxxxx"``).
+            options: Include options, as a :class:`StateVersionReadOptions`.
+
+        Returns:
+            The :class:`StateVersion`.
+
+        Raises:
+            ValueError: If ``state_version_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import StateVersionIncludeOpt, StateVersionReadOptions
+            >>> state_version = client.state_versions.read_with_options(
+            ...     "sv-read-2",
+            ...     StateVersionReadOptions(include=[StateVersionIncludeOpt.OUTPUTS]),
+            ... )
+        """
         if not valid_string_id(state_version_id):
             raise ValueError("invalid state version id")
 
@@ -131,7 +181,22 @@ class StateVersions(_Service):
         )
 
     def read_current(self, workspace_id: str) -> StateVersion:
-        """Read the current state version for a workspace."""
+        """Read the current state version for a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+
+        Returns:
+            The :class:`StateVersion`.
+
+        Raises:
+            ValueError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> state_version = client.state_versions.read_current("ws-123")
+            >>> print(state_version.id, state_version.serial)
+        """
         if not valid_string_id(workspace_id):
             raise ValueError("invalid workspace id")
 
@@ -154,7 +219,31 @@ class StateVersions(_Service):
     def read_current_with_options(
         self, workspace_id: str, options: StateVersionCurrentOptions
     ) -> StateVersion:
-        """Read the current state version with include options."""
+        """Read the current state version with included relationships.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            options: Include options, as a :class:`StateVersionCurrentOptions`.
+
+        Returns:
+            The :class:`StateVersion`.
+
+        Raises:
+            ValueError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import (
+            ...     StateVersionCurrentOptions,
+            ...     StateVersionIncludeOpt,
+            ... )
+            >>> state_version = client.state_versions.read_current_with_options(
+            ...     "ws-123",
+            ...     StateVersionCurrentOptions(
+            ...         include=[StateVersionIncludeOpt.CREATED_BY]
+            ...     ),
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise ValueError("invalid workspace id")
 
@@ -191,7 +280,31 @@ class StateVersions(_Service):
         *,
         organization: str | None = None,
     ) -> StateVersion:
-        """Create a state-version record (returns hosted upload URLs if content omitted)."""
+        """Create a state-version record for a workspace.
+
+        Create with ``serial`` and ``md5`` and omit inline state to receive hosted
+        upload URLs for the signed upload flow.
+
+        Args:
+            workspace: The workspace ID (e.g. ``"ws-xxxxxxxx"``) or workspace name.
+            options: State version attributes, as a :class:`StateVersionCreateOptions`.
+            organization: The organization name (e.g. ``"my-org"``), required when
+                ``workspace`` is a workspace name instead of an ID.
+
+        Returns:
+            The :class:`StateVersion`.
+
+        Raises:
+            ValueError: If the create options contain no attributes.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import StateVersionCreateOptions
+            >>> state_version = client.state_versions.create(
+            ...     "ws-123",
+            ...     StateVersionCreateOptions(serial=10, md5="abc123"),
+            ... )
+        """
         ws_id = self._resolve_workspace_id(workspace, organization)
 
         attrs = options.model_dump(by_alias=True, exclude_none=True)
@@ -221,14 +334,41 @@ class StateVersions(_Service):
         options: StateVersionCreateOptions,
         organization: str | None = None,
     ) -> StateVersion:
-        """
-        Create a state version and upload state bytes to signed Archivist URLs.
+        """Create a state version and upload state bytes to hosted URLs.
 
         This mirrors Terraform's recommended workflow:
-          1. POST /workspaces/:id/state-versions with serial+md5 and no inline state
-          2. PUT raw state bytes to hosted-state-upload-url
-          3. Optional PUT JSON state bytes to hosted-json-state-upload-url
-          4. Read the state version again and return the refreshed object
+
+        1. POST ``/workspaces/:id/state-versions`` with ``serial`` and ``md5`` and
+           no inline state.
+        2. PUT raw state bytes to ``hosted-state-upload-url``.
+        3. Optionally PUT JSON state bytes to ``hosted-json-state-upload-url``.
+        4. Read the state version again and return the refreshed object.
+
+        Args:
+            workspace: The workspace ID (e.g. ``"ws-xxxxxxxx"``) or workspace name.
+            raw_state: The raw ``.tfstate`` bytes to upload.
+            raw_json_state: The optional raw JSON state bytes to upload.
+            options: State version attributes, as a :class:`StateVersionCreateOptions`;
+                omit ``state`` and ``json_state`` when using hosted upload URLs.
+            organization: The organization name (e.g. ``"my-org"``), required when
+                ``workspace`` is a workspace name instead of an ID.
+
+        Returns:
+            The :class:`StateVersion`.
+
+        Raises:
+            ValueError: If ``raw_state`` is missing or inline state fields are set.
+            ErrStateVersionUploadNotSupported: If the server does not support the
+                hosted upload flow or omits a required hosted upload URL.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import StateVersionCreateOptions
+            >>> state_version = client.state_versions.upload(
+            ...     "ws-123",
+            ...     raw_state=b"{}",
+            ...     options=StateVersionCreateOptions(serial=10, md5="abc123"),
+            ... )
         """
         if raw_state is None:
             raise ValueError("raw_state is required")
@@ -274,11 +414,26 @@ class StateVersions(_Service):
         return self.read(sv.id)
 
     def download(self, state_version_id: str) -> bytes:
-        """
-        Download the raw state file bytes for a specific state version.
+        """Download the raw state file bytes for a state version.
 
-        HCP Terraform returns a signed blob URL in the state-version attributes
-        called 'hosted-state-download-url'. We must fetch that URL directly.
+        HCP Terraform returns a signed storage URL in
+        ``hosted-state-download-url``; the SDK follows that URL for you and keeps
+        sending the bearer token on the redirected request.
+
+        Args:
+            state_version_id: The state version ID (e.g. ``"sv-xxxxxxxx"``).
+
+        Returns:
+            The raw bytes (the SDK follows the storage/redirect URL for you).
+
+        Raises:
+            ValueError: If ``state_version_id`` is not a valid resource ID.
+            NotFound: If no hosted state download URL is available.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> state_bytes = client.state_versions.download("sv-dl-1")
+            >>> print(len(state_bytes))
         """
         if not valid_string_id(state_version_id):
             raise ValueError("invalid state version id")
@@ -304,7 +459,27 @@ class StateVersions(_Service):
         return resp.content
 
     def download_current(self, workspace_id: str) -> bytes:
-        """Download the current state for a workspace."""
+        """Download the current raw state file bytes for a workspace.
+
+        The SDK reads the workspace's current state version, follows its hosted
+        storage URL for you, and keeps sending the bearer token on the redirected
+        request.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+
+        Returns:
+            The raw bytes (the SDK follows the storage/redirect URL for you).
+
+        Raises:
+            ValueError: If ``workspace_id`` is not a valid resource ID.
+            NotFound: If no hosted state download URL is available.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> state_bytes = client.state_versions.download_current("ws-123")
+            >>> print(len(state_bytes))
+        """
         if not valid_string_id(workspace_id):
             raise ValueError("invalid workspace id")
 
@@ -331,7 +506,28 @@ class StateVersions(_Service):
         state_version_id: str,
         options: StateVersionOutputsListOptions | None = None,
     ) -> Iterator[StateVersionOutput]:
-        """List outputs for a given state version (paged)."""
+        """List outputs for a state version.
+
+        Args:
+            state_version_id: The state version ID (e.g. ``"sv-xxxxxxxx"``).
+            options: Pagination options, as a :class:`StateVersionOutputsListOptions`.
+
+        Returns:
+            A single-use ``Iterator[StateVersionOutput]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            ValueError: If ``state_version_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import StateVersionOutputsListOptions
+            >>> outputs = client.state_versions.list_outputs(
+            ...     "sv-outputs-1", StateVersionOutputsListOptions(page_size=5)
+            ... )
+            >>> for output in outputs:
+            ...     print(output.name, output.value)
+        """
         if not valid_string_id(state_version_id):
             raise ValueError("invalid state version id")
 
@@ -354,6 +550,21 @@ class StateVersions(_Service):
     # ----------------------------
 
     def soft_delete_backing_data(self, state_version_id: str) -> None:
+        """Soft-delete the backing data for a state version.
+
+        Args:
+            state_version_id: The state version ID (e.g. ``"sv-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``state_version_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.state_versions.soft_delete_backing_data("sv-123")
+        """
         if not valid_string_id(state_version_id):
             raise ValueError("invalid state version id")
         self.t.request(
@@ -363,6 +574,21 @@ class StateVersions(_Service):
         return None
 
     def restore_backing_data(self, state_version_id: str) -> None:
+        """Restore soft-deleted backing data for a state version.
+
+        Args:
+            state_version_id: The state version ID (e.g. ``"sv-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``state_version_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.state_versions.restore_backing_data("sv-123")
+        """
         if not valid_string_id(state_version_id):
             raise ValueError("invalid state version id")
         self.t.request(
@@ -372,6 +598,21 @@ class StateVersions(_Service):
         return None
 
     def permanently_delete_backing_data(self, state_version_id: str) -> None:
+        """Permanently delete backing data for a state version.
+
+        Args:
+            state_version_id: The state version ID (e.g. ``"sv-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``state_version_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.state_versions.permanently_delete_backing_data("sv-123")
+        """
         if not valid_string_id(state_version_id):
             raise ValueError("invalid state version id")
         self.t.request(
@@ -388,8 +629,24 @@ class StateVersions(_Service):
         """Roll a workspace back to a previous state version.
 
         Duplicates the named state version and sets the copy as the workspace's
-        current state version. The workspace must be locked by the caller
-        before invoking this operation, otherwise the API returns 409.
+        current state version. The workspace must be locked by the caller before
+        invoking this operation, otherwise the API returns 409.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            rollback_state_version_id: The state version ID to roll back to
+                (e.g. ``"sv-xxxxxxxx"``).
+
+        Returns:
+            The :class:`StateVersion`.
+
+        Raises:
+            ValueError: If either ID is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> state_version = client.state_versions.rollback("ws-123", "sv-1")
+            >>> print(state_version.id)
         """
         if not valid_string_id(workspace_id):
             raise ValueError("invalid workspace id")

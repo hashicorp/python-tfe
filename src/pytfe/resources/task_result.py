@@ -13,6 +13,22 @@ from ._base import _Service
 
 class TaskResults(_Service):
     def read(self, task_result_id: str) -> TaskResult:
+        """Read a task result by its ID.
+
+        Args:
+            task_result_id: The task result ID (e.g. ``"taskrs-abc123"``).
+
+        Returns:
+            The :class:`TaskResult`.
+
+        Raises:
+            ValueError: If ``task_result_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> result = client.task_results.read("taskrs-abc123")
+            >>> print(result.status)
+        """
         if not valid_string_id(task_result_id):
             raise ValueError("Invalid task_result_id")
 

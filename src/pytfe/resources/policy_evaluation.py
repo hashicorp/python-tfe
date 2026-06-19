@@ -26,9 +26,27 @@ class PolicyEvaluations(_Service):
     def list(
         self, task_stage_id: str, options: PolicyEvaluationListOptions | None = None
     ) -> Iterator[PolicyEvaluation]:
-        """
-        **Note: This method is still in BETA and subject to change.**
-        List all policy evaluations in the task stage. Only available for OPA policies.
+        """List policy evaluations in a task stage.
+
+        **Note: This method is still in BETA and subject to change.** Only available
+        for OPA policies.
+
+        Args:
+            task_stage_id: The task stage ID (e.g. ``"ts-xxxxxxxx"``).
+            options: Optional pagination settings, as a
+                :class:`PolicyEvaluationListOptions`.
+
+        Returns:
+            A single-use ``Iterator[PolicyEvaluation]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidTaskStageIDError: If ``task_stage_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for evaluation in client.policy_evaluations.list("ts-123"):
+            ...     print(evaluation.id, evaluation.status)
         """
         if not valid_string_id(task_stage_id):
             raise InvalidTaskStageIDError()

@@ -37,6 +37,27 @@ class _AdminWorkspaces(_Service):
     def list(
         self, options: AdminWorkspaceListOptions | None = None
     ) -> Iterator[AdminWorkspace]:
+        """List Terraform Enterprise admin workspaces.
+
+        Args:
+            options: Optional filters and pagination, as a
+                :class:`AdminWorkspaceListOptions`.
+
+        Returns:
+            A single-use ``Iterator[AdminWorkspace]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AdminWorkspaceListOptions
+            >>> workspaces = client.admin.workspaces.list(
+            ...     AdminWorkspaceListOptions(query="production")
+            ... )
+            >>> for workspace in workspaces:
+            ...     print(workspace.id, workspace.name)
+        """
         params: dict[str, Any] = {}
         if options:
             if options.query:
@@ -49,6 +70,22 @@ class _AdminWorkspaces(_Service):
             yield _parse_admin_workspace(item)
 
     def read(self, workspace_id: str) -> AdminWorkspace:
+        """Read a Terraform Enterprise admin workspace by ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+
+        Returns:
+            The :class:`AdminWorkspace`.
+
+        Raises:
+            ValueError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> workspace = client.admin.workspaces.read("ws-6fHMCom98SDXSQUv")
+            >>> print(workspace.organization_name)
+        """
         if not valid_string_id(workspace_id):
             raise ValueError(ERR_INVALID_NAME)
         r = self.t.request("GET", f"/api/v2/admin/workspaces/{workspace_id}")

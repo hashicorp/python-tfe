@@ -115,7 +115,7 @@ This is the workflow that produces low-friction reviews. Follow it.
 
 ## Style
 
-The codebase uses [ruff](https://docs.astral.sh/ruff/) for both formatting and linting and [mypy](https://mypy.readthedocs.io/) for type checking. Type hints are required on every public method's signature. Docstrings are required on every public method — keep them to one or two lines unless the behavior is genuinely non-obvious.
+The codebase uses [ruff](https://docs.astral.sh/ruff/) for both formatting and linting and [mypy](https://mypy.readthedocs.io/) for type checking. Type hints are required on every public method's signature. **Public resource methods carry a Google-style docstring** — a one-line summary plus `Args:`, `Returns:`, `Raises:`, and `Example:` sections *as applicable* (omit `Args:` for a no-argument method; omit `Raises:` when the method raises nothing, e.g. a pure local computation) — written for *consumers* and the AI coding assistants that read them via the language server. Accuracy comes first: under `Raises:` list only the exceptions the method body itself raises (not those raised by an options model's validators); encode return gotchas in `Returns:` (single-use `Iterator`, raw `bytes` for blob downloads that follow a redirect, `None` for `204`s); and make every `Example:` a real, runnable call using the correct `client.<attr>` name and a real `*Options` class. Internal/private helpers stay terse (one line, or none when obvious).
 
 Comments are minimal by design. A comment should explain *why* something non-obvious is true, not *what* the code does. The names and types should be enough to convey "what".
 

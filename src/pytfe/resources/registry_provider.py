@@ -30,7 +30,25 @@ class RegistryProviders(_Service):
     def list(
         self, organization: str, options: RegistryProviderListOptions | None = None
     ) -> Iterator[RegistryProvider]:
-        """List all the registry providers within an organization."""
+        """List registry providers in an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Optional filters, includes, and pagination settings, as a
+                :class:`RegistryProviderListOptions`.
+
+        Returns:
+            A single-use ``Iterator[RegistryProvider]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for provider in client.registry_providers.list("my-org"):
+            ...     print(provider.namespace, provider.name)
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
 
@@ -59,7 +77,31 @@ class RegistryProviders(_Service):
     def create(
         self, organization: str, options: RegistryProviderCreateOptions
     ) -> RegistryProvider:
-        """Create a registry provider."""
+        """Create a registry provider in an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: The registry provider creation settings, as a
+                :class:`RegistryProviderCreateOptions`.
+
+        Returns:
+            The created :class:`RegistryProvider`.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryName, RegistryProviderCreateOptions
+            >>> provider = client.registry_providers.create(
+            ...     "my-org",
+            ...     RegistryProviderCreateOptions(
+            ...         name="example",
+            ...         namespace="my-org",
+            ...         registry_name=RegistryName.PRIVATE,
+            ...     ),
+            ... )
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
 
@@ -86,7 +128,31 @@ class RegistryProviders(_Service):
         provider_id: RegistryProviderID,
         options: RegistryProviderReadOptions | None = None,
     ) -> RegistryProvider:
-        """Read a specific registry provider."""
+        """Read a registry provider by composite ID.
+
+        Args:
+            provider_id: The registry provider identifier, as a
+                :class:`RegistryProviderID`.
+            options: Optional include settings, as a
+                :class:`RegistryProviderReadOptions`.
+
+        Returns:
+            The :class:`RegistryProvider`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryName, RegistryProviderID
+            >>> provider = client.registry_providers.read(
+            ...     RegistryProviderID(
+            ...         organization_name="my-org",
+            ...         registry_name=RegistryName.PRIVATE,
+            ...         namespace="my-org",
+            ...         name="example",
+            ...     )
+            ... )
+        """
         path = (
             f"/api/v2/organizations/{provider_id.organization_name}/"
             f"registry-providers/{provider_id.registry_name.value}/"
@@ -104,7 +170,29 @@ class RegistryProviders(_Service):
         )
 
     def delete(self, provider_id: RegistryProviderID) -> None:
-        """Delete a registry provider."""
+        """Delete a registry provider by composite ID.
+
+        Args:
+            provider_id: The registry provider identifier, as a
+                :class:`RegistryProviderID`.
+
+        Returns:
+            None.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import RegistryName, RegistryProviderID
+            >>> client.registry_providers.delete(
+            ...     RegistryProviderID(
+            ...         organization_name="my-org",
+            ...         registry_name=RegistryName.PRIVATE,
+            ...         namespace="my-org",
+            ...         name="example",
+            ...     )
+            ... )
+        """
         path = (
             f"/api/v2/organizations/{provider_id.organization_name}/"
             f"registry-providers/{provider_id.registry_name.value}/"

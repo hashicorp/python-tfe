@@ -220,6 +220,27 @@ class Workspaces(_Service):
         organization: str,
         options: WorkspaceListOptions | None = None,
     ) -> Iterator[Workspace]:
+        """List workspaces in an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Optional filters and includes, as a :class:`WorkspaceListOptions`.
+
+        Returns:
+            A single-use ``Iterator[Workspace]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import WorkspaceListOptions
+            >>> for workspace in client.workspaces.list(
+            ...     "my-org", WorkspaceListOptions(search="prod")
+            ... ):
+            ...     print(workspace.id, workspace.name)
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
 
@@ -248,7 +269,24 @@ class Workspaces(_Service):
             yield _ws_from(item)
 
     def read(self, workspace: str, *, organization: str) -> Workspace:
-        """Read workspace by organization and name."""
+        """Read a workspace by organization and name.
+
+        Args:
+            workspace: The workspace name (e.g. ``"example-workspace"``).
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            The :class:`Workspace`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> workspace = client.workspaces.read(
+            ...     "example-workspace", organization="my-org"
+            ... )
+            >>> print(workspace.id)
+        """
         return self.read_with_options(workspace, organization=organization)
 
     def read_with_options(
@@ -258,6 +296,29 @@ class Workspaces(_Service):
         *,
         organization: str,
     ) -> Workspace:
+        """Read a workspace by organization and name with include options.
+
+        Args:
+            workspace: The workspace name (e.g. ``"example-workspace"``).
+            options: Optional related resources, as a :class:`WorkspaceReadOptions`.
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            The :class:`Workspace`.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            InvalidWorkspaceValueError: If ``workspace`` is not a valid workspace name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import WorkspaceIncludeOpt, WorkspaceReadOptions
+            >>> workspace = client.workspaces.read_with_options(
+            ...     "example-workspace",
+            ...     WorkspaceReadOptions(include=[WorkspaceIncludeOpt.PROJECT]),
+            ...     organization="my-org",
+            ... )
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(workspace):
@@ -282,12 +343,46 @@ class Workspaces(_Service):
         return ws
 
     def read_by_id(self, workspace_id: str) -> Workspace:
-        """Read workspace by workspace ID."""
+        """Read a workspace by workspace ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            The :class:`Workspace`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> workspace = client.workspaces.read_by_id("ws-abc123def456")
+            >>> print(workspace.name)
+        """
         return self.read_by_id_with_options(workspace_id)
 
     def read_by_id_with_options(
         self, workspace_id: str, options: WorkspaceReadOptions | None = None
     ) -> Workspace:
+        """Read a workspace by workspace ID with include options.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+            options: Optional related resources, as a :class:`WorkspaceReadOptions`.
+
+        Returns:
+            The :class:`Workspace`.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import WorkspaceIncludeOpt, WorkspaceReadOptions
+            >>> workspace = client.workspaces.read_by_id_with_options(
+            ...     "ws-abc123def456",
+            ...     WorkspaceReadOptions(include=[WorkspaceIncludeOpt.OUTPUTS]),
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -309,7 +404,25 @@ class Workspaces(_Service):
         organization: str,
         options: WorkspaceCreateOptions,
     ) -> Workspace:
-        """Create a new workspace in the given organization."""
+        """Create a workspace in an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: The workspace settings, as a :class:`WorkspaceCreateOptions`.
+
+        Returns:
+            The created :class:`Workspace`.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import WorkspaceCreateOptions
+            >>> workspace = client.workspaces.create(
+            ...     "my-org", WorkspaceCreateOptions(name="example-workspace")
+            ... )
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
 
@@ -322,7 +435,29 @@ class Workspaces(_Service):
     def update(
         self, workspace: str, options: WorkspaceUpdateOptions, *, organization: str
     ) -> Workspace:
-        """Update workspace by organization and name."""
+        """Update a workspace by organization and name.
+
+        Args:
+            workspace: The workspace name (e.g. ``"example-workspace"``).
+            options: The workspace changes, as a :class:`WorkspaceUpdateOptions`.
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            The updated :class:`Workspace`.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            InvalidWorkspaceValueError: If ``workspace`` is not a valid workspace name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import WorkspaceUpdateOptions
+            >>> workspace = client.workspaces.update(
+            ...     "example-workspace",
+            ...     WorkspaceUpdateOptions(description="Managed by pytfe."),
+            ...     organization="my-org",
+            ... )
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(workspace):
@@ -339,7 +474,25 @@ class Workspaces(_Service):
     def update_by_id(
         self, workspace_id: str, options: WorkspaceUpdateOptions
     ) -> Workspace:
-        """Update workspace by workspace ID."""
+        """Update a workspace by workspace ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+            options: The workspace changes, as a :class:`WorkspaceUpdateOptions`.
+
+        Returns:
+            The updated :class:`Workspace`.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import WorkspaceUpdateOptions
+            >>> workspace = client.workspaces.update_by_id(
+            ...     "ws-abc123def456", WorkspaceUpdateOptions(auto_apply=True)
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -425,7 +578,23 @@ class Workspaces(_Service):
         return body
 
     def delete(self, workspace: str, *, organization: str) -> None:
-        """Delete workspace by organization and workspace name."""
+        """Delete a workspace by organization and name.
+
+        Args:
+            workspace: The workspace name (e.g. ``"example-workspace"``).
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            InvalidWorkspaceValueError: If ``workspace`` is not a valid workspace name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.workspaces.delete("example-workspace", organization="my-org")
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(workspace):
@@ -437,7 +606,21 @@ class Workspaces(_Service):
         return None
 
     def delete_by_id(self, workspace_id: str) -> None:
-        """Delete workspace by workspace ID."""
+        """Delete a workspace by workspace ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.workspaces.delete_by_id("ws-abc123def456")
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -445,7 +628,25 @@ class Workspaces(_Service):
         return None
 
     def safe_delete(self, workspace: str, *, organization: str) -> None:
-        """Safely delete workspace by organization and name."""
+        """Safely delete a workspace by organization and name.
+
+        Args:
+            workspace: The workspace name (e.g. ``"example-workspace"``).
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            InvalidWorkspaceValueError: If ``workspace`` is not a valid workspace name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.workspaces.safe_delete(
+            ...     "example-workspace", organization="my-org"
+            ... )
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(workspace):
@@ -458,7 +659,21 @@ class Workspaces(_Service):
         return None
 
     def safe_delete_by_id(self, workspace_id: str) -> None:
-        """Safely delete workspace by workspace ID."""
+        """Safely delete a workspace by workspace ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.workspaces.safe_delete_by_id("ws-abc123def456")
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -471,7 +686,25 @@ class Workspaces(_Service):
         *,
         organization: str | None = None,
     ) -> Workspace:
-        """Remove VCS connection from workspace by organization and name."""
+        """Remove the VCS connection from a workspace by name.
+
+        Args:
+            workspace: The workspace name (e.g. ``"example-workspace"``).
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            The updated :class:`Workspace`.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            InvalidWorkspaceValueError: If ``workspace`` is not a valid workspace name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> workspace = client.workspaces.remove_vcs_connection(
+            ...     "example-workspace", organization="my-org"
+            ... )
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(workspace):
@@ -492,7 +725,23 @@ class Workspaces(_Service):
         return _ws_from(r.json()["data"])
 
     def remove_vcs_connection_by_id(self, workspace_id: str) -> Workspace:
-        """Remove VCS connection from workspace by workspace ID."""
+        """Remove the VCS connection from a workspace by ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            The updated :class:`Workspace`.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> workspace = client.workspaces.remove_vcs_connection_by_id(
+            ...     "ws-abc123def456"
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -511,7 +760,25 @@ class Workspaces(_Service):
         return _ws_from(r.json()["data"])
 
     def lock(self, workspace_id: str, options: WorkspaceLockOptions) -> Workspace:
-        """Lock a workspace by workspace ID."""
+        """Lock a workspace by workspace ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+            options: The lock reason, as a :class:`WorkspaceLockOptions`.
+
+        Returns:
+            The locked :class:`Workspace`.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import WorkspaceLockOptions
+            >>> workspace = client.workspaces.lock(
+            ...     "ws-abc123def456", WorkspaceLockOptions(reason="Maintenance")
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -525,7 +792,23 @@ class Workspaces(_Service):
         return _ws_from(r.json()["data"])
 
     def unlock(self, workspace_id: str) -> Workspace:
-        """Unlock a workspace by workspace ID."""
+        """Unlock a workspace by workspace ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            The unlocked :class:`Workspace`.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            WorkspaceLockedStateVersionStillPending: If the latest state version is
+                pending.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> workspace = client.workspaces.unlock("ws-abc123def456")
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         try:
@@ -540,7 +823,21 @@ class Workspaces(_Service):
             raise
 
     def force_unlock(self, workspace_id: str) -> Workspace:
-        """Force unlock a workspace by workspace ID."""
+        """Force unlock a workspace by workspace ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            The unlocked :class:`Workspace`.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> workspace = client.workspaces.force_unlock("ws-abc123def456")
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -553,7 +850,28 @@ class Workspaces(_Service):
     def assign_ssh_key(
         self, workspace_id: str, options: WorkspaceAssignSSHKeyOptions
     ) -> Workspace:
-        """Assign an SSH key to a workspace by workspace ID."""
+        """Assign an SSH key to a workspace by workspace ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+            options: The SSH key ID, as a :class:`WorkspaceAssignSSHKeyOptions`.
+
+        Returns:
+            The updated :class:`Workspace`.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            RequiredSSHKeyIDError: If ``options.ssh_key_id`` is empty.
+            InvalidSSHKeyIDError: If ``options.ssh_key_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import WorkspaceAssignSSHKeyOptions
+            >>> workspace = client.workspaces.assign_ssh_key(
+            ...     "ws-abc123def456",
+            ...     WorkspaceAssignSSHKeyOptions(ssh_key_id="sshkey-123"),
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -578,7 +896,21 @@ class Workspaces(_Service):
         return _ws_from(r.json()["data"])
 
     def unassign_ssh_key(self, workspace_id: str) -> Workspace:
-        """Unassign the SSH key from a workspace by workspace ID."""
+        """Unassign the SSH key from a workspace by workspace ID.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            The updated :class:`Workspace`.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> workspace = client.workspaces.unassign_ssh_key("ws-abc123def456")
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -602,7 +934,27 @@ class Workspaces(_Service):
         workspace_id: str,
         options: WorkspaceListRemoteStateConsumersOptions | None = None,
     ) -> Iterator[Workspace]:
-        """List remote state consumers of a workspace by workspace ID."""
+        """List remote-state consumers for a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+            options: Optional pagination, as a
+                :class:`WorkspaceListRemoteStateConsumersOptions`.
+
+        Returns:
+            A single-use ``Iterator[Workspace]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for consumer in client.workspaces.list_remote_state_consumers(
+            ...     "ws-abc123def456"
+            ... ):
+            ...     print(consumer.id)
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -615,7 +967,34 @@ class Workspaces(_Service):
     def add_remote_state_consumers(
         self, workspace_id: str, options: WorkspaceAddRemoteStateConsumersOptions
     ) -> None:
-        """Add remote state consumers to a workspace by workspace ID."""
+        """Add remote-state consumers to a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+            options: The consumer workspaces, as a
+                :class:`WorkspaceAddRemoteStateConsumersOptions`.
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            WorkspaceRequiredError: If ``options.workspaces`` is ``None``.
+            WorkspaceMinimumLimitError: If ``options.workspaces`` is empty.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import (
+            ...     Workspace,
+            ...     WorkspaceAddRemoteStateConsumersOptions,
+            ... )
+            >>> client.workspaces.add_remote_state_consumers(
+            ...     "ws-abc123def456",
+            ...     WorkspaceAddRemoteStateConsumersOptions(
+            ...         workspaces=[Workspace(id="ws-456")]
+            ...     ),
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if options.workspaces is None:
@@ -636,7 +1015,34 @@ class Workspaces(_Service):
     def remove_remote_state_consumers(
         self, workspace_id: str, options: WorkspaceRemoveRemoteStateConsumersOptions
     ) -> None:
-        """Remove remote state consumers from a workspace by workspace ID."""
+        """Remove remote-state consumers from a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+            options: The consumer workspaces, as a
+                :class:`WorkspaceRemoveRemoteStateConsumersOptions`.
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            WorkspaceRequiredError: If ``options.workspaces`` is ``None``.
+            WorkspaceMinimumLimitError: If ``options.workspaces`` is empty.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import (
+            ...     Workspace,
+            ...     WorkspaceRemoveRemoteStateConsumersOptions,
+            ... )
+            >>> client.workspaces.remove_remote_state_consumers(
+            ...     "ws-abc123def456",
+            ...     WorkspaceRemoveRemoteStateConsumersOptions(
+            ...         workspaces=[Workspace(id="ws-456")]
+            ...     ),
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if options.workspaces is None:
@@ -656,7 +1062,34 @@ class Workspaces(_Service):
     def update_remote_state_consumers(
         self, workspace_id: str, options: WorkspaceUpdateRemoteStateConsumersOptions
     ) -> None:
-        """Update remote state consumers of a workspace by workspace ID."""
+        """Replace remote-state consumers for a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+            options: The complete consumer set, as a
+                :class:`WorkspaceUpdateRemoteStateConsumersOptions`.
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            WorkspaceRequiredError: If ``options.workspaces`` is ``None``.
+            WorkspaceMinimumLimitError: If ``options.workspaces`` is empty.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import (
+            ...     Workspace,
+            ...     WorkspaceUpdateRemoteStateConsumersOptions,
+            ... )
+            >>> client.workspaces.update_remote_state_consumers(
+            ...     "ws-abc123def456",
+            ...     WorkspaceUpdateRemoteStateConsumersOptions(
+            ...         workspaces=[Workspace(id="ws-456")]
+            ...     ),
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if options.workspaces is None:
@@ -676,6 +1109,25 @@ class Workspaces(_Service):
     def list_tags(
         self, workspace_id: str, options: WorkspaceTagListOptions | None = None
     ) -> Iterator[Tag]:
+        """List tags attached to a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+            options: Optional pagination and name filtering, as a
+                :class:`WorkspaceTagListOptions`.
+
+        Returns:
+            A single-use ``Iterator[Tag]``. Wrap with ``list(...)`` to materialize the
+            results or iterate more than once.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for tag in client.workspaces.list_tags("ws-abc123def456"):
+            ...     print(tag.id, tag.name)
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -687,7 +1139,26 @@ class Workspaces(_Service):
             yield Tag(id=item.get("id"), name=attr.get("name", ""))
 
     def add_tags(self, workspace_id: str, options: WorkspaceAddTagsOptions) -> None:
-        """AddTags adds a list of tags to a workspace."""
+        """Add tags to a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+            options: The tags to add, as a :class:`WorkspaceAddTagsOptions`.
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            MissingTagIdentifierError: If no tag has an ID or name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import Tag, WorkspaceAddTagsOptions
+            >>> client.workspaces.add_tags(
+            ...     "ws-abc123def456", WorkspaceAddTagsOptions(tags=[Tag(name="prod")])
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if len(options.tags) == 0:
@@ -712,7 +1183,27 @@ class Workspaces(_Service):
     def remove_tags(
         self, workspace_id: str, options: WorkspaceRemoveTagsOptions
     ) -> None:
-        """RemoveTags removes a list of tags from a workspace."""
+        """Remove tags from a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+            options: The tags to remove, as a :class:`WorkspaceRemoveTagsOptions`.
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            MissingTagIdentifierError: If no tag has an ID or name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import Tag, WorkspaceRemoveTagsOptions
+            >>> client.workspaces.remove_tags(
+            ...     "ws-abc123def456",
+            ...     WorkspaceRemoveTagsOptions(tags=[Tag(name="prod")]),
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if len(options.tags) == 0:
@@ -735,6 +1226,23 @@ class Workspaces(_Service):
         return None
 
     def list_tag_bindings(self, workspace_id: str) -> Iterator[TagBinding]:
+        """List tag bindings attached to a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            A single-use ``Iterator[TagBinding]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> bindings = list(client.workspaces.list_tag_bindings("ws-abc123def456"))
+            >>> print(bindings[0].key)
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -751,6 +1259,25 @@ class Workspaces(_Service):
     def list_effective_tag_bindings(
         self, workspace_id: str
     ) -> Iterator[EffectiveTagBinding]:
+        """List effective tag bindings for a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            A single-use ``Iterator[EffectiveTagBinding]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for binding in client.workspaces.list_effective_tag_bindings(
+            ...     "ws-abc123def456"
+            ... ):
+            ...     print(binding.key, binding.value)
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -768,7 +1295,30 @@ class Workspaces(_Service):
     def add_tag_bindings(
         self, workspace_id: str, options: WorkspaceAddTagBindingsOptions
     ) -> Iterator[TagBinding]:
-        """AddTagBindings adds or modifies the value of existing tag binding keys for a workspace."""
+        """Add or update tag bindings on a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+            options: The tag bindings, as a :class:`WorkspaceAddTagBindingsOptions`.
+
+        Returns:
+            A single-use ``Iterator[TagBinding]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            MissingTagBindingIdentifierError: If no tag bindings are provided.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import TagBinding, WorkspaceAddTagBindingsOptions
+            >>> bindings = client.workspaces.add_tag_bindings(
+            ...     "ws-abc123def456",
+            ...     WorkspaceAddTagBindingsOptions(
+            ...         tag_bindings=[TagBinding(key="env", value="prod")]
+            ...     ),
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         if len(options.tag_bindings) == 0:
@@ -800,7 +1350,21 @@ class Workspaces(_Service):
         return iter(out)
 
     def delete_all_tag_bindings(self, workspace_id: str) -> None:
-        """DeleteAllTagBindings removes all tag bindings associated with a workspace."""
+        """Delete all tag bindings from a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.workspaces.delete_all_tag_bindings("ws-abc123def456")
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -817,7 +1381,24 @@ class Workspaces(_Service):
     def read_data_retention_policy(
         self, workspace_id: str
     ) -> DataRetentionPolicy | None:
-        """Read a workspace's data retention policy (deprecated: use read_data_retention_policy_choice instead)."""
+        """Read a workspace's deprecated data retention policy.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            The :class:`DataRetentionPolicy`, or ``None`` if the relationship
+            has no data.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            ValueError: If the deprecated policy endpoint should not be used.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> policy = client.workspaces.read_data_retention_policy("ws-abc123def456")
+            >>> print(policy.delete_older_than_n_days if policy else "none")
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -844,7 +1425,24 @@ class Workspaces(_Service):
     def read_data_retention_policy_choice(
         self, workspace_id: str
     ) -> DataRetentionPolicyChoice | None:
-        """Read a workspace's data retention policy choice (polymorphic)."""
+        """Read a workspace's polymorphic data retention policy choice.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            The :class:`DataRetentionPolicyChoice`, or ``None`` if the workspace has no
+            policy choice or the relationship endpoint has no data.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> choice = client.workspaces.read_data_retention_policy_choice(
+            ...     "ws-abc123def456"
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -898,7 +1496,26 @@ class Workspaces(_Service):
     def set_data_retention_policy(
         self, workspace_id: str, options: DataRetentionPolicySetOptions
     ) -> DataRetentionPolicy:
-        """Set a workspace's data retention policy (deprecated: use set_data_retention_policy_delete_older instead)."""
+        """Set a workspace's deprecated data retention policy.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+            options: The retention period, as a :class:`DataRetentionPolicySetOptions`.
+
+        Returns:
+            The :class:`DataRetentionPolicy`.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import DataRetentionPolicySetOptions
+            >>> policy = client.workspaces.set_data_retention_policy(
+            ...     "ws-abc123def456",
+            ...     DataRetentionPolicySetOptions(delete_older_than_n_days=30),
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -930,7 +1547,29 @@ class Workspaces(_Service):
     def set_data_retention_policy_delete_older(
         self, workspace_id: str, options: DataRetentionPolicyDeleteOlderSetOptions
     ) -> DataRetentionPolicyDeleteOlder:
-        """Set a workspace's data retention policy to delete data older than a certain number of days."""
+        """Set a workspace's delete-older data retention policy.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+            options: The retention period, as a
+                :class:`DataRetentionPolicyDeleteOlderSetOptions`.
+
+        Returns:
+            The :class:`DataRetentionPolicyDeleteOlder`.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import DataRetentionPolicyDeleteOlderSetOptions
+            >>> policy = client.workspaces.set_data_retention_policy_delete_older(
+            ...     "ws-abc123def456",
+            ...     DataRetentionPolicyDeleteOlderSetOptions(
+            ...         delete_older_than_n_days=30
+            ...     ),
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -958,7 +1597,23 @@ class Workspaces(_Service):
     def set_data_retention_policy_dont_delete(
         self, workspace_id: str
     ) -> DataRetentionPolicyDontDelete:
-        """Set a workspace's data retention policy to explicitly not delete data."""
+        """Set a workspace's data retention policy to never delete.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            The :class:`DataRetentionPolicyDontDelete`.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> policy = client.workspaces.set_data_retention_policy_dont_delete(
+            ...     "ws-abc123def456"
+            ... )
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -977,7 +1632,21 @@ class Workspaces(_Service):
         return DataRetentionPolicyDontDelete(id=d.get("id"))
 
     def delete_data_retention_policy(self, workspace_id: str) -> None:
-        """Delete a workspace's data retention policy."""
+        """Delete a workspace's data retention policy.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.workspaces.delete_data_retention_policy("ws-abc123def456")
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
 
@@ -985,7 +1654,23 @@ class Workspaces(_Service):
         return None
 
     def readme(self, workspace_id: str) -> str | None:
-        """Get the README content of a workspace by its ID."""
+        """Read the README content for a workspace.
+
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            The README Markdown string, or ``None`` if the workspace has no README
+            relationship or included README content.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> markdown = client.workspaces.readme("ws-abc123def456")
+            >>> print(markdown or "No README")
+        """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
         r = self.t.request(
@@ -1014,10 +1699,21 @@ class Workspaces(_Service):
         return None
 
     def current_assessment_result(self, workspace_id: str) -> AssessmentResult | None:
-        """Get the current health-assessment (drift detection) result for a workspace.
+        """Read the current health-assessment result for a workspace.
 
-        Returns ``None`` if the workspace has no assessment result yet (assessments
-        may be disabled, or no assessment has run).
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            The :class:`AssessmentResult`, or ``None`` if no assessment result exists.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> result = client.workspaces.current_assessment_result("ws-abc123def456")
+            >>> print(result.status if result else "not assessed")
         """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()
@@ -1038,13 +1734,25 @@ class Workspaces(_Service):
         return AssessmentResult.model_validate(attributes)
 
     def list_applicable_varsets(self, workspace_id: str) -> Iterator[dict[str, Any]]:
-        """List variable sets that apply to a workspace, including inherited ones.
+        """List variable sets that apply to a workspace.
 
-        Returns raw varset attribute dicts (id/name/global/var-count/etc.). The
-        endpoint summarises varsets rather than returning the full relationship
-        graph, so it is exposed as plain dicts to avoid the heavier
-        ``VariableSet`` parsing path. Callers wanting the full model can pass
-        each ``id`` to ``client.variable_sets.read``.
+        Args:
+            workspace_id: The workspace ID (e.g. ``"ws-abc123def456"``).
+
+        Returns:
+            A single-use ``Iterator[dict[str, Any]]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> varsets = client.workspaces.list_applicable_varsets(
+            ...     "ws-abc123def456"
+            ... )
+            >>> for varset in varsets:
+            ...     print(varset["id"], varset.get("name"))
         """
         if not valid_string_id(workspace_id):
             raise InvalidWorkspaceIDError()

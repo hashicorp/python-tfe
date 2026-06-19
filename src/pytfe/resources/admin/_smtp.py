@@ -25,10 +25,42 @@ def _parse_jsonapi(data: dict[str, Any], model: type[_M]) -> _M:
 
 class _AdminSMTPSettings(_Service):
     def read(self) -> AdminSMTPSettings:
+        """Read the TFE site SMTP settings.
+
+        Returns:
+            The :class:`AdminSMTPSettings`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> settings = client.admin.smtp_settings.read()
+            >>> print(settings.host)
+        """
         r = self.t.request("GET", "/api/v2/admin/smtp-settings")
         return _parse_jsonapi(r.json()["data"], AdminSMTPSettings)
 
     def update(self, options: AdminSMTPSettingsUpdateOptions) -> AdminSMTPSettings:
+        """Update the TFE site SMTP settings.
+
+        Args:
+            options: SMTP settings to update, as a
+                :class:`AdminSMTPSettingsUpdateOptions`.
+
+        Returns:
+            The updated :class:`AdminSMTPSettings`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import AdminSMTPSettingsUpdateOptions, SMTPAuthType
+            >>> settings = client.admin.smtp_settings.update(
+            ...     AdminSMTPSettingsUpdateOptions(
+            ...         host="smtp.example.com", port=587, auth=SMTPAuthType.PLAIN
+            ...     )
+            ... )
+        """
         attrs = options.model_dump(by_alias=True, exclude_none=True, mode="json")
         body = {"data": {"type": _SMTP_TYPE, "attributes": attrs}}
         r = self.t.request("PATCH", "/api/v2/admin/smtp-settings", json_body=body)

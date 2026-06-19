@@ -42,6 +42,23 @@ class OrganizationTokenTTLPolicies(_Service):
     """
 
     def list(self, organization: str) -> Iterator[OrgTokenTTLPolicy]:
+        """List organization API-token TTL policies.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            A single-use ``Iterator[OrgTokenTTLPolicy]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for policy in client.organization_token_ttl_policies.list("my-org"):
+            ...     print(policy.token_type, policy.max_ttl_ms)
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
         # The endpoint is not documented as paginated; we iterate the
@@ -59,8 +76,29 @@ class OrganizationTokenTTLPolicies(_Service):
         organization: str,
         options: OrgTokenTTLPolicyUpdateOptions,
     ) -> builtins.list[OrgTokenTTLPolicy]:
-        """PATCH a partial set of token-type policies. Returns the full
-        post-update policy list as the server reports it."""
+        """Update organization API-token TTL policies.
+
+        PATCH a partial set of token-type policies; unchanged token types keep
+        their existing TTLs. The server returns the full post-update policy list.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Token TTL policy update settings, as a
+                :class:`OrgTokenTTLPolicyUpdateOptions`.
+
+        Returns:
+            A ``list[OrgTokenTTLPolicy]``.
+
+        Raises:
+            ValueError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import OrgTokenTTLPolicyUpdateOptions
+            >>> policies = client.organization_token_ttl_policies.update(
+            ...     "my-org", OrgTokenTTLPolicyUpdateOptions(user="90d")
+            ... )
+        """
         if not valid_string_id(organization):
             raise ValueError(ERR_INVALID_ORG)
         body = {"data": options.to_payload()}
@@ -72,8 +110,24 @@ class OrganizationTokenTTLPolicies(_Service):
         return [_parse_policy(item) for item in r.json().get("data") or []]
 
     def reset_to_defaults(self, organization: str) -> builtins.list[OrgTokenTTLPolicy]:
-        """Reset all four token types to the documented 2-year default
-        (``DEFAULT_MAX_TTL_MS = 63_072_000_000``).
+        """Reset all organization API-token TTL policies to defaults.
+
+        The documented default is two years,
+        ``DEFAULT_MAX_TTL_MS = 63_072_000_000``.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+
+        Returns:
+            A ``list[OrgTokenTTLPolicy]``.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> policies = client.organization_token_ttl_policies.reset_to_defaults(
+            ...     "my-org"
+            ... )
         """
         return self.update(
             organization,

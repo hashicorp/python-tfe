@@ -164,7 +164,29 @@ class NoCodeModules(_Service):
     def create(
         self, organization: str, options: NoCodeModuleCreateOptions
     ) -> NoCodeModule:
-        """Enable no-code provisioning on a registry module."""
+        """Enable no-code provisioning on a registry module.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Registry module relationship and settings, as a
+                :class:`NoCodeModuleCreateOptions`.
+
+        Returns:
+            The :class:`NoCodeModule`.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            RequiredRegistryModuleIDError: If ``options.registry_module_id`` is not a
+                valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import NoCodeModuleCreateOptions
+            >>> module = client.no_code_modules.create(
+            ...     "my-org",
+            ...     NoCodeModuleCreateOptions(registry_module_id="mod-xxxxxxxx"),
+            ... )
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
         if not valid_string_id(options.registry_module_id):
@@ -183,7 +205,26 @@ class NoCodeModules(_Service):
         no_code_module_id: str,
         options: NoCodeModuleReadOptions | None = None,
     ) -> NoCodeModule:
-        """Read a no-code module by ID, optionally including variable options."""
+        """Read a no-code module by ID.
+
+        Args:
+            no_code_module_id: The no-code module ID (e.g. ``"nocode-xxxxxxxx"``).
+            options: Optional include settings, as a :class:`NoCodeModuleReadOptions`.
+
+        Returns:
+            The :class:`NoCodeModule`.
+
+        Raises:
+            InvalidNoCodeModuleIDError: If ``no_code_module_id`` is not a valid resource
+                ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import NoCodeModuleReadOptions
+            >>> module = client.no_code_modules.read(
+            ...     "nocode-xxxxxxxx", NoCodeModuleReadOptions()
+            ... )
+        """
         if not valid_string_id(no_code_module_id):
             raise InvalidNoCodeModuleIDError()
 
@@ -210,6 +251,25 @@ class NoCodeModules(_Service):
         caller didn't supply ``registry_module_id`` in ``options``, we
         read the current module to pick up its existing relationship so
         callers don't have to remember this quirk.
+
+        Args:
+            no_code_module_id: The no-code module ID (e.g. ``"nocode-xxxxxxxx"``).
+            options: No-code module fields to update, as a
+                :class:`NoCodeModuleUpdateOptions`.
+
+        Returns:
+            The :class:`NoCodeModule`.
+
+        Raises:
+            InvalidNoCodeModuleIDError: If ``no_code_module_id`` is not a valid resource
+                ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import NoCodeModuleUpdateOptions
+            >>> module = client.no_code_modules.update(
+            ...     "nocode-xxxxxxxx", NoCodeModuleUpdateOptions(enabled=True)
+            ... )
         """
         if not valid_string_id(no_code_module_id):
             raise InvalidNoCodeModuleIDError()
@@ -230,7 +290,22 @@ class NoCodeModules(_Service):
         return _no_code_module_from(r.json()["data"])
 
     def delete(self, no_code_module_id: str) -> None:
-        """Disable no-code provisioning for a registry module."""
+        """Disable no-code provisioning for a registry module.
+
+        Args:
+            no_code_module_id: The no-code module ID (e.g. ``"nocode-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidNoCodeModuleIDError: If ``no_code_module_id`` is not a valid resource
+                ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.no_code_modules.delete("nocode-xxxxxxxx")
+        """
         if not valid_string_id(no_code_module_id):
             raise InvalidNoCodeModuleIDError()
 
@@ -239,9 +314,30 @@ class NoCodeModules(_Service):
     def read_variables(
         self, no_code_module_id: str, version: str
     ) -> Iterator[RegistryModuleVariable]:
-        """Iterate the variables declared by a specific version of a no-code
-        module. Useful for driving a form that lets users supply ``vars`` when
-        creating a workspace.
+        """Iterate variables declared by a no-code module version.
+
+        Useful for driving a form that lets users supply ``vars`` when creating
+        a workspace.
+
+        Args:
+            no_code_module_id: The no-code module ID (e.g. ``"nocode-xxxxxxxx"``).
+            version: The registry module version (e.g. ``"1.2.3"``).
+
+        Returns:
+            A single-use ``Iterator[RegistryModuleVariable]``. Wrap with
+            ``list(...)`` to materialize the results or iterate more than once.
+
+        Raises:
+            InvalidNoCodeModuleIDError: If ``no_code_module_id`` is not a valid resource
+                ID.
+            InvalidVersionError: If ``version`` is empty or invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for variable in client.no_code_modules.read_variables(
+            ...     "nocode-xxxxxxxx", "1.2.3"
+            ... ):
+            ...     print(variable.name, variable.required)
         """
         if not valid_string_id(no_code_module_id):
             raise InvalidNoCodeModuleIDError()
@@ -278,6 +374,30 @@ class NoCodeModules(_Service):
         The returned Workspace is populated by the workspaces parser, so
         relationships (project, agent_pool, vars) are available when the
         server includes them.
+
+        Args:
+            no_code_module_id: The no-code module ID (e.g. ``"nocode-xxxxxxxx"``).
+            options: Workspace name, project, and variables, as a
+                :class:`NoCodeWorkspaceCreateOptions`.
+
+        Returns:
+            The :class:`Workspace`.
+
+        Raises:
+            InvalidNoCodeModuleIDError: If ``no_code_module_id`` is not a valid resource
+                ID.
+            RequiredNameError: If ``options.name`` is empty.
+            RequiredProjectError: If ``options.project_id`` is not a valid resource ID.
+            RequiredAgentPoolIDError: If agent execution is requested without a valid
+                ``options.agent_pool_id``.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import NoCodeWorkspaceCreateOptions
+            >>> workspace = client.no_code_modules.create_workspace(
+            ...     "nocode-xxxxxxxx",
+            ...     NoCodeWorkspaceCreateOptions(name="app-dev", project_id="prj-x"),
+            ... )
         """
         if not valid_string_id(no_code_module_id):
             raise InvalidNoCodeModuleIDError()
@@ -308,10 +428,33 @@ class NoCodeModules(_Service):
         workspace_id: str,
         options: NoCodeWorkspaceUpgradeOptions | None = None,
     ) -> WorkspaceUpgrade:
-        """Initiate a no-code workspace upgrade. Returns the upgrade record;
-        poll with ``read_workspace_upgrade`` until ``status`` is
-        ``planned_and_finished`` (or terminal), then call
+        """Initiate a no-code workspace upgrade.
+
+        Returns the upgrade record; poll with ``read_workspace_upgrade`` until
+        ``status`` is ``planned_and_finished`` (or terminal), then call
         ``confirm_workspace_upgrade``.
+
+        Args:
+            no_code_module_id: The no-code module ID (e.g. ``"nocode-xxxxxxxx"``).
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            options: Optional upgrade variables, as a
+                :class:`NoCodeWorkspaceUpgradeOptions`.
+
+        Returns:
+            The :class:`WorkspaceUpgrade`.
+
+        Raises:
+            InvalidNoCodeModuleIDError: If ``no_code_module_id`` is not a valid resource
+                ID.
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import NoCodeWorkspaceUpgradeOptions
+            >>> upgrade = client.no_code_modules.upgrade_workspace(
+            ...     "nocode-xxxxxxxx", "ws-xxxxxxxx",
+            ...     NoCodeWorkspaceUpgradeOptions(),
+            ... )
         """
         if not valid_string_id(no_code_module_id):
             raise InvalidNoCodeModuleIDError()
@@ -341,7 +484,29 @@ class NoCodeModules(_Service):
         workspace_id: str,
         upgrade_id: str,
     ) -> WorkspaceUpgrade:
-        """Read the current status of a no-code workspace upgrade."""
+        """Read the current status of a no-code workspace upgrade.
+
+        Args:
+            no_code_module_id: The no-code module ID (e.g. ``"nocode-xxxxxxxx"``).
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            upgrade_id: The workspace upgrade ID (e.g. ``"wsup-xxxxxxxx"``).
+
+        Returns:
+            The :class:`WorkspaceUpgrade`.
+
+        Raises:
+            InvalidNoCodeModuleIDError: If ``no_code_module_id`` is not a valid resource
+                ID.
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            InvalidWorkspaceUpgradeIDError: If ``upgrade_id`` is not a valid resource
+                ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> upgrade = client.no_code_modules.read_workspace_upgrade(
+            ...     "nocode-xxxxxxxx", "ws-xxxxxxxx", "wsup-xxxxxxxx"
+            ... )
+        """
         if not valid_string_id(no_code_module_id):
             raise InvalidNoCodeModuleIDError()
         if not valid_string_id(workspace_id):
@@ -370,6 +535,27 @@ class NoCodeModules(_Service):
         rather than a JSON:API envelope; we intentionally return ``None`` and
         rely on the HTTP status for success/failure semantics, matching the
         SDK's pattern for action endpoints.
+
+        Args:
+            no_code_module_id: The no-code module ID (e.g. ``"nocode-xxxxxxxx"``).
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            upgrade_id: The workspace upgrade ID (e.g. ``"wsup-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidNoCodeModuleIDError: If ``no_code_module_id`` is not a valid resource
+                ID.
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
+            InvalidWorkspaceUpgradeIDError: If ``upgrade_id`` is not a valid resource
+                ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.no_code_modules.confirm_workspace_upgrade(
+            ...     "nocode-xxxxxxxx", "ws-xxxxxxxx", "wsup-xxxxxxxx"
+            ... )
         """
         if not valid_string_id(no_code_module_id):
             raise InvalidNoCodeModuleIDError()

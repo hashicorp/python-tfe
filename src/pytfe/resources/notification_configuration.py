@@ -35,7 +35,25 @@ class NotificationConfigurations(_Service):
         subscribable_id: str,
         options: NotificationConfigurationListOptions | None = None,
     ) -> Iterator[NotificationConfiguration]:
-        """List all notification configurations associated with a workspace or team."""
+        """List notification configurations for a workspace or team.
+
+        Args:
+            subscribable_id: The workspace or team ID (e.g. ``"ws-xxxxxxxx"``).
+            options: Optional pagination and subscribable choice, as a
+                :class:`NotificationConfigurationListOptions`.
+
+        Returns:
+            A single-use ``Iterator[NotificationConfiguration]``. Wrap with
+            ``list(...)`` to materialize the results or iterate more than once.
+
+        Raises:
+            InvalidOrgError: If ``subscribable_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for config in client.notification_configurations.list("ws-abc123"):
+            ...     print(config.id, config.name)
+        """
         if not valid_string_id(subscribable_id):
             raise InvalidOrgError("Invalid subscribable ID")
 
@@ -53,7 +71,35 @@ class NotificationConfigurations(_Service):
     def create(
         self, subscribable_id: str, options: NotificationConfigurationCreateOptions
     ) -> NotificationConfiguration:
-        """Create a new notification configuration."""
+        """Create a notification configuration for a workspace or team.
+
+        Args:
+            subscribable_id: The workspace or team ID (e.g. ``"ws-xxxxxxxx"``).
+            options: The notification settings, as a
+                :class:`NotificationConfigurationCreateOptions`.
+
+        Returns:
+            The created :class:`NotificationConfiguration`.
+
+        Raises:
+            InvalidOrgError: If ``subscribable_id`` is invalid or the subscribable is
+                not found.
+            ValidationError: If options are invalid, verification fails, or the API
+                response format is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import NotificationConfigurationCreateOptions
+            >>> from pytfe.models import NotificationDestinationType
+            >>> options = NotificationConfigurationCreateOptions(
+            ...     destination_type=NotificationDestinationType.EMAIL,
+            ...     enabled=True,
+            ...     name="Email",
+            ... )
+            >>> config = client.notification_configurations.create(
+            ...     "ws-abc123", options
+            ... )
+        """
         if not valid_string_id(subscribable_id):
             raise InvalidOrgError("Invalid subscribable ID provided")
 
@@ -100,7 +146,24 @@ class NotificationConfigurations(_Service):
                 raise
 
     def read(self, notification_config_id: str) -> NotificationConfiguration:
-        """Read a notification configuration by its ID."""
+        """Read a notification configuration by its ID.
+
+        Args:
+            notification_config_id: The notification configuration ID (e.g.
+                ``"nc-xxxxxxxx"``).
+
+        Returns:
+            The :class:`NotificationConfiguration`.
+
+        Raises:
+            InvalidOrgError: If ``notification_config_id`` is invalid or not found.
+            ValidationError: If the API response format is invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> config = client.notification_configurations.read("nc-123456789")
+            >>> print(config.name)
+        """
         if not valid_string_id(notification_config_id):
             raise InvalidOrgError("Invalid notification configuration ID provided")
 
@@ -128,7 +191,30 @@ class NotificationConfigurations(_Service):
         notification_config_id: str,
         options: NotificationConfigurationUpdateOptions,
     ) -> NotificationConfiguration:
-        """Update an existing notification configuration."""
+        """Update a notification configuration.
+
+        Args:
+            notification_config_id: The notification configuration ID (e.g.
+                ``"nc-xxxxxxxx"``).
+            options: The notification fields to change, as a
+                :class:`NotificationConfigurationUpdateOptions`.
+
+        Returns:
+            The updated :class:`NotificationConfiguration`.
+
+        Raises:
+            InvalidOrgError: If ``notification_config_id`` is not a valid resource ID.
+            ValidationError: If options are invalid or the API response format is
+                invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import NotificationConfigurationUpdateOptions
+            >>> options = NotificationConfigurationUpdateOptions(enabled=False)
+            >>> config = client.notification_configurations.update(
+            ...     "nc-123456789", options
+            ... )
+        """
         if not valid_string_id(notification_config_id):
             raise InvalidOrgError("Invalid notification configuration ID")
 
@@ -151,7 +237,22 @@ class NotificationConfigurations(_Service):
         raise ValidationError("Invalid response format from API")
 
     def delete(self, notification_config_id: str) -> None:
-        """Delete a notification configuration by its ID."""
+        """Delete a notification configuration by its ID.
+
+        Args:
+            notification_config_id: The notification configuration ID (e.g.
+                ``"nc-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidOrgError: If ``notification_config_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.notification_configurations.delete("nc-123456789")
+        """
         if not valid_string_id(notification_config_id):
             raise InvalidOrgError("Invalid notification configuration ID")
 
@@ -159,7 +260,25 @@ class NotificationConfigurations(_Service):
         self.t.request("DELETE", url)
 
     def verify(self, notification_config_id: str) -> NotificationConfiguration:
-        """Verify a notification configuration by delivering a verification payload."""
+        """Verify a notification configuration by delivering a verification payload.
+
+        Args:
+            notification_config_id: The notification configuration ID (e.g.
+                ``"nc-xxxxxxxx"``).
+
+        Returns:
+            The verified :class:`NotificationConfiguration`.
+
+        Raises:
+            InvalidOrgError: If ``notification_config_id`` is invalid or not found.
+            ValidationError: If verification fails or the API response format is
+                invalid.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> config = client.notification_configurations.verify("nc-123456789")
+            >>> print(config.id)
+        """
         if not valid_string_id(notification_config_id):
             raise InvalidOrgError("Invalid notification configuration ID provided")
 

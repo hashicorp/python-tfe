@@ -42,6 +42,17 @@ drive the SDK without hardcoding resource names or browsing the GitHub repo.
   quickstart, conventions) so `help(TFEClient)` and IDE hover are useful, and
   it is now a context manager: `with TFEClient(...) as tfe: ...` closes the
   pooled HTTP connection automatically. `close()` is documented and idempotent.
+* Every public resource method now ships a Google-style docstring — a one-line
+  summary plus `Args`, `Returns`, `Raises`, and a runnable `Example:` block
+  (sections included as applicable). These are written for consumers and the AI
+  coding assistants (Copilot/Claude/Cursor) that read them via the language
+  server from `site-packages`, so completions for pytfe calls are more accurate
+  out of the box. Return-shape gotchas (single-use `Iterator`, raw `bytes` for
+  blob downloads, `None` for `204`s) and the exact exceptions each method raises
+  are now documented in place. Linked from the README's new *AI coding
+  assistants* row alongside `llms.txt`.
+* `StateVersionIncludeOpt` and `PolicySetOutcomeListOptions` are now exported
+  from `pytfe.models`, matching the rest of their model families.
 
 ### Packaging
 * The source distribution (sdist) now includes `examples/`, `CHANGELOG.md`, and

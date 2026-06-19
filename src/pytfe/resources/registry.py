@@ -113,7 +113,26 @@ class Registry(_Service):
         namespace: str | None = None,
         options: PublicRegistryModuleListOptions | None = None,
     ) -> Iterator[PublicRegistryModule]:
-        """List registry modules, optionally restricted to a ``namespace``."""
+        """List public registry modules.
+
+        Args:
+            namespace: Optional module namespace (e.g. ``"hashicorp"``) to restrict
+                results to.
+            options: Optional filters and pagination settings, as a
+                :class:`PublicRegistryModuleListOptions`.
+
+        Returns:
+            A single-use ``Iterator[PublicRegistryModule]``. Wrap with ``list(...)``
+            to materialize the results or iterate more than once.
+
+        Raises:
+            InvalidModuleNamespaceError: If ``namespace`` is not valid when provided.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for module in client.registry.list_modules("hashicorp"):
+            ...     print(module.name, module.provider)
+        """
         if namespace is not None and not valid_string_id(namespace):
             raise InvalidModuleNamespaceError()
         path = f"/v1/modules/{namespace}" if namespace else "/v1/modules"
@@ -122,7 +141,28 @@ class Registry(_Service):
     def search_modules(
         self, query: str, options: PublicRegistrySearchOptions | None = None
     ) -> Iterator[PublicRegistryModule]:
-        """Search registry modules by keyword/phrase (``q``)."""
+        """Search public registry modules by query.
+
+        Args:
+            query: The search query (e.g. ``"vpc"``).
+            options: Optional filters and pagination settings, as a
+                :class:`PublicRegistrySearchOptions`.
+
+        Returns:
+            A single-use ``Iterator[PublicRegistryModule]``. Wrap with ``list(...)``
+            to materialize the results or iterate more than once.
+
+        Raises:
+            RequiredQueryError: If ``query`` is empty.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import PublicRegistrySearchOptions
+            >>> for module in client.registry.search_modules(
+            ...     "vpc", PublicRegistrySearchOptions(provider="aws")
+            ... ):
+            ...     print(module.id)
+        """
         if not valid_string(query):
             raise RequiredQueryError()
         params = _query_params(options)
@@ -135,7 +175,28 @@ class Registry(_Service):
         name: str,
         options: PublicRegistryModuleListOptions | None = None,
     ) -> Iterator[PublicRegistryModule]:
-        """List the latest version of a module for each of its providers."""
+        """List latest module versions for all providers.
+
+        Args:
+            namespace: The module namespace (e.g. ``"hashicorp"``).
+            name: The module name (e.g. ``"consul"``).
+            options: Optional filters and pagination settings, as a
+                :class:`PublicRegistryModuleListOptions`.
+
+        Returns:
+            A single-use ``Iterator[PublicRegistryModule]``. Wrap with ``list(...)``
+            to materialize the results or iterate more than once.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> modules = client.registry.list_latest_for_all_providers(
+            ...     "hashicorp", "consul"
+            ... )
+            >>> for module in modules:
+            ...     print(module.provider, module.version)
+        """
         self._validate(namespace, name)
         yield from self._paginate(
             f"/v1/modules/{namespace}/{name}", _query_params(options)
@@ -144,7 +205,25 @@ class Registry(_Service):
     def latest_for_provider(
         self, namespace: str, name: str, provider: str
     ) -> PublicRegistryModule:
-        """Read the latest version of a module for a single provider."""
+        """Read the latest module version for a provider.
+
+        Args:
+            namespace: The module namespace (e.g. ``"hashicorp"``).
+            name: The module name (e.g. ``"consul"``).
+            provider: The provider name (e.g. ``"aws"``).
+
+        Returns:
+            The :class:`PublicRegistryModule`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> module = client.registry.latest_for_provider(
+            ...     "hashicorp", "consul", "aws"
+            ... )
+            >>> print(module.version)
+        """
         self._validate(namespace, name, provider)
         body = self._get(f"/v1/modules/{namespace}/{name}/{provider}").json()
         return PublicRegistryModule.model_validate(body)
@@ -152,7 +231,26 @@ class Registry(_Service):
     def get_module(
         self, namespace: str, name: str, provider: str, version: str
     ) -> PublicRegistryModule:
-        """Read a specific version of a module for a single provider."""
+        """Read a specific module version for a provider.
+
+        Args:
+            namespace: The module namespace (e.g. ``"hashicorp"``).
+            name: The module name (e.g. ``"consul"``).
+            provider: The provider name (e.g. ``"aws"``).
+            version: The module version (e.g. ``"0.0.1"``).
+
+        Returns:
+            The :class:`PublicRegistryModule`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> module = client.registry.get_module(
+            ...     "hashicorp", "consul", "aws", "0.0.1"
+            ... )
+            >>> print(module.source)
+        """
         self._validate(namespace, name, provider, version)
         body = self._get(f"/v1/modules/{namespace}/{name}/{provider}/{version}").json()
         return PublicRegistryModule.model_validate(body)
@@ -160,10 +258,25 @@ class Registry(_Service):
     def list_versions(
         self, namespace: str, name: str, provider: str
     ) -> PublicRegistryModuleVersions:
-        """List the available versions for a fully-qualified module.
+        """List available versions for a public registry module.
 
-        Returns the requested module (the API always lists it first); any
-        dependency modules the registry also returns are not included.
+        The public registry can return dependency modules too; this method returns
+        only the requested module, which the API lists first.
+
+        Args:
+            namespace: The module namespace (e.g. ``"hashicorp"``).
+            name: The module name (e.g. ``"consul"``).
+            provider: The provider name (e.g. ``"aws"``).
+
+        Returns:
+            The :class:`PublicRegistryModuleVersions`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> versions = client.registry.list_versions("hashicorp", "consul", "aws")
+            >>> print([version.version for version in versions.versions])
         """
         self._validate(namespace, name, provider)
         body = self._get(f"/v1/modules/{namespace}/{name}/{provider}/versions").json()
@@ -175,9 +288,28 @@ class Registry(_Service):
     def download_url(
         self, namespace: str, name: str, provider: str, version: str
     ) -> str:
-        """Return a module version's source location (the ``X-Terraform-Get`` value).
+        """Read a module version's source location.
 
-        The value is a go-getter URL string, not the archive bytes.
+        The returned value is the ``X-Terraform-Get`` go-getter URL string, not the
+        archive bytes.
+
+        Args:
+            namespace: The module namespace (e.g. ``"hashicorp"``).
+            name: The module name (e.g. ``"consul"``).
+            provider: The provider name (e.g. ``"aws"``).
+            version: The module version (e.g. ``"0.0.1"``).
+
+        Returns:
+            The ``str``.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> url = client.registry.download_url(
+            ...     "hashicorp", "consul", "aws", "0.0.1"
+            ... )
+            >>> print(url)
         """
         self._validate(namespace, name, provider, version)
         resp = self._get(
@@ -186,10 +318,25 @@ class Registry(_Service):
         return self._x_terraform_get(resp)
 
     def latest_download_url(self, namespace: str, name: str, provider: str) -> str:
-        """Return the latest version's source location (``X-Terraform-Get``).
+        """Read the latest module version's source location.
 
-        The endpoint 302-redirects to the versioned download; the redirect is
-        followed automatically.
+        The endpoint redirects to the versioned download, and the SDK follows that
+        redirect automatically.
+
+        Args:
+            namespace: The module namespace (e.g. ``"hashicorp"``).
+            name: The module name (e.g. ``"consul"``).
+            provider: The provider name (e.g. ``"aws"``).
+
+        Returns:
+            The ``str``.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> url = client.registry.latest_download_url("hashicorp", "consul", "aws")
+            >>> print(url)
         """
         self._validate(namespace, name, provider)
         resp = self._get(f"/v1/modules/{namespace}/{name}/{provider}/download")
@@ -198,7 +345,25 @@ class Registry(_Service):
     def downloads_summary(
         self, namespace: str, name: str, provider: str
     ) -> PublicRegistryModuleDownloadsSummary:
-        """Read a module's download metrics summary (week/month/year/total)."""
+        """Read a module's download metrics summary.
+
+        Args:
+            namespace: The module namespace (e.g. ``"hashicorp"``).
+            name: The module name (e.g. ``"consul"``).
+            provider: The provider name (e.g. ``"aws"``).
+
+        Returns:
+            The :class:`PublicRegistryModuleDownloadsSummary`.
+
+        Raises:
+            TFEError: If the API request fails.
+
+        Example:
+            >>> summary = client.registry.downloads_summary(
+            ...     "hashicorp", "consul", "aws"
+            ... )
+            >>> print(summary.total)
+        """
         self._validate(namespace, name, provider)
         body = self._get(
             f"/v2/modules/{namespace}/{name}/{provider}/downloads/summary"

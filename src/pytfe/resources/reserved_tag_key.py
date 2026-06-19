@@ -26,7 +26,25 @@ class ReservedTagKeys(_Service):
     def list(
         self, organization: str, options: ReservedTagKeyListOptions | None = None
     ) -> Iterator[ReservedTagKey]:
-        """List reserved tag keys for the given organization."""
+        """List reserved tag keys in an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Optional pagination controls, as a
+                :class:`ReservedTagKeyListOptions`.
+
+        Returns:
+            A single-use ``Iterator[ReservedTagKey]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for key in client.reserved_tag_key.list("my-org"):
+            ...     print(key.id, key.key)
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
 
@@ -40,7 +58,27 @@ class ReservedTagKeys(_Service):
     def create(
         self, organization: str, options: ReservedTagKeyCreateOptions
     ) -> ReservedTagKey:
-        """Create a new reserved tag key for the given organization."""
+        """Create a reserved tag key in an organization.
+
+        Args:
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Reserved tag key attributes, as a
+                :class:`ReservedTagKeyCreateOptions`.
+
+        Returns:
+            The created :class:`ReservedTagKey`.
+
+        Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import ReservedTagKeyCreateOptions
+            >>> key = client.reserved_tag_key.create(
+            ...     "my-org",
+            ...     ReservedTagKeyCreateOptions(key="environment", disable_overrides=True),
+            ... )
+        """
         if not valid_string_id(organization):
             raise InvalidOrgError()
 
@@ -66,7 +104,26 @@ class ReservedTagKeys(_Service):
     def update(
         self, reserved_tag_key_id: str, options: ReservedTagKeyUpdateOptions
     ) -> ReservedTagKey:
-        """Update a reserved tag key."""
+        """Update a reserved tag key by its ID.
+
+        Args:
+            reserved_tag_key_id: The reserved tag key ID (e.g. ``"rtk-xxxxxxxx"``).
+            options: Reserved tag key attributes to update, as a
+                :class:`ReservedTagKeyUpdateOptions`.
+
+        Returns:
+            The updated :class:`ReservedTagKey`.
+
+        Raises:
+            ValidationError: If ``reserved_tag_key_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import ReservedTagKeyUpdateOptions
+            >>> key = client.reserved_tag_key.update(
+            ...     "rtk-123", ReservedTagKeyUpdateOptions(disable_overrides=False)
+            ... )
+        """
         if not valid_string_id(reserved_tag_key_id):
             raise ValidationError("Invalid reserved tag key ID")
 
@@ -90,7 +147,21 @@ class ReservedTagKeys(_Service):
         return self._parse_reserved_tag_key(data)
 
     def delete(self, reserved_tag_key_id: str) -> None:
-        """Delete a reserved tag key."""
+        """Delete a reserved tag key by its ID.
+
+        Args:
+            reserved_tag_key_id: The reserved tag key ID (e.g. ``"rtk-xxxxxxxx"``).
+
+        Returns:
+            None.
+
+        Raises:
+            ValidationError: If ``reserved_tag_key_id`` is not a valid resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.reserved_tag_key.delete("rtk-123")
+        """
         if not valid_string_id(reserved_tag_key_id):
             raise ValidationError("Invalid reserved tag key ID")
 

@@ -30,9 +30,29 @@ class PolicySetOutcomes(_Service):
         policy_evaluation_id: str,
         options: PolicySetOutcomeListOptions | None = None,
     ) -> Iterator[PolicySetOutcome]:
-        """
-        **Note: This method is still in BETA and subject to change.**
-            List all policy set outcomes in the policy evaluation. Only available for OPA policies.
+        """List policy set outcomes in a policy evaluation.
+
+        **Note: This method is still in BETA and subject to change.** Only available
+        for OPA policies.
+
+        Args:
+            policy_evaluation_id: The policy evaluation ID (e.g.
+                ``"poleval-xxxxxxxx"``).
+            options: Optional filters and pagination, as a
+                :class:`PolicySetOutcomeListOptions`.
+
+        Returns:
+            A single-use ``Iterator[PolicySetOutcome]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
+        Raises:
+            InvalidPolicyEvaluationIDError: If ``policy_evaluation_id`` is not a valid
+                resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for outcome in client.policy_set_outcomes.list("poleval-123"):
+            ...     print(outcome.id, outcome.policy_set_name)
         """
         if not valid_string_id(policy_evaluation_id):
             raise InvalidPolicyEvaluationIDError()
@@ -48,7 +68,21 @@ class PolicySetOutcomes(_Service):
     def build_query_string(
         self, options: PolicySetOutcomeListOptions | None
     ) -> dict[str, str] | None:
-        """build_query_string takes the PolicySetOutcomeListOptions and returns a filters map."""
+        """Build filter query parameters for listing policy set outcomes.
+
+        Args:
+            options: Optional filter settings, as a
+                :class:`PolicySetOutcomeListOptions`.
+
+        Returns:
+            A ``dict[str, str] | None``. ``None`` is returned when no filters are set.
+
+        Example:
+            >>> from pytfe.models import PolicySetOutcomeListOptions
+            >>> params = client.policy_set_outcomes.build_query_string(
+            ...     PolicySetOutcomeListOptions(page_size=20)
+            ... )
+        """
         result = {}
         if options is None or options.filter is None:
             return None
@@ -60,9 +94,26 @@ class PolicySetOutcomes(_Service):
         return result
 
     def read(self, policy_set_outcome_id: str) -> PolicySetOutcome:
+        """Read a policy set outcome by its ID.
+
+        **Note: This method is still in BETA and subject to change.** Only available
+        for OPA policies.
+
+        Args:
+            policy_set_outcome_id: The policy set outcome ID (e.g. ``"pso-xxxxxxxx"``).
+
+        Returns:
+            The :class:`PolicySetOutcome`.
+
+        Raises:
+            InvalidPolicySetOutcomeIDError: If ``policy_set_outcome_id`` is not a valid
+                resource ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> outcome = client.policy_set_outcomes.read("pso-123")
+            >>> print(outcome.policy_set_name)
         """
-        **Note: This method is still in BETA and subject to change.**
-        Read a single policy set outcome by ID. Only available for OPA policies."""
         if not valid_string_id(policy_set_outcome_id):
             raise InvalidPolicySetOutcomeIDError()
         path = f"api/v2/policy-set-outcomes/{policy_set_outcome_id}"

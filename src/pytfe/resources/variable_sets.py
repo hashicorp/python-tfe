@@ -64,17 +64,27 @@ class VariableSets(_Service):
         organization: str,
         options: VariableSetListOptions | None = None,
     ) -> Iterator[VariableSet]:
-        """List all variable sets within an organization.
+        """List variable sets in an organization.
 
         Args:
-            organization: Organization name
-            options: Optional parameters for filtering and pagination
+            organization: The organization name (e.g. ``"my-org"``).
+            options: Optional filters and includes, as a
+                :class:`VariableSetListOptions`.
 
         Returns:
-            Iterator of VariableSet objects within the organization
+            A single-use ``Iterator[VariableSet]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
+
         Raises:
-            ValueError: If organization name is invalid
-            TFEError: If API request fails
+            ValueError: If ``organization`` is not a string.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import VariableSetListOptions
+            >>> for varset in client.variable_sets.list(
+            ...     "my-org", VariableSetListOptions(query="shared")
+            ... ):
+            ...     print(varset.id, varset.name)
         """
         if not organization or not isinstance(organization, str):
             raise ValueError("Organization name is required and must be a string")
@@ -101,15 +111,23 @@ class VariableSets(_Service):
         """List variable sets associated with a workspace.
 
         Args:
-            workspace_id: Workspace ID
-            options: Optional parameters for filtering and pagination
+            workspace_id: The workspace ID (e.g. ``"ws-xxxxxxxx"``).
+            options: Optional filters and includes, as a
+                :class:`VariableSetListOptions`.
 
         Returns:
-            Iterator of VariableSet objects associated with the workspace
+            A single-use ``Iterator[VariableSet]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
 
         Raises:
-            ValueError: If workspace_id is invalid
-            TFEError: If API request fails
+            ValueError: If ``workspace_id`` is not a string.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for varset in client.variable_sets.list_for_workspace(
+            ...     "ws-4j8p6jX1w33MiDC7"
+            ... ):
+            ...     print(varset.id, varset.name)
         """
         if not workspace_id or not isinstance(workspace_id, str):
             raise ValueError("Workspace ID is required and must be a string")
@@ -136,15 +154,23 @@ class VariableSets(_Service):
         """List variable sets associated with a project.
 
         Args:
-            project_id: Project ID
-            options: Optional parameters for filtering and pagination
+            project_id: The project ID (e.g. ``"prj-xxxxxxxx"``).
+            options: Optional filters and includes, as a
+                :class:`VariableSetListOptions`.
 
         Returns:
-            Iterator of VariableSet objects associated with the project
+            A single-use ``Iterator[VariableSet]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
 
         Raises:
-            ValueError: If project_id is invalid
-            TFEError: If API request fails
+            ValueError: If ``project_id`` is not a string.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for varset in client.variable_sets.list_for_project(
+            ...     "prj-4j8p6jX1w33MiDC7"
+            ... ):
+            ...     print(varset.id, varset.name)
         """
         if not project_id or not isinstance(project_id, str):
             raise ValueError("Project ID is required and must be a string")
@@ -168,18 +194,27 @@ class VariableSets(_Service):
         organization: str,
         options: VariableSetCreateOptions,
     ) -> VariableSet:
-        """Create a new variable set.
+        """Create a variable set in an organization.
 
         Args:
-            organization: Organization name
-            options: Variable set creation options
+            organization: The organization name (e.g. ``"my-org"``).
+            options: The variable set configuration, as a
+                :class:`VariableSetCreateOptions`.
 
         Returns:
-            Created VariableSet object
+            The :class:`VariableSet`.
 
         Raises:
-            ValueError: If organization name or options are invalid
-            TFEError: If API request fails
+            ValueError: If ``organization`` is not a string, ``options`` is not a
+                :class:`VariableSetCreateOptions`, or ``options.name`` is blank.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import VariableSetCreateOptions
+            >>> varset = client.variable_sets.create(
+            ...     "my-org",
+            ...     VariableSetCreateOptions(name="shared", global_=False),
+            ... )
         """
         if not organization or not isinstance(organization, str):
             raise ValueError("Organization name is required and must be a string")
@@ -241,18 +276,24 @@ class VariableSets(_Service):
         variable_set_id: str,
         options: VariableSetReadOptions | None = None,
     ) -> VariableSet:
-        """Read a variable set by its ID.
+        """Read a variable set by ID.
 
         Args:
-            variable_set_id: Variable set ID
-            options: Optional parameters for including related resources
+            variable_set_id: The variable set ID (e.g. ``"varset-xxxxxxxx"``).
+            options: Optional includes, as a :class:`VariableSetReadOptions`.
 
         Returns:
-            VariableSet object
+            The :class:`VariableSet`.
 
         Raises:
-            ValueError: If variable_set_id is invalid
-            TFEError: If API request fails
+            ValueError: If ``variable_set_id`` is not a string.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import VariableSetReadOptions
+            >>> varset = client.variable_sets.read(
+            ...     "varset-4j8p6jX1w33MiDC7", VariableSetReadOptions()
+            ... )
         """
         if not variable_set_id or not isinstance(variable_set_id, str):
             raise ValueError("Variable set ID is required and must be a string")
@@ -273,18 +314,27 @@ class VariableSets(_Service):
         variable_set_id: str,
         options: VariableSetUpdateOptions,
     ) -> VariableSet:
-        """Update an existing variable set.
+        """Update a variable set by ID.
 
         Args:
-            variable_set_id: Variable set ID
-            options: Variable set update options
+            variable_set_id: The variable set ID (e.g. ``"varset-xxxxxxxx"``).
+            options: The variable set updates, as a
+                :class:`VariableSetUpdateOptions`.
 
         Returns:
-            Updated VariableSet object
+            The :class:`VariableSet`.
 
         Raises:
-            ValueError: If variable_set_id or options are invalid
-            TFEError: If API request fails
+            ValueError: If ``variable_set_id`` is not a string or ``options`` is not a
+                :class:`VariableSetUpdateOptions`.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import VariableSetUpdateOptions
+            >>> varset = client.variable_sets.update(
+            ...     "varset-4j8p6jX1w33MiDC7",
+            ...     VariableSetUpdateOptions(description="Shared AWS settings"),
+            ... )
         """
         if not variable_set_id or not isinstance(variable_set_id, str):
             raise ValueError("Variable set ID is required and must be a string")
@@ -323,14 +373,20 @@ class VariableSets(_Service):
         return self._parse_variable_set(data["data"])
 
     def delete(self, variable_set_id: str) -> None:
-        """Delete a variable set by its ID.
+        """Delete a variable set by ID.
 
         Args:
-            variable_set_id: Variable set ID
+            variable_set_id: The variable set ID (e.g. ``"varset-xxxxxxxx"``).
+
+        Returns:
+            None.
 
         Raises:
-            ValueError: If variable_set_id is invalid
-            TFEError: If API request fails
+            ValueError: If ``variable_set_id`` is not a string.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.variable_sets.delete("varset-4j8p6jX1w33MiDC7")
         """
         if not variable_set_id or not isinstance(variable_set_id, str):
             raise ValueError("Variable set ID is required and must be a string")
@@ -343,17 +399,32 @@ class VariableSets(_Service):
         variable_set_id: str,
         options: VariableSetApplyToWorkspacesOptions,
     ) -> None:
-        """Apply variable set to workspaces.
+        """Apply a non-global variable set to workspaces.
 
-        Note: This method will return an error if the variable set has global = true.
+        This endpoint returns an API error when the variable set has ``global=True``.
 
         Args:
-            variable_set_id: Variable set ID
-            options: Options specifying workspaces to apply to
+            variable_set_id: The variable set ID (e.g. ``"varset-xxxxxxxx"``).
+            options: The workspace relationship payload, as a
+                :class:`VariableSetApplyToWorkspacesOptions`.
+
+        Returns:
+            None.
 
         Raises:
-            ValueError: If variable_set_id or options are invalid
-            TFEError: If API request fails
+            ValueError: If ``variable_set_id`` is not a string, ``options`` is not a
+                :class:`VariableSetApplyToWorkspacesOptions`, no workspaces are
+                supplied, or any supplied workspace has no ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import VariableSetApplyToWorkspacesOptions, Workspace
+            >>> client.variable_sets.apply_to_workspaces(
+            ...     "varset-4j8p6jX1w33MiDC7",
+            ...     VariableSetApplyToWorkspacesOptions(
+            ...         workspaces=[Workspace.model_construct(id="ws-4j8p6jX1w33MiDC7")]
+            ...     ),
+            ... )
         """
         if not variable_set_id or not isinstance(variable_set_id, str):
             raise ValueError("Variable set ID is required and must be a string")
@@ -389,17 +460,32 @@ class VariableSets(_Service):
         variable_set_id: str,
         options: VariableSetRemoveFromWorkspacesOptions,
     ) -> None:
-        """Remove variable set from workspaces.
+        """Remove a non-global variable set from workspaces.
 
-        Note: This method will return an error if the variable set has global = true.
+        This endpoint returns an API error when the variable set has ``global=True``.
 
         Args:
-            variable_set_id: Variable set ID
-            options: Options specifying workspaces to remove from
+            variable_set_id: The variable set ID (e.g. ``"varset-xxxxxxxx"``).
+            options: The workspace relationship payload, as a
+                :class:`VariableSetRemoveFromWorkspacesOptions`.
+
+        Returns:
+            None.
 
         Raises:
-            ValueError: If variable_set_id or options are invalid
-            TFEError: If API request fails
+            ValueError: If ``variable_set_id`` is not a string, ``options`` is not a
+                :class:`VariableSetRemoveFromWorkspacesOptions`, no workspaces are
+                supplied, or any supplied workspace has no ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import VariableSetRemoveFromWorkspacesOptions, Workspace
+            >>> client.variable_sets.remove_from_workspaces(
+            ...     "varset-4j8p6jX1w33MiDC7",
+            ...     VariableSetRemoveFromWorkspacesOptions(
+            ...         workspaces=[Workspace.model_construct(id="ws-4j8p6jX1w33MiDC7")]
+            ...     ),
+            ... )
         """
         if not variable_set_id or not isinstance(variable_set_id, str):
             raise ValueError("Variable set ID is required and must be a string")
@@ -437,17 +523,32 @@ class VariableSets(_Service):
         variable_set_id: str,
         options: VariableSetApplyToProjectsOptions,
     ) -> None:
-        """Apply variable set to projects.
+        """Apply a non-global variable set to projects.
 
-        This method will return an error if the variable set has global = true.
+        This endpoint returns an API error when the variable set has ``global=True``.
 
         Args:
-            variable_set_id: Variable set ID
-            options: Options specifying projects to apply to
+            variable_set_id: The variable set ID (e.g. ``"varset-xxxxxxxx"``).
+            options: The project relationship payload, as a
+                :class:`VariableSetApplyToProjectsOptions`.
+
+        Returns:
+            None.
 
         Raises:
-            ValueError: If variable_set_id or options are invalid
-            TFEError: If API request fails
+            ValueError: If ``variable_set_id`` is not a string, ``options`` is not a
+                :class:`VariableSetApplyToProjectsOptions`, no projects are supplied,
+                or any supplied project has no ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import Project, VariableSetApplyToProjectsOptions
+            >>> client.variable_sets.apply_to_projects(
+            ...     "varset-4j8p6jX1w33MiDC7",
+            ...     VariableSetApplyToProjectsOptions(
+            ...         projects=[Project.model_construct(id="prj-4j8p6jX1w33MiDC7")]
+            ...     ),
+            ... )
         """
         if not variable_set_id or not isinstance(variable_set_id, str):
             raise ValueError("Variable set ID is required and must be a string")
@@ -483,17 +584,32 @@ class VariableSets(_Service):
         variable_set_id: str,
         options: VariableSetRemoveFromProjectsOptions,
     ) -> None:
-        """Remove variable set from projects.
+        """Remove a non-global variable set from projects.
 
-        This method will return an error if the variable set has global = true.
+        This endpoint returns an API error when the variable set has ``global=True``.
 
         Args:
-            variable_set_id: Variable set ID
-            options: Options specifying projects to remove from
+            variable_set_id: The variable set ID (e.g. ``"varset-xxxxxxxx"``).
+            options: The project relationship payload, as a
+                :class:`VariableSetRemoveFromProjectsOptions`.
+
+        Returns:
+            None.
 
         Raises:
-            ValueError: If variable_set_id or options are invalid
-            TFEError: If API request fails
+            ValueError: If ``variable_set_id`` is not a string, ``options`` is not a
+                :class:`VariableSetRemoveFromProjectsOptions`, no projects are
+                supplied, or any supplied project has no ID.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import Project, VariableSetRemoveFromProjectsOptions
+            >>> client.variable_sets.remove_from_projects(
+            ...     "varset-4j8p6jX1w33MiDC7",
+            ...     VariableSetRemoveFromProjectsOptions(
+            ...         projects=[Project.model_construct(id="prj-4j8p6jX1w33MiDC7")]
+            ...     ),
+            ... )
         """
         if not variable_set_id or not isinstance(variable_set_id, str):
             raise ValueError("Variable set ID is required and must be a string")
@@ -529,18 +645,32 @@ class VariableSets(_Service):
         variable_set_id: str,
         options: VariableSetUpdateWorkspacesOptions,
     ) -> VariableSet:
-        """Update variable set to be applied to only the workspaces in the supplied list.
+        """Replace the workspaces applied to a variable set.
+
+        This forces the variable set to ``global=False`` and includes workspaces in the
+        response.
 
         Args:
-            variable_set_id: Variable set ID
-            options: Options specifying workspaces to apply to
+            variable_set_id: The variable set ID (e.g. ``"varset-xxxxxxxx"``).
+            options: The complete workspace list, as a
+                :class:`VariableSetUpdateWorkspacesOptions`.
 
         Returns:
-            Updated VariableSet object
+            The :class:`VariableSet`.
 
         Raises:
-            ValueError: If variable_set_id or options are invalid
-            TFEError: If API request fails
+            ValueError: If ``variable_set_id`` is not a string or ``options`` is not a
+                :class:`VariableSetUpdateWorkspacesOptions`.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import VariableSetUpdateWorkspacesOptions, Workspace
+            >>> varset = client.variable_sets.update_workspaces(
+            ...     "varset-4j8p6jX1w33MiDC7",
+            ...     VariableSetUpdateWorkspacesOptions(
+            ...         workspaces=[Workspace.model_construct(id="ws-4j8p6jX1w33MiDC7")]
+            ...     ),
+            ... )
         """
         if not variable_set_id or not isinstance(variable_set_id, str):
             raise ValueError("Variable set ID is required and must be a string")
@@ -673,18 +803,26 @@ class VariableSetVariables(_Service):
         variable_set_id: str,
         options: VariableSetVariableListOptions | None = None,
     ) -> Iterator[VariableSetVariable]:
-        """List all variables in a variable set.
+        """List variables in a variable set.
 
         Args:
-            variable_set_id: Variable set ID
-            options: Optional parameters for pagination
+            variable_set_id: The variable set ID (e.g. ``"varset-xxxxxxxx"``).
+            options: Optional pagination options, as a
+                :class:`VariableSetVariableListOptions`.
 
         Returns:
-            Iterator of VariableSetVariable objects
+            A single-use ``Iterator[VariableSetVariable]``. Wrap with ``list(...)`` to
+            materialize the results or iterate more than once.
 
         Raises:
-            ValueError: If variable_set_id is invalid
-            TFEError: If API request fails
+            ValueError: If ``variable_set_id`` is not a string.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> for variable in client.variable_set_variables.list(
+            ...     "varset-4j8p6jX1w33MiDC7"
+            ... ):
+            ...     print(variable.id, variable.key)
         """
         if not variable_set_id or not isinstance(variable_set_id, str):
             raise ValueError("Variable set ID is required and must be a string")
@@ -704,18 +842,30 @@ class VariableSetVariables(_Service):
         variable_set_id: str,
         options: VariableSetVariableCreateOptions,
     ) -> VariableSetVariable:
-        """Create a new variable within a variable set.
+        """Create a variable in a variable set.
 
         Args:
-            variable_set_id: Variable set ID
-            options: Variable creation options
+            variable_set_id: The variable set ID (e.g. ``"varset-xxxxxxxx"``).
+            options: The variable configuration, as a
+                :class:`VariableSetVariableCreateOptions`.
 
         Returns:
-            Created VariableSetVariable object
+            The :class:`VariableSetVariable`.
 
         Raises:
-            ValueError: If variable_set_id or options are invalid
-            TFEError: If API request fails
+            ValueError: If ``variable_set_id`` is not a string, ``options`` is not a
+                :class:`VariableSetVariableCreateOptions`, ``options.key`` is blank, or
+                ``options.category`` is blank.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import CategoryType, VariableSetVariableCreateOptions
+            >>> variable = client.variable_set_variables.create(
+            ...     "varset-4j8p6jX1w33MiDC7",
+            ...     VariableSetVariableCreateOptions(
+            ...         key="AWS_REGION", value="us-east-1", category=CategoryType.ENV,
+            ...     ),
+            ... )
         """
         if not variable_set_id or not isinstance(variable_set_id, str):
             raise ValueError("Variable set ID is required and must be a string")
@@ -766,18 +916,23 @@ class VariableSetVariables(_Service):
         variable_set_id: str,
         variable_id: str,
     ) -> VariableSetVariable:
-        """Read a variable by its ID.
+        """Read a variable from a variable set by ID.
 
         Args:
-            variable_set_id: Variable set ID
-            variable_id: Variable ID
+            variable_set_id: The variable set ID (e.g. ``"varset-xxxxxxxx"``).
+            variable_id: The variable ID (e.g. ``"var-xxxxxxxx"``).
 
         Returns:
-            VariableSetVariable object
+            The :class:`VariableSetVariable`.
 
         Raises:
-            ValueError: If variable_set_id or variable_id are invalid
-            TFEError: If API request fails
+            ValueError: If ``variable_set_id`` or ``variable_id`` is not a string.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> variable = client.variable_set_variables.read(
+            ...     "varset-4j8p6jX1w33MiDC7", "var-4j8p6jX1w33MiDC7"
+            ... )
         """
         if not variable_set_id or not isinstance(variable_set_id, str):
             raise ValueError("Variable set ID is required and must be a string")
@@ -798,19 +953,29 @@ class VariableSetVariables(_Service):
         variable_id: str,
         options: VariableSetVariableUpdateOptions,
     ) -> VariableSetVariable:
-        """Update an existing variable.
+        """Update a variable in a variable set by ID.
 
         Args:
-            variable_set_id: Variable set ID
-            variable_id: Variable ID
-            options: Variable update options
+            variable_set_id: The variable set ID (e.g. ``"varset-xxxxxxxx"``).
+            variable_id: The variable ID (e.g. ``"var-xxxxxxxx"``).
+            options: The variable updates, as a
+                :class:`VariableSetVariableUpdateOptions`.
 
         Returns:
-            Updated VariableSetVariable object
+            The :class:`VariableSetVariable`.
 
         Raises:
-            ValueError: If variable_set_id, variable_id or options are invalid
-            TFEError: If API request fails
+            ValueError: If ``variable_set_id`` or ``variable_id`` is not a string, or if
+                ``options`` is not a :class:`VariableSetVariableUpdateOptions`.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> from pytfe.models import VariableSetVariableUpdateOptions
+            >>> variable = client.variable_set_variables.update(
+            ...     "varset-4j8p6jX1w33MiDC7",
+            ...     "var-4j8p6jX1w33MiDC7",
+            ...     VariableSetVariableUpdateOptions(value="us-west-2"),
+            ... )
         """
         if not variable_set_id or not isinstance(variable_set_id, str):
             raise ValueError("Variable set ID is required and must be a string")
@@ -859,15 +1024,23 @@ class VariableSetVariables(_Service):
         variable_set_id: str,
         variable_id: str,
     ) -> None:
-        """Delete a variable by its ID.
+        """Delete a variable from a variable set by ID.
 
         Args:
-            variable_set_id: Variable set ID
-            variable_id: Variable ID
+            variable_set_id: The variable set ID (e.g. ``"varset-xxxxxxxx"``).
+            variable_id: The variable ID (e.g. ``"var-xxxxxxxx"``).
+
+        Returns:
+            None.
 
         Raises:
-            ValueError: If variable_set_id or variable_id are invalid
-            TFEError: If API request fails
+            ValueError: If ``variable_set_id`` or ``variable_id`` is not a string.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> client.variable_set_variables.delete(
+            ...     "varset-4j8p6jX1w33MiDC7", "var-4j8p6jX1w33MiDC7"
+            ... )
         """
         if not variable_set_id or not isinstance(variable_set_id, str):
             raise ValueError("Variable set ID is required and must be a string")
