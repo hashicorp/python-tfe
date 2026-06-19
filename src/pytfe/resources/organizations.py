@@ -233,25 +233,12 @@ class Organizations(_Service):
         d = r.json()["data"]
         attr = d.get("attributes", {}) or {}
 
-        e = Entitlements(
-            id=_safe_str(d.get("id")),
-            agents=attr.get("agents"),
-            audit_logging=attr.get("audit-logging"),
-            cost_estimation=attr.get("cost-estimation"),
-            global_run_tasks=attr.get("global-run-tasks"),
-            operations=attr.get("operations"),
-            private_module_registry=attr.get("private-module-registry"),
-            private_run_tasks=attr.get("private-run-tasks"),
-            run_tasks=attr.get("run-tasks"),
-            sso=attr.get("sso"),
-            sentinel=attr.get("sentinel"),
-            state_storage=attr.get("state-storage"),
-            teams=attr.get("teams"),
-            vcs_integrations=attr.get("vcs-integrations"),
-            waypoint_actions=attr.get("waypoint-actions"),
-            waypoint_templates_and_addons=attr.get("waypoint-templates-and-addons"),
-        )
-        return e
+        # Pass every flag through (hyphen -> underscore). Flags not modelled as
+        # typed fields on Entitlements are retained in `model_extra` via
+        # extra="allow" rather than being silently dropped (e.g. the integer
+        # `*_limit` flags). Existing typed fields are populated unchanged.
+        normalized = {k.replace("-", "_"): v for k, v in attr.items() if k != "id"}
+        return Entitlements(id=_safe_str(d.get("id")), **normalized)
 
     def read_run_queue(
         self, organization: str, options: ReadRunQueueOptions

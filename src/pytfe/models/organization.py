@@ -252,6 +252,11 @@ class Capacity(BaseModel):
 
 
 class Entitlements(BaseModel):
+    # Retain every entitlement flag the API returns. The set grows over time and
+    # includes integer `*-limit` flags; extra="allow" keeps anything not modelled
+    # as a typed field below in `model_extra` instead of silently dropping it.
+    model_config = ConfigDict(extra="allow")
+
     id: str
     agents: bool | None = None
     audit_logging: bool | None = None
@@ -268,6 +273,15 @@ class Entitlements(BaseModel):
     vcs_integrations: bool | None = None
     waypoint_actions: bool | None = None
     waypoint_templates_and_addons: bool | None = None
+    # Additional flags that map to SDK features (previously dropped). Other flags
+    # the API returns remain accessible via ``model_extra`` (snake_case keys).
+    hyok: bool | None = None
+    assessments: bool | None = None
+    stacks: bool | None = None
+    terraform_actions: bool | None = None
+    change_requests: bool | None = None
+    ephemeral_workspaces: bool | None = None
+    no_code_modules: bool | None = None
 
 
 class Run(BaseModel):

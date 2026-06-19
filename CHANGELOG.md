@@ -33,6 +33,12 @@ Related data is now a complete, first-class part of every response. Before, `?in
 ### Cost estimates
 * Fixed `CostEstimate` failing to parse real API responses: `status-timestamps` now treats every timestamp as optional (the API only returns the ones that have occurred) and adds the missing `pending-at`, and `error-message` now accepts `null`. Previously an included `cost-estimate` with a null error or partial timestamps would silently collapse to an id-only stub.
 
+### Transport
+* Fixed the shared HTTP client retaining `Set-Cookie` session cookies across requests. The `/api/meta/ip-ranges` endpoint returns an `_atlas_session_data` cookie; once stored, that browser session silently overrode bearer-token auth on every subsequent request, causing spurious `401`/`404` errors. The transport now never persists cookies (this SDK authenticates only with the bearer token). Without this fix, any call to `client.ip_ranges.read()` broke all later authenticated calls on the same client.
+
+### Organizations
+* Fixed `organizations.read_entitlements` silently dropping most entitlement flags. The parser surfaced only 15 of the ~47 flags the API returns, so flags such as `hyok`, `assessments`, `stacks`, `terraform-actions`, and `change-requests` were discarded. `Entitlements` now exposes those as typed fields and retains every remaining flag (including the integer `*-limit` flags) under `model_extra` via `extra="allow"`. The change is additive — existing typed fields are unchanged.
+
 
 # Released
 # v1.1.0
