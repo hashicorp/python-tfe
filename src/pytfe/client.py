@@ -17,6 +17,7 @@ from .resources.cost_estimate import CostEstimates
 from .resources.explorer import Explorer
 from .resources.github_app_installation import GitHubAppInstallations
 from .resources.hyok_configuration import HYOKConfigurations
+from .resources.invoice import Invoices
 from .resources.ip_ranges import IPRanges
 from .resources.no_code_module import NoCodeModules
 from .resources.notification_configuration import NotificationConfigurations
@@ -61,6 +62,7 @@ from .resources.stack import Stacks
 from .resources.stack_configuration import StackConfigurations
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
+from .resources.subscription import Subscriptions
 from .resources.task_result import TaskResults
 from .resources.task_stage import TaskStages
 from .resources.team import Teams
@@ -126,6 +128,9 @@ class TFEClient:
         self.cidr_range_lists = CIDRRangeLists(self._transport)
         self.cidr_ranges = CIDRRanges(self._transport)
         self.organizations = Organizations(self._transport)
+        # Billing (HCP Terraform only)
+        self.subscriptions = Subscriptions(self._transport)
+        self.invoices = Invoices(self._transport)
         self.organization_memberships = OrganizationMemberships(self._transport)
         self.organization_audit_configurations = OrganizationAuditConfigurations(
             self._transport

@@ -51,6 +51,8 @@ column.
 | `client.team_tokens` | `TeamTokens` | `list`, `read`, `create`, `delete` | [team_token.py](../../examples/team_token.py) | [Team tokens](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/team-tokens) |
 | `client.organization_memberships` | `OrganizationMemberships` | `list`, `read`, `create`, `delete` | [organization_membership.py](../../examples/organization_membership.py) | [Organization memberships](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/organization-memberships) |
 | `client.organization_tokens` | `OrganizationTokens` | `read`, `create`, `delete` | [organization_token.py](../../examples/organization_token.py) | [Organization tokens](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/organization-tokens) |
+| `client.subscriptions` | `Subscriptions` | `read_for_organization`, `read` | [billing.py](../../examples/billing.py) | [Subscriptions](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/subscriptions) |
+| `client.invoices` | `Invoices` | `list`, `read_next` | [billing.py](../../examples/billing.py) | [Invoices](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/invoices) |
 
 ## Policies and policy results
 

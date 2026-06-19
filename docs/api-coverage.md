@@ -8,7 +8,7 @@ resource list is reconciled against the public
 
 **Legend:** ✅ Covered &nbsp;·&nbsp; 🟡 Partial &nbsp;·&nbsp; ❌ Not yet implemented
 
-pytfe implements **69 resource namespaces**. The resources still missing or
+pytfe implements **71 resource namespaces**. The resources still missing or
 partially covered are listed at the bottom of this page.
 
 ## Covered resources
@@ -19,6 +19,8 @@ partially covered are listed at the bottom of this page.
 | | Organization memberships | `client.organization_memberships` | ✅ |
 | | Organization tags | `client.organization_tags` | ✅ |
 | | Organization tokens | `client.organization_tokens` | ✅ |
+| | Subscriptions | `client.subscriptions` | ✅ |
+| | Invoices | `client.invoices` | ✅ |
 | | Organization token TTL policies | `client.organization_token_ttl_policies` | ✅ |
 | | Organization audit configuration | `client.organization_audit_configurations` | ✅ |
 | | Teams | `client.teams` | ✅ |
@@ -105,7 +107,6 @@ Public HCP Terraform API resources that do not yet have a pytfe client namespace
 | Feature sets | Organization feature sets. |
 | GPG keys | Private Registry provider signing keys. |
 | Group member roles | Team member role assignments. |
-| Invoices | Organization billing invoices. |
 | Metrics service tokens | Metrics endpoint service tokens. |
 | Stack configuration summary | Builds on the existing stack_configuration resource |
 | Stack deployment | Core Stacks deployment lifecycle |
@@ -115,7 +116,6 @@ Public HCP Terraform API resources that do not yet have a pytfe client namespace
 | Stack deployment steps | Granular deployment step tracking |
 | Stack diagnostic | Diagnostics companion to stack_deployment |
 | Stack state | State surface for deployed stacks |
-| Subscriptions | Organization subscription management. |
 | Terraform actions | Only the Run `invoke_action_addrs` field today; no dedicated resource. |
 | User tokens | Personal (user) API tokens. |
 | VCS events | — |
