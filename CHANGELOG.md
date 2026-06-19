@@ -1,12 +1,12 @@
 # Unreleased
 
+# Released
 # v1.2.0
 
 ## Enhancements
 
 ### Relationships
 Related data is now a complete, first-class part of every response. Before, `?include=` often did not actually fill the related fields it returned, and anything the SDK did not model as a typed field was dropped on the floor. Now the full set of related resources the API hands back is always available to you: typed where pytfe models it, raw where it does not. The practical win is that **you are no longer limited to the relationships pytfe has added typed support for.** You can read any related resource in a response without dropping to manual HTTP or waiting for a new SDK release.
-
 * `?include=` now fills in related data. When the SDK models a relation as a typed field (for example `workspace.outputs`, `policy_set.current_version`, `organization_membership.user`, `run_event.actor`), passing `?include=<relation>` fills that field with the real record instead of an id-only stub.
 * Relations the SDK does **not** model are no longer lost. Every top-level resource model now derives from a new `pytfe.models.TFEModel` base and gains read-only accessors for the raw JSON:API data the API returned: `model.relationships`, `model.included`, `model.related(name)`, `model.included_by(type, id)`, and the `model.has_relationships` and `model.has_included` flags. So when a relation has no typed field of its own (for example an organization's `subscription`, or a workspace `readme`), `?include=` still returns it and you reach it with `model.related("subscription")` or `model.included_by(type, id)`. These accessors are read-only extras that never appear in `model_dump()` or affect equality, so this is additive and non-breaking. List endpoints expose the relationship refs but do not yet fill `included`. See [docs/related-resources.md](docs/related-resources.md) for the per-resource table and a "typed field vs raw accessor" guide.
 * Added `?include=` support to three reads that previously had no include option, matching the HCP Terraform API:
@@ -29,7 +29,6 @@ Related data is now a complete, first-class part of every response. Before, `?in
 The installed package is now self-describing, so a consumer (including an AI
 agent or other tooling working only from `site-packages/pytfe`) can enumerate and
 drive the SDK without hardcoding resource names or browsing the GitHub repo.
-
 * `pytfe.describe()` returns a machine-readable manifest of the API surface —
   every resource namespace on `TFEClient`, its public methods, signatures, and
   one-line summaries, with the `admin` namespace nested. It makes no network
