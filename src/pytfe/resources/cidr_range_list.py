@@ -304,6 +304,7 @@ class CIDRRangeLists(_Service):
 
         Raises:
             InvalidCIDRRangeListIDError: If ``cidr_range_list_id`` is not valid.
+            InvalidAgentPoolIDError: If an agent pool ID is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
@@ -335,6 +336,7 @@ class CIDRRangeLists(_Service):
 
         Raises:
             InvalidCIDRRangeListIDError: If ``cidr_range_list_id`` is not valid.
+            InvalidAgentPoolIDError: If an agent pool ID is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:

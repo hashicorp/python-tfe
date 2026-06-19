@@ -43,6 +43,8 @@ class RunTaskIntegrations(_Service):
         Example:
             >>> from pytfe.models import TaskResultCallbackRequestOptions
             >>> from pytfe.models import TaskResultCallbackStatus
+            >>> # callback_url and access_token are delivered by the inbound
+            >>> # Run Task request that your integration is responding to:
             >>> client.run_task_integrations.callback(
             ...     callback_url,
             ...     access_token,

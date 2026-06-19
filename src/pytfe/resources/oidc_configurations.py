@@ -164,6 +164,7 @@ class AWSOIDCConfigurations(_OIDCConfigurationsBase[AWSOIDCConfiguration]):
             The created :class:`AWSOIDCConfiguration`.
 
         Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
             TFEError: If the API request fails.
 
         Example:
@@ -188,6 +189,7 @@ class AWSOIDCConfigurations(_OIDCConfigurationsBase[AWSOIDCConfiguration]):
             The :class:`AWSOIDCConfiguration`.
 
         Raises:
+            InvalidOIDCConfigurationIDError: If ``oidc_configuration_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
@@ -213,6 +215,7 @@ class AWSOIDCConfigurations(_OIDCConfigurationsBase[AWSOIDCConfiguration]):
             The updated :class:`AWSOIDCConfiguration`.
 
         Raises:
+            InvalidOIDCConfigurationIDError: If ``oidc_configuration_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
@@ -237,6 +240,7 @@ class AWSOIDCConfigurations(_OIDCConfigurationsBase[AWSOIDCConfiguration]):
             None.
 
         Raises:
+            InvalidOIDCConfigurationIDError: If ``oidc_configuration_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
@@ -270,6 +274,7 @@ class AzureOIDCConfigurations(_OIDCConfigurationsBase[AzureOIDCConfiguration]):
             The created :class:`AzureOIDCConfiguration`.
 
         Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
             TFEError: If the API request fails.
 
         Example:
@@ -296,6 +301,7 @@ class AzureOIDCConfigurations(_OIDCConfigurationsBase[AzureOIDCConfiguration]):
             The :class:`AzureOIDCConfiguration`.
 
         Raises:
+            InvalidOIDCConfigurationIDError: If ``oidc_configuration_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
@@ -321,6 +327,7 @@ class AzureOIDCConfigurations(_OIDCConfigurationsBase[AzureOIDCConfiguration]):
             The updated :class:`AzureOIDCConfiguration`.
 
         Raises:
+            InvalidOIDCConfigurationIDError: If ``oidc_configuration_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
@@ -343,6 +350,7 @@ class AzureOIDCConfigurations(_OIDCConfigurationsBase[AzureOIDCConfiguration]):
             None.
 
         Raises:
+            InvalidOIDCConfigurationIDError: If ``oidc_configuration_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
@@ -376,6 +384,7 @@ class GCPOIDCConfigurations(_OIDCConfigurationsBase[GCPOIDCConfiguration]):
             The created :class:`GCPOIDCConfiguration`.
 
         Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
             TFEError: If the API request fails.
 
         Example:
@@ -402,6 +411,7 @@ class GCPOIDCConfigurations(_OIDCConfigurationsBase[GCPOIDCConfiguration]):
             The :class:`GCPOIDCConfiguration`.
 
         Raises:
+            InvalidOIDCConfigurationIDError: If ``oidc_configuration_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
@@ -427,6 +437,7 @@ class GCPOIDCConfigurations(_OIDCConfigurationsBase[GCPOIDCConfiguration]):
             The updated :class:`GCPOIDCConfiguration`.
 
         Raises:
+            InvalidOIDCConfigurationIDError: If ``oidc_configuration_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
@@ -451,6 +462,7 @@ class GCPOIDCConfigurations(_OIDCConfigurationsBase[GCPOIDCConfiguration]):
             None.
 
         Raises:
+            InvalidOIDCConfigurationIDError: If ``oidc_configuration_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
@@ -484,6 +496,7 @@ class VaultOIDCConfigurations(_OIDCConfigurationsBase[VaultOIDCConfiguration]):
             The created :class:`VaultOIDCConfiguration`.
 
         Raises:
+            InvalidOrgError: If ``organization`` is not a valid organization name.
             TFEError: If the API request fails.
 
         Example:
@@ -508,6 +521,7 @@ class VaultOIDCConfigurations(_OIDCConfigurationsBase[VaultOIDCConfiguration]):
             The :class:`VaultOIDCConfiguration`.
 
         Raises:
+            InvalidOIDCConfigurationIDError: If ``oidc_configuration_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
@@ -533,6 +547,7 @@ class VaultOIDCConfigurations(_OIDCConfigurationsBase[VaultOIDCConfiguration]):
             The updated :class:`VaultOIDCConfiguration`.
 
         Raises:
+            InvalidOIDCConfigurationIDError: If ``oidc_configuration_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:
@@ -555,6 +570,7 @@ class VaultOIDCConfigurations(_OIDCConfigurationsBase[VaultOIDCConfiguration]):
             None.
 
         Raises:
+            InvalidOIDCConfigurationIDError: If ``oidc_configuration_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:

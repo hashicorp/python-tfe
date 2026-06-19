@@ -653,10 +653,12 @@ class RegistryModules(_Service):
         return self._parse_registry_module(data)
 
     def upload(self, rmv: RegistryModuleVersion, path: str) -> None:
-        """Upload Terraform configuration files for a module version.
+        """Package and upload module files from a local path (not implemented yet).
 
-        It requires a path to the configuration files on disk, which will be
-        packaged before being uploaded.
+        Packaging a local directory is not implemented, so this always raises
+        ``NotImplementedError`` once an upload link is present. To upload a module
+        version today, build the gzipped tar archive yourself and pass the
+        version's upload link to :meth:`upload_tar_gzip`.
 
         Args:
             rmv: The registry module version with an upload link, as a
@@ -667,12 +669,18 @@ class RegistryModules(_Service):
             None.
 
         Raises:
-            NotImplementedError: This method does not implement packaging yet.
-            ValueError: If an argument or options value is invalid.
+            ValueError: If ``rmv`` has no upload link.
+            NotImplementedError: Always (when an upload link is present) —
+                local-path packaging is not implemented yet.
 
         Example:
-            >>> version = client.registry_modules.create_version(module_id, options)
-            >>> client.registry_modules.upload(version, "./module")
+            >>> import io
+            >>> # upload() is not implemented; build the archive yourself and use
+            >>> # upload_tar_gzip with the version's upload link instead:
+            >>> with open("module.tar.gz", "rb") as fh:
+            ...     client.registry_modules.upload_tar_gzip(
+            ...         rmv.links["upload"], io.BytesIO(fh.read())
+            ...     )
         """
         upload_url = rmv.links.get("upload")
         if not upload_url:
@@ -705,8 +713,11 @@ class RegistryModules(_Service):
 
         Example:
             >>> import io
-            >>> archive = io.BytesIO(tar_gzip_bytes)
-            >>> client.registry_modules.upload_tar_gzip(upload_url, archive)
+            >>> version = client.registry_modules.create_version(module_id, options)
+            >>> with open("module.tar.gz", "rb") as fh:
+            ...     client.registry_modules.upload_tar_gzip(
+            ...         version.links["upload"], io.BytesIO(fh.read())
+            ...     )
         """
         # Use the httpx client for direct upload to external URL
         response = self.t._sync.put(upload_url, content=archive.read())

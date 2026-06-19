@@ -279,6 +279,8 @@ class Workspaces(_Service):
             The :class:`Workspace`.
 
         Raises:
+            InvalidWorkspaceValueError: If ``workspace`` is not a valid workspace name.
+            InvalidOrgError: If ``organization`` is not a valid organization name.
             TFEError: If the API request fails.
 
         Example:
@@ -352,6 +354,7 @@ class Workspaces(_Service):
             The :class:`Workspace`.
 
         Raises:
+            InvalidWorkspaceIDError: If ``workspace_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:

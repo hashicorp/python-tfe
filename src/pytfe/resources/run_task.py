@@ -259,6 +259,7 @@ class RunTasks(_Service):
             The :class:`RunTask`.
 
         Raises:
+            InvalidRunTaskIDError: If ``run_task_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:

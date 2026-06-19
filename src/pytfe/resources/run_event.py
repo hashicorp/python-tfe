@@ -82,6 +82,7 @@ class RunEvents(_Service):
             The :class:`RunEvent`.
 
         Raises:
+            InvalidRunEventIDError: If ``run_event_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:

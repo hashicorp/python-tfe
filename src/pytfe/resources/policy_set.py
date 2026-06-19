@@ -213,6 +213,7 @@ class PolicySets(_Service):
             The :class:`PolicySet`.
 
         Raises:
+            InvalidPolicySetIDError: If ``policy_set_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:

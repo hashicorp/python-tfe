@@ -137,6 +137,7 @@ class OAuthClients(_Service):
             The :class:`OAuthClient`.
 
         Raises:
+            ValueError: If ``oauth_client_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:

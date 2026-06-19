@@ -74,6 +74,8 @@ class SSHKeys(_Service):
 
         Example:
             >>> from pytfe.models import SSHKeyCreateOptions
+            >>> with open("deploy_key", "r") as fh:
+            ...     private_key_pem = fh.read()
             >>> key = client.ssh_keys.create(
             ...     "my-org",
             ...     SSHKeyCreateOptions(name="deploy-key", value=private_key_pem),

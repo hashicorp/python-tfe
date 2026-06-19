@@ -188,6 +188,8 @@ class Registry(_Service):
             to materialize the results or iterate more than once.
 
         Raises:
+            InvalidModuleNamespaceError: If ``namespace`` is not a valid module namespace.
+            InvalidModuleNameError: If ``name`` is not a valid module name.
             TFEError: If the API request fails.
 
         Example:
@@ -216,6 +218,9 @@ class Registry(_Service):
             The :class:`PublicRegistryModule`.
 
         Raises:
+            InvalidModuleNamespaceError: If ``namespace`` is not a valid module namespace.
+            InvalidModuleNameError: If ``name`` is not a valid module name.
+            InvalidModuleProviderError: If ``provider`` is not a valid module provider.
             TFEError: If the API request fails.
 
         Example:
@@ -243,6 +248,10 @@ class Registry(_Service):
             The :class:`PublicRegistryModule`.
 
         Raises:
+            InvalidModuleNamespaceError: If ``namespace`` is not a valid module namespace.
+            InvalidModuleNameError: If ``name`` is not a valid module name.
+            InvalidModuleProviderError: If ``provider`` is not a valid module provider.
+            InvalidModuleVersionError: If ``version`` is not a valid module version.
             TFEError: If the API request fails.
 
         Example:
@@ -272,6 +281,9 @@ class Registry(_Service):
             The :class:`PublicRegistryModuleVersions`.
 
         Raises:
+            InvalidModuleNamespaceError: If ``namespace`` is not a valid module namespace.
+            InvalidModuleNameError: If ``name`` is not a valid module name.
+            InvalidModuleProviderError: If ``provider`` is not a valid module provider.
             TFEError: If the API request fails.
 
         Example:
@@ -303,6 +315,10 @@ class Registry(_Service):
             The ``str``.
 
         Raises:
+            InvalidModuleNamespaceError: If ``namespace`` is not a valid module namespace.
+            InvalidModuleNameError: If ``name`` is not a valid module name.
+            InvalidModuleProviderError: If ``provider`` is not a valid module provider.
+            InvalidModuleVersionError: If ``version`` is not a valid module version.
             TFEError: If the API request fails.
 
         Example:
@@ -332,6 +348,9 @@ class Registry(_Service):
             The ``str``.
 
         Raises:
+            InvalidModuleNamespaceError: If ``namespace`` is not a valid module namespace.
+            InvalidModuleNameError: If ``name`` is not a valid module name.
+            InvalidModuleProviderError: If ``provider`` is not a valid module provider.
             TFEError: If the API request fails.
 
         Example:
@@ -356,6 +375,9 @@ class Registry(_Service):
             The :class:`PublicRegistryModuleDownloadsSummary`.
 
         Raises:
+            InvalidModuleNamespaceError: If ``namespace`` is not a valid module namespace.
+            InvalidModuleNameError: If ``name`` is not a valid module name.
+            InvalidModuleProviderError: If ``provider`` is not a valid module provider.
             TFEError: If the API request fails.
 
         Example:

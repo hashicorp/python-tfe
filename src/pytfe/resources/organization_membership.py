@@ -190,6 +190,7 @@ class OrganizationMemberships(_Service):
             The :class:`OrganizationMembership`.
 
         Raises:
+            ValueError: If ``organization_membership_id`` is not a valid resource ID.
             TFEError: If the API request fails.
 
         Example:

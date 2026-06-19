@@ -309,6 +309,7 @@ class Organizations(_Service):
             The :class:`OrganizationDefaultSettings`.
 
         Raises:
+            ValueError: If ``organization`` is not a valid organization name.
             TFEError: If the API request fails.
 
         Example:
