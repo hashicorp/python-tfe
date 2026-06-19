@@ -5,7 +5,7 @@ from importlib.metadata import PackageNotFoundError
 from importlib.metadata import version as _pkg_version
 
 from . import errors, models
-from ._introspect import describe, llms_txt, tool_schemas
+from ._introspect import describe, llms_txt
 from ._logging import setup_logging
 from .client import TFEClient
 from .config import TFEConfig
@@ -23,6 +23,5 @@ __all__ = [
     "setup_logging",
     "describe",
     "llms_txt",
-    "tool_schemas",
     "__version__",
 ]

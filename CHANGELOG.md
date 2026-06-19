@@ -36,16 +36,6 @@ drive the SDK without hardcoding resource names or browsing the GitHub repo.
   calls (a throwaway client with an empty config is used purely to introspect
   the wiring) and the result is JSON-serializable. Each method's `*Options`
   model still exposes JSON Schema via `model_json_schema()`.
-* `pytfe.tool_schemas()` returns tool-calling definitions —
-  `{name, resource, method, description, input_schema}` per method, where
-  `input_schema` is a JSON Schema object composed of the method's positional
-  identifiers plus its `*Options` model. Network-free and JSON-serializable, for
-  use with an MCP server or any LLM tool framework, and generated from the
-  installed package so new/updated resources appear automatically. The
-  definitions cover the whole SDK surface — including destructive, file-upload,
-  and secret-bearing methods — so a consumer that *executes* them should default
-  to read-only, allowlist mutations, and avoid logging secret arguments;
-  `tool_schemas()` itself only describes the surface and never makes a call.
 * `pytfe.llms_txt()` returns a concise, agent-oriented orientation guide that
   now ships inside the wheel at `pytfe/llms.txt` (alongside `py.typed`).
 * `TFEClient` gained a comprehensive class docstring (resource namespaces,
