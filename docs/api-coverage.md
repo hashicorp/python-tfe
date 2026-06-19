@@ -8,7 +8,7 @@ resource list is reconciled against the public
 
 **Legend:** ✅ Covered &nbsp;·&nbsp; 🟡 Partial &nbsp;·&nbsp; ❌ Not yet implemented
 
-pytfe implements **68 resource namespaces**. The resources still missing or
+pytfe implements **69 resource namespaces**. The resources still missing or
 partially covered are listed at the bottom of this page.
 
 ## Covered resources
@@ -81,6 +81,7 @@ partially covered are listed at the bottom of this page.
 | | Azure OIDC configurations | `client.azure_oidc_configurations` | ✅ |
 | | GCP OIDC configurations | `client.gcp_oidc_configurations` | ✅ |
 | | Vault OIDC configurations | `client.vault_oidc_configurations` | ✅ |
+| | HYOK configurations | `client.hyok_configurations` | ✅ |
 | Meta | IP ranges | `client.ip_ranges` | ✅ |
 | Admin (TFE site-admin) | Organizations, users, runs, workspaces | `client.admin.organizations` / `.users` / `.runs` / `.workspaces` | ✅ |
 | | Terraform / OPA / Sentinel versions | `client.admin.terraform_versions` / `.opa_versions` / `.sentinel_versions` | ✅ |
@@ -100,7 +101,6 @@ Public HCP Terraform API resources that do not yet have a pytfe client namespace
 
 | Resource | Notes |
 |---|---|
-| Audit trails tokens | Auth tokens for the audit-trail streaming API. |
 | Change requests | — |
 | Feature sets | Organization feature sets. |
 | GPG keys | Private Registry provider signing keys. |
@@ -116,7 +116,6 @@ Public HCP Terraform API resources that do not yet have a pytfe client namespace
 | Stack diagnostic | Diagnostics companion to stack_deployment |
 | Stack state | State surface for deployed stacks |
 | Subscriptions | Organization subscription management. |
-| Team member | - |
 | Terraform actions | Only the Run `invoke_action_addrs` field today; no dedicated resource. |
 | User tokens | Personal (user) API tokens. |
 | VCS events | — |
@@ -124,3 +123,8 @@ Public HCP Terraform API resources that do not yet have a pytfe client namespace
 > Note: the TFE site-admin API (`/api/v2/admin/*`, TFE-only — not part of the
 > public HCP Terraform API) **is** implemented under `client.admin` (see the
 > Admin rows above).
+>
+> Note: **team membership** is covered by `client.teams`
+> (`add_users` / `remove_users` / `list_users` and the `*_organization_memberships`
+> variants), and **audit-trail tokens** are covered by `client.organization_tokens`
+> via `token_type=TokenType.AUDIT_TRAILS` — neither is a separate namespace.

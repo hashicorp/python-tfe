@@ -16,6 +16,7 @@ from .resources.configuration_version import ConfigurationVersions
 from .resources.cost_estimate import CostEstimates
 from .resources.explorer import Explorer
 from .resources.github_app_installation import GitHubAppInstallations
+from .resources.hyok_configuration import HYOKConfigurations
 from .resources.ip_ranges import IPRanges
 from .resources.no_code_module import NoCodeModules
 from .resources.notification_configuration import NotificationConfigurations
@@ -154,6 +155,8 @@ class TFEClient:
         self.azure_oidc_configurations = AzureOIDCConfigurations(self._transport)
         self.gcp_oidc_configurations = GCPOIDCConfigurations(self._transport)
         self.vault_oidc_configurations = VaultOIDCConfigurations(self._transport)
+        # HYOK configurations (parent of the OIDC configs above)
+        self.hyok_configurations = HYOKConfigurations(self._transport)
         self.registry_providers = RegistryProviders(self._transport)
         self.registry_provider_versions = RegistryProviderVersions(self._transport)
         self.registry_provider_platforms = RegistryProviderPlatforms(self._transport)

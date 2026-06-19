@@ -466,6 +466,21 @@ class InvalidAssessmentResultIDError(InvalidValues):
         super().__init__(message)
 
 
+# HYOK (Hold Your Own Key) configuration errors
+class InvalidHYOKConfigurationIDError(InvalidValues):
+    """Raised when an invalid HYOK configuration ID is provided."""
+
+    def __init__(self, message: str = "invalid value for HYOK configuration ID"):
+        super().__init__(message)
+
+
+class RequiredKEKIDError(RequiredFieldMissing):
+    """Raised when a key-encryption-key id (kek-id) is required but not provided."""
+
+    def __init__(self, message: str = "kek-id is required"):
+        super().__init__(message)
+
+
 # IP allowlist (CIDR range list) errors
 class InvalidCIDRRangeListIDError(InvalidValues):
     """Raised when an invalid CIDR range list (IP allowlist) ID is provided."""
