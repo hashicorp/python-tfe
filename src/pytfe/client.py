@@ -78,7 +78,44 @@ from .resources.workspaces import Workspaces
 
 
 class TFEClient:
+    """Synchronous client for the HCP Terraform / Terraform Enterprise V2 API.
+
+    The client is the composition root: construct it once, then reach every
+    resource through a namespaced attribute and call standard verbs on it::
+
+        from pytfe import TFEClient, TFEConfig
+
+        with TFEClient(TFEConfig(address="https://app.terraform.io", token="...")) as tfe:
+            for ws in tfe.workspaces.list("my-org"):
+                print(ws.id, ws.name)
+
+    When no :class:`TFEConfig` is supplied, configuration falls back to the
+    ``TFE_ADDRESS`` and ``TFE_TOKEN`` environment variables.
+
+    Resources are exposed as attributes — e.g. ``workspaces``, ``runs``,
+    ``plans``, ``applies``, ``variables``, ``variable_sets``, ``teams``,
+    ``projects``, ``organizations``, ``state_versions``, ``policies``,
+    ``policy_sets``, ``registry_modules``, ``configuration_versions`` — plus the
+    ``admin`` namespace for Terraform Enterprise site administration, and ~70
+    more. Call :func:`pytfe.describe` for a complete, machine-readable map of
+    every resource, method, and signature.
+
+    Conventions worth knowing:
+
+    * ``list`` / ``list_*`` methods return a single-use :class:`Iterator`;
+      pagination is handled transparently. Wrap with ``list(...)`` to materialise.
+    * Write methods take a typed ``*Options`` Pydantic model; identifiers come
+      first, options last.
+    * Errors raise typed :class:`pytfe.errors.TFEError` subclasses.
+    * Logging is silent by default; opt in with ``PYTFE_LOG=debug`` or
+      :func:`pytfe.setup_logging`.
+
+    The client holds a pooled HTTP connection. Use it as a context manager (as
+    above) or call :meth:`close` when done.
+    """
+
     def __init__(self, config: TFEConfig | None = None):
+        """Build a client from ``config`` (or env vars when ``config`` is None)."""
         cfg = config or TFEConfig.from_env()
         self._transport = HTTPTransport(
             cfg.address,
@@ -201,7 +238,20 @@ class TFEClient:
         # Reserved Tag Key
         self.reserved_tag_key = ReservedTagKeys(self._transport)
 
+    def __enter__(self) -> TFEClient:
+        """Enter a runtime context and return the client unchanged."""
+        return self
+
+    def __exit__(self, *exc_info: object) -> None:
+        """Exit the runtime context, releasing pooled HTTP connections."""
+        self.close()
+
     def close(self) -> None:
+        """Close the HTTP transport and release pooled connections.
+
+        Safe to call multiple times. Prefer using the client as a context
+        manager (``with TFEClient(...) as tfe:``) so this runs automatically.
+        """
         try:
             self._transport._sync.close()
         except Exception:

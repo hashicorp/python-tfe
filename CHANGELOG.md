@@ -25,6 +25,18 @@ Related data is now a complete, first-class part of every response. Before, `?in
 * Added `client.assessment_results` — read workspace health assessment (drift detection / continuous validation) results. `read(id)` returns an `AssessmentResult`; `json_output(id)` and `json_schema(id)` return the underlying JSON plan / provider schema (following the blob redirect, `None` on 204); `log_output(id)` returns the Terraform JSON log as text. `AssessmentResult` is now a `TFEModel`, so its `workspace`/`source` relationships are reachable via `.relationships` / `.related(...)`. New error: `InvalidAssessmentResultIDError`.
 * Added `client.hyok_configurations` — manage HYOK (Hold Your Own Key) configurations. `list(org)`, `create(org, options)`, `read(id)`, `delete(id)`, `test(id)`, and `revoke(id)`. A HYOK configuration ties an OIDC configuration (`client.*_oidc_configurations`) and an agent pool to a customer-controlled KMS key; this is the parent resource for the per-cloud OIDC configs. A configuration must be revoked before it can be deleted. New models: `HYOKConfiguration`, `HYOKConfigurationCreateOptions`, `HYOKConfigurationStatus`, `HYOKKMSOptions`, `OIDCConfigurationType`. New errors: `InvalidHYOKConfigurationIDError`, `RequiredKEKIDError`.
 
+### Discovery for AI agents, MCP servers, and tooling
+The installed package is now self-describing, so a consumer can enumerate the
+SDK without hardcoding resource names or browsing the GitHub repo.
+
+* `pytfe.describe()` returns a machine-readable manifest of the API surface —
+  every resource namespace on `TFEClient`, its public methods, signatures, and
+  one-line summaries, with the `admin` namespace nested. It makes no network
+  calls (a throwaway client with an empty config is used purely to introspect
+  the wiring) and the result is JSON-serializable. Each method's `*Options`
+  model still exposes JSON Schema via `model_json_schema()`.
+
+
 ## Bug Fixes
 
 ### Relationships
