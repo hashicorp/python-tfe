@@ -54,16 +54,9 @@ through a namespaced attribute and call standard verbs on it:
     list(manifest["resources"])      # every resource namespace
     manifest["resources"]["runs"]["methods"]   # methods + signatures + summaries
 
-    tools = pytfe.tool_schemas()     # [{name, resource, method, description, input_schema}, ...]
-    # input_schema is JSON Schema (ids + the *Options model via model_json_schema()).
-    # Covers the whole SDK surface, incl. destructive / file-upload / secret-bearing
-    # methods. If you EXECUTE these from model output, default to read-only, allowlist
-    # mutations, confirm deletes, and keep secret-bearing args out of logs/transcripts.
-
     print(pytfe.llms_txt())          # this document, from the installed package
 
-`pytfe.describe()` and `pytfe.tool_schemas()` make no network calls; they
-introspect the client wiring.
+`pytfe.describe()` makes no network calls; it introspects the client wiring.
 
 ## Top-level exports
 
@@ -72,7 +65,7 @@ introspect the client wiring.
 - `errors` — typed exception hierarchy (`TFEError` + subclasses).
 - `models` — Pydantic request/response models and `*Options` types.
 - `setup_logging` — opt-in stdlib logging configuration.
-- `describe`, `tool_schemas`, `llms_txt` — discovery helpers (this section).
+- `describe`, `llms_txt` — discovery helpers (this section).
 
 ## More (GitHub repository, not shipped in the wheel)
 
