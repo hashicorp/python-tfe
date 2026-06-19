@@ -116,4 +116,13 @@ module = "tests.*"
 disallow_untyped_defs = false
 
 [tool.hatch.build.targets.sdist]
-include = ["src/**", "README.md", "LICENSE", "docs/**"]
+include = [
+    "src/**",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "AGENTS.md",
+    "docs/**",
+    "examples/**",
+]
+exclude = ["**/__pycache__", "**/*.pyc"]
