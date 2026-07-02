@@ -43,9 +43,7 @@ def main() -> int:
         "--address", default=os.getenv("TFE_ADDRESS", "https://app.terraform.io")
     )
     parser.add_argument("--token", default=os.getenv("TFE_TOKEN", ""))
-    parser.add_argument(
-        "--stack-id", required=True, help="Stack ID (e.g. st-xxxxxxxx)"
-    )
+    parser.add_argument("--stack-id", required=True, help="Stack ID (e.g. st-xxxxxxxx)")
     parser.add_argument(
         "--page-size", type=int, default=20, help="Page size for listing deployments"
     )

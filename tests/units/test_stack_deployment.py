@@ -39,9 +39,7 @@ class TestStackDeployments:
             "type": "stack-deployments",
             "attributes": {"name": "simple"},
             "relationships": {
-                "stack": {
-                    "data": {"id": "st-MWvJsvy1FCg3bnXY", "type": "stacks"}
-                },
+                "stack": {"data": {"id": "st-MWvJsvy1FCg3bnXY", "type": "stacks"}},
                 "latest-deployment-run": {
                     "data": {
                         "id": "sdr-vzub48Y4f7sFBk7J",
