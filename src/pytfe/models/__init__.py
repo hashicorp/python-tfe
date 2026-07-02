@@ -544,6 +544,11 @@ from .stack_configuration import (
     StackConfigurationSource,
     StackConfigurationStatus,
 )
+from .stack_deployment import (
+    StackDeployment,
+    StackDeploymentIncludeOpt,
+    StackDeploymentListOptions,
+)
 from .state_version import (
     StateVersion,
     StateVersionCreateOptions,
@@ -890,6 +895,10 @@ __all__ = [
     "StackConfigurationReadOptions",
     "StackConfigurationSource",
     "StackConfigurationStatus",
+    # Stack Deployment
+    "StackDeployment",
+    "StackDeploymentIncludeOpt",
+    "StackDeploymentListOptions",
     # Query runs
     "QueryRun",
     "QueryRunActions",

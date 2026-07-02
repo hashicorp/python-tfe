@@ -10,6 +10,7 @@ from pytfe import TFEClient, TFEConfig
 from pytfe.models import (
     StackConfigurationCreateOptions,
     StackConfigurationListOptions,
+    StackConfigurationSource,
 )
 
 
@@ -82,7 +83,7 @@ def main():
     else:
         print(f"Total: {config_count} stack configurations")
 
-    # 2) Create a new stack configuration
+    # 2) Create a new stack configuration (manual archive upload)
     if args.create:
         _print_header("Creating a new stack configuration")
         create_opts = StackConfigurationCreateOptions(
@@ -97,7 +98,19 @@ def main():
         print(f"  Sequence: {config.sequence_number}")
         print(f"  Created: {config.created_at}")
 
-    # 3) Read a specific stack configuration
+    # 3) Fetch latest config from VCS (stack must have a vcs_repo wired)
+    if args.fetch_from_vcs:
+        _print_header("Fetching latest configuration from VCS")
+        config = client.stack_configurations.create(
+            stack_id=args.stack_id,
+            source=StackConfigurationSource.FETCH,
+        )
+        print(f"Triggered VCS fetch: {config.id}")
+        print(f"  Status: {config.status.value if config.status else None}")
+        print(f"  Sequence: {config.sequence_number}")
+        print(f"  Created: {config.created_at}")
+
+    # 4) Read a specific stack configuration
     if args.read:
         if not args.id:
             print("--id is required for --read")

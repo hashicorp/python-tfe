@@ -1,5 +1,10 @@
 # Unreleased
 
+## Enhancements
+
+### New resources
+* Added `client.stack_deployments` — list the deployments that belong to a stack. `list(stack_id, options=None)` (`GET /stacks/{stack_id}/stack-deployments`) returns an `Iterator[StackDeployment]`, with optional pagination (`page_size`) and `?include=` (`latest_deployment_run`, `latest_deployment_run.stack_configuration`) via `StackDeploymentListOptions`. The `stack` relationship is hydrated as a typed field; the `latest-deployment-run` relation is reachable via the lossless raw accessors (`deployment.related("latest-deployment-run")`). New models: `StackDeployment`, `StackDeploymentListOptions`, `StackDeploymentIncludeOpt`.
+
 # Released
 # v1.2.0
 
