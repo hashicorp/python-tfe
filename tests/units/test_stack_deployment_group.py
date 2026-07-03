@@ -194,7 +194,9 @@ class TestStackDeploymentGroups:
     def test_rerun_empty_deployments_raises(self, service):
         """rerun() raises ValueError when options.deployments is empty."""
         with pytest.raises(ValueError, match="at least one"):
-            service.rerun("sdg-xyz789", StackDeploymentGroupRerunOptions(deployments=[]))
+            service.rerun(
+                "sdg-xyz789", StackDeploymentGroupRerunOptions(deployments=[])
+            )
 
     def test_rerun_calls_correct_endpoint(self, service, mock_transport):
         """rerun() POSTs to the rerun endpoint with deployment names as a query param."""

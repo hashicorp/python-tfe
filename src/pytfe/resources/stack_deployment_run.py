@@ -121,7 +121,9 @@ class StackDeploymentRuns(_Service):
         """
         if not valid_string_id(stack_deployment_run_id):
             raise InvalidStackDeploymentRunIDError()
-        path = f"/api/v2/stack-deployment-runs/{stack_deployment_run_id}/approve-all-plans"
+        path = (
+            f"/api/v2/stack-deployment-runs/{stack_deployment_run_id}/approve-all-plans"
+        )
         self.t.request("POST", path=path)
 
     def cancel(

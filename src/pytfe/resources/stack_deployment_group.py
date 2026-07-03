@@ -179,7 +179,9 @@ class StackDeploymentGroups(_Service):
         if not valid_string_id(stack_deployment_group_id):
             raise InvalidStackDeploymentGroupIDError()
         if not options.deployments:
-            raise ValueError("options.deployments must contain at least one deployment name")
+            raise ValueError(
+                "options.deployments must contain at least one deployment name"
+            )
         path = f"/api/v2/stack-deployment-groups/{stack_deployment_group_id}/rerun"
         params: dict[str, str] = {"deployments": ",".join(options.deployments)}
         self.t.request("POST", path=path, params=params)
@@ -199,4 +201,6 @@ class StackDeploymentGroups(_Service):
                 included=included,
             )
         )
-        return attach_jsonapi(StackDeploymentGroup.model_validate(attrs), data, included)
+        return attach_jsonapi(
+            StackDeploymentGroup.model_validate(attrs), data, included
+        )

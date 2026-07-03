@@ -45,15 +45,29 @@ def _print_header(title: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Manage stack deployment runs")
-    parser.add_argument("--address", default=os.getenv("TFE_ADDRESS", "https://app.terraform.io"))
+    parser.add_argument(
+        "--address", default=os.getenv("TFE_ADDRESS", "https://app.terraform.io")
+    )
     parser.add_argument("--token", default=os.getenv("TFE_TOKEN"))
-    parser.add_argument("--group-id", required=True, help="Deployment group ID (sdg-...)")
+    parser.add_argument(
+        "--group-id", required=True, help="Deployment group ID (sdg-...)"
+    )
     parser.add_argument("--run-id", help="Deployment run ID (sdr-...)")
     parser.add_argument("--page-size", type=int, default=20)
-    parser.add_argument("--include-group", action="store_true", help="Include stack-deployment-group relation")
-    parser.add_argument("--read", action="store_true", help="Read a specific run (requires --run-id)")
-    parser.add_argument("--approve", action="store_true", help="Approve all plans (requires --run-id)")
-    parser.add_argument("--cancel", action="store_true", help="Cancel a run (requires --run-id)")
+    parser.add_argument(
+        "--include-group",
+        action="store_true",
+        help="Include stack-deployment-group relation",
+    )
+    parser.add_argument(
+        "--read", action="store_true", help="Read a specific run (requires --run-id)"
+    )
+    parser.add_argument(
+        "--approve", action="store_true", help="Approve all plans (requires --run-id)"
+    )
+    parser.add_argument(
+        "--cancel", action="store_true", help="Cancel a run (requires --run-id)"
+    )
     args = parser.parse_args()
 
     cfg = TFEConfig(address=args.address, token=args.token)
@@ -61,7 +75,11 @@ def main() -> None:
 
     # 1) List deployment runs in the group
     _print_header(f"Listing deployment runs for group: {args.group_id}")
-    include = [StackDeploymentRunIncludeOpt.STACK_DEPLOYMENT_GROUP] if args.include_group else None
+    include = (
+        [StackDeploymentRunIncludeOpt.STACK_DEPLOYMENT_GROUP]
+        if args.include_group
+        else None
+    )
     opts = StackDeploymentRunListOptions(page_size=args.page_size, include=include)
     count = 0
     for run in client.stack_deployment_runs.list(args.group_id, options=opts):
@@ -82,7 +100,9 @@ def main() -> None:
         else:
             _print_header(f"Reading deployment run: {args.run_id}")
             read_opts = StackDeploymentRunReadOptions(
-                include=[StackDeploymentRunIncludeOpt.STACK_DEPLOYMENT_GROUP] if args.include_group else None
+                include=[StackDeploymentRunIncludeOpt.STACK_DEPLOYMENT_GROUP]
+                if args.include_group
+                else None
             )
             run = client.stack_deployment_runs.read(args.run_id, options=read_opts)
             print(f"ID:      {run.id}")

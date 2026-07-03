@@ -49,16 +49,37 @@ def _print_header(title: str) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Manage stack deployment groups")
-    parser.add_argument("--address", default=os.getenv("TFE_ADDRESS", "https://app.terraform.io"))
+    parser.add_argument(
+        "--address", default=os.getenv("TFE_ADDRESS", "https://app.terraform.io")
+    )
     parser.add_argument("--token", default=os.getenv("TFE_TOKEN"))
-    parser.add_argument("--stack-config-id", required=True, help="Stack configuration ID (stc-...)")
+    parser.add_argument(
+        "--stack-config-id", required=True, help="Stack configuration ID (stc-...)"
+    )
     parser.add_argument("--group-id", help="Deployment group ID (sdg-...)")
     parser.add_argument("--page-size", type=int, default=20)
-    parser.add_argument("--read", action="store_true", help="Read a specific group (requires --group-id)")
-    parser.add_argument("--read-by-name", metavar="NAME", help="Read a group by deployment name")
-    parser.add_argument("--approve", action="store_true", help="Approve all plans (requires --group-id)")
-    parser.add_argument("--rerun", action="store_true", help="Rerun a failed group (requires --group-id and --deployments)")
-    parser.add_argument("--deployments", nargs="+", metavar="NAME", help="Deployment names to rerun, e.g. dev prod (from the 'deployment' field on runs)")
+    parser.add_argument(
+        "--read",
+        action="store_true",
+        help="Read a specific group (requires --group-id)",
+    )
+    parser.add_argument(
+        "--read-by-name", metavar="NAME", help="Read a group by deployment name"
+    )
+    parser.add_argument(
+        "--approve", action="store_true", help="Approve all plans (requires --group-id)"
+    )
+    parser.add_argument(
+        "--rerun",
+        action="store_true",
+        help="Rerun a failed group (requires --group-id and --deployments)",
+    )
+    parser.add_argument(
+        "--deployments",
+        nargs="+",
+        metavar="NAME",
+        help="Deployment names to rerun, e.g. dev prod (from the 'deployment' field on runs)",
+    )
     args = parser.parse_args()
 
     cfg = TFEConfig(address=args.address, token=args.token)
@@ -68,7 +89,9 @@ def main() -> None:
     _print_header(f"Listing deployment groups for config: {args.stack_config_id}")
     opts = StackDeploymentGroupListOptions(page_size=args.page_size)
     count = 0
-    for group in client.stack_deployment_groups.list(args.stack_config_id, options=opts):
+    for group in client.stack_deployment_groups.list(
+        args.stack_config_id, options=opts
+    ):
         count += 1
         print(f"- {group.id}")
         print(f"  Name:    {group.name}")
@@ -117,7 +140,9 @@ def main() -> None:
         if not args.group_id or not args.deployments:
             print("--group-id and --deployments are required for --rerun")
         else:
-            _print_header(f"Rerunning {len(args.deployments)} deployment(s) in group: {args.group_id}")
+            _print_header(
+                f"Rerunning {len(args.deployments)} deployment(s) in group: {args.group_id}"
+            )
             rerun_opts = StackDeploymentGroupRerunOptions(deployments=args.deployments)
             client.stack_deployment_groups.rerun(args.group_id, rerun_opts)
             print(f"Rerun triggered for: {', '.join(args.deployments)}")
