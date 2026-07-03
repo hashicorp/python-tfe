@@ -549,6 +549,19 @@ from .stack_deployment import (
     StackDeploymentIncludeOpt,
     StackDeploymentListOptions,
 )
+from .stack_deployment_group import (
+    DeploymentGroupStatus,
+    StackDeploymentGroup,
+    StackDeploymentGroupListOptions,
+    StackDeploymentGroupRerunOptions,
+)
+from .stack_deployment_run import (
+    DeploymentRunStatus,
+    StackDeploymentRun,
+    StackDeploymentRunIncludeOpt,
+    StackDeploymentRunListOptions,
+    StackDeploymentRunReadOptions,
+)
 from .state_version import (
     StateVersion,
     StateVersionCreateOptions,
@@ -899,6 +912,17 @@ __all__ = [
     "StackDeployment",
     "StackDeploymentIncludeOpt",
     "StackDeploymentListOptions",
+    # Stack Deployment Group
+    "DeploymentGroupStatus",
+    "StackDeploymentGroup",
+    "StackDeploymentGroupListOptions",
+    "StackDeploymentGroupRerunOptions",
+    # Stack Deployment Run
+    "DeploymentRunStatus",
+    "StackDeploymentRun",
+    "StackDeploymentRunIncludeOpt",
+    "StackDeploymentRunListOptions",
+    "StackDeploymentRunReadOptions",
     # Query runs
     "QueryRun",
     "QueryRunActions",
