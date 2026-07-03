@@ -4,6 +4,8 @@
 
 ### New resources
 * Added `client.stack_deployments` — list the deployments that belong to a stack. `list(stack_id, options=None)` (`GET /stacks/{stack_id}/stack-deployments`) returns an `Iterator[StackDeployment]`, with optional pagination (`page_size`) and `?include=` (`latest_deployment_run`, `latest_deployment_run.stack_configuration`) via `StackDeploymentListOptions`. The `stack` relationship is hydrated as a typed field; the `latest-deployment-run` relation is reachable via the lossless raw accessors (`deployment.related("latest-deployment-run")`). New models: `StackDeployment`, `StackDeploymentListOptions`, `StackDeploymentIncludeOpt`.
+* Added `client.stack_deployment_groups` — list, read, approve, and rerun deployment groups within a stack configuration. `list(stack_configuration_id)` (`GET /stack-configurations/{id}/stack-deployment-groups`), `read(group_id)` (`GET /stack-deployment-groups/{id}`), `read_by_name(stack_configuration_id, name)`, `approve_all_plans(group_id)` (`POST .../approve-all-plans`), `rerun(group_id, options)` (`POST .../rerun?deployments=...`). New models: `StackDeploymentGroup`, `DeploymentGroupStatus`, `StackDeploymentGroupListOptions`, `StackDeploymentGroupRerunOptions`.
+* Added `client.stack_deployment_runs` — list, read, approve, and cancel individual deployment runs within a deployment group. `list(group_id)` (`GET /stack-deployment-groups/{id}/stack-deployment-runs`), `read(run_id)` (`GET /stack-deployment-runs/{id}`), `approve_all_plans(run_id)` (`POST .../approve-all-plans`), `cancel(run_id)` (`POST .../cancel`). New models: `StackDeploymentRun`, `DeploymentRunStatus`, `StackDeploymentRunListOptions`, `StackDeploymentRunReadOptions`, `StackDeploymentRunIncludeOpt`.
 
 # Released
 # v1.2.0
