@@ -62,7 +62,7 @@ class TestStackDeploymentSteps:
     def diag_api_data(self):
         """Typical API response item for a single stack diagnostic."""
         return {
-            "id": "stf-diag001",
+            "id": "std-diag001",
             "type": "stack-diagnostics",
             "attributes": {
                 "severity": "warning",
@@ -244,7 +244,7 @@ class TestStackDeploymentSteps:
         )
         assert len(results) == 1
         assert isinstance(results[0], StackDiagnostic)
-        assert results[0].id == "stf-diag001"
+        assert results[0].id == "std-diag001"
         assert results[0].severity == "warning"
 
     def test_list_diagnostics_with_page_size(self, service, diag_api_data):
