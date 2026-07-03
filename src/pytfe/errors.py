@@ -807,6 +807,20 @@ class InvalidStackDeploymentStepIDError(InvalidValues):
         super().__init__(message)
 
 
+class InvalidStackStateIDError(InvalidValues):
+    """Raised when an invalid stack state ID is provided."""
+
+    def __init__(self, message: str = "invalid value for stack state ID"):
+        super().__init__(message)
+
+
+class InvalidStackDiagnosticIDError(InvalidValues):
+    """Raised when an invalid stack diagnostic ID is provided."""
+
+    def __init__(self, message: str = "invalid value for stack diagnostic ID"):
+        super().__init__(message)
+
+
 # Comment errors
 class InvalidCommentIDError(InvalidValues):
     """Raised when an invalid comment ID is provided."""

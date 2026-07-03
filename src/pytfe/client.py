@@ -60,10 +60,14 @@ from .resources.run_trigger import RunTriggers
 from .resources.ssh_keys import SSHKeys
 from .resources.stack import Stacks
 from .resources.stack_configuration import StackConfigurations
+from .resources.stack_configuration_summaries import StackConfigurationSummaries
 from .resources.stack_deployment import StackDeployments
 from .resources.stack_deployment_group import StackDeploymentGroups
+from .resources.stack_deployment_group_summaries import StackDeploymentGroupSummaries
 from .resources.stack_deployment_run import StackDeploymentRuns
 from .resources.stack_deployment_steps import StackDeploymentSteps
+from .resources.stack_diagnostics import StackDiagnostics
+from .resources.stack_states import StackStates
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
 from .resources.subscription import Subscriptions
@@ -214,6 +218,14 @@ class TFEClient:
         self.stack_deployment_groups = StackDeploymentGroups(self._transport)
         self.stack_deployment_runs = StackDeploymentRuns(self._transport)
         self.stack_deployment_steps = StackDeploymentSteps(self._transport)
+        self.stack_states = StackStates(self._transport)
+        self.stack_configuration_summaries = StackConfigurationSummaries(
+            self._transport
+        )
+        self.stack_deployment_group_summaries = StackDeploymentGroupSummaries(
+            self._transport
+        )
+        self.stack_diagnostics = StackDiagnostics(self._transport)
 
         # State and execution resources
         self.state_versions = StateVersions(self._transport)
