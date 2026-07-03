@@ -543,6 +543,10 @@ from .stack_configuration import (
     StackConfigurationReadOptions,
     StackConfigurationSource,
     StackConfigurationStatus,
+    StackConfigurationSummary,
+    StackConfigurationSummaryGroupStatus,
+    StackConfigurationSummaryListOptions,
+    StackConfigurationSummaryRunStatus,
 )
 from .stack_deployment import (
     StackDeployment,
@@ -554,6 +558,9 @@ from .stack_deployment_group import (
     StackDeploymentGroup,
     StackDeploymentGroupListOptions,
     StackDeploymentGroupRerunOptions,
+    StackDeploymentGroupStatusCounts,
+    StackDeploymentGroupSummary,
+    StackDeploymentGroupSummaryListOptions,
 )
 from .stack_deployment_run import (
     DeploymentRunStatus,
@@ -571,6 +578,11 @@ from .stack_deployment_step import (
     StackDeploymentStepReadOptions,
     StackDiagnostic,
     StackDiagnosticListOptions,
+)
+from .stack_state import (
+    StackState,
+    StackStateComponent,
+    StackStateListOptions,
 )
 from .state_version import (
     StateVersion,
@@ -918,6 +930,10 @@ __all__ = [
     "StackConfigurationReadOptions",
     "StackConfigurationSource",
     "StackConfigurationStatus",
+    "StackConfigurationSummary",
+    "StackConfigurationSummaryGroupStatus",
+    "StackConfigurationSummaryListOptions",
+    "StackConfigurationSummaryRunStatus",
     # Stack Deployment
     "StackDeployment",
     "StackDeploymentIncludeOpt",
@@ -927,6 +943,9 @@ __all__ = [
     "StackDeploymentGroup",
     "StackDeploymentGroupListOptions",
     "StackDeploymentGroupRerunOptions",
+    "StackDeploymentGroupStatusCounts",
+    "StackDeploymentGroupSummary",
+    "StackDeploymentGroupSummaryListOptions",
     # Stack Deployment Run
     "DeploymentRunStatus",
     "StackDeploymentRun",
@@ -942,6 +961,10 @@ __all__ = [
     "StackDeploymentStepReadOptions",
     "StackDiagnostic",
     "StackDiagnosticListOptions",
+    # Stack State
+    "StackState",
+    "StackStateComponent",
+    "StackStateListOptions",
     # Query runs
     "QueryRun",
     "QueryRunActions",
