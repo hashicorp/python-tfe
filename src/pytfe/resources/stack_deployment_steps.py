@@ -206,9 +206,7 @@ class StackDeploymentSteps(_Service):
                 included=included,
             )
         )
-        return attach_jsonapi(
-            StackDeploymentStep.model_validate(attrs), data, included
-        )
+        return attach_jsonapi(StackDeploymentStep.model_validate(attrs), data, included)
 
     def _stack_diagnostic_from(
         self,

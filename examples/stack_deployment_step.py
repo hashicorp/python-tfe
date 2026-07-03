@@ -58,9 +58,7 @@ def main() -> None:
         "--address", default=os.getenv("TFE_ADDRESS", "https://app.terraform.io")
     )
     parser.add_argument("--token", default=os.getenv("TFE_TOKEN"))
-    parser.add_argument(
-        "--run-id", required=True, help="Deployment run ID (sdr-...)"
-    )
+    parser.add_argument("--run-id", required=True, help="Deployment run ID (sdr-...)")
     parser.add_argument("--step-id", help="Deployment step ID (sds-...)")
     parser.add_argument("--page-size", type=int, default=20)
     parser.add_argument(
@@ -88,7 +86,12 @@ def main() -> None:
     )
     parser.add_argument(
         "--artifact",
-        choices=["plan-description", "apply-description", "plan-debug-log", "apply-debug-log"],
+        choices=[
+            "plan-description",
+            "apply-description",
+            "plan-debug-log",
+            "apply-debug-log",
+        ],
         help="Download an artifact (requires --step-id)",
     )
     parser.add_argument(
@@ -107,7 +110,9 @@ def main() -> None:
         includes.append(StackDeploymentStepIncludeOpt.STACK_APPROVAL)
     if args.include_state:
         includes.append(StackDeploymentStepIncludeOpt.STACK_STATE)
-    opts = StackDeploymentStepListOptions(page_size=args.page_size, include=includes or None)
+    opts = StackDeploymentStepListOptions(
+        page_size=args.page_size, include=includes or None
+    )
     count = 0
     for step in client.stack_deployment_steps.list(args.run_id, options=opts):
         count += 1
@@ -172,7 +177,9 @@ def main() -> None:
             print("--step-id is required for --artifact")
         else:
             artifact_type = StackDeploymentStepArtifactType(args.artifact)
-            _print_header(f"Downloading artifact '{args.artifact}' for step: {args.step_id}")
+            _print_header(
+                f"Downloading artifact '{args.artifact}' for step: {args.step_id}"
+            )
             content = client.stack_deployment_steps.download_artifact(
                 args.step_id, artifact_type
             )

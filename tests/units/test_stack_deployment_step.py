@@ -267,7 +267,9 @@ class TestStackDeploymentSteps:
     def test_download_artifact_invalid_id_raises(self, service):
         """download_artifact() with an empty ID raises InvalidStackDeploymentStepIDError."""
         with pytest.raises(InvalidStackDeploymentStepIDError):
-            service.download_artifact("", StackDeploymentStepArtifactType.PLAN_DESCRIPTION)
+            service.download_artifact(
+                "", StackDeploymentStepArtifactType.PLAN_DESCRIPTION
+            )
 
     def test_download_artifact_returns_bytes(self, service, mock_transport):
         """download_artifact() returns the raw response bytes."""
