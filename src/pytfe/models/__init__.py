@@ -562,6 +562,16 @@ from .stack_deployment_run import (
     StackDeploymentRunListOptions,
     StackDeploymentRunReadOptions,
 )
+from .stack_deployment_step import (
+    DeploymentStepStatus,
+    StackDeploymentStep,
+    StackDeploymentStepArtifactType,
+    StackDeploymentStepIncludeOpt,
+    StackDeploymentStepListOptions,
+    StackDeploymentStepReadOptions,
+    StackDiagnostic,
+    StackDiagnosticListOptions,
+)
 from .state_version import (
     StateVersion,
     StateVersionCreateOptions,
@@ -923,6 +933,15 @@ __all__ = [
     "StackDeploymentRunIncludeOpt",
     "StackDeploymentRunListOptions",
     "StackDeploymentRunReadOptions",
+    # Stack Deployment Step
+    "DeploymentStepStatus",
+    "StackDeploymentStep",
+    "StackDeploymentStepArtifactType",
+    "StackDeploymentStepIncludeOpt",
+    "StackDeploymentStepListOptions",
+    "StackDeploymentStepReadOptions",
+    "StackDiagnostic",
+    "StackDiagnosticListOptions",
     # Query runs
     "QueryRun",
     "QueryRunActions",

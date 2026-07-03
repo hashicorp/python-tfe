@@ -27,9 +27,17 @@ class DeploymentRunStatus(str, Enum):
 
 
 class StackDeploymentRunIncludeOpt(str, Enum):
-    """StackDeploymentRunIncludeOpt represents include options for stack deployment run endpoints."""
+    """StackDeploymentRunIncludeOpt represents include options for stack deployment run endpoints.
 
-    STACK_DEPLOYMENT_GROUP = "stack-deployment-group"
+    ``LATEST_DEPLOYMENT_RUN_FOR_DEPLOYMENT`` is only valid on read (show) endpoints;
+    the remaining values are valid on both list and read.
+    """
+
+    STACK_DEPLOYMENT_GROUP = "stack_deployment_group"
+    STACK_APPROVAL = "stack_approval"
+    DESTROY_STACK_CONFIGURATION = "destroy_stack_configuration"
+    BLOCKED_BY_DEPLOYMENT_GROUP = "blocked_by_deployment_group"
+    LATEST_DEPLOYMENT_RUN_FOR_DEPLOYMENT = "latest_deployment_run_for_deployment"
 
 
 class StackDeploymentRun(TFEModel):

@@ -800,6 +800,13 @@ class InvalidStackDeploymentGroupIDError(InvalidValues):
         super().__init__(message)
 
 
+class InvalidStackDeploymentStepIDError(InvalidValues):
+    """Raised when an invalid stack deployment step ID is provided."""
+
+    def __init__(self, message: str = "invalid value for stack deployment step ID"):
+        super().__init__(message)
+
+
 # Comment errors
 class InvalidCommentIDError(InvalidValues):
     """Raised when an invalid comment ID is provided."""

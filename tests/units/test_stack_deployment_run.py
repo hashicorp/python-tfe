@@ -71,6 +71,17 @@ class TestStackDeploymentRuns:
         }
         assert {s.value for s in DeploymentRunStatus} == expected
 
+    def test_deployment_run_include_opt_values(self):
+        """StackDeploymentRunIncludeOpt covers all valid include values from the API docs."""
+        expected = {
+            "stack_deployment_group",
+            "stack_approval",
+            "destroy_stack_configuration",
+            "blocked_by_deployment_group",
+            "latest_deployment_run_for_deployment",
+        }
+        assert {o.value for o in StackDeploymentRunIncludeOpt} == expected
+
     def test_deployment_run_parse(self, run_api_data):
         """StackDeploymentRun parses id and status from attributes."""
         attrs = dict(run_api_data["attributes"])
@@ -119,7 +130,7 @@ class TestStackDeploymentRuns:
         list(service.list("sdg-xyz789", options=opts))
         service._list.assert_called_once_with(
             path="/api/v2/stack-deployment-groups/sdg-xyz789/stack-deployment-runs",
-            params={"page[size]": 10, "include": "stack-deployment-group"},
+            params={"page[size]": 10, "include": "stack_deployment_group"},
         )
 
     def test_list_hydrates_group_relation(self, service, run_api_data):
@@ -170,7 +181,7 @@ class TestStackDeploymentRuns:
         mock_transport.request.assert_called_once_with(
             "GET",
             path="/api/v2/stack-deployment-runs/sdr-abc123",
-            params={"include": "stack-deployment-group"},
+            params={"include": "stack_deployment_group"},
         )
 
     # ── approve_all_plans() tests ─────────────────────────────────────────────
