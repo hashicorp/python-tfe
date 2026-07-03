@@ -786,6 +786,20 @@ class InvalidStackConfigurationIDError(InvalidValues):
         super().__init__(message)
 
 
+class InvalidStackDeploymentRunIDError(InvalidValues):
+    """Raised when an invalid stack deployment run ID is provided."""
+
+    def __init__(self, message: str = "invalid value for stack deployment run ID"):
+        super().__init__(message)
+
+
+class InvalidStackDeploymentGroupIDError(InvalidValues):
+    """Raised when an invalid stack deployment group ID is provided."""
+
+    def __init__(self, message: str = "invalid value for stack deployment group ID"):
+        super().__init__(message)
+
+
 # Comment errors
 class InvalidCommentIDError(InvalidValues):
     """Raised when an invalid comment ID is provided."""

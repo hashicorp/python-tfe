@@ -61,6 +61,8 @@ from .resources.ssh_keys import SSHKeys
 from .resources.stack import Stacks
 from .resources.stack_configuration import StackConfigurations
 from .resources.stack_deployment import StackDeployments
+from .resources.stack_deployment_group import StackDeploymentGroups
+from .resources.stack_deployment_run import StackDeploymentRuns
 from .resources.state_version_outputs import StateVersionOutputs
 from .resources.state_versions import StateVersions
 from .resources.subscription import Subscriptions
@@ -208,6 +210,8 @@ class TFEClient:
         self.stacks = Stacks(self._transport)
         self.stack_configurations = StackConfigurations(self._transport)
         self.stack_deployments = StackDeployments(self._transport)
+        self.stack_deployment_groups = StackDeploymentGroups(self._transport)
+        self.stack_deployment_runs = StackDeploymentRuns(self._transport)
 
         # State and execution resources
         self.state_versions = StateVersions(self._transport)
