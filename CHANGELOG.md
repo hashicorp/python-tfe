@@ -1,11 +1,20 @@
 # Unreleased
 
+# Released
+# v1.3.0
+
 ## Enhancements
 
 ### New resources
 * Added `client.stack_deployments` — list the deployments that belong to a stack. `list(stack_id, options=None)` (`GET /stacks/{stack_id}/stack-deployments`) returns an `Iterator[StackDeployment]`, with optional pagination (`page_size`) and `?include=` (`latest_deployment_run`, `latest_deployment_run.stack_configuration`) via `StackDeploymentListOptions`. The `stack` relationship is hydrated as a typed field; the `latest-deployment-run` relation is reachable via the lossless raw accessors (`deployment.related("latest-deployment-run")`). New models: `StackDeployment`, `StackDeploymentListOptions`, `StackDeploymentIncludeOpt`.
+* Added `client.stack_deployment_groups` — list, read, approve, and rerun deployment groups within a stack configuration. `list(stack_configuration_id)` (`GET /stack-configurations/{id}/stack-deployment-groups`), `read(group_id)` (`GET /stack-deployment-groups/{id}`), `read_by_name(stack_configuration_id, name)`, `approve_all_plans(group_id)` (`POST .../approve-all-plans`), `rerun(group_id, options)` (`POST .../rerun?deployments=...`). New models: `StackDeploymentGroup`, `DeploymentGroupStatus`, `StackDeploymentGroupListOptions`, `StackDeploymentGroupRerunOptions`.
+* Added `client.stack_deployment_runs` — list, read, approve, and cancel individual deployment runs within a deployment group. `list(group_id)` (`GET /stack-deployment-groups/{id}/stack-deployment-runs`), `read(run_id)` (`GET /stack-deployment-runs/{id}`), `approve_all_plans(run_id)` (`POST .../approve-all-plans`), `cancel(run_id)` (`POST .../cancel`). New models: `StackDeploymentRun`, `DeploymentRunStatus`, `StackDeploymentRunListOptions`, `StackDeploymentRunReadOptions`, `StackDeploymentRunIncludeOpt`.
+* Added `client.stack_deployment_steps` — list, read, advance, list diagnostics, and download artifacts for individual deployment steps within a deployment run. `list(run_id)` (`GET /stack-deployment-runs/{id}/stack-deployment-steps`), `read(step_id)` (`GET /stack-deployment-steps/{id}`), `advance(step_id)` (`POST .../advance`), `list_diagnostics(step_id)` (`GET .../stack-diagnostics`), `download_artifact(step_id, artifact_type)` (`GET .../artifacts?name=<type>`) returns raw `bytes`. New models: `StackDeploymentStep`, `DeploymentStepStatus`, `StackDeploymentStepArtifactType`, `StackDeploymentStepIncludeOpt`, `StackDeploymentStepListOptions`, `StackDeploymentStepReadOptions`, `StackDiagnostic`, `StackDiagnosticListOptions`.
+* Added `client.stack_states` — list, read, and download descriptions for stack states. `list(stack_id)` (`GET /stacks/{id}/stack-states`), `read(state_id)` (`GET /stack-states/{id}`), `download_description(state_id)` (`GET /stack-states/{id}/description`) returns raw `bytes`. New models: `StackState`, `StackStateListOptions`. New error: `InvalidStackStateIDError`.
+* Added `client.stack_configuration_summaries` — list lightweight stack configuration summaries for a stack. `list(stack_id)` (`GET /stacks/{id}/stack-configuration-summaries`). New models: `StackConfigurationSummary`, `StackConfigurationSummaryListOptions`.
+* Added `client.stack_deployment_group_summaries` — list rolled-up deployment group summaries for a stack configuration. `list(stack_configuration_id)` (`GET /stack-configurations/{id}/stack-deployment-group-summaries`). New models: `StackDeploymentGroupSummary`, `StackDeploymentGroupSummaryListOptions`, `StackDeploymentGroupStatusCounts`.
+* Added `client.stack_diagnostics` — read and acknowledge stack diagnostics. `read(diagnostic_id)` (`GET /stack-diagnostics/{id}`), `acknowledge(diagnostic_id)` (`POST /stack-diagnostics/{id}/acknowledge`). New error: `InvalidStackDiagnosticIDError`.
 
-# Released
 # v1.2.0
 
 ## Enhancements
@@ -81,7 +90,6 @@ drive the SDK without hardcoding resource names or browsing the GitHub repo.
 * Fixed `organizations.read_entitlements` silently dropping most entitlement flags. The parser surfaced only 15 of the ~47 flags the API returns, so flags such as `hyok`, `assessments`, `stacks`, `terraform-actions`, and `change-requests` were discarded. `Entitlements` now exposes those as typed fields and retains every remaining flag (including the integer `*-limit` flags) under `model_extra` via `extra="allow"`. The change is additive — existing typed fields are unchanged.
 
 
-# Released
 # v1.1.0
 
 ## Features
