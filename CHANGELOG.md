@@ -1,5 +1,8 @@
 # Unreleased
 
+# Released
+# v1.3.0
+
 ## Enhancements
 
 ### New resources
@@ -12,7 +15,6 @@
 * Added `client.stack_deployment_group_summaries` — list rolled-up deployment group summaries for a stack configuration. `list(stack_configuration_id)` (`GET /stack-configurations/{id}/stack-deployment-group-summaries`). New models: `StackDeploymentGroupSummary`, `StackDeploymentGroupSummaryListOptions`, `StackDeploymentGroupStatusCounts`.
 * Added `client.stack_diagnostics` — read and acknowledge stack diagnostics. `read(diagnostic_id)` (`GET /stack-diagnostics/{id}`), `acknowledge(diagnostic_id)` (`POST /stack-diagnostics/{id}/acknowledge`). New error: `InvalidStackDiagnosticIDError`.
 
-# Released
 # v1.2.0
 
 ## Enhancements
@@ -88,7 +90,6 @@ drive the SDK without hardcoding resource names or browsing the GitHub repo.
 * Fixed `organizations.read_entitlements` silently dropping most entitlement flags. The parser surfaced only 15 of the ~47 flags the API returns, so flags such as `hyok`, `assessments`, `stacks`, `terraform-actions`, and `change-requests` were discarded. `Entitlements` now exposes those as typed fields and retains every remaining flag (including the integer `*-limit` flags) under `model_extra` via `extra="allow"`. The change is additive — existing typed fields are unchanged.
 
 
-# Released
 # v1.1.0
 
 ## Features
