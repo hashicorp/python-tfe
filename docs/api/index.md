@@ -107,10 +107,28 @@ column.
 | `client.organization_tags` | `OrganizationTags` | `list`, `delete`, `add_workspaces` | [organization_tags.py](../../examples/organization_tags.py) | [Organization tags](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/organization-tags) |
 | `client.comments` | `Comments` | `list`, `read`, `create` | [comment.py](../../examples/comment.py) | [Comments](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/comments) |
 | `client.explorer` | `Explorer` | query and saved-view helpers | [explorer.py](../../examples/explorer.py) | [Explorer](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/explorer) |
-| `client.stacks` | `Stacks` | `list`, `read`, `create`, `update`, `delete`, `force_delete`, VCS fetch | [stack.py](../../examples/stack.py) | [Stacks](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/stacks) |
-| `client.stack_configurations` | `StackConfigurations` | `list`, `read`, `create` | [stack_configuration.py](../../examples/stack_configuration.py) | [Stacks](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/stacks) |
 | `client.github_app_installations` | `GitHubAppInstallations` | `list`, `read` | [github_app_installations.py](../../examples/github_app_installations.py) | [GitHub App installations](https://developer.hashicorp.com/terraform/enterprise/api-docs/github-app-installations) |
 | `client.organization_token_ttl_policies` | `OrganizationTokenTTLPolicies` | `list`, `update`, `reset_to_defaults` | [org_token_ttl.py](../../examples/org_token_ttl.py) | [Org token TTL settings](https://developer.hashicorp.com/terraform/cloud-docs/users-teams-organizations/organizations/settings#api-tokens) |
+
+## Stacks
+
+HCP Terraform Stacks coordinate multi-component, multi-environment Terraform
+deployments. See [stacks.md](stacks.md) for full method details and
+[stack-deployment.md](../scenarios/stack-deployment.md) for an end-to-end
+scenario.
+
+| Client attribute | Resource class | Common methods | Example | Upstream API docs |
+|---|---|---|---|---|
+| `client.stacks` | `Stacks` | `list`, `read`, `create`, `update`, `delete`, `force_delete` | [stack.py](../../examples/stack.py) | [Stacks](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/stacks/stacks) |
+| `client.stack_configurations` | `StackConfigurations` | `list`, `read`, `create` | [stack_configuration.py](../../examples/stack_configuration.py) | [Stack configurations](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/stacks/stack-configurations) |
+| `client.stack_configuration_summaries` | `StackConfigurationSummaries` | `list` | [stack_configuration_summary.py](../../examples/stack_configuration_summary.py) | [Stack configurations](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/stacks/stack-configurations) |
+| `client.stack_deployments` | `StackDeployments` | `list` | [stack_deployment.py](../../examples/stack_deployment.py) | [Stack deployments](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/stacks/stack-deployments) |
+| `client.stack_deployment_groups` | `StackDeploymentGroups` | `list`, `read`, `read_by_name`, `approve_all_plans`, `rerun` | [stack_deployment_group.py](../../examples/stack_deployment_group.py) | [Stack deployment groups](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/stacks/stack-deployment-groups) |
+| `client.stack_deployment_group_summaries` | `StackDeploymentGroupSummaries` | `list` | [stack_deployment_group_summary.py](../../examples/stack_deployment_group_summary.py) | [Stack deployment groups](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/stacks/stack-deployment-groups) |
+| `client.stack_deployment_runs` | `StackDeploymentRuns` | `list`, `read`, `approve_all_plans`, `cancel` | [stack_deployment_run.py](../../examples/stack_deployment_run.py) | [Stack deployment runs](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/stacks/stack-deployment-runs) |
+| `client.stack_deployment_steps` | `StackDeploymentSteps` | `list`, `read`, `advance`, `list_diagnostics`, `download_artifact` | [stack_deployment_step.py](../../examples/stack_deployment_step.py) | [Stack deployment steps](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/stacks/stack-deployment-steps) |
+| `client.stack_states` | `StackStates` | `list`, `read`, `download_description` | [stack_state.py](../../examples/stack_state.py) | [Stack states](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/stacks/stack-states) |
+| `client.stack_diagnostics` | `StackDiagnostics` | `read`, `acknowledge` | [stack_diagnostic.py](../../examples/stack_diagnostic.py) | [Stack diagnostics](https://developer.hashicorp.com/terraform/cloud-docs/api-docs/stacks/stack-diagnostics) |
 
 ## TFE admin (site-admin only)
 

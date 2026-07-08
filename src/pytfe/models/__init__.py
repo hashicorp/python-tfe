@@ -543,6 +543,46 @@ from .stack_configuration import (
     StackConfigurationReadOptions,
     StackConfigurationSource,
     StackConfigurationStatus,
+    StackConfigurationSummary,
+    StackConfigurationSummaryGroupStatus,
+    StackConfigurationSummaryListOptions,
+    StackConfigurationSummaryRunStatus,
+)
+from .stack_deployment import (
+    StackDeployment,
+    StackDeploymentIncludeOpt,
+    StackDeploymentListOptions,
+)
+from .stack_deployment_group import (
+    DeploymentGroupStatus,
+    StackDeploymentGroup,
+    StackDeploymentGroupListOptions,
+    StackDeploymentGroupRerunOptions,
+    StackDeploymentGroupStatusCounts,
+    StackDeploymentGroupSummary,
+    StackDeploymentGroupSummaryListOptions,
+)
+from .stack_deployment_run import (
+    DeploymentRunStatus,
+    StackDeploymentRun,
+    StackDeploymentRunIncludeOpt,
+    StackDeploymentRunListOptions,
+    StackDeploymentRunReadOptions,
+)
+from .stack_deployment_step import (
+    DeploymentStepStatus,
+    StackDeploymentStep,
+    StackDeploymentStepArtifactType,
+    StackDeploymentStepIncludeOpt,
+    StackDeploymentStepListOptions,
+    StackDeploymentStepReadOptions,
+    StackDiagnostic,
+    StackDiagnosticListOptions,
+)
+from .stack_state import (
+    StackState,
+    StackStateComponent,
+    StackStateListOptions,
 )
 from .state_version import (
     StateVersion,
@@ -890,6 +930,41 @@ __all__ = [
     "StackConfigurationReadOptions",
     "StackConfigurationSource",
     "StackConfigurationStatus",
+    "StackConfigurationSummary",
+    "StackConfigurationSummaryGroupStatus",
+    "StackConfigurationSummaryListOptions",
+    "StackConfigurationSummaryRunStatus",
+    # Stack Deployment
+    "StackDeployment",
+    "StackDeploymentIncludeOpt",
+    "StackDeploymentListOptions",
+    # Stack Deployment Group
+    "DeploymentGroupStatus",
+    "StackDeploymentGroup",
+    "StackDeploymentGroupListOptions",
+    "StackDeploymentGroupRerunOptions",
+    "StackDeploymentGroupStatusCounts",
+    "StackDeploymentGroupSummary",
+    "StackDeploymentGroupSummaryListOptions",
+    # Stack Deployment Run
+    "DeploymentRunStatus",
+    "StackDeploymentRun",
+    "StackDeploymentRunIncludeOpt",
+    "StackDeploymentRunListOptions",
+    "StackDeploymentRunReadOptions",
+    # Stack Deployment Step
+    "DeploymentStepStatus",
+    "StackDeploymentStep",
+    "StackDeploymentStepArtifactType",
+    "StackDeploymentStepIncludeOpt",
+    "StackDeploymentStepListOptions",
+    "StackDeploymentStepReadOptions",
+    "StackDiagnostic",
+    "StackDiagnosticListOptions",
+    # Stack State
+    "StackState",
+    "StackStateComponent",
+    "StackStateListOptions",
     # Query runs
     "QueryRun",
     "QueryRunActions",

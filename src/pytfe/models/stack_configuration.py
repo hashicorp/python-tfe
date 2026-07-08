@@ -103,3 +103,69 @@ class StackConfigurationReadOptions(BaseModel):
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
     include: list[StackConfigurationIncludeOps] | None = None
+
+
+class StackConfigurationSummaryGroupStatus(BaseModel):
+    """Rolled-up deployment group run-status counts within a configuration summary."""
+
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
+
+    pending: int = Field(default=0, alias="pending")
+    deploying: int = Field(default=0, alias="deploying")
+    succeeded: int = Field(default=0, alias="succeeded")
+    failed: int = Field(default=0, alias="failed")
+    abandoned: int = Field(default=0, alias="abandoned")
+
+
+class StackConfigurationSummaryRunStatus(BaseModel):
+    """Rolled-up deployment run status counts within a configuration summary."""
+
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
+
+    pending: int = Field(default=0, alias="pending")
+    pre_deploying: int = Field(default=0, alias="pre-deploying")
+    pre_deploying_pending_operator: int = Field(
+        default=0, alias="pre-deploying-pending-operator"
+    )
+    acquiring_lock: int = Field(default=0, alias="acquiring-lock")
+    pending_capacity: int = Field(default=0, alias="pending-capacity")
+    deploying: int = Field(default=0, alias="deploying")
+    deploying_pending_operator: int = Field(
+        default=0, alias="deploying-pending-operator"
+    )
+    succeeded: int = Field(default=0, alias="succeeded")
+    failed: int = Field(default=0, alias="failed")
+    abandoned: int = Field(default=0, alias="abandoned")
+
+
+class StackConfigurationSummary(TFEModel):
+    """StackConfigurationSummary represents a lightweight summary of a stack configuration.
+
+    JSON:API type: ``stack-configuration-summaries``.
+    """
+
+    model_config = ConfigDict(
+        populate_by_name=True, validate_by_name=True, extra="allow"
+    )
+
+    id: str
+    status: str | None = Field(default=None, alias="status")
+    sequence_number: int | None = Field(default=None, alias="sequence-number")
+    group_status_summary: StackConfigurationSummaryGroupStatus | None = Field(
+        default=None, alias="stack-deployment-group-status-summary"
+    )
+    run_status_summary: StackConfigurationSummaryRunStatus | None = Field(
+        default=None, alias="stack-deployment-run-status-summary"
+    )
+
+
+class StackConfigurationSummaryListOptions(BaseModel):
+    """StackConfigurationSummaryListOptions represents the options for listing stack configuration summaries."""
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    page_size: int | None = Field(default=None, alias="page[size]")
