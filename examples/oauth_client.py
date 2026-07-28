@@ -241,7 +241,7 @@ def main():
                 print(" OAuth Token details:")
                 for i, token in enumerate(read_oauth_client.oauth_tokens[:2], 1):
                     if isinstance(token, dict):
-                        print(f"{i}. Token ID: {token.get('id', 'N/A')}")
+                        print(f"{i}. Token details: [REDACTED]")
 
         except Exception as e:
             print(f"Error reading OAuth client with options: {e}")
