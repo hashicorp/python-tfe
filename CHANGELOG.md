@@ -1,6 +1,20 @@
 # Unreleased
 
 # Released
+# v1.3.1
+
+## Security Fixes
+
+### Transport
+* Fixed clear-text URL logging in HTTP transport retry and exception paths. Request URLs (which can contain workspace IDs, organization names, and resource paths) were previously emitted at `DEBUG`/`INFO` level during retries and transport exceptions. These are now replaced with `<redacted-url>` to prevent sensitive path segments from appearing in debug logs or CI output by @isivaselvan [#193](https://github.com/hashicorp/python-tfe/pull/193)
+
+### Examples
+* Fixed `examples/oauth_client.py` printing raw OAuth token IDs during the `read_with_options` test. The print statement now outputs `[REDACTED]` instead of the token ID to prevent credential-adjacent values appearing in example run output by @isivaselvan [#193](https://github.com/hashicorp/python-tfe/pull/193)
+
+## Build / Tooling
+
+* Excluded `.bob/` directory and `*.md` files from ruff's formatter to prevent ruff 0.16.0's new Markdown code-block formatter from flagging documentation and skill files. Fixes `lint` CI failure on Python 3.11 introduced by the ruff 0.16.0 release by @isivaselvan [#194](https://github.com/hashicorp/python-tfe/pull/194)
+
 # v1.3.0
 
 ## Enhancements
