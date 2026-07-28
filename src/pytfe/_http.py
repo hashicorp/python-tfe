@@ -104,7 +104,7 @@ class HTTPTransport:
                 transport_logger.debug(
                     "transport exception on %s %s (attempt %d): %s",
                     method,
-                    url,
+                    "<redacted-url>",
                     attempt,
                     e,
                 )
@@ -125,7 +125,7 @@ class HTTPTransport:
                 transport_logger.info(
                     "retrying %s %s after %s (status=%d, attempt=%d)",
                     method,
-                    url,
+                    "<redacted-url>",
                     f"{retry_after:.2f}s" if retry_after else "backoff",
                     resp.status_code,
                     attempt,
