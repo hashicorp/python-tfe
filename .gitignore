@@ -138,3 +138,6 @@ protos.bin
 # Local RSA keys
 .local/*
 
+# Bob files
+.bob/
+_context/
