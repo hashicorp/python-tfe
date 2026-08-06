@@ -102,7 +102,7 @@ class HTTPTransport:
                 )
             except httpx.HTTPError as e:
                 transport_logger.debug(
-                    "transport exception on %s %s (attempt %d): %s",
+                    "transport exception on %s (attempt %d): %s",
                     method,
                     attempt,
                     e,
@@ -122,7 +122,7 @@ class HTTPTransport:
             if resp.status_code in _RETRY_STATUSES and attempt < self.max_retries:
                 retry_after = _parse_retry_after(resp)
                 transport_logger.info(
-                    "retrying %s %s after %s (status=%d, attempt=%d)",
+                    "retrying %s after %s (status=%d, attempt=%d)",
                     method,
                     f"{retry_after:.2f}s" if retry_after else "backoff",
                     resp.status_code,
