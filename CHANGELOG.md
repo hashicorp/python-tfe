@@ -1,6 +1,11 @@
 # Unreleased
 
 # Released
+# v1.3.1
+
+## Security Fixes
+* Fixed security and quality issues at clear-text URL logging in HTTP transport retry/exception paths and `examples/oauth_client.py` [#193](https://github.com/hashicorp/python-tfe/pull/193)
+
 # v1.3.0
 
 ## Enhancements
