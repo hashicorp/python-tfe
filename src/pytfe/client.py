@@ -77,6 +77,8 @@ from .resources.team import Teams
 from .resources.team_project_access import TeamProjectAccesses
 from .resources.team_token import TeamTokens
 from .resources.team_workspace_access import TeamWorkspaceAccesses
+from .resources.tf_policy_evaluation import TfPolicyEvaluations
+from .resources.tf_policy_set_outcome import TfPolicySetOutcomes
 from .resources.user import Users
 from .resources.variable import Variables
 from .resources.variable_sets import VariableSets, VariableSetVariables
@@ -245,6 +247,8 @@ class TFEClient:
         self.policy_set_parameters = PolicySetParameters(self._transport)
         self.policy_set_outcomes = PolicySetOutcomes(self._transport)
         self.policy_set_versions = PolicySetVersions(self._transport)
+        self.tf_policy_evaluations = TfPolicyEvaluations(self._transport)
+        self.tf_policy_set_outcomes = TfPolicySetOutcomes(self._transport)
 
         # SSH Keys
         self.ssh_keys = SSHKeys(self._transport)

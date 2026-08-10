@@ -652,6 +652,21 @@ class InvalidPolicySetOutcomeIDError(InvalidValues):
         super().__init__(message)
 
 
+# tf-policy errors
+class InvalidTfPolicyEvaluationIDError(InvalidValues):
+    """Raised when a tf-policy evaluation ID (``tfpeval-``) is invalid."""
+
+    def __init__(self, message: str = "invalid value for tf-policy evaluation ID"):
+        super().__init__(message)
+
+
+class InvalidTfPolicySetOutcomeIDError(InvalidValues):
+    """Raised when a tf-policy set outcome ID (``tfpsout-``) is invalid."""
+
+    def __init__(self, message: str = "invalid value for tf-policy set outcome ID"):
+        super().__init__(message)
+
+
 # Registry Provider Version errors
 class RequiredPrivateRegistryError(RequiredFieldMissing):
     """Raised when a required private registry field is missing."""

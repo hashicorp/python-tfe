@@ -349,6 +349,9 @@ from .policy_set_version import PolicySetVersion
 from .policy_types import (
     EnforcementLevel,
     PolicyKind,
+    TfPolicyEnforcementLevel,
+    TfPolicyEvaluationStatus,
+    TfPolicyStage,
 )
 from .project import (
     Project,
@@ -652,6 +655,25 @@ from .team_workspace_access import (
     TeamWorkspaceSentinelMocksPermission,
     TeamWorkspaceStateVersionsPermission,
     TeamWorkspaceVariablesPermission,
+)
+from .tf_policy_evaluation import (
+    TfPolicyEvaluation,
+    TfPolicyEvaluationActions,
+    TfPolicyEvaluationError,
+    TfPolicyEvaluationListOptions,
+    TfPolicyEvaluationOverrideOptions,
+    TfPolicyEvaluationPermissions,
+    TfPolicyEvaluationStatusTimestamps,
+    TfPolicyResultCount,
+)
+from .tf_policy_set_outcome import (
+    Diagnostic,
+    OutcomeResource,
+    PassedResource,
+    PolicyOutcome,
+    TfPolicySetOutcome,
+    TfPolicySetOutcomeListOptions,
+    TraversalValue,
 )
 from .user import (
     User,
@@ -1254,6 +1276,27 @@ __all__ = [
     "PolicySetParameterUpdateOptions",
     "PolicyKind",
     "EnforcementLevel",
+    # tf-policy enums
+    "TfPolicyEvaluationStatus",
+    "TfPolicyStage",
+    "TfPolicyEnforcementLevel",
+    # tf-policy evaluations
+    "TfPolicyEvaluation",
+    "TfPolicyEvaluationStatusTimestamps",
+    "TfPolicyResultCount",
+    "TfPolicyEvaluationError",
+    "TfPolicyEvaluationPermissions",
+    "TfPolicyEvaluationActions",
+    "TfPolicyEvaluationListOptions",
+    "TfPolicyEvaluationOverrideOptions",
+    # tf-policy set outcomes
+    "TfPolicySetOutcome",
+    "PolicyOutcome",
+    "Diagnostic",
+    "OutcomeResource",
+    "TraversalValue",
+    "PassedResource",
+    "TfPolicySetOutcomeListOptions",
     # Variable Sets
     "Parent",
     "VariableSet",
