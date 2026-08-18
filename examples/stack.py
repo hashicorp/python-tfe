@@ -30,7 +30,7 @@ def _print_stack(item):
     print(f"- description: {item.description}")
     print(f"- created_at: {item.created_at}")
     print(f"- updated_at: {item.updated_at}")
-    print(f"- speculation_enabled: {item.speculation_enabled}")
+    print(f"- speculative_enabled: {item.speculative_enabled}")
     print(f"- project_id: {item.project.id if item.project else None}")
     print(f"- agent_pool_id: {item.agent_pool.id if item.agent_pool else None}")
 
@@ -77,7 +77,7 @@ def main():
     parser.add_argument("--name", help="Stack name (required for create)")
     parser.add_argument("--description", help="Stack description")
     parser.add_argument(
-        "--speculation-enabled",
+        "--speculative-enabled",
         type=lambda v: str(v).lower() in ("1", "true", "yes", "y"),
         default=None,
         help="Enable speculation (true/false)",
@@ -130,7 +130,7 @@ def main():
         options = StackCreateOptions(
             name=args.name,
             description=args.description,
-            speculation_enabled=args.speculation_enabled,
+            speculative_enabled=args.speculative_enabled,
             vcs_repo=_build_vcs_repo_options(args),
             project=Project(id=args.project_id),
             agent_pool=AgentPool(id=args.agent_pool_id) if args.agent_pool_id else None,
@@ -157,7 +157,7 @@ def main():
             [
                 args.name,
                 args.description,
-                args.speculation_enabled is not None,
+                args.speculative_enabled is not None,
                 args.agent_pool_id,
                 args.vcs_identifier,
                 args.vcs_branch,
@@ -172,7 +172,7 @@ def main():
         options = StackUpdateOptions(
             name=args.name,
             description=args.description,
-            speculation_enabled=args.speculation_enabled,
+            speculative_enabled=args.speculative_enabled,
             vcs_repo=_build_vcs_repo_options(args),
             agent_pool=AgentPool(id=args.agent_pool_id) if args.agent_pool_id else None,
             project=Project(id=args.project_id) if args.project_id else None,
