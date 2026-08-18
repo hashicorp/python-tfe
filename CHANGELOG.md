@@ -1,5 +1,8 @@
 # Unreleased
 
+# Released
+# v1.4.0
+
 ## Enhancements
 
 ### New resources
@@ -38,7 +41,9 @@
   with the existing `client.policy_sets` resource.
 * New enums: `TfPolicyEvaluationStatus`, `TfPolicyStage`, `TfPolicyEnforcementLevel`.
 
-# Released
+## Bug Fixes
+* Updated model attributes of speculative enabled attribute with correct alias name at stack models.
+
 # v1.3.0
 
 ## Enhancements
