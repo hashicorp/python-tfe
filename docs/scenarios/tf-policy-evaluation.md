@@ -27,10 +27,22 @@ beta feature). Evaluations on an older version come back `errored` with an
 
 ## Step 1: List a run's tf-policy evaluations
 
-A run has one evaluation per applicable stage. `resource_policy` findings
-typically only show up at the Plan stage — Init-stage evaluations commonly
-pass trivially with an empty result count, so don't assume `list()[0]` is the
-interesting one.
+A run has one evaluation per applicable stage, and each stage evaluates a
+different scope (see [Evaluation and enforcement](https://developer.hashicorp.com/terraform/policy#evaluation-and-enforcement)):
+
+- **Init** — provider and module policies, evaluated during workspace
+  initialization, before Terraform installs providers or modules.
+- **Plan** — resource policies whose referenced attributes are known at plan
+  time, evaluated against the proposed plan before any infrastructure
+  changes.
+- **Apply** — resource policies that reference computed values (ARNs, IDs,
+  and similar) that stay unknown until Terraform actually applies; these
+  necessarily run after infrastructure changes are made.
+
+An Init-stage evaluation only has an empty result if your policy set has no
+provider/module policies — don't assume `list()[0]` is the interesting one
+for a resource-policy scenario; find the evaluation whose stage matches what
+your policy actually targets.
 
 ```python
 from pytfe import TFEClient
@@ -110,14 +122,20 @@ print(result.status)  # "overridden"
 The override only succeeds while the evaluation is in `awaiting_override`
 status; calling it again on an already-overridden evaluation raises `TFEError`
 rather than silently no-op'ing, so guard on `status` first if you're looping
-over a batch:
+over a batch.
+
+Override is only available for **Plan-stage** evaluations. Init and Apply
+stage evaluations are never overridable, regardless of enforcement level or
+`AWAITING_OVERRIDE` status — check `stage_type == TfPolicyStage.PLAN` (in
+addition to `actions.is_overridable`) before attempting one:
 
 ```python
-from pytfe.models import TfPolicyEvaluationStatus
+from pytfe.models import TfPolicyEvaluationStatus, TfPolicyStage
 
 overridable = [
     e for e in evaluations
     if e.status == TfPolicyEvaluationStatus.AWAITING_OVERRIDE
+    and e.stage_type == TfPolicyStage.PLAN
     and e.actions and e.actions.is_overridable
 ]
 for e in overridable:
@@ -146,8 +164,13 @@ if non_compliant:
 
 ## Creating a `kind=tfpolicy` policy set
 
-Policy sets of this kind don't require a VCS connection — upload policy files
-directly for the fastest iteration loop:
+tf-policy policy sets are primarily supported as **VCS-connected** policy
+sets — commit your `.policy.hcl` files to a repository and connect it via
+`vcs_repo` on `PolicySetCreateOptions`, the same pattern as Sentinel/OPA
+policy sets. That's the supported path for anything beyond local iteration.
+
+For quick local testing without setting up a VCS/OAuth connection, the
+direct-upload path below also works and is what this scenario uses:
 
 ```python
 from pytfe.models import PolicyKind, PolicySetCreateOptions
@@ -173,12 +196,24 @@ from `client.configuration_versions.upload()`, which does take the upload URL
 directly. Easy to transpose the two if you're working with both in the same
 script.
 
-The directory passed to `upload()` must have `.policy.hcl` files **flat at
-its root** — no subdirectory — unless `policies_path` is set on the policy
-set. A nested layout is accepted without error and silently evaluates zero
-policies, which is a confusing failure mode: every evaluation "passes" with
-`result_count` at all zeros, indistinguishable from a genuinely compliant run
-until you notice nothing was actually checked.
+If your `.policy.hcl` files live in a subdirectory of the uploaded archive
+rather than at its root, set `policies_path` on the policy set to point at
+that subdirectory:
+
+```python
+from pytfe.models import PolicySetUpdateOptions
+
+client.policy_sets.update(
+    policy_set.id,
+    PolicySetUpdateOptions(policies_path="policies"),
+)
+```
+
+Without `policies_path` set, the engine looks for policy files at the
+archive root. A nested layout with `policies_path` left unset is accepted
+without error and silently evaluates zero policies — every evaluation
+"passes" with `result_count` at all zeros, indistinguishable from a
+genuinely compliant run until you notice nothing was actually checked.
 
 ## Cleanup
 
