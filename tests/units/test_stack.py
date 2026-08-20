@@ -42,7 +42,7 @@ class TestStacks:
             "attributes": {
                 "name": "demo-stack",
                 "description": "Stack description",
-                "speculation-enabled": True,
+                "speculative-enabled": True,
                 "vcs-repo": {
                     "identifier": "hashicorp/terraform",
                     "branch": "main",
@@ -95,7 +95,7 @@ class TestStacks:
         options = StackCreateOptions(
             name="demo-stack",
             description="Stack description",
-            speculation_enabled=True,
+            speculative_enabled=True,
             vcs_repo=StackVcsRepoOptions(
                 identifier="hashicorp/terraform",
                 branch="main",
@@ -115,7 +115,7 @@ class TestStacks:
                     "attributes": {
                         "name": "demo-stack",
                         "description": "Stack description",
-                        "speculation-enabled": True,
+                        "speculative-enabled": True,
                         "vcs-repo": {
                             "identifier": "hashicorp/terraform",
                             "branch": "main",

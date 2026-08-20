@@ -1,6 +1,49 @@
 # Unreleased
 
 # Released
+# v1.4.0
+
+## Enhancements
+
+### New resources
+
+* Added `client.tf_policy_evaluations` — read and override tf-policy evaluations
+  attached to a run.
+  * `list(run_id, options=None)` (`GET /runs/{run_id}/tf-policy-evaluations`) returns
+    an `Iterator[TfPolicyEvaluation]`.
+  * `read(tf_policy_evaluation_id, options=None)` (`GET /tf-policy-evaluations/{id}`)
+    returns a single `TfPolicyEvaluation`; pass
+    `TfPolicyEvaluationListOptions(include="tf_policy_set_outcomes")` to sideload
+    outcomes in one request.
+  * `override(tf_policy_evaluation_id, options=None)` (`POST
+    /tf-policy-evaluations/{id}/actions/override`) overrides an evaluation in
+    `awaiting_override` status and returns the updated resource.
+  * `list_set_outcomes(tf_policy_evaluation_id, options=None)` (`GET
+    /tf-policy-evaluations/{id}/tf-policy-set-outcomes`) returns an
+    `Iterator[TfPolicySetOutcome]`; supports `filter_status` and
+    `filter_enforcement_level` via `TfPolicySetOutcomeListOptions`.
+  * New models: `TfPolicyEvaluation`, `TfPolicyEvaluationStatusTimestamps`,
+    `TfPolicyResultCount`, `TfPolicyEvaluationError`, `TfPolicyEvaluationPermissions`,
+    `TfPolicyEvaluationActions`, `TfPolicyEvaluationListOptions`,
+    `TfPolicyEvaluationOverrideOptions`.
+  * New errors: `InvalidTfPolicyEvaluationIDError`.
+* Added `client.tf_policy_set_outcomes` — read a single tf-policy set outcome.
+  * `read(tf_policy_set_outcome_id)` (`GET /tf-policy-set-outcomes/{id}`) returns a
+    `TfPolicySetOutcome` with its nested `outcomes` array (snake_case inner keys, as
+    stored by atlas).
+  * New models: `TfPolicySetOutcome`, `PolicyOutcome`, `Diagnostic`, `OutcomeResource`,
+    `TraversalValue`, `PassedResource`, `TfPolicySetOutcomeListOptions`.
+  * New error: `InvalidTfPolicySetOutcomeIDError`.
+
+### New enum values
+
+* `PolicyKind.TFPOLICY = "tfpolicy"` — enables creating and reading tf-policy sets
+  with the existing `client.policy_sets` resource.
+* New enums: `TfPolicyEvaluationStatus`, `TfPolicyStage`, `TfPolicyEnforcementLevel`.
+
+## Bug Fixes
+* Updated model attributes of speculative enabled attribute with correct alias name at stack models.
+
 # v1.3.1
 
 ## Security Fixes
