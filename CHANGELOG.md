@@ -1,6 +1,17 @@
 # Unreleased
 
 # Released
+# v1.4.1
+
+## Bug Fixes
+
+* Added the `tf_policy_checked` and `tf_policy_override` values to `RunStatus`. A run
+  paused awaiting a tf-policy override decision reports `status: "tf_policy_override"`
+  on the wire; without this fix, `client.runs.read()` (and anything that parses a `Run`
+  through this status) raised a validation error instead of returning the run.
+  Discovered via live testing of the `hashicorp.terraform` Ansible collection's
+  tf-policy modules — no mocked unit fixture had exercised this status before.
+
 # v1.4.0
 
 ## Enhancements

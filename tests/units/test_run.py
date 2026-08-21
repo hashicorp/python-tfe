@@ -523,3 +523,23 @@ class TestRuns:
             assert call_args[0][0] == "POST"
             assert call_args[0][1] == "/api/v2/runs/run-discard-123/actions/discard"
             assert call_args[1]["json_body"]["comment"] == "Discarding run"
+
+
+class TestRunStatusTfPolicy:
+    """Regression test: atlas introduced ``tf_policy_checked`` and
+    ``tf_policy_override`` run statuses alongside tf-policy (the analogues
+    of the pre-existing ``policy_checked``/``policy_override`` statuses for
+    the Sentinel/OPA flow). A run that pauses awaiting a tf-policy override
+    decision reports ``status: "tf_policy_override"`` on the wire - if the
+    enum doesn't know that value, parsing the run raises a validation error
+    instead of returning the status. Caught only by live testing against a
+    run that actually reached this status; no mocked fixture exercised it.
+    """
+
+    def test_tf_policy_override_status_parses(self):
+        run = Run.model_validate({"id": "run-abc123", "status": "tf_policy_override"})
+        assert run.status == RunStatus.Run_Tf_Policy_Override
+
+    def test_tf_policy_checked_status_parses(self):
+        run = Run.model_validate({"id": "run-abc123", "status": "tf_policy_checked"})
+        assert run.status == RunStatus.Run_Tf_Policy_Checked

@@ -70,6 +70,8 @@ class RunStatus(str, Enum):
     Run_Pre_Plan_Running = "pre_plan_running"
     Run_Queuing = "queuing"
     Run_Queuing_Apply = "queuing_apply"
+    Run_Tf_Policy_Checked = "tf_policy_checked"
+    Run_Tf_Policy_Override = "tf_policy_override"
 
 
 class RunIncludeOpt(str, Enum):
