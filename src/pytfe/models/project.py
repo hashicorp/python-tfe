@@ -48,6 +48,8 @@ class ProjectListOptions(BaseModel):
 
     # Optional: String used to filter results by complete project name
     name: str | None = None
+    # Optional: Tags used to filter results by key=value pairs
+    tags: dict[str, str] | None = None
     # Optional: Query string to search projects by names
     query: str | None = None
     # Optional: Include related resources
