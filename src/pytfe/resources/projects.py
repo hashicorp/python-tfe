@@ -160,6 +160,10 @@ class Projects(_Service):
                 params["q"] = options.query
             if options.name:
                 params["filter[names]"] = options.name
+            if options.tags:
+                for i, (tag_name, tag_value) in enumerate(options.tags.items()):
+                    params[f"filter[tagged][{i}][key]"] = _safe_str(tag_name)
+                    params[f"filter[tagged][{i}][value]"] = _safe_str(tag_value)
             if options.page_size:
                 params["page[size]"] = options.page_size
 

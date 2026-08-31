@@ -10,6 +10,7 @@ from pytfe.models.project import (
     Project,
     ProjectAddTagBindingsOptions,
     ProjectCreateOptions,
+    ProjectListOptions,
     ProjectUpdateOptions,
     TagBinding,
 )
@@ -108,6 +109,51 @@ class TestProjects:
         # Verify the correct API path was used
         expected_path = f"/api/v2/organizations/{organization}/projects"
         self.projects_service._list.assert_called_once_with(expected_path)
+
+    def test_list_projects_by_tags_query_params_serialized_success(self):
+        """Test successful serialization of project list tag filter into query parameters."""
+        organization = "test-org"
+        expected_path = f"/api/v2/organizations/{organization}/projects"
+
+        # Mock the _list method so we can introspect the query parameters
+        self.projects_service._list = Mock(return_value=[])
+
+        # Call the method under test
+        list(
+            self.projects_service.list(
+                organization, options=ProjectListOptions(tags={"department": "five"})
+            )
+        )
+
+        self.projects_service._list.assert_called_once_with(
+            expected_path,
+            params={
+                "filter[tagged][0][key]": "department",
+                "filter[tagged][0][value]": "five",
+            },
+        )
+
+    def test_list_projects_by_name_query_params_serialized_success(self):
+        """Test successful serialization of project list name filter into query parameters."""
+        organization = "test-org"
+        expected_path = f"/api/v2/organizations/{organization}/projects"
+
+        # Mock the _list method so we can introspect the query parameters
+        self.projects_service._list = Mock(return_value=[])
+
+        # Call the method under test
+        list(
+            self.projects_service.list(
+                organization, options=ProjectListOptions(name="prj-456")
+            )
+        )
+
+        self.projects_service._list.assert_called_once_with(
+            expected_path,
+            params={
+                "filter[names]": "prj-456",
+            },
+        )
 
     def test_create_project_success(self):
         """Test successful project creation"""
