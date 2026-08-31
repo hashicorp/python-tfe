@@ -1,6 +1,11 @@
 # Unreleased
 
 # Released
+# v1.5.0
+
+## Enhancement
+* Exposed tag filter via new field in ProjectListOptions, and serialize it to query parameters in Projects.list() [#201](https://github.com/hashicorp/python-tfe/pull/201)
+
 # v1.4.1
 
 ## Bug Fixes
