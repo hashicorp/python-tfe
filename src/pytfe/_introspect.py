@@ -84,6 +84,41 @@ def _describe_obj(obj: Any) -> dict[str, Any]:
     return entry
 
 
+def _describe_workflows() -> dict[str, Any]:
+    """Describe the workflow layer as a sibling of ``resources``.
+
+    Workflows are module-level functions, not client attributes, so the
+    ``vars(client)`` walk never sees them. They are also categorically different
+    from a resource method - one is a single HTTP round trip, the other is a
+    multi-call orchestration that may block for minutes and may mutate state -
+    so they are reported separately rather than mixed into ``resources``, where
+    an agent could not tell them apart.
+    """
+    from . import workflows
+
+    out: dict[str, Any] = {}
+    for name in sorted(workflows.__all__):
+        member = getattr(workflows, name, None)
+        if not inspect.isfunction(member):
+            continue
+        try:
+            signature = str(inspect.signature(member))
+        except (TypeError, ValueError):  # pragma: no cover - defensive
+            signature = "(...)"
+        entry: dict[str, Any] = {
+            "signature": signature,
+            "summary": _summary(member),
+        }
+        parameters = inspect.signature(member).parameters
+        # Metadata an agent cannot infer from a signature.
+        entry["blocking"] = "timeout" in parameters
+        entry["mutating"] = not name.startswith(("find_", "read_", "diagnose_"))
+        entry["gated"] = "confirmed" in parameters
+        entry["dry_run"] = "dry_run" in parameters
+        out[name] = entry
+    return out
+
+
 def describe() -> dict[str, Any]:
     """Return a machine-readable manifest of the SDK's API surface.
 
@@ -125,12 +160,15 @@ def describe() -> dict[str, Any]:
             if name.startswith("_") or not _service_like(obj):
                 continue
             resources[name] = _describe_obj(obj)
+        workflows = _describe_workflows()
         return {
             "sdk": "pytfe",
             "version": __version__,
             "client": "pytfe.TFEClient",
             "resource_count": len(resources),
             "resources": resources,
+            "workflow_count": len(workflows),
+            "workflows": workflows,
         }
     finally:
         client.close()

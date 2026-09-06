@@ -127,6 +127,11 @@ class TFEClient:
     def __init__(self, config: TFEConfig | None = None):
         """Build a client from ``config`` (or env vars when ``config`` is None)."""
         cfg = config or TFEConfig.from_env()
+        #: The resolved configuration. Kept so callers can read ``address``
+        #: without reaching into the transport - the workflow layer needs it to
+        #: build web URLs for runs. Excluded from ``describe()``, which skips
+        #: every Pydantic model.
+        self.config = cfg
         self._transport = HTTPTransport(
             cfg.address,
             cfg.token,
@@ -140,6 +145,8 @@ class TFEClient:
             http2=cfg.http2,
             proxies=cfg.proxies,
             ca_bundle=cfg.ca_bundle,
+            read_only=cfg.read_only,
+            before_request=cfg.before_request,
         )
         self.oauth_clients = OAuthClients(self._transport)
         self.oauth_tokens = OAuthTokens(self._transport)

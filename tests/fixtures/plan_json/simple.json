@@ -1,0 +1,11 @@
+{
+  "format_version": "1.2",
+  "resource_changes": [
+    {"address": "aws_s3_bucket.logs", "change": {"actions": ["create"]}},
+    {"address": "aws_s3_bucket.data", "change": {"actions": ["create"]}},
+    {"address": "aws_iam_role.app", "change": {"actions": ["update"]}},
+    {"address": "aws_vpc.main", "change": {"actions": ["no-op"]}},
+    {"address": "data.aws_ami.ubuntu", "change": {"actions": ["read"]}}
+  ],
+  "output_changes": {"bucket_arn": {"actions": ["create"]}}
+}

@@ -1,0 +1,6 @@
+{
+  "format_version": "1.2",
+  "resource_changes": [
+    {"address": "aws_vpc.main", "change": {"actions": ["no-op"]}}
+  ]
+}

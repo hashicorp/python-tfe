@@ -98,6 +98,7 @@ known-first-party = ["pytfe"]
 
 # MyPy configuration
 [tool.mypy]
+plugins = ["pydantic.mypy"]
 python_version = "3.10"
 warn_return_any = true
 warn_unused_configs = true
@@ -116,6 +117,24 @@ show_error_codes = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 disallow_untyped_defs = false
+
+# The workflows/agent layers are new code with no legacy debt, so they are held
+# to strict mode. The strict sub-flags are listed individually rather than via
+# ``strict = true``: mypy applies that key globally even inside an overrides
+# table, which fails the 175 legacy files in resources/ and models/.
+[[tool.mypy.overrides]]
+module = ["pytfe.workflows.*", "pytfe.agent.*"]
+disallow_any_generics = true
+disallow_subclassing_any = true
+disallow_untyped_calls = true
+disallow_untyped_decorators = true
+no_implicit_reexport = true
+extra_checks = true
+
+# The workflows/agent layers are new code with no legacy debt, so they are held
+# to full strict mode. The rest of the package cannot pass --strict yet.
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 [tool.hatch.build.targets.sdist]
 include = [

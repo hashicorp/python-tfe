@@ -1,0 +1,139 @@
+{
+  "applies": {
+    "errored_state": [
+      "apply_id"
+    ],
+    "logs": [
+      "apply_id"
+    ],
+    "read": [
+      "apply_id"
+    ]
+  },
+  "comments": {
+    "create": [
+      "run_id",
+      "options"
+    ]
+  },
+  "configuration_versions": {
+    "create": [
+      "workspace_id",
+      "options"
+    ],
+    "read": [
+      "cv_id"
+    ],
+    "upload_tar_gzip": [
+      "upload_url",
+      "archive"
+    ]
+  },
+  "cost_estimates": {
+    "read": [
+      "cost_estimate_id"
+    ]
+  },
+  "plans": {
+    "logs": [
+      "plan_id"
+    ],
+    "read": [
+      "plan_id"
+    ],
+    "read_for_run": [
+      "run_id"
+    ],
+    "read_json_output": [
+      "plan_id"
+    ],
+    "read_json_output_for_run": [
+      "run_id"
+    ]
+  },
+  "policy_checks": {
+    "list": [
+      "run_id",
+      "options"
+    ]
+  },
+  "runs": {
+    "apply": [
+      "run_id",
+      "options"
+    ],
+    "create": [
+      "options"
+    ],
+    "discard": [
+      "run_id",
+      "options"
+    ],
+    "list": [
+      "workspace_id",
+      "options"
+    ],
+    "read": [
+      "run_id"
+    ]
+  },
+  "state_version_outputs": {
+    "read_current": [
+      "workspace_id",
+      "options"
+    ]
+  },
+  "state_versions": {
+    "read_current": [
+      "workspace_id"
+    ]
+  },
+  "variables": {
+    "create": [
+      "workspace_id",
+      "options"
+    ],
+    "delete": [
+      "workspace_id",
+      "variable_id"
+    ],
+    "list": [
+      "workspace_id",
+      "options"
+    ],
+    "update": [
+      "workspace_id",
+      "variable_id",
+      "options"
+    ]
+  },
+  "workspaces": {
+    "add_tags": [
+      "workspace_id",
+      "options"
+    ],
+    "create": [
+      "organization",
+      "options"
+    ],
+    "list": [
+      "organization",
+      "options"
+    ],
+    "read": [
+      "workspace",
+      "organization"
+    ],
+    "read_by_id": [
+      "workspace_id"
+    ],
+    "remove_tags": [
+      "workspace_id",
+      "options"
+    ],
+    "update_by_id": [
+      "workspace_id",
+      "options"
+    ]
+  }
+}

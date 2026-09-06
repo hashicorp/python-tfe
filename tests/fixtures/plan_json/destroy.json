@@ -1,0 +1,7 @@
+{
+  "format_version": "1.2",
+  "resource_changes": [
+    {"address": "aws_instance.web", "change": {"actions": ["delete"]}},
+    {"address": "aws_ebs_volume.data", "change": {"actions": ["delete"]}}
+  ]
+}

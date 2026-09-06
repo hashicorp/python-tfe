@@ -155,6 +155,32 @@ logging.getLogger("pytfe").addHandler(my_json_handler)
 
 For full details — environment variables, redaction guarantees, and how to add log statements to new SDK code — see [`docs/LOGGING.md`](./docs/LOGGING.md).
 
+## Workflows
+
+Resource methods are one HTTP round trip each. Real jobs are not: an API-driven
+run is eight calls with a polling loop in the middle. [`pytfe.workflows`](./docs/workflows/README.md)
+ships those multi-step operations, built on the same public API.
+
+```python
+from pytfe import TFEClient
+from pytfe.workflows import run_from_directory, apply_with_gate
+
+with TFEClient() as tfe:
+    result = run_from_directory(
+        tfe, "./terraform", organization="acme", workspace_name="web"
+    )
+    if result.phase == "awaiting_confirmation":
+        print(result.plan)   # +3 ~1 -0 (no destroys)
+        apply_with_gate(tfe, result.run_id, confirmed=True)   # after a human approves
+```
+
+Nothing applies, deletes, or overrides by default: a destructive step stops and
+returns `phase="awaiting_confirmation"` rather than proceeding, and a plan that
+destroys or replaces resources is refused unless `allow_destroy=True` is passed
+as well. To hand an agent a client that cannot mutate anything at all, construct
+it with `TFEConfig(read_only=True)` (or set `PYTFE_READ_ONLY=1`) — every write
+then raises `ReadOnlyViolation`, including configuration uploads.
+
 ## Documentation
 
 Start with [Getting started](./docs/getting-started.md), then use the
@@ -164,6 +190,7 @@ and upstream HCP Terraform API docs.
 | Need | Start here |
 |---|---|
 | Configure the SDK | [Authentication](./docs/authentication.md), [Pagination](./docs/pagination.md), [Logging](./docs/LOGGING.md) |
+| Multi-step operations | [Workflows](./docs/workflows/README.md) — `pytfe.workflows`: API-driven runs, plan gating, idempotent converge, run-status classification |
 | AI coding assistants | [`llms.txt`](./src/pytfe/llms.txt) — concise pytfe orientation (quickstart, conventions, error handling) for LLMs writing pytfe code |
 | API guides | [API index](./docs/api/index.md), [API coverage](./docs/api-coverage.md), [Related resources (`include`)](./docs/related-resources.md), [Workspaces](./docs/api/workspaces.md), [Runs/plans/applies](./docs/api/runs-plans-applies.md), [State versions](./docs/api/state-versions.md), [Public Registry](./docs/api/registry.md) |
 | Scenario guides | [API-driven run](./docs/scenarios/api-driven-run.md), [State management](./docs/scenarios/state-management.md), [Migrate workspaces and state](./docs/scenarios/migrate-workspaces-and-state.md), [Team access onboarding](./docs/scenarios/team-access-onboarding.md), [No-code provisioning](./docs/scenarios/no-code-provisioning.md), [TFE identity bootstrap](./docs/scenarios/tfe-identity-bootstrap.md), [TFE admin bootstrap](./docs/scenarios/tfe-admin-bootstrap.md), [OIDC dynamic credentials](./docs/scenarios/oidc-dynamic-credentials.md) |

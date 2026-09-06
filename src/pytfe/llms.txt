@@ -1,7 +1,7 @@
 # pytfe
 
 > Official Python SDK for the HCP Terraform and Terraform Enterprise (TFE) V2 API.
-> A single `TFEClient` exposes ~70 resource namespaces (workspaces, runs, plans,
+> A single `TFEClient` exposes 81 resource namespaces (workspaces, runs, plans,
 > applies, variables, teams, projects, policies, state versions, the registry, and
 > a TFE `admin` namespace). Synchronous, fully type-hinted (ships `py.typed`),
 > built on httpx + Pydantic v2.
@@ -28,7 +28,7 @@ through a namespaced attribute and call standard verbs on it:
 
     tfe.<resource>.<verb>(<identifiers...>, <options>)
     tfe.workspaces.read("my-workspace", organization="my-org")
-    tfe.runs.create(RunCreateOptions(workspace_id="ws-..."))
+    tfe.runs.create(RunCreateOptions(workspace=Workspace(id="ws-...")))
 
 ## Conventions (read before generating code)
 
@@ -45,14 +45,61 @@ through a namespaced attribute and call standard verbs on it:
   `pytfe.setup_logging()`. Bearer tokens and secrets are auto-redacted.
 - Use the client as a context manager (or call `tfe.close()`) to release the
   pooled HTTP connection.
+- Relationship fields on `*Options` models take a model, not an id string:
+  `RunCreateOptions(workspace=Workspace(id="ws-..."))`, not `workspace_id=`.
+  Passing an unknown field name raises nothing - it is silently dropped - so
+  check the field exists before relying on it.
+
+## Workflows (prefer these over hand-rolled sequences)
+
+`pytfe.workflows` ships multi-step operations built on the same public API.
+Reach for them before writing a polling loop: the SDK has no other waiter, and
+run-status classification is easy to get wrong.
+
+    from pytfe.workflows import run_from_directory, apply_with_gate
+
+    result = run_from_directory(tfe, "./terraform",
+                                organization="my-org", workspace_name="web")
+    if result.phase == "awaiting_confirmation":
+        print(result.plan)          # +3 ~1 -0 (no destroys)
+        print(result.url)           # hand this to a human
+        # Only after a human approves:
+        apply_with_gate(tfe, result.run_id, confirmed=True)
+
+Safety rules the workflow layer enforces, so you do not have to:
+
+- Nothing applies, deletes or overrides by default. A destructive step returns
+  `phase="awaiting_confirmation"` instead of proceeding; it does not raise.
+- A plan with destroys or replaces is refused unless `allow_destroy=True`,
+  even when `confirmed=True`. Set `confirmed=True` only after a human approves.
+- Every `ensure_*` is idempotent and takes `dry_run=True`.
+- Every result has `.summary()` - a small JSON-serializable dict, never
+  containing secrets. Use it instead of dumping the whole result into context.
+- Every wait takes `timeout=` and raises `WorkflowTimeout`, which carries the
+  last observed value on `.last`.
+
+To hand an agent a client that physically cannot mutate anything:
+
+    tfe = TFEClient(TFEConfig(read_only=True))   # or PYTFE_READ_ONLY=1
+
+Every write raises `ReadOnlyViolation`, including configuration uploads.
+`TFEConfig(before_request=hook)` sees every request for auditing or approval.
 
 ## Discovery (machine-readable)
 
     import pytfe
 
-    manifest = pytfe.describe()      # {sdk, version, client, resource_count, resources{...}}
+    manifest = pytfe.describe()      # {sdk, version, client, resource_count,
+                                     #  resources{...}, workflow_count, workflows{...}}
     list(manifest["resources"])      # every resource namespace
     manifest["resources"]["runs"]["methods"]   # methods + signatures + summaries
+    manifest["workflows"]            # multi-step operations, listed separately
+
+Resources and workflows are separate keys because they behave differently: a
+resource method is one HTTP round trip, while a workflow may block for minutes.
+Each workflow entry carries `blocking`, `mutating`, `gated` and `dry_run` flags
+that a signature alone does not tell you. Note `resources["admin"]` has no
+`methods` key at all - only `namespaces` - so use `.get("methods", {})`.
 
     print(pytfe.llms_txt())          # this document, from the installed package
 
@@ -64,6 +111,7 @@ through a namespaced attribute and call standard verbs on it:
 - `TFEConfig` — auth, timeout, retry, proxy, TLS settings.
 - `errors` — typed exception hierarchy (`TFEError` + subclasses).
 - `models` — Pydantic request/response models and `*Options` types.
+- `workflows` — multi-step operations (see above).
 - `setup_logging` — opt-in stdlib logging configuration.
 - `describe`, `llms_txt` — discovery helpers (this section).
 

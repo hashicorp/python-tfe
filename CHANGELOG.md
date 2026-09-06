@@ -1,5 +1,72 @@
 # Unreleased
 
+## Enhancements
+
+### New: `pytfe.workflows` - multi-step operations for humans and AI agents
+
+* Added `pytfe.workflows`, a package of task-oriented operations built strictly
+  on the public SDK API. It fills the gap between "one method, one HTTP request"
+  and the multi-step jobs `docs/scenarios/` describes in prose: `find_workspaces`,
+  `workspace_status`, `ensure_workspace`, `ensure_variables`, `run_from_directory`,
+  `speculative_plan`, `wait_for_run`, `plan_summary`, `diagnose_run`,
+  `apply_with_gate` and `read_outputs`.
+  * Nothing applies, deletes or overrides by default. Destructive workflows
+    return `phase="awaiting_confirmation"` unless given `confirmed=True` or a
+    `confirm` callback, and refuse a plan containing destroys or replaces unless
+    `allow_destroy=True` is also passed.
+  * Every `ensure_*` workflow is idempotent and supports `dry_run=True`.
+  * Every result is a Pydantic model with a `summary()` digest that is
+    JSON-serializable and never contains secrets.
+* Added run-status classification (`pytfe.workflows.status`): `phase_of`,
+  `is_terminal`, `is_confirmable`, `is_awaiting_decision`, `run_is_confirmable`
+  and the underlying frozensets. `RunStatus` ships 33 members with no way to ask
+  whether one is final, which is why the repository previously contained four
+  mutually inconsistent definitions of "terminal". A test asserts every
+  `RunStatus` member falls into exactly one phase, so a future upstream addition
+  fails CI instead of silently hanging a polling loop.
+* Added `pytfe.workflows.package_directory`, which packages a configuration
+  directory using Terraform's own exclusion rules (`.git/`, `.terraform/`, and
+  any `.terraformignore`, with `.terraform/modules/` re-included) and produces a
+  reproducible archive. `pytfe.utils.pack_contents`, used by
+  `configuration_versions.upload`, applies no exclusions at all and would upload
+  `.git/` and cached provider binaries.
+* `pytfe.describe()` now also reports `workflow_count` and `workflows`, as keys
+  alongside `resources` rather than mixed into it, since a workflow may block for
+  minutes while a resource method is a single request. Each entry carries
+  `blocking`, `mutating`, `gated` and `dry_run` flags.
+
+### Read-only clients and request hooks
+
+* `TFEConfig` gained `read_only` (also honouring `PYTFE_READ_ONLY`) and
+  `before_request`. A read-only client raises `ReadOnlyViolation` on every
+  non-`GET`/`HEAD`/`OPTIONS` request, which makes it safe to hand to an AI agent.
+  The gate is installed as an httpx request event hook rather than inside
+  `HTTPTransport.request`, so it also covers the configuration-version and
+  registry-module uploads that call the underlying client directly.
+* `TFEError` gained an optional `hint` and a `to_dict()` method for feeding a
+  failure back to a model as data. `__str__` and `args` are unchanged.
+  The transport now populates `hint` for 401, 403, 404, 409, 422, 429 and 5xx;
+  for 422 it maps each `source.pointer` to the options field name to correct.
+
+## Bug Fixes
+
+* Added the `plan_queueable` value to `RunStatus`. A run in that state made
+  `client.runs.read()` raise pydantic's `ValidationError` - which is not a
+  `TFEError`, so `except TFEError:` did not catch it. Same class of bug as the
+  `tf_policy_override` fix in v1.4.1.
+* `backoff_jitter` was stored on the transport and never applied, so every
+  concurrent caller retried a 429 at identical instants. Backoff is now jittered.
+* Cookies are refused at the jar rather than only cleared after each response
+  through `request()`, so the two upload paths that bypass `request()` can no
+  longer leave a session cookie that overrides bearer auth on later calls.
+* `TFEConfig` read `timeout`, `verify_tls`, `max_retries` and `ca_bundle` once at
+  import time, so environment variables set after importing `pytfe` were ignored.
+  They now resolve per instantiation, matching `address` and `token`.
+* Corrected `llms.txt`, which documented
+  `RunCreateOptions(workspace_id="ws-...")`. That field does not exist; the model
+  takes `workspace=Workspace(id=...)`, so an agent following the guide wrote code
+  that could not run.
+
 # Released
 # v1.5.0
 

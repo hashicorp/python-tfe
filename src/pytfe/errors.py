@@ -13,10 +13,37 @@ class TFEError(Exception):
         *,
         status: int | None = None,
         errors: list[dict | str] | None = None,
+        hint: str | None = None,
     ):
         super().__init__(message)
         self.status = status
         self.errors = errors or []
+        self.hint = hint
+
+    def to_dict(self) -> dict:
+        """Return a JSON-serializable view of this error.
+
+        Intended for AI agents and MCP servers, which need to feed a failure
+        back to a model as data rather than a traceback. ``hint`` is the
+        actionable half: it names the next call to try.
+
+        Returns:
+            A dict with ``type``, ``message``, ``status``, ``hint`` and
+            ``errors`` keys. Always JSON-serializable.
+
+        Example:
+            >>> try:
+            ...     client.workspaces.read("nope", organization="acme")
+            ... except TFEError as exc:
+            ...     print(exc.to_dict()["hint"])
+        """
+        return {
+            "type": type(self).__name__,
+            "message": str(self),
+            "status": self.status,
+            "hint": self.hint,
+            "errors": list(self.errors),
+        }
 
 
 class AuthError(TFEError): ...
@@ -933,3 +960,123 @@ class InvalidGitHubAppInstallationIDError(InvalidValues):
         self, message: str = "invalid value for GitHub App installation ID"
     ) -> None:
         super().__init__(message)
+
+
+# ── Read-only / request-gate errors ─────────────────────────────────────────
+
+
+class ReadOnlyViolation(TFEError):
+    """Raised when a write is attempted on a client configured read-only."""
+
+    def __init__(self, method: str, path: str) -> None:
+        super().__init__(
+            f"{method.upper()} {path} blocked: client is read-only",
+            hint=(
+                "Construct the client without read_only=True (or unset "
+                "PYTFE_READ_ONLY) to perform writes."
+            ),
+        )
+        self.method = method.upper()
+        self.path = path
+
+
+# ── Workflow errors ─────────────────────────────────────────────────────────
+#
+# These live here, not in ``pytfe.workflows``, so that the documented
+# ``except TFEError:`` contract and ``from pytfe.errors import ...`` keep
+# working for downstream consumers.
+
+
+class WorkflowError(TFEError):
+    """Base class for multi-step workflow failures."""
+
+    def __init__(
+        self,
+        message: str = "workflow failed",
+        *,
+        hint: str | None = None,
+        result: object | None = None,
+    ) -> None:
+        super().__init__(message, hint=hint)
+        self.result = result
+
+
+class WorkflowTimeout(WorkflowError, TimeoutError):
+    """Raised when a workflow exceeds its deadline.
+
+    Subclasses :class:`TimeoutError` as well as :class:`WorkflowError` so both
+    ``except TFEError:`` and ``except TimeoutError:`` catch it.
+    """
+
+    def __init__(
+        self,
+        message: str = "workflow timed out",
+        *,
+        last: object | None = None,
+        hint: str | None = None,
+        result: object | None = None,
+    ) -> None:
+        super().__init__(message, hint=hint, result=result)
+        self.last = last
+
+
+#: Hint attached when a workflow cannot resolve a workspace. The existing
+#: ``WorkspaceNotFound(NotFound)`` above is reused rather than shadowed, so
+#: downstream ``except NotFound:`` handlers keep working.
+WORKSPACE_NOT_FOUND_HINT = (
+    "Verify the name with pytfe.workflows.find_workspaces(client, organization) "
+    "or client.workspaces.list(organization)."
+)
+
+
+class RunNotConfirmable(WorkflowError):
+    """Raised when a run cannot be applied in its current state."""
+
+    def __init__(self, message: str = "run is not confirmable") -> None:
+        super().__init__(
+            message,
+            hint=(
+                "Wait for the plan with pytfe.workflows.wait_for_run(client, "
+                "run_id, until='plan_done') and re-check run.actions."
+            ),
+        )
+
+
+class RunFailed(WorkflowError):
+    """Raised when a run reaches a terminal failure state."""
+
+    def __init__(
+        self, message: str = "run failed", *, failure: object | None = None
+    ) -> None:
+        super().__init__(
+            message,
+            hint="Call pytfe.workflows.diagnose_run(client, run_id) for details.",
+        )
+        self.failure = failure
+
+
+class UploadFailed(WorkflowError):
+    """Raised when a configuration version upload does not reach 'uploaded'."""
+
+    def __init__(self, message: str = "configuration version upload failed") -> None:
+        super().__init__(message)
+
+
+class CoreGap(WorkflowError, NotImplementedError):
+    """Raised when a workflow needs an SDK method that does not exist yet.
+
+    Subclasses :class:`NotImplementedError` so it reads correctly to callers,
+    and :class:`WorkflowError` so ``except TFEError:`` still catches it.
+    """
+
+    def __init__(self, resource: str, method: str) -> None:
+        super().__init__(
+            f"pytfe has no client.{resource}.{method}(); "
+            "this workflow step cannot run yet",
+            hint=(
+                "This is a known gap in the SDK surface, not a usage error. "
+                "See the 'Core gaps' section of the workflows documentation."
+            ),
+        )
+        self.resource = resource
+        self.method = method

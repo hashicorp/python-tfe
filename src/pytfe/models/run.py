@@ -56,6 +56,7 @@ class RunStatus(str, Enum):
     Run_Planned_And_Finished = "planned_and_finished"
     Run_Planned_And_Saved = "planned_and_saved"
     Run_Planning = "planning"
+    Run_Plan_Queueable = "plan_queueable"
     Run_Plan_Queued = "plan_queued"
     Run_Policy_Checked = "policy_checked"
     Run_Policy_Checking = "policy_checking"

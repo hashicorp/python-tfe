@@ -1,4 +1,4 @@
-.PHONY: help fmt fmt-check lint check test install dev-install type-check clean all venv activate
+.PHONY: help fmt fmt-check lint check test install dev-install type-check clean all venv activate surface-snapshot
 
 PYTHON := python3
 SRC_DIR := src/pytfe
@@ -19,6 +19,7 @@ help:
 	@echo "  check            Run format check + lint + type check"
 	@echo "  type-check       Run type checking"
 	@echo "  test             Run unit tests"
+	@echo "  surface-snapshot Re-record the public surface the workflows depend on"
 	@echo "  clean            Clean build artifacts and cache"
 	@echo "  all              Run clean + dev-install + fmt + lint + test"
 
@@ -60,6 +61,15 @@ type-check:
 
 test:
 	$(VENV_PYTHON) -m pytest -v
+
+surface-snapshot:
+	$(VENV_PYTHON) -c "import json, sys; sys.path.insert(0, '.'); \
+	from tests.contract.surface import current_surface; \
+	from pytfe.workflows._surface import REQUIRED; \
+	f = open('tests/contract/public_surface.json', 'w'); \
+	json.dump(current_surface(REQUIRED), f, indent=2, sort_keys=True); \
+	f.write('\n')"
+	@echo "Recorded tests/contract/public_surface.json - review the diff before committing."
 
 clean:
 	find . -type f -name "*.pyc" -delete

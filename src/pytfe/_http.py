@@ -4,9 +4,10 @@
 from __future__ import annotations
 
 import logging
+import random
 import re
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import Any
 from urllib.parse import urljoin
 
@@ -14,10 +15,12 @@ import httpx
 
 from ._jsonapi import build_headers, parse_error_payload
 from ._logging import RoundTrip, transport_logger
+from .config import RequestInfo, request_info
 from .errors import (
     AuthError,
     NotFound,
     RateLimited,
+    ReadOnlyViolation,
     ServerError,
     TFEError,
 )
@@ -25,6 +28,69 @@ from .errors import (
 _RETRY_STATUSES = {429, 502, 503, 504}
 
 ABSOLUTE_URL_RE = re.compile(r"^https?://", re.I)
+
+
+class _NoStoreCookies(httpx.Cookies):
+    """A cookie jar that never retains anything.
+
+    This SDK authenticates with a bearer token, never cookies. Some endpoints
+    (notably ``/api/meta/ip-ranges``) return a session cookie which, if kept,
+    silently overrides bearer auth and produces 401/404 on later requests.
+    Refusing at the jar covers the upload paths that bypass ``request()``.
+    """
+
+    def extract_cookies(self, response: httpx.Response) -> None:
+        return None
+
+
+#: Actionable next step per HTTP status, surfaced as ``TFEError.hint``.
+def _hint_for(status: int, errors: list[dict | str]) -> str | None:
+    if status == 401:
+        return (
+            "Token missing, invalid, or expired. Set TFE_TOKEN or TFEConfig(token=...)."
+        )
+    if status == 403:
+        return (
+            "Token lacks permission for this organization/workspace. Check team "
+            "access and token type (user/team/organization)."
+        )
+    if status == 404:
+        return (
+            "Not found. Verify names with client.organizations.list() or "
+            "client.workspaces.list('<org>')."
+        )
+    if status == 409:
+        return (
+            "Conflict - often a locked workspace or a run already in progress. "
+            "See pytfe.workflows.workspace_status / lock / unlock."
+        )
+    if status == 422:
+        fields = _invalid_fields(errors)
+        if fields:
+            return "Invalid request fields: " + "; ".join(fields)
+        return (
+            "The API rejected the request body. Check required fields and enum values."
+        )
+    if status == 429:
+        return "Rate limited. The transport already retried; slow down or reduce concurrency."
+    if status >= 500:
+        return "Server error. Retry later, or check the Terraform Enterprise instance health."
+    return None
+
+
+def _invalid_fields(errors: list[dict | str]) -> list[str]:
+    """Map JSON:API 422 ``source.pointer`` values to Python option field names."""
+    out: list[str] = []
+    for err in errors:
+        if not isinstance(err, dict):
+            continue
+        pointer = (err.get("source") or {}).get("pointer")
+        if not isinstance(pointer, str) or "/" not in pointer:
+            continue
+        wire = pointer.rsplit("/", 1)[-1]
+        detail = err.get("detail") or err.get("title") or ""
+        out.append(f"'{wire}' (options field '{wire.replace('-', '_')}'): {detail}")
+    return out
 
 
 class HTTPTransport:
@@ -43,6 +109,8 @@ class HTTPTransport:
         http2: bool,
         proxies: str | None,
         ca_bundle: str | None,
+        read_only: bool = False,
+        before_request: Callable[[RequestInfo], None] | None = None,
     ):
         self.base = address.rstrip("/")
         self.headers = build_headers(user_agent_suffix)
@@ -57,12 +125,36 @@ class HTTPTransport:
         self.http2 = http2
         self.proxies = proxies
         self.ca_bundle = ca_bundle
+        self.read_only = read_only
+        self.before_request = before_request
+        # The gate lives on the httpx client, not in request(), because two
+        # upload paths (configuration_version.upload_tar_gzip and
+        # registry_module.upload_tar_gzip) issue self._sync.put(...) directly
+        # and never reach request(). An event hook is the only chokepoint that
+        # sees every request this client makes.
         self._sync = httpx.Client(
             http2=http2,
             timeout=timeout,
             verify=ca_bundle or verify_tls,
             proxy=proxies,
+            event_hooks={"request": [self._gate]},
         )
+        # A Set-Cookie from any endpoint would otherwise override bearer auth on
+        # later requests. request() clears the jar per response, but the two
+        # bypass PUTs above do not, so refuse cookies at the jar instead.
+        self._sync.cookies = _NoStoreCookies()
+
+    def _gate(self, request: httpx.Request) -> None:
+        """Enforce read-only and run the caller's ``before_request`` hook.
+
+        Runs for every request the underlying client issues, including the
+        absolute-URL uploads that bypass :meth:`request`.
+        """
+        info = request_info(request.method, str(request.url))
+        if self.read_only and info.is_write:
+            raise ReadOnlyViolation(info.method, info.path)
+        if self.before_request is not None:
+            self.before_request(info)
 
     def _build_url(self, path: str) -> str:
         # IMPORTANT: don't prefix absolute URLs (hosted_state, signed blobs, etc.)
@@ -112,11 +204,9 @@ class HTTPTransport:
                 self._sleep(attempt, None)
                 attempt += 1
                 continue
-            # This SDK authenticates with a bearer token, never cookies. Some
-            # endpoints (notably /api/meta/ip-ranges on app.terraform.io) return
-            # a Set-Cookie session cookie; if the shared client retains it, that
-            # session silently overrides bearer auth on subsequent requests and
-            # the API responds 404/401. Never let cookies persist across requests.
+            # Belt and braces with the _NoStoreCookies jar installed in
+            # __init__: callers (and tests) may swap out self._sync, which
+            # would otherwise silently drop the jar-level guarantee.
             if self._sync.cookies:
                 self._sync.cookies.clear()
             if resp.status_code in _RETRY_STATUSES and attempt < self.max_retries:
@@ -165,6 +255,11 @@ class HTTPTransport:
             time.sleep(retry_after)
             return
         delay = min(self.backoff_cap, self.backoff_base * (2**attempt))
+        if self.backoff_jitter:
+            # Without jitter, every worker sharing a client wakes at the same
+            # instants after a 429 and thunder-herds the API. Full jitter, as
+            # in the AWS "Exponential Backoff and Jitter" guidance.
+            delay = random.uniform(0, delay)
         time.sleep(delay)
 
     def _raise_if_error(self, resp: httpx.Response) -> None:
@@ -191,16 +286,20 @@ class HTTPTransport:
             elif isinstance(first_error, str):
                 msg = first_error
 
+        hint = _hint_for(status, errors)
+
         if status in (401, 403):
-            raise AuthError(msg, status=status, errors=errors)
+            raise AuthError(msg, status=status, errors=errors, hint=hint)
         if status == 404:
-            raise NotFound(msg, status=status, errors=errors)
+            raise NotFound(msg, status=status, errors=errors, hint=hint)
         if status == 429:
             ra = _parse_retry_after(resp)
-            raise RateLimited(msg, status=status, errors=errors, retry_after=ra)
+            raise RateLimited(
+                msg, status=status, errors=errors, retry_after=ra, hint=hint
+            )
         if status >= 500:
-            raise ServerError(msg, status=status, errors=errors)
-        raise TFEError(msg, status=status, errors=errors)
+            raise ServerError(msg, status=status, errors=errors, hint=hint)
+        raise TFEError(msg, status=status, errors=errors, hint=hint)
 
 
 def _parse_retry_after(resp: httpx.Response) -> float | None:

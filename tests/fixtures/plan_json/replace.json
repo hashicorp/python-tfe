@@ -1,0 +1,9 @@
+{
+  "format_version": "1.2",
+  "resource_changes": [
+    {"address": "aws_instance.web", "change": {"actions": ["delete", "create"]}},
+    {"address": "aws_instance.api", "change": {"actions": ["create", "delete"]}},
+    {"address": "aws_s3_bucket.logs", "change": {"actions": ["create"]}}
+  ],
+  "resource_drift": [{"address": "aws_iam_role.app"}]
+}

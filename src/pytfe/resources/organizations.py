@@ -316,13 +316,9 @@ class Organizations(_Service):
             >>> settings = client.organizations.reset_default_settings("my-org")
             >>> print(settings.default_agent_pool_id)
         """
-        # mypy reads the Pydantic-synthesised __init__ as accepting only
-        # the wire-aliased kwargs (``default-execution-mode``) and not
-        # the Python field names. The runtime behaviour with
-        # ``populate_by_name=True`` accepts both; suppress here.
         return self.update_default_settings(
             organization,
-            OrganizationDefaultSettingsUpdateOptions(  # type: ignore[call-arg]
+            OrganizationDefaultSettingsUpdateOptions(
                 default_execution_mode="remote",
                 default_agent_pool_id=None,
             ),
