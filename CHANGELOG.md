@@ -116,6 +116,31 @@
   endpoint carries no attributes, and enumerates instances so a resource with
   `count`/`for_each` yields one row each.
 
+### New: Stacks workflows
+
+* Added seven Stacks workflows and a four-level status classification. Stacks
+  change the shape of the loop, so these are not the workspace workflows with
+  different nouns: a workspace is one configuration, one run, one plan, one
+  apply, while a stack is one configuration fanning out to N deployments, each
+  with its own run, plan and approval. Every result is therefore a matrix keyed
+  by deployment name, every gate is per deployment, and the verb is *approve*.
+  * `stack_status`, `wait_for_stack_configuration`, `stack_fetch_and_run`,
+    `speculative_stack_plan`, `approve_stack_plans`,
+    `diagnose_stack_configuration`, `teardown_stack`. Names follow the
+    `terraform stacks` CLI where one exists.
+  * `pytfe.workflows.stack_phases` partitions all four status vocabularies -
+    configuration, deployment group, deployment run, deployment step - which
+    none of them shipped a way to do. The operator gates
+    (`*-pending-operator`) are classified as awaiting-approval rather than
+    in-progress, so a waiter stops for the human instead of spinning to timeout.
+    Names are level-prefixed so they cannot shadow the run-side classification
+    in the flat `pytfe.workflows` namespace.
+  * `teardown_stack` drives destruction through the `destroy_all` configuration
+    option rather than by editing `.tfdeploy.hcl`.
+  * `approve_stack_plans` re-reads each run after approving, because
+    `approve_all_plans` returns no body, and reports **partial** approval - an
+    approver without permission on every plan in a group clears only some.
+
 ### Runs without a local directory
 
 * Added `queue_run`, which queues a run against a workspace's existing

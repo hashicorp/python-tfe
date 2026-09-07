@@ -297,6 +297,66 @@
       "run_id"
     ]
   },
+  "stack_configurations": {
+    "create": [
+      "stack_id",
+      "options",
+      "source"
+    ],
+    "list": [
+      "stack_id",
+      "options"
+    ],
+    "read": [
+      "stack_configuration_id",
+      "options"
+    ]
+  },
+  "stack_deployment_groups": {
+    "approve_all_plans": [
+      "stack_deployment_group_id"
+    ],
+    "list": [
+      "stack_configuration_id",
+      "options"
+    ]
+  },
+  "stack_deployment_runs": {
+    "list": [
+      "stack_deployment_group_id",
+      "options"
+    ],
+    "read": [
+      "stack_deployment_run_id",
+      "options"
+    ]
+  },
+  "stack_deployment_steps": {
+    "list": [
+      "stack_deployment_run_id",
+      "options"
+    ],
+    "list_diagnostics": [
+      "stack_deployment_step_id",
+      "options"
+    ]
+  },
+  "stack_diagnostics": {
+    "read": [
+      "stack_diagnostic_id"
+    ]
+  },
+  "stacks": {
+    "delete": [
+      "stack_id"
+    ],
+    "force_delete": [
+      "stack_id"
+    ],
+    "read": [
+      "stack_id"
+    ]
+  },
   "state_version_outputs": {
     "read": [
       "output_id"

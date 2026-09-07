@@ -57,6 +57,14 @@ __all__ = [
     "AgentPoolSetup",
     "PublishResult",
     "TFEHealth",
+    "StackRunPhase",
+    "StackDeploymentState",
+    "StackRunResult",
+    "StackApproval",
+    "StackApprovalResult",
+    "StackDiagnosticRow",
+    "StackFailure",
+    "StackStatus",
 ]
 
 RunPhaseName = Literal[
@@ -1181,3 +1189,265 @@ class TFEHealth(WorkflowResult):
     def __str__(self) -> str:
         state = "reachable" if self.reachable else "unreachable"
         return f"TFE {state}, {self.run_queue_depth} run(s) queued"
+
+
+# ── Stacks ──────────────────────────────────────────────────────────────────
+#
+# A workspace run is one config -> one run -> one plan -> apply. A stack is one
+# configuration -> N deployments -> N deployment runs, each with its own plan and
+# its own approval. So every stack result is a matrix keyed by deployment name,
+# and the verb is "approve", not "apply".
+
+
+StackRunPhase = Literal[
+    "preparing",
+    "prepare_failed",
+    "planned",
+    "no_changes",
+    "awaiting_approval",
+    "refused_destructive",
+    "rejected",
+    "approved",
+    "completed",
+    "errored",
+]
+
+
+class StackDeploymentState(BaseModel):
+    """One deployment's row in a stack result matrix."""
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    deployment: str
+    run_id: str | None = None
+    group_id: str | None = None
+    status: str | None = None
+    phase: str | None = None
+    awaiting_approval: bool = False
+    approved: bool = False
+    auto_approved: bool = False
+    plan_steps: int = 0
+    apply_steps: int = 0
+    failed_step_ids: list[str] = Field(default_factory=list)
+    plan_description_step_id: str | None = None
+    """Step to pass to ``download_artifact`` for this deployment's plan.
+
+    The plan-description payload is not modelled by this SDK, so the step id is
+    surfaced rather than the parsed content.
+    """
+
+    def __str__(self) -> str:
+        gate = " (awaiting approval)" if self.awaiting_approval else ""
+        return f"{self.deployment}: {self.status}{gate}"
+
+
+class StackRunResult(WorkflowResult):
+    """Outcome of a stack configuration and its deployments.
+
+    ``deployments`` is the matrix: one entry per deployment name. There is no
+    single plan and no single status, because a stack does not have one.
+    """
+
+    kind: Kind = "destructive"
+    stack_id: str | None = None
+    configuration_id: str | None = None
+    configuration_status: str | None = None
+    phase: StackRunPhase
+    deployments: dict[str, StackDeploymentState] = Field(default_factory=dict)
+    speculative: bool = False
+    duration_s: float = 0.0
+
+    @property
+    def awaiting(self) -> list[StackDeploymentState]:
+        """Deployments parked waiting for an operator."""
+        return [d for d in self.deployments.values() if d.awaiting_approval]
+
+    @property
+    def failed(self) -> list[StackDeploymentState]:
+        """Deployments that failed."""
+        return [d for d in self.deployments.values() if d.failed_step_ids]
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "phase": self.phase,
+                "stack_id": self.stack_id,
+                "configuration_id": self.configuration_id,
+                "configuration_status": self.configuration_status,
+                "speculative": self.speculative,
+                "deployment_count": len(self.deployments),
+                "awaiting_approval": [d.deployment for d in self.awaiting],
+                "failed": [d.deployment for d in self.failed],
+                "deployments": {
+                    name: d.status for name, d in sorted(self.deployments.items())
+                },
+                "duration_s": round(self.duration_s, 1),
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return (
+            f"stack configuration {self.configuration_id or '?'}: {self.phase} "
+            f"({len(self.deployments)} deployment(s), {len(self.awaiting)} awaiting)"
+        )
+
+
+class StackApproval(BaseModel):
+    """What happened to one deployment during an approval."""
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    deployment: str
+    run_id: str | None = None
+    approved: bool = False
+    reason: str | None = None
+
+
+class StackApprovalResult(WorkflowResult):
+    """Outcome of approving stack deployment plans."""
+
+    kind: Kind = "destructive"
+    phase: Literal[
+        "awaiting_confirmation",
+        "rejected",
+        "approved",
+        "nothing_to_approve",
+        "refused_destructive",
+        "partial",
+    ] = "nothing_to_approve"
+    configuration_id: str | None = None
+    group_ids: list[str] = Field(default_factory=list)
+    approvals: list[StackApproval] = Field(default_factory=list)
+    enumerated_at: datetime | None = None
+
+    @property
+    def approved(self) -> list[str]:
+        return [a.deployment for a in self.approvals if a.approved]
+
+    @property
+    def not_approved(self) -> list[str]:
+        return [a.deployment for a in self.approvals if not a.approved]
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "phase": self.phase,
+                "configuration_id": self.configuration_id,
+                "approved": self.approved,
+                "not_approved": self.not_approved,
+                "enumerated_at": (
+                    self.enumerated_at.isoformat() if self.enumerated_at else None
+                ),
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return f"{self.phase}: {len(self.approved)}/{len(self.approvals)} approved"
+
+
+class StackDiagnosticRow(BaseModel):
+    """One diagnostic emitted by a configuration or a deployment step."""
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    id: str | None = None
+    severity: str | None = None
+    summary: str | None = None
+    detail: str | None = None
+    acknowledged: bool = False
+    deployment: str | None = None
+    step_id: str | None = None
+
+
+class StackFailure(WorkflowResult):
+    """Why a stack configuration or one of its deployments failed."""
+
+    kind: Kind = "read"
+    stack_id: str | None = None
+    configuration_id: str | None = None
+    stage: Literal["prepare", "plan", "apply", "none", "unknown"] = "unknown"
+    configuration_status: str | None = None
+    diagnostics: list[StackDiagnosticRow] = Field(default_factory=list)
+    failed_deployments: list[str] = Field(default_factory=list)
+    blocked_deployments: list[str] = Field(default_factory=list)
+    debug_log_step_ids: dict[str, str] = Field(default_factory=dict)
+    """Deployment -> step id whose debug-log artifact a caller can download.
+
+    The bytes are not fetched: they are credential-bearing and this SDK has no
+    validated redaction path for them.
+    """
+    suggestion: str | None = None
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "stage": self.stage,
+                "configuration_id": self.configuration_id,
+                "configuration_status": self.configuration_status,
+                "failed_deployments": self.failed_deployments,
+                "blocked_deployments": self.blocked_deployments,
+                "diagnostic_count": len(self.diagnostics),
+                "first_error": (
+                    self.diagnostics[0].summary if self.diagnostics else None
+                ),
+                "suggestion": self.suggestion,
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return f"stack failed at {self.stage}: {len(self.diagnostics)} diagnostic(s)"
+
+
+class StackStatus(WorkflowResult):
+    """A stack's current health, across every deployment."""
+
+    kind: Kind = "read"
+    stack_id: str
+    name: str | None = None
+    configuration_id: str | None = None
+    configuration_status: str | None = None
+    sequence_number: int | None = None
+    deployments: dict[str, StackDeploymentState] = Field(default_factory=dict)
+    health: Literal[
+        "healthy",
+        "deploying",
+        "awaiting_approval",
+        "errored",
+        "never_deployed",
+        "unknown",
+    ] = "unknown"
+    upstream_count: int | None = None
+    downstream_count: int | None = None
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "stack_id": self.stack_id,
+                "name": self.name,
+                "health": self.health,
+                "configuration_id": self.configuration_id,
+                "configuration_status": self.configuration_status,
+                "deployment_count": len(self.deployments),
+                "awaiting_approval": [
+                    d.deployment
+                    for d in self.deployments.values()
+                    if d.awaiting_approval
+                ],
+                "deployments": {
+                    name: d.status for name, d in sorted(self.deployments.items())
+                },
+                "upstream_count": self.upstream_count,
+                "downstream_count": self.downstream_count,
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return f"{self.name or self.stack_id}: {self.health}"

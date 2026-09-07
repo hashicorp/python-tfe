@@ -199,6 +199,50 @@ Each refuses to run against HCP Terraform.
 | `identity_bootstrap` | write | SAML and SCIM settings. |
 | `tfe_health` | read | Composed from admin reads — see the note below. |
 
+### Stacks
+
+Stacks change the shape of the loop, so these are not the workspace workflows
+with different nouns. A workspace is one configuration → one run → one plan →
+apply. A stack is one configuration → N deployments (in deployment groups) → N
+deployment runs, each with its own plan and its own approval, and
+`.tfdeploy.hcl` orchestration rules may auto-approve some of them.
+
+So **every stack result is a matrix keyed by deployment name**, every gate is per
+deployment, and the verb is *approve*, not *apply*. Names follow the
+`terraform stacks` CLI where one exists.
+
+| Workflow | Kind | Notes |
+|---|---|---|
+| `stack_status` | read | Resolves the latest configuration and builds the per-deployment matrix. Health is `healthy`/`deploying`/`awaiting_approval`/`errored`/`never_deployed`. |
+| `wait_for_stack_configuration` | read | Three stopping points: `prepared`, `plans_ready` (every run gated or finished — the moment a human is needed), `completed`. |
+| `stack_fetch_and_run` | destructive (gated) | The whole loop over the VCS fetch path. Stops at `awaiting_approval` with the matrix. |
+| `speculative_stack_plan` | read | `-speculative` equivalent. Never approves, and doubles as configuration validation since a bad `.tfcomponent.hcl` fails at prepare. |
+| `approve_stack_plans` | destructive (gated) | Per configuration or per group. Re-reads to confirm, and reports **partial** approval. |
+| `diagnose_stack_configuration` | read | Separates prepare-time failure from a failed deployment step, and blocked-behind-a-predecessor from actually failed. |
+| `teardown_stack` | destructive (gated ×2) | Destroys via the `destroy_all` create option — no HCL editing — then deletes. `force=True` orphans resources. |
+
+```python
+result = stack_fetch_and_run(tfe, "st-abc")
+if result.phase == "awaiting_approval":
+    for name, d in result.deployments.items():
+        print(name, d.status, "gated" if d.awaiting_approval else "")
+    approve_stack_plans(tfe, configuration_id=result.configuration_id, confirmed=True)
+```
+
+Three honest limits, each visible in the API rather than papered over:
+
+- **No `stack_run_from_directory`.** `StackConfigurationSource.MANUAL` is the
+  default but unreachable — there is no upload method and no upload-URL field —
+  so every workflow here drives the VCS `FETCH` path.
+- **A stack plan's blast radius is not readable.** No plan JSON, no counters and
+  no policy check exist at any stack level, so the gate cannot compute
+  `is_destructive`. These workflows report the step holding each plan
+  (`plan_description_step_id`) and let `confirmed`/`confirm` be the whole gate,
+  rather than inventing a signal that is not there.
+- **`approve_all_plans` clears a whole group.** A run that reaches the gate
+  between the enumeration and the POST is approved too. The result carries
+  `enumerated_at` and the list it saw, so the gap is visible.
+
 ### Registry
 
 | Workflow | Kind | Notes |
