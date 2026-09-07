@@ -67,7 +67,7 @@ print(stack.id, stack.name)
 
 # List
 for stack in client.stacks.list("my-org", StackListOptions(page_size=20)):
-    print(stack.id, stack.name, stack.deployment_names)
+    print(stack.id, stack.name, stack.description)
 
 # Read / update / delete
 stack = client.stacks.read("st-abc123")
@@ -80,7 +80,7 @@ client.stacks.delete("st-abc123")
 
 A stack configuration is a versioned snapshot of the stack's source,
 created whenever a VCS commit triggers preparation. Its `status` progresses
-from `pending` through `converging` to `converged` (or `errored` if
+from `pending` through `queued` and `preparing` to `completed` (or `failed` if
 preparation fails). Check `client.stack_diagnostics` for details when a
 configuration errors.
 

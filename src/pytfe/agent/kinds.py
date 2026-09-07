@@ -145,6 +145,13 @@ OVERRIDES: dict[tuple[str, str], Kind] = {
     ("variable_sets", "apply_to_projects"): Kind.WRITE,
     ("variable_sets", "remove_from_workspaces"): Kind.WRITE,
     ("variable_sets", "remove_from_projects"): Kind.WRITE,
+    # The Stacks operator gate. `advance` releases a step sitting in
+    # `pending-operator` and `rerun` re-executes a deployment group; both cause
+    # infrastructure to be applied, exactly like runs.apply. A verb-prefix table
+    # reads them as ordinary writes, which would wave the approval straight
+    # through a Kind-based gate.
+    ("stack_deployment_steps", "advance"): Kind.DESTRUCTIVE,
+    ("stack_deployment_groups", "rerun"): Kind.DESTRUCTIVE,
     # Pure local computation: no request is issued.
     ("organizations", "validate"): Kind.LOCAL,
     ("run_triggers", "validate_run_trigger_filter_param"): Kind.LOCAL,

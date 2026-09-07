@@ -63,6 +63,10 @@ class TestStackDeploymentRuns:
             "pre-deploying",
             "pre-deploying-pending-operator",
             "acquiring-lock",
+            # Emitted when the platform is capacity-throttled. Counted by
+            # StackConfigurationSummaryRunStatus.pending_capacity, so the wire
+            # sends it; it was missing here and parsing such a run raised.
+            "pending-capacity",
             "deploying",
             "deploying-pending-operator",
             "succeeded",
@@ -215,3 +219,39 @@ class TestStackDeploymentRuns:
             "POST",
             path="/api/v2/stack-deployment-runs/sdr-abc123/cancel",
         )
+
+
+def test_pending_capacity_is_a_real_status() -> None:
+    """Regression: the enum was missing this and parsing a run raised.
+
+    The wire emits it - the SDK's own StackConfigurationSummaryRunStatus has a
+    pending_capacity bucket - and pydantic's ValidationError is not a TFEError,
+    so it escaped `except TFEError:` in the workflow layer. Same class of bug as
+    RunStatus.plan_queueable.
+    """
+    from pytfe.models.stack_configuration import StackConfigurationSummaryRunStatus
+    from pytfe.models.stack_deployment_run import (
+        DeploymentRunStatus,
+        StackDeploymentRun,
+    )
+
+    assert "pending_capacity" in StackConfigurationSummaryRunStatus.model_fields
+    assert DeploymentRunStatus("pending-capacity")
+    run = StackDeploymentRun.model_validate(
+        {"id": "sdr-1", "status": "pending-capacity"}
+    )
+    assert run.status is DeploymentRunStatus.PENDING_CAPACITY
+
+
+def test_every_summary_run_bucket_has_a_status_member() -> None:
+    """The summary counts and the status enum must not drift apart again."""
+    from pytfe.models.stack_configuration import StackConfigurationSummaryRunStatus
+    from pytfe.models.stack_deployment_run import DeploymentRunStatus
+
+    buckets = {
+        f.replace("_", "-") for f in StackConfigurationSummaryRunStatus.model_fields
+    }
+    members = {e.value for e in DeploymentRunStatus}
+    assert not buckets - members, (
+        f"summary counts a status the enum lacks: {buckets - members}"
+    )

@@ -19,6 +19,7 @@ class DeploymentRunStatus(str, Enum):
     PRE_DEPLOYING = "pre-deploying"
     PRE_DEPLOYING_PENDING_OPERATOR = "pre-deploying-pending-operator"
     ACQUIRING_LOCK = "acquiring-lock"
+    PENDING_CAPACITY = "pending-capacity"
     DEPLOYING = "deploying"
     DEPLOYING_PENDING_OPERATOR = "deploying-pending-operator"
     SUCCEEDED = "succeeded"

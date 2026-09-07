@@ -168,6 +168,27 @@
   missing key, and `"None"` is truthy, so the guard immediately below never
   fired. An upload built on the returned value would have PUT to a URL named
   `None`.
+* Added the `pending-capacity` value to `DeploymentRunStatus`. The wire emits it
+  when the platform is capacity-throttled - the SDK's own
+  `StackConfigurationSummaryRunStatus` counts a `pending_capacity` bucket - and
+  reading such a run raised pydantic's `ValidationError`, which is not a
+  `TFEError` and so escaped `except TFEError:`. A new test asserts every summary
+  bucket has a matching status member, so the two cannot drift apart again.
+  Third instance of this bug class, after `tf_policy_override` and
+  `plan_queueable`.
+* `client.stacks.list(organization)` no longer requires an `options` argument. It
+  was the only `list` method in the SDK without a default, so the obvious call
+  raised `TypeError`.
+* `pytfe.agent.kinds` now classifies `stack_deployment_steps.advance` and
+  `stack_deployment_groups.rerun` as destructive. Both release infrastructure -
+  `advance` is the Stacks operator gate, releasing a step from
+  `pending-operator` - but a verb-prefix table reads them as ordinary writes, so
+  a Kind-based approval gate would have waved them straight through.
+* Corrected `docs/api/stacks.md` and `docs/scenarios/stack-deployment.md`, which
+  printed `stack.deployment_names` (no such attribute - `extra="allow"` keeps it
+  under the hyphenated wire key, so the documented line raises `AttributeError`)
+  and described configuration statuses as `converging`/`converged`/`errored`,
+  none of which are members of `StackConfigurationStatus`.
 * Added the `plan_queueable` value to `RunStatus`. A run in that state made
   `client.runs.read()` raise pydantic's `ValidationError` - which is not a
   `TFEError`, so `except TFEError:` did not catch it. Same class of bug as the

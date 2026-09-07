@@ -121,12 +121,16 @@ class Stacks(_Service):
         data = r.json().get("data", {})
         return self._stack_from(data)
 
-    def list(self, organization: str, options: StackListOptions) -> Iterator[Stack]:
+    def list(
+        self, organization: str, options: StackListOptions | None = None
+    ) -> Iterator[Stack]:
         """List stacks within an organization.
 
         Args:
             organization: The organization name (e.g. ``"my-org"``).
-            options: Filtering and pagination settings, as a :class:`StackListOptions`.
+            options: Filtering and pagination settings, as a
+                :class:`StackListOptions`. Optional, matching every other
+                ``list`` method on the client.
 
         Returns:
             A single-use ``Iterator[Stack]``. Wrap with ``list(...)`` to materialize
@@ -136,14 +140,14 @@ class Stacks(_Service):
             TFEError: If the API request fails.
 
         Example:
+            >>> for stack in client.stacks.list("my-org"):
+            ...     print(stack.id, stack.name)
             >>> from pytfe.models import StackListOptions
             >>> stacks = client.stacks.list(
             ...     "my-org", StackListOptions(page_size=20)
             ... )
-            >>> for stack in stacks:
-            ...     print(stack.id, stack.name)
         """
-        params = options.model_dump(by_alias=True, exclude_none=True)
+        params = options.model_dump(by_alias=True, exclude_none=True) if options else {}
         path = f"/api/v2/organizations/{organization}/stacks"
         for item in self._list(path, params=params):
             yield self._stack_from(item)

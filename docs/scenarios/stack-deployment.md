@@ -35,7 +35,7 @@ client = TFEClient()
 stack_id = "st-abc123"
 
 stack = client.stacks.read(stack_id)
-print(stack.name, stack.deployment_names)
+print(stack.name, stack.description)
 
 # Get the most recent configuration (list returns newest first)
 configs = list(client.stack_configurations.list(stack_id))

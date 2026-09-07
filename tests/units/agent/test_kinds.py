@@ -126,3 +126,25 @@ def test_every_destructive_method_is_reachable_for_review() -> None:
     ]
     assert len(destructive) > 50
     assert "runs.apply" in destructive
+
+
+@pytest.mark.parametrize(
+    ("resource", "method"),
+    [
+        # Every way a caller can approve Stacks work. `advance` releases a step
+        # in `pending-operator` and `rerun` re-executes a deployment group; both
+        # apply infrastructure, so a Kind gate must stop at them.
+        ("stack_deployment_groups", "approve_all_plans"),
+        ("stack_deployment_runs", "approve_all_plans"),
+        ("stack_deployment_steps", "advance"),
+        ("stack_deployment_groups", "rerun"),
+    ],
+)
+def test_stacks_operator_gate_is_destructive(resource: str, method: str) -> None:
+    assert classify(resource, method) is Kind.DESTRUCTIVE
+
+
+def test_stacks_reads_are_not_gated() -> None:
+    assert classify("stack_deployment_steps", "download_artifact") is Kind.READ
+    assert classify("stack_states", "download_description") is Kind.READ
+    assert classify("stack_configurations", "create") is Kind.WRITE

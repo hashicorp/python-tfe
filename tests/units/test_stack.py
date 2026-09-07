@@ -337,3 +337,29 @@ class TestStacks:
         assert result.vcs_repo.identifier == "hashicorp/terraform"
         assert result.vcs_repo.branch == "main"
         assert result.vcs_repo.oauth_token_id == "ot-abc"
+
+
+class TestStackListOptional:
+    """`options` was the only required list-options argument in the SDK."""
+
+    def test_list_without_options(self) -> None:
+        transport = Mock(spec=HTTPTransport)
+        transport.request.return_value = _resp({"data": []})
+        service = Stacks(transport)
+        assert list(service.list("my-org")) == []
+
+    def test_list_still_accepts_options(self) -> None:
+        from pytfe.models.stack import StackListOptions
+
+        transport = Mock(spec=HTTPTransport)
+        transport.request.return_value = _resp({"data": []})
+        service = Stacks(transport)
+        list(service.list("my-org", StackListOptions(page_size=20)))
+        assert transport.request.call_args.kwargs["params"]["page[size]"] == 20
+
+
+def _resp(payload: dict) -> Mock:
+    """Minimal transport response stub for the pagination helper."""
+    response = Mock()
+    response.json.return_value = payload
+    return response
