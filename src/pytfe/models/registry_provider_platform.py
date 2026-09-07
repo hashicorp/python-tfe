@@ -59,6 +59,62 @@ class RegistryProviderPlatform(TFEModel):
     # Links
     links: dict[str, Any] | None = None
 
+    def provider_binary_upload_url(self) -> str:
+        """Return the URL to upload this platform's provider binary.
+
+        Returns:
+            The presigned upload URL from the ``provider-binary-upload`` link.
+
+        Raises:
+            ValueError: If the platform carries no upload link, which happens
+                once the binary has already been uploaded.
+
+        Example:
+            >>> platform = client.registry_provider_platforms.create(version_id, opts)
+            >>> platform.provider_binary_upload_url()
+            'https://archivist.terraform.io/v1/object/...'
+        """
+        if self.links is None:
+            raise ValueError(
+                "The registry provider platform does not contain a provider "
+                "binary upload link"
+            )
+        upload_url = str(self.links.get("provider-binary-upload") or "")
+        if not upload_url:
+            raise ValueError(
+                "The registry provider platform does not contain a provider "
+                "binary upload link"
+            )
+        return upload_url
+
+    def provider_binary_download_url(self) -> str:
+        """Return the URL to download this platform's provider binary.
+
+        Returns:
+            The download URL from the ``provider-binary-download`` link.
+
+        Raises:
+            ValueError: If the platform carries no download link, which is the
+                case until the binary has been uploaded.
+
+        Example:
+            >>> platform = client.registry_provider_platforms.read(platform_id)
+            >>> platform.provider_binary_download_url()
+            'https://archivist.terraform.io/v1/object/...'
+        """
+        if self.links is None:
+            raise ValueError(
+                "The registry provider platform does not contain a provider "
+                "binary download link"
+            )
+        download_url = str(self.links.get("provider-binary-download") or "")
+        if not download_url:
+            raise ValueError(
+                "The registry provider platform does not contain a provider "
+                "binary download link"
+            )
+        return download_url
+
 
 class RegistryProviderPlatformID(RegistryProviderVersionID):
     """Registry provider platform identifier.

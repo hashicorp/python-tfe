@@ -74,7 +74,7 @@ class RegistryProviderVersion(TFEModel):
             raise ValueError(
                 "The registry provider version does not contain a shasums upload link"
             )
-        upload_url = str(self.links.get("shasums-upload"))
+        upload_url = str(self.links.get("shasums-upload") or "")
         if not upload_url:
             raise ValueError(
                 "The registry provider version does not contain a shasums upload link"
@@ -93,7 +93,7 @@ class RegistryProviderVersion(TFEModel):
             raise ValueError(
                 "The registry provider version does not contain a shasums sig upload link"
             )
-        upload_url = str(self.links.get("shasums-sig-upload"))
+        upload_url = str(self.links.get("shasums-sig-upload") or "")
         if not upload_url:
             raise ValueError(
                 "The registry provider version does not contain a shasums sig upload link"
@@ -112,7 +112,7 @@ class RegistryProviderVersion(TFEModel):
             raise ValueError(
                 "The registry provider version does not contain a shasums download link"
             )
-        download_url = str(self.links.get("shasums-download"))
+        download_url = str(self.links.get("shasums-download") or "")
         if not download_url:
             raise ValueError(
                 "The registry provider version does not contain a shasums download link"
@@ -131,7 +131,7 @@ class RegistryProviderVersion(TFEModel):
             raise ValueError(
                 "The registry provider version does not contain a shasums sig download link"
             )
-        download_url = str(self.links.get("shasums-sig-download"))
+        download_url = str(self.links.get("shasums-sig-download") or "")
         if not download_url:
             raise ValueError(
                 "The registry provider version does not contain a shasums sig download link"

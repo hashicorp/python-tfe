@@ -10,11 +10,14 @@ from typing import Any
 
 import pytest
 
-from pytfe.errors import CoreGap, NotFound, TFEError, UnsupportedInCloud
+from pytfe.errors import NotFound, TFEError, UnsupportedInCloud
+from pytfe.models.registry_provider_platform import RegistryProviderPlatform
+from pytfe.models.registry_provider_version import RegistryProviderVersion
 from pytfe.models.state_version import StateVersion
 from pytfe.models.workspace import Workspace
 from pytfe.workflows import (
     OIDC_VARIABLES,
+    ProviderPlatformSpec,
     VariableSpec,
     WorkspaceSpec,
     bulk_update,
@@ -407,11 +410,197 @@ def test_tfe_health_counts_the_queue(client: Any) -> None:
 # --------------------------------------------------------------------------
 
 
-def test_provider_publishing_reports_a_core_gap(client: Any) -> None:
-    """The SDK has no provider-binary upload method, so this cannot be built."""
-    with pytest.raises(CoreGap) as excinfo:
-        publish_provider_version(client, "acme", "widget", "1.0.0")
-    assert excinfo.value.resource == "registry_provider_versions"
-    assert isinstance(excinfo.value, NotImplementedError)
-    assert isinstance(excinfo.value, TFEError)
-    assert excinfo.value.hint
+SHASUMS = b"deadbeef  terraform-provider-widget_1.0.0_linux_amd64.zip\n"
+
+
+def make_provider_version(**kw: Any) -> RegistryProviderVersion:
+    payload: dict[str, Any] = {
+        "id": "rpv-1",
+        "version": "1.0.0",
+        "key-id": "KEY",
+        "shasums-uploaded": True,
+        "shasums-sig-uploaded": True,
+        "links": {
+            "shasums-upload": "https://archivist.terraform.io/v1/object/sha",
+            "shasums-sig-upload": "https://archivist.terraform.io/v1/object/sig",
+        },
+    }
+    payload.update(kw)
+    return RegistryProviderVersion.model_validate(payload)
+
+
+def make_platform(**kw: Any) -> RegistryProviderPlatform:
+    payload: dict[str, Any] = {
+        "id": "rpp-1",
+        "os": "linux",
+        "arch": "amd64",
+        "filename": "terraform-provider-widget_1.0.0_linux_amd64.zip",
+        "shasum": "deadbeef",
+        "links": {
+            "provider-binary-upload": "https://archivist.terraform.io/v1/object/bin"
+        },
+    }
+    payload.update(kw)
+    return RegistryProviderPlatform.model_validate(payload)
+
+
+def stub_provider(client: Any) -> None:
+    client.registry_provider_versions.list.return_value = iter([])
+    client.registry_provider_versions.create.return_value = make_provider_version()
+    client.registry_provider_versions.read.return_value = make_provider_version()
+    client.registry_provider_platforms.create.return_value = make_platform()
+
+
+def test_publish_provider_uploads_checksums_and_binaries(client: Any) -> None:
+    """The full private-provider publish sequence."""
+    stub_provider(client)
+    result = publish_provider_version(
+        client,
+        "acme",
+        "widget",
+        "1.0.0",
+        gpg_key_id="KEY",
+        shasums=SHASUMS,
+        shasums_sig=b"SIGNATURE",
+        platforms=[
+            ProviderPlatformSpec(
+                os="linux",
+                arch="amd64",
+                filename="terraform-provider-widget_1.0.0_linux_amd64.zip",
+                shasum="deadbeef",
+                binary=b"PK\x03\x04",
+            )
+        ],
+    )
+    assert result.action == "published"
+    assert result.ok is True
+    client.registry_provider_versions.upload_shasums.assert_called_once()
+    client.registry_provider_versions.upload_shasums_sig.assert_called_once()
+    client.registry_provider_platforms.upload_binary.assert_called_once()
+    # The platform binary must be uploaded for the platform that was created.
+    platform, binary = client.registry_provider_platforms.upload_binary.call_args.args
+    assert platform.os == "linux"
+    assert binary == b"PK\x03\x04"
+
+
+def test_publish_provider_creates_the_provider_when_absent(client: Any) -> None:
+    stub_provider(client)
+    client.registry_providers.read.side_effect = NotFound("nope")
+    publish_provider_version(
+        client,
+        "acme",
+        "widget",
+        "1.0.0",
+        gpg_key_id="KEY",
+        shasums=SHASUMS,
+        shasums_sig=b"SIG",
+        platforms=[
+            ProviderPlatformSpec(
+                os="linux", arch="amd64", filename="p.zip", shasum="d", binary=b"x"
+            )
+        ],
+    )
+    client.registry_providers.create.assert_called_once()
+    options = client.registry_providers.create.call_args.args[1]
+    # The private registry requires namespace == organization.
+    assert options.namespace == "acme"
+
+
+def test_publish_provider_is_idempotent(client: Any) -> None:
+    stub_provider(client)
+    client.registry_provider_versions.list.return_value = iter(
+        [make_provider_version()]
+    )
+    result = publish_provider_version(
+        client,
+        "acme",
+        "widget",
+        "1.0.0",
+        gpg_key_id="KEY",
+        shasums=SHASUMS,
+        shasums_sig=b"SIG",
+        platforms=[
+            ProviderPlatformSpec(
+                os="linux", arch="amd64", filename="p.zip", shasum="d", binary=b"x"
+            )
+        ],
+    )
+    assert result.action == "unchanged"
+    client.registry_provider_versions.create.assert_not_called()
+    client.registry_provider_versions.upload_shasums.assert_not_called()
+
+
+def test_publish_provider_rejects_no_platforms(client: Any) -> None:
+    """A version with no platform binaries is unusable, so refuse early."""
+    with pytest.raises(ValueError, match="platforms must not be empty"):
+        publish_provider_version(
+            client,
+            "acme",
+            "widget",
+            "1.0.0",
+            gpg_key_id="KEY",
+            shasums=SHASUMS,
+            shasums_sig=b"SIG",
+            platforms=[],
+        )
+    client.registry_provider_versions.create.assert_not_called()
+
+
+def test_publish_provider_warns_when_upload_unconfirmed(client: Any) -> None:
+    stub_provider(client)
+    client.registry_provider_versions.read.return_value = make_provider_version(
+        **{"shasums-uploaded": False}
+    )
+    result = publish_provider_version(
+        client,
+        "acme",
+        "widget",
+        "1.0.0",
+        gpg_key_id="KEY",
+        shasums=SHASUMS,
+        shasums_sig=b"SIG",
+        platforms=[
+            ProviderPlatformSpec(
+                os="linux", arch="amd64", filename="p.zip", shasum="d", binary=b"x"
+            )
+        ],
+    )
+    assert result.ok is False
+    assert any("SHA256SUMS" in w for w in result.warnings)
+
+
+def test_platform_spec_reads_from_disk(tmp_path: Any) -> None:
+    binary = tmp_path / "p.zip"
+    binary.write_bytes(b"ZIPDATA")
+    spec = ProviderPlatformSpec(
+        os="linux",
+        arch="amd64",
+        filename="p.zip",
+        shasum="d",
+        binary_path=str(binary),
+    )
+    assert spec.read_binary() == b"ZIPDATA"
+
+
+def test_platform_spec_requires_a_source() -> None:
+    spec = ProviderPlatformSpec(os="linux", arch="amd64", filename="p.zip", shasum="d")
+    with pytest.raises(ValueError, match="neither binary nor binary_path"):
+        spec.read_binary()
+
+
+def test_platform_specs_from_a_release_dir(tmp_path: Any) -> None:
+    """Pair a SHA256SUMS body with the zips actually present."""
+    for name in (
+        "terraform-provider-widget_1.0.0_linux_amd64.zip",
+        "terraform-provider-widget_1.0.0_darwin_arm64.zip",
+    ):
+        (tmp_path / name).write_bytes(b"zip")
+    shasums = (
+        "aaa  terraform-provider-widget_1.0.0_linux_amd64.zip\n"
+        "bbb  terraform-provider-widget_1.0.0_darwin_arm64.zip\n"
+        "ccc  terraform-provider-widget_1.0.0_SHA256SUMS\n"
+        "ddd  terraform-provider-widget_1.0.0_windows_386.zip\n"  # not on disk
+    )
+    specs = ProviderPlatformSpec.from_release_dir(str(tmp_path), shasums=shasums)
+    assert {(s.os, s.arch) for s in specs} == {("linux", "amd64"), ("darwin", "arm64")}
+    assert {s.shasum for s in specs} == {"aaa", "bbb"}

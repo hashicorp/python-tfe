@@ -204,3 +204,81 @@ class RegistryProviderVersions(_Service):
             path=path,
         )
         return None
+
+    def upload_shasums(self, version: RegistryProviderVersion, shasums: bytes) -> None:
+        """Upload the SHA256SUMS file for a private provider version.
+
+        A provider version is not usable until both the SHA256SUMS file and its
+        detached signature have been uploaded; ``version.shasums_uploaded``
+        reports whether this step is done.
+
+        Args:
+            version: The version to upload for, as returned by :meth:`create`.
+            shasums: The contents of the ``SHA256SUMS`` file.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``shasums`` is empty, or the version carries no
+                upload link (which is the case once it has been uploaded).
+            NotFound: If the upload URL has expired.
+            AuthError: If the token may not upload to this URL.
+            TFEError: If the upload fails.
+
+        Example:
+            >>> from pathlib import Path
+            >>> version = client.registry_provider_versions.create(provider_id, opts)
+            >>> client.registry_provider_versions.upload_shasums(
+            ...     version, Path("terraform-provider-widget_1.0.0_SHA256SUMS").read_bytes()
+            ... )
+        """
+        if not shasums:
+            raise ValueError("shasums must not be empty")
+        self._put(version.shasums_upload_url(), shasums)
+
+    def upload_shasums_sig(
+        self, version: RegistryProviderVersion, signature: bytes
+    ) -> None:
+        """Upload the detached SHA256SUMS signature for a provider version.
+
+        Args:
+            version: The version to upload for, as returned by :meth:`create`.
+            signature: The contents of the ``SHA256SUMS.sig`` file, signed with
+                the GPG key registered as the version's ``key_id``.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``signature`` is empty, or the version carries no
+                signature upload link.
+            NotFound: If the upload URL has expired.
+            AuthError: If the token may not upload to this URL.
+            TFEError: If the upload fails.
+
+        Example:
+            >>> from pathlib import Path
+            >>> client.registry_provider_versions.upload_shasums_sig(
+            ...     version,
+            ...     Path("terraform-provider-widget_1.0.0_SHA256SUMS.sig").read_bytes(),
+            ... )
+        """
+        if not signature:
+            raise ValueError("signature must not be empty")
+        self._put(version.shasums_sig_upload_url(), signature)
+
+    def _put(self, upload_url: str, content: bytes) -> None:
+        """PUT binary content to a presigned registry upload URL.
+
+        Goes through the transport rather than the underlying HTTP client, so
+        the upload inherits retries, typed error translation, and the read-only
+        request gate. The bearer token is sent deliberately: these URLs point at
+        HashiCorp's Archivist, which requires it.
+        """
+        self.t.request(
+            "PUT",
+            upload_url,
+            data=content,
+            headers={"Content-Type": "application/octet-stream"},
+        )

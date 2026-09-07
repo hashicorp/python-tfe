@@ -13,7 +13,7 @@ from collections.abc import Callable
 from typing import Any
 
 from ..client import TFEClient
-from ..errors import CoreGap, NotFound, WorkflowError
+from ..errors import NotFound, WorkflowError
 from ..models.no_code_module import (
     NoCodeWorkspaceCreateOptions,
     NoCodeWorkspaceVariable,
@@ -24,9 +24,25 @@ from ..models.registry_module import (
     RegistryModuleID,
     RegistryName,
 )
+from ..models.registry_provider import (
+    RegistryProviderCreateOptions,
+    RegistryProviderID,
+)
+from ..models.registry_provider_platform import (
+    RegistryProviderPlatformCreateOptions,
+)
+from ..models.registry_provider_version import (
+    RegistryProviderVersionCreateOptions,
+    RegistryProviderVersionID,
+)
 from ._package import package_directory
 from ._poll import wait_until
-from .models import PublishResult, RunResult, VariableSpec
+from .models import (
+    ProviderPlatformSpec,
+    PublishResult,
+    RunResult,
+    VariableSpec,
+)
 
 logger = logging.getLogger("pytfe.workflows")
 
@@ -168,22 +184,139 @@ def publish_provider_version(
     organization: str,
     name: str,
     version: str,
-    **kwargs: Any,
+    *,
+    gpg_key_id: str,
+    shasums: bytes,
+    shasums_sig: bytes,
+    platforms: list[ProviderPlatformSpec],
+    namespace: str | None = None,
+    protocols: list[str] | None = None,
+    registry_name: str = "private",
 ) -> PublishResult:
-    """Publish a private provider version.
+    """Publish a private provider version, with its checksums and binaries.
+
+    The full sequence the private provider registry requires: find-or-create the
+    provider, create the version, upload ``SHA256SUMS`` and its detached
+    signature, then create and upload every platform binary. Idempotent - a
+    version that already exists is reported as ``unchanged`` and nothing is
+    re-uploaded.
+
+    The GPG key identified by ``gpg_key_id`` must already be registered with the
+    organization, and must be the key that signed ``shasums_sig``.
+
+    Args:
+        client: The client to act through.
+        organization: Organization that owns the provider.
+        name: Provider name, without the ``terraform-provider-`` prefix.
+        version: Semantic version to publish.
+        gpg_key_id: ID of the registered GPG key that signed the checksums.
+        shasums: Contents of the ``SHA256SUMS`` file.
+        shasums_sig: Contents of the ``SHA256SUMS.sig`` detached signature.
+        platforms: One spec per OS/arch build. See
+            :meth:`~pytfe.workflows.models.ProviderPlatformSpec.from_release_dir`
+            for building these from a goreleaser output directory.
+        namespace: Registry namespace. Defaults to ``organization``, which is
+            what the private registry requires.
+        protocols: Terraform protocol versions the provider implements.
+            Defaults to ``["5.0"]``.
+        registry_name: ``"private"`` or ``"public"``.
+
+    Returns:
+        A :class:`~pytfe.workflows.models.PublishResult`. ``warnings`` records
+        any platform the registry did not confirm as uploaded.
 
     Raises:
-        CoreGap: Always. pytfe has no method that uploads provider SHA256SUMS,
-            their signature, or platform binaries - only URL properties exist on
-            the models - so this workflow cannot be built on the public API.
-            Publishing a provider requires new methods in ``resources/``.
+        ValueError: If ``platforms`` is empty or a spec has no binary.
+        TFEError: If the API rejects a call or an upload fails.
 
     Example:
-        >>> publish_provider_version(client, "acme", "widget", "1.0.0")
-        Traceback (most recent call last):
-        pytfe.errors.CoreGap: ...
+        >>> from pathlib import Path
+        >>> from pytfe.workflows import ProviderPlatformSpec
+        >>> shasums = Path("dist/terraform-provider-widget_1.0.0_SHA256SUMS").read_bytes()
+        >>> publish_provider_version(
+        ...     client, "acme", "widget", "1.0.0",
+        ...     gpg_key_id="32966F3FB5AC1129",
+        ...     shasums=shasums,
+        ...     shasums_sig=Path("dist/…_SHA256SUMS.sig").read_bytes(),
+        ...     platforms=ProviderPlatformSpec.from_release_dir("dist", shasums=shasums),
+        ... )
     """
-    raise CoreGap("registry_provider_versions", "upload_shasums")
+    if not platforms:
+        raise ValueError(
+            "platforms must not be empty; a provider version with no platform "
+            "binaries is unusable"
+        )
+
+    provider_namespace = namespace or organization
+    registry = RegistryName(registry_name)
+    provider_id = RegistryProviderID(
+        organization_name=organization,
+        registry_name=registry,
+        namespace=provider_namespace,
+        name=name,
+    )
+
+    try:
+        client.registry_providers.read(provider_id)
+    except NotFound:
+        logger.info("creating registry provider %s/%s", provider_namespace, name)
+        client.registry_providers.create(
+            organization,
+            RegistryProviderCreateOptions(
+                name=name, namespace=provider_namespace, registry_name=registry
+            ),
+        )
+
+    existing = {v.version for v in client.registry_provider_versions.list(provider_id)}
+    if version in existing:
+        return PublishResult(
+            action="unchanged",
+            name=name,
+            version=version,
+            warnings=[f"version {version} already exists; nothing was uploaded"],
+        )
+
+    created = client.registry_provider_versions.create(
+        provider_id,
+        RegistryProviderVersionCreateOptions(
+            version=version, key_id=gpg_key_id, protocols=protocols or ["5.0"]
+        ),
+    )
+    logger.info("uploading checksums for %s %s", name, version)
+    client.registry_provider_versions.upload_shasums(created, shasums)
+    client.registry_provider_versions.upload_shasums_sig(created, shasums_sig)
+
+    version_id = RegistryProviderVersionID(
+        organization_name=organization,
+        registry_name=registry,
+        namespace=provider_namespace,
+        name=name,
+        version=version,
+    )
+
+    result = PublishResult(action="published", name=name, version=version)
+    for spec in platforms:
+        logger.info("uploading %s_%s binary", spec.os, spec.arch)
+        platform = client.registry_provider_platforms.create(
+            version_id,
+            RegistryProviderPlatformCreateOptions(
+                os=spec.os,
+                arch=spec.arch,
+                shasum=spec.shasum,
+                filename=spec.filename,
+            ),
+        )
+        client.registry_provider_platforms.upload_binary(platform, spec.read_binary())
+
+    final = client.registry_provider_versions.read(version_id)
+    result.module_id = final.id
+    result.status = "published"
+    if not final.shasums_uploaded:
+        result.warnings.append("the registry has not confirmed the SHA256SUMS upload")
+    if not final.shasums_sig_uploaded:
+        result.warnings.append("the registry has not confirmed the signature upload")
+    result.ok = not result.warnings
+    return result
 
 
 def no_code_provision(

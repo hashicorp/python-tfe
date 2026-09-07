@@ -79,19 +79,6 @@
       "options"
     ]
   },
-  "configuration_versions": {
-    "create": [
-      "workspace_id",
-      "options"
-    ],
-    "read": [
-      "cv_id"
-    ],
-    "upload_tar_gzip": [
-      "upload_url",
-      "archive"
-    ]
-  },
   "cost_estimates": {
     "read": [
       "cost_estimate_id"
@@ -212,6 +199,47 @@
     "upload_tar_gzip": [
       "upload_url",
       "archive"
+    ]
+  },
+  "registry_provider_platforms": {
+    "create": [
+      "version_id",
+      "options"
+    ],
+    "upload_binary": [
+      "platform",
+      "binary"
+    ]
+  },
+  "registry_provider_versions": {
+    "create": [
+      "provider_id",
+      "options"
+    ],
+    "list": [
+      "provider_id",
+      "options"
+    ],
+    "read": [
+      "version_id"
+    ],
+    "upload_shasums": [
+      "version",
+      "shasums"
+    ],
+    "upload_shasums_sig": [
+      "version",
+      "signature"
+    ]
+  },
+  "registry_providers": {
+    "create": [
+      "organization",
+      "options"
+    ],
+    "read": [
+      "provider_id",
+      "options"
     ]
   },
   "run_tasks": {

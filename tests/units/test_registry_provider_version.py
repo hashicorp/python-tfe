@@ -421,3 +421,76 @@ class TestRegistryProviderVersions:
         assert version_id.namespace == "test-namespace"
         assert version_id.name == "test-provider"
         assert version_id.version == "1.0.0"
+
+
+class TestUploadShasums:
+    """Uploads for the private provider registry.
+
+    The SDK models already exposed shasums_upload_url()/shasums_sig_upload_url();
+    these methods are what actually PUTs the bytes to them.
+    """
+
+    def _version(self) -> RegistryProviderVersion:
+        return RegistryProviderVersion.model_validate(
+            {
+                "id": "rpv-1",
+                "version": "1.0.0",
+                "key-id": "KEY",
+                "links": {
+                    "shasums-upload": "https://archivist.terraform.io/v1/object/sha",
+                    "shasums-sig-upload": "https://archivist.terraform.io/v1/object/sig",
+                },
+            }
+        )
+
+    def test_upload_shasums_puts_to_the_link(self) -> None:
+        transport = Mock(spec=HTTPTransport)
+        service = RegistryProviderVersions(transport)
+        service.upload_shasums(self._version(), b"abc  file.zip\n")
+
+        method, url = transport.request.call_args.args
+        assert method == "PUT"
+        assert url == "https://archivist.terraform.io/v1/object/sha"
+        assert transport.request.call_args.kwargs["data"] == b"abc  file.zip\n"
+
+    def test_upload_shasums_sig_puts_to_the_sig_link(self) -> None:
+        transport = Mock(spec=HTTPTransport)
+        service = RegistryProviderVersions(transport)
+        service.upload_shasums_sig(self._version(), b"SIGNATURE")
+
+        method, url = transport.request.call_args.args
+        assert method == "PUT"
+        assert url == "https://archivist.terraform.io/v1/object/sig"
+
+    def test_uploads_go_through_the_transport(self) -> None:
+        """Not through the raw HTTP client.
+
+        Routing through request() means the upload inherits retries, typed
+        error translation and the read-only gate. The bearer token is required:
+        these URLs point at HashiCorp's Archivist.
+        """
+        transport = Mock(spec=HTTPTransport)
+        service = RegistryProviderVersions(transport)
+        service.upload_shasums(self._version(), b"x")
+        transport.request.assert_called_once()
+        assert not hasattr(transport, "_sync") or not transport._sync.put.called
+
+    def test_empty_content_is_rejected(self) -> None:
+        transport = Mock(spec=HTTPTransport)
+        service = RegistryProviderVersions(transport)
+        with pytest.raises(ValueError, match="must not be empty"):
+            service.upload_shasums(self._version(), b"")
+        with pytest.raises(ValueError, match="must not be empty"):
+            service.upload_shasums_sig(self._version(), b"")
+        transport.request.assert_not_called()
+
+    def test_missing_link_is_rejected(self) -> None:
+        """A version whose shasums are already uploaded has no upload link."""
+        transport = Mock(spec=HTTPTransport)
+        service = RegistryProviderVersions(transport)
+        version = RegistryProviderVersion.model_validate(
+            {"id": "rpv-1", "version": "1.0.0", "key-id": "KEY", "links": {}}
+        )
+        with pytest.raises(ValueError, match="shasums upload link"):
+            service.upload_shasums(version, b"x")
+        transport.request.assert_not_called()

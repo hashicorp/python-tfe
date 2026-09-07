@@ -27,6 +27,7 @@ __all__ = [
     "VCSRepoSpec",
     "WorkspaceSpec",
     "VariableSpec",
+    "ProviderPlatformSpec",
     "WorkspaceSummary",
     "WorkspaceList",
     "WorkspaceStatus",
@@ -161,6 +162,83 @@ class VariableSpec(_Spec):
                 out.append(cls(key=key, value=value))
             else:
                 out.append(cls(key=key, value=json.dumps(value), hcl=True))
+        return out
+
+
+class ProviderPlatformSpec(_Spec):
+    """One OS/arch build of a provider version.
+
+    Either ``binary`` or ``binary_path`` must be supplied; ``binary_path`` is
+    read lazily so a caller can describe a large fleet of platforms cheaply.
+    """
+
+    os: str
+    arch: str
+    filename: str
+    shasum: str
+    binary: bytes | None = None
+    binary_path: str | None = None
+
+    def read_binary(self) -> bytes:
+        """Return the binary content, reading ``binary_path`` if needed.
+
+        Raises:
+            ValueError: If neither ``binary`` nor ``binary_path`` was supplied.
+        """
+        if self.binary is not None:
+            return self.binary
+        if self.binary_path is None:
+            raise ValueError(
+                f"platform {self.os}_{self.arch} has neither binary nor binary_path"
+            )
+        from pathlib import Path
+
+        return Path(self.binary_path).read_bytes()
+
+    @classmethod
+    def from_release_dir(
+        cls, directory: str, *, shasums: str | bytes
+    ) -> list[ProviderPlatformSpec]:
+        """Build platform specs from a goreleaser-style output directory.
+
+        Parses a ``SHA256SUMS`` body and pairs each entry with the matching zip
+        in ``directory``, deriving ``os`` and ``arch`` from the conventional
+        ``<name>_<version>_<os>_<arch>.zip`` filename.
+
+        Args:
+            directory: Directory holding the built provider zips.
+            shasums: The ``SHA256SUMS`` body.
+
+        Returns:
+            One spec per zip present in both the shasums file and the directory.
+        """
+        from pathlib import Path
+
+        body = shasums.decode("utf-8") if isinstance(shasums, bytes) else shasums
+        root = Path(directory)
+        out: list[ProviderPlatformSpec] = []
+        for line in body.splitlines():
+            parts = line.split()
+            if len(parts) != 2:
+                continue
+            digest, filename = parts[0], parts[1].lstrip("*")
+            if not filename.endswith(".zip"):
+                continue
+            stem = filename[: -len(".zip")].split("_")
+            if len(stem) < 2:
+                continue
+            candidate = root / filename
+            if not candidate.is_file():
+                continue
+            out.append(
+                cls(
+                    os=stem[-2],
+                    arch=stem[-1],
+                    filename=filename,
+                    shasum=digest,
+                    binary_path=str(candidate),
+                )
+            )
         return out
 
 

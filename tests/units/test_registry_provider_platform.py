@@ -390,3 +390,61 @@ class TestRegistryProviderPlatforms:
         result = platforms_service._registry_provider_platform_from(data)
 
         assert result.registry_provider_version is None
+
+
+class TestUploadBinary:
+    """Provider binary upload for one OS/arch of a version."""
+
+    def _platform(self, links: dict | None = None) -> RegistryProviderPlatform:
+        return RegistryProviderPlatform.model_validate(
+            {
+                "id": "rpp-1",
+                "os": "linux",
+                "arch": "amd64",
+                "filename": "terraform-provider-widget_1.0.0_linux_amd64.zip",
+                "shasum": "deadbeef",
+                "links": links
+                if links is not None
+                else {
+                    "provider-binary-upload": (
+                        "https://archivist.terraform.io/v1/object/bin"
+                    )
+                },
+            }
+        )
+
+    def test_upload_binary_puts_to_the_link(self) -> None:
+        transport = Mock(spec=HTTPTransport)
+        service = RegistryProviderPlatforms(transport)
+        service.upload_binary(self._platform(), b"PK\x03\x04")
+
+        method, url = transport.request.call_args.args
+        assert method == "PUT"
+        assert url == "https://archivist.terraform.io/v1/object/bin"
+        assert transport.request.call_args.kwargs["data"] == b"PK\x03\x04"
+
+    def test_empty_binary_is_rejected(self) -> None:
+        transport = Mock(spec=HTTPTransport)
+        service = RegistryProviderPlatforms(transport)
+        with pytest.raises(ValueError, match="must not be empty"):
+            service.upload_binary(self._platform(), b"")
+        transport.request.assert_not_called()
+
+    def test_missing_link_is_rejected(self) -> None:
+        transport = Mock(spec=HTTPTransport)
+        service = RegistryProviderPlatforms(transport)
+        with pytest.raises(ValueError, match="provider binary upload link"):
+            service.upload_binary(self._platform(links={}), b"x")
+        transport.request.assert_not_called()
+
+    def test_download_url_accessor(self) -> None:
+        platform = self._platform(
+            links={
+                "provider-binary-download": (
+                    "https://archivist.terraform.io/v1/object/dl"
+                )
+            }
+        )
+        assert platform.provider_binary_download_url().endswith("/dl")
+        with pytest.raises(ValueError, match="provider binary upload link"):
+            platform.provider_binary_upload_url()

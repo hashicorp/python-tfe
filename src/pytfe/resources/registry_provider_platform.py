@@ -195,3 +195,44 @@ class RegistryProviderPlatforms(_Service):
             attrs["links"] = data["links"]
 
         return attach_jsonapi(RegistryProviderPlatform.model_validate(attrs), data)
+
+    def upload_binary(self, platform: RegistryProviderPlatform, binary: bytes) -> None:
+        """Upload the provider binary for one platform of a provider version.
+
+        The binary is the zip archive named by the platform's ``filename``, and
+        its SHA256 must match the ``shasum`` the platform was created with.
+        ``platform.provider_binary_uploaded`` reports whether this step is done.
+
+        Args:
+            platform: The platform to upload for, as returned by :meth:`create`.
+            binary: The contents of the provider zip archive.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``binary`` is empty, or the platform carries no
+                upload link (which is the case once it has been uploaded).
+            NotFound: If the upload URL has expired.
+            AuthError: If the token may not upload to this URL.
+            TFEError: If the upload fails.
+
+        Example:
+            >>> from pathlib import Path
+            >>> platform = client.registry_provider_platforms.create(version_id, opts)
+            >>> client.registry_provider_platforms.upload_binary(
+            ...     platform,
+            ...     Path("terraform-provider-widget_1.0.0_linux_amd64.zip").read_bytes(),
+            ... )
+        """
+        if not binary:
+            raise ValueError("binary must not be empty")
+        # Through the transport, not the raw client, so the upload inherits
+        # retries, typed errors and the read-only gate. Archivist requires the
+        # bearer token, which request() sends by default.
+        self.t.request(
+            "PUT",
+            platform.provider_binary_upload_url(),
+            data=binary,
+            headers={"Content-Type": "application/octet-stream"},
+        )

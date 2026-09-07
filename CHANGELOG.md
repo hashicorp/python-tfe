@@ -43,7 +43,8 @@
     `setup_oidc_dynamic_credentials`, `token_audit`, `setup_agent_pool`.
   * **Terraform Enterprise** - `admin_bootstrap`, `identity_bootstrap`,
     `tfe_health`. Each refuses to run against HCP Terraform.
-  * **Registry** - `publish_module_version`, `no_code_provision`.
+  * **Registry** - `publish_module_version`, `publish_provider_version`,
+    `no_code_provision`.
 * Notes on three tier-2 workflows that differ from the obvious design:
   * `setup_oidc_dynamic_credentials` writes the documented `TFC_*_PROVIDER_AUTH`
     environment variables rather than using the `*_oidc_configurations`
@@ -54,9 +55,6 @@
     (organizations, users, runs, Terraform versions). There is no health or ping
     endpoint, so it reports reachability and queue pressure rather than a
     server-reported status.
-  * `publish_provider_version` raises `CoreGap`: no method in pytfe uploads
-    provider SHASUMS, their signature, or platform binaries, so it cannot be
-    built on the public API.
 * Fleet workflows share one client across a `ThreadPoolExecutor`. Their work
   lists are materialized on the calling thread first, because `list_*` methods
   return single-use, lazily-paginating iterators that must not be driven from
@@ -66,6 +64,28 @@
   alongside `resources` rather than mixed into it, since a workflow may block for
   minutes while a resource method is a single request. Each entry carries
   `blocking`, `mutating`, `gated` and `dry_run` flags.
+
+### New: private provider publishing
+
+* Added the three upload methods the private provider registry needs, which the
+  SDK was missing even though the models already exposed the upload URLs:
+  `client.registry_provider_versions.upload_shasums()`,
+  `.upload_shasums_sig()`, and `client.registry_provider_platforms.upload_binary()`.
+  Verified against the HCP Terraform private-registry API docs: the create
+  responses carry `shasums-upload`, `shasums-sig-upload` and
+  `provider-binary-upload` links, and the corresponding `shasums-uploaded`,
+  `shasums-sig-uploaded` and `provider-binary-uploaded` attributes report
+  progress.
+  * The uploads go through `HTTPTransport.request`, not the underlying HTTP
+    client, so unlike the older configuration-version upload they inherit
+    retries, typed error translation, and the read-only request gate. The
+    bearer token is sent deliberately: these URLs point at Archivist.
+* Added `RegistryProviderPlatform.provider_binary_upload_url()` and
+  `.provider_binary_download_url()`, mirroring the accessors the version model
+  already had.
+* Added `pytfe.workflows.publish_provider_version`, which runs the whole
+  sequence, and `ProviderPlatformSpec.from_release_dir()` to build the platform
+  list from a goreleaser-style output directory.
 
 ### Read-only clients and request hooks
 
@@ -82,6 +102,12 @@
 
 ## Bug Fixes
 
+* Fixed `RegistryProviderVersion.shasums_upload_url()` and its three sibling
+  accessors, which returned the literal string `"None"` instead of raising when
+  the link was absent. `str(self.links.get(...))` produces `"None"` for a
+  missing key, and `"None"` is truthy, so the guard immediately below never
+  fired. An upload built on the returned value would have PUT to a URL named
+  `None`.
 * Added the `plan_queueable` value to `RunStatus`. A run in that state made
   `client.runs.read()` raise pydantic's `ValidationError` - which is not a
   `TFEError`, so `except TFEError:` did not catch it. Same class of bug as the

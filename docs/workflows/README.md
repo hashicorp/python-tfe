@@ -173,8 +173,8 @@ Each refuses to run against HCP Terraform.
 | Workflow | Kind | Notes |
 |---|---|---|
 | `publish_module_version` | write | Packages the directory itself, because `registry_modules.upload()` raises `NotImplementedError`. |
+| `publish_provider_version` | write | Provider, version, `SHA256SUMS` + signature, then every platform binary. Idempotent. |
 | `no_code_provision` | destructive (gated) | Creates a workspace from a no-code module and gates its first run. |
-| `publish_provider_version` | — | Raises `CoreGap`. See the gaps table below. |
 
 ## Run-status classification
 
@@ -250,8 +250,32 @@ It tells you reachability and queue pressure, not a server-reported status.
 |---|---|
 | `plans.logs()` / `applies.logs()` are placeholder stubs returning `""` | `diagnose_run` cannot include a log excerpt. It records a warning and exposes `log_read_url` so a caller can fetch the log directly. Its structured signals — stage, status, policy failures, errored-state availability — are derived without logs and are always populated. |
 | `registry_modules.upload()` raises `NotImplementedError` | `publish_module_version` packages the directory itself and uses the public `upload_tar_gzip`. |
-| No method uploads provider SHASUMS, signatures or platform binaries | `publish_provider_version` raises `CoreGap`. It needs new methods in `resources/`. |
 | `client.users` exposes no user-token namespace | `token_audit` cannot enumerate user API tokens, and says so in its warnings. |
+
+## Publishing a provider
+
+`publish_provider_version` runs the whole private-provider sequence. Build the
+platform list from a goreleaser-style output directory:
+
+```python
+from pathlib import Path
+from pytfe.workflows import ProviderPlatformSpec, publish_provider_version
+
+shasums = Path("dist/terraform-provider-widget_1.0.0_SHA256SUMS").read_bytes()
+
+publish_provider_version(
+    tfe, "acme", "widget", "1.0.0",
+    gpg_key_id="32966F3FB5AC1129",          # already registered with the org
+    shasums=shasums,
+    shasums_sig=Path("dist/terraform-provider-widget_1.0.0_SHA256SUMS.sig").read_bytes(),
+    platforms=ProviderPlatformSpec.from_release_dir("dist", shasums=shasums),
+)
+```
+
+`from_release_dir` pairs each `SHA256SUMS` entry with the zip actually present
+on disk and derives `os`/`arch` from the conventional
+`<name>_<version>_<os>_<arch>.zip` filename, so entries with no matching file
+are skipped rather than failing mid-upload.
 
 ## See also
 
