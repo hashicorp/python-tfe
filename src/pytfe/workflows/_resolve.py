@@ -78,18 +78,37 @@ def organization_of(
 ) -> str:
     """Organization name for a workspace.
 
-    ``Workspace`` carries no ``organization_name`` field, so this reads the
-    parsed relationship and falls back to whatever the caller supplied.
+    ``Workspace`` carries no ``organization_name`` field, so the name comes from
+    the JSON:API relationship block. Organizations are identified by name rather
+    than by an opaque id, so the relationship's ``data.id`` *is* the name::
+
+        "organization": {"data": {"id": "acme", "type": "organizations"}}
+
+    ``related("organization")`` is not used: the workspace parser has no entry
+    for organizations, so it yields a list of raw dicts rather than a model, and
+    reading ``.name`` off it silently produces None.
+
+    Args:
+        client: Unused; kept so callers can pass it uniformly.
+        workspace: The workspace to look up.
+        fallback: Preferred when supplied - a caller who named the organization
+            already knows it, and it costs nothing to trust them.
+
+    Returns:
+        The organization name, or ``""`` when it cannot be determined.
     """
+    if fallback:
+        return fallback
     try:
-        if workspace.has_relationships:
-            org = workspace.related("organization")
-            name = getattr(org, "name", None) or getattr(org, "id", None)
-            if isinstance(name, str):
+        relationship = (workspace.relationships or {}).get("organization") or {}
+        data = relationship.get("data")
+        if isinstance(data, dict):
+            name = data.get("id")
+            if isinstance(name, str) and name:
                 return name
-    except (AttributeError, TFEError):
+    except (AttributeError, TypeError, TFEError):
         pass
-    return fallback or ""
+    return ""
 
 
 def workspace_web_url(client: TFEClient, organization: str, workspace_name: str) -> str:

@@ -776,7 +776,13 @@ def run_from_directory(
     if status in ("errored", "canceled", "discarded"):
         return _result("errored", ok=False, failure=diagnose_run(client, run_id))
     if status == "planned_and_finished":
-        return _result("no_changes", plan=plan_summary(client, run_id))
+        # A speculative or plan-only run ALWAYS ends planned_and_finished,
+        # whether or not it proposed changes, so the status alone cannot
+        # distinguish "nothing to do" from "planned, and can never be applied".
+        # Reporting no_changes for a speculative plan of ten new resources would
+        # tell an agent the opposite of the truth.
+        settled = plan_summary(client, run_id)
+        return _result("planned" if settled.has_changes else "no_changes", plan=settled)
 
     summary = plan_summary(client, run_id)
     if phase_of(planned.status) is RunPhase.AWAITING_DECISION:
@@ -1561,7 +1567,10 @@ def queue_run(
     if status in ("errored", "canceled", "discarded"):
         return build("errored", ok=False, failure=diagnose_run(client, run_id))
     if status == "planned_and_finished":
-        return build("no_changes", plan=plan_summary(client, run_id))
+        # See run_from_directory: this status is the normal terminal state for a
+        # plan-only or refresh-only run, so the plan itself decides the phase.
+        settled = plan_summary(client, run_id)
+        return build("planned" if settled.has_changes else "no_changes", plan=settled)
 
     summary = plan_summary(client, run_id)
     if phase_of(planned.status) is RunPhase.AWAITING_DECISION:

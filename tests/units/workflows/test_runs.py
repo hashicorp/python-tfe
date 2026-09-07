@@ -12,7 +12,9 @@ from typing import Any
 import pytest
 
 from pytfe.errors import RunNotConfirmable, WorkflowTimeout
+from pytfe.models.configuration_version import ConfigurationVersion
 from pytfe.models.run import Run
+from pytfe.models.workspace import Workspace
 from pytfe.workflows import apply_with_gate, plan_summary, wait_for_run
 
 FIXTURES = Path(__file__).resolve().parents[2] / "fixtures" / "plan_json"
@@ -293,3 +295,136 @@ def test_summary_is_json_serializable_and_small(client: Any) -> None:
     json.dumps(summary)  # must not raise
     assert len(summary) <= 20
     assert summary["phase"] == "awaiting_confirmation"
+
+
+# --------------------------------------------------------------------------
+# Organization resolution for run URLs
+#
+# Found by a live run against HCP Terraform, which produced
+# https://app.terraform.io/app//workspaces/... - an empty org segment - whenever
+# the caller addressed the workspace by id rather than by organization+name.
+# --------------------------------------------------------------------------
+
+
+def workspace_with_org_relationship() -> Any:
+    """A workspace as the resource parser actually produces it.
+
+    `relationships` is a PrivateAttr attached by attach_jsonapi during parsing,
+    not a model field, so passing it to model_validate silently does nothing -
+    which is what made the first version of this test pass a bad fixture.
+    """
+    from pytfe._jsonapi import attach_jsonapi
+    from pytfe.models.workspace import Workspace
+
+    return attach_jsonapi(
+        Workspace.model_validate({"id": "ws-1", "name": "web"}),
+        {
+            "id": "ws-1",
+            "type": "workspaces",
+            "relationships": {
+                # Organizations are identified by name, so data.id IS the name.
+                "organization": {"data": {"id": "acme", "type": "organizations"}}
+            },
+        },
+    )
+
+
+def test_organization_read_from_the_relationship(client: Any) -> None:
+    from pytfe.workflows._resolve import organization_of
+
+    assert organization_of(client, workspace_with_org_relationship()) == "acme"
+
+
+def test_related_returns_raw_dicts_not_a_model(client: Any) -> None:
+    """Why the first implementation failed: the workspace parser has no entry
+    for organizations, so related() yields a list of dicts and reading .name
+    off it silently produced None."""
+    ws = workspace_with_org_relationship()
+    related = ws.related("organization")
+    assert isinstance(related, list)
+    assert getattr(related[0], "name", None) is None
+
+
+def test_run_url_has_no_empty_segment(client: Any) -> None:
+    from pytfe.workflows._resolve import organization_of, run_web_url
+
+    org = organization_of(client, workspace_with_org_relationship())
+    url = run_web_url(client, org, "web", "run-1")
+    assert url == "https://tfe.example.com/app/acme/workspaces/web/runs/run-1"
+    assert "//workspaces" not in url
+
+
+def test_caller_supplied_organization_wins(client: Any) -> None:
+    from pytfe.workflows._resolve import organization_of
+
+    ws = workspace_with_org_relationship()
+    assert organization_of(client, ws, "explicit") == "explicit"
+
+
+def test_missing_relationship_degrades_to_empty(client: Any) -> None:
+    from pytfe.models.workspace import Workspace
+    from pytfe.workflows._resolve import organization_of
+
+    assert (
+        organization_of(client, Workspace.model_validate({"id": "ws-1", "name": "w"}))
+        == ""
+    )
+
+
+# --------------------------------------------------------------------------
+# planned_and_finished is ambiguous
+#
+# Found live: a speculative plan creating two resources reported
+# phase="no_changes", because HCP ends every speculative run in
+# planned_and_finished regardless of what it proposed.
+# --------------------------------------------------------------------------
+
+
+def test_speculative_plan_with_changes_reports_planned(client: Any, clock: Any) -> None:
+    from pytfe.workflows import speculative_plan
+
+    client.workspaces.read_by_id.return_value = Workspace.model_validate(
+        {"id": "ws-1", "name": "web"}
+    )
+    client.configuration_versions.create.return_value = (
+        ConfigurationVersion.model_validate(
+            {"id": "cv-1", "upload-url": "https://archivist/x"}
+        )
+    )
+    client.configuration_versions.read.return_value = (
+        ConfigurationVersion.model_validate({"id": "cv-1", "status": "uploaded"})
+    )
+    client.runs.create.return_value = make_run("pending")
+    client.runs.read.return_value = make_run("planned_and_finished")
+    client.plans.read_json_output_for_run.return_value = plan_json("simple")
+    client.policy_checks.list.return_value = iter([])
+
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        from pathlib import Path
+
+        Path(tmp, "main.tf").write_text("resource {}")
+        result = speculative_plan(client, tmp, workspace_id="ws-1")
+
+    assert result.plan is not None and result.plan.has_changes
+    assert result.phase == "planned", (
+        "a speculative plan with changes is not 'no_changes'"
+    )
+
+
+def test_planned_and_finished_with_no_changes_still_reports_no_changes(
+    client: Any,
+) -> None:
+    from pytfe.workflows import queue_run
+
+    client.workspaces.read_by_id.return_value = Workspace.model_validate(
+        {"id": "ws-1", "name": "web"}
+    )
+    client.runs.create.return_value = make_run("pending")
+    client.runs.read.return_value = make_run("planned_and_finished")
+    client.plans.read_json_output_for_run.return_value = plan_json("no_changes")
+    client.policy_checks.list.return_value = iter([])
+
+    result = queue_run(client, workspace_id="ws-1", plan_only=True)
+    assert result.phase == "no_changes"
