@@ -1,39 +1,16 @@
 # Workflows
 
-`pytfe.workflows` is the layer between "one method, one HTTP request" and the
-multi-step jobs people actually do. Every resource method in pytfe is a single
-round trip; an API-driven run is eight calls with a polling loop in the middle,
-and until now the SDK never said which run states are final.
+Every method on `TFEClient` is one HTTP request. Real jobs are not: an
+API-driven run is eight calls with a polling loop in the middle, a stack
+deployment spans five API levels, and the SDK never told you which run states
+are final.
 
-Everything here is built strictly on the public API — `client.<resource>.<verb>`,
-typed options models, typed errors. It never touches the transport or the
-pagination helper, which `tests/contract/test_isolation.py` enforces.
-
-## Why this exists
-
-Before this package, the repository contained:
-
-| | |
-|---|---|
-| Hand-rolled polling loops | 10, across 7 files |
-| Blind `sleep`-then-read sites | 12, across 5 example files |
-| Definitions of "terminal run state" | 4, mutually inconsistent |
-| Waiters shipped in the SDK | 0 |
-
-`RunStatus` has 33 members and no way to ask whether one is final, so four call
-sites each invented their own set — and one of them
-(`examples/oidc_aws_e2e.py:509`) omits `cost_estimated` and `policy_checked`
-from a confirmable set that the same file gets right 50 lines earlier. Another
-set contains `force_canceled`, which is not a `RunStatus` member at all.
-
-The gap was never that people could not poll. It was that the SDK never told
-them what to poll for.
-
-## Quick start
+`pytfe.workflows` is that missing layer — multi-step operations you call once,
+built on the same public API you would have used by hand.
 
 ```python
 from pytfe import TFEClient
-from pytfe.workflows import run_from_directory, apply_with_gate
+from pytfe.workflows import apply_with_gate, run_from_directory
 
 with TFEClient() as tfe:
     result = run_from_directory(
@@ -43,48 +20,57 @@ with TFEClient() as tfe:
     if result.phase == "awaiting_confirmation":
         print(result.plan)   # +3 ~1 -0 (no destroys)
         print(result.url)    # hand this to a human
-
-        # ...after a human approves:
+        # ...once they approve:
         apply_with_gate(tfe, result.run_id, confirmed=True)
 ```
 
-## Secrets
+Nothing here applies, deletes or approves on its own — see
+[Safety model](#safety-model).
 
-Two rules, because raw Terraform data is full of credentials:
+## Which workflow do I want?
 
-- **State is redacted by default.** `download_state` and `state_inventory` strip
-  every value Terraform flagged in `sensitive_attributes`, plus any root output
-  marked `sensitive: true`. `redacted_paths` reports what was removed, so "this
-  resource has no password" is distinguishable from "the password was stripped".
-  Pass `redact_sensitive=False` only when you genuinely need the secrets.
-- **Analysis returns paths, never values.** `analyze_plan` tells you that
-  `aws_db_instance.main.password` changed without telling you what it changed to.
-  A plan's `before`/`after` blocks are real infrastructure data and routinely
-  exceed 20MB; neither belongs in an agent's context.
+| I want to… | Use |
+|---|---|
+| Push local config and run it | `run_from_directory` |
+| Run a VCS-connected workspace, no local files | `queue_run` |
+| See what *would* change | `speculative_plan`, or `queue_run(refresh_only=True)` for drift |
+| Know which attribute changed, and why something is being replaced | `analyze_plan` |
+| Apply a run a human already approved | `apply_with_gate(confirmed=True)` |
+| Find out why a run failed | `diagnose_run` |
+| Create or update a workspace, repeatably | `ensure_workspace` |
+| Set variables without clobbering the rest | `ensure_variables` |
+| Get outputs after an apply | `read_outputs` |
+| List the machines a workspace manages, with their IPs | `state_inventory(include_attributes=True)` |
+| Check the health of every workspace in an org | `org_inventory` |
+| Roll a setting out across many workspaces | `bulk_update` |
+| Rotate a credential everywhere | `bulk_variable_rotate` |
+| Move or restore state | `push_state`, `rollback_state`, `migrate_state` |
+| Deploy a stack and stop for approval | `stack_fetch_and_run` |
+| See which stack deployments are waiting on me | `stack_status` |
+| Tear something down | `teardown_workspace`, `teardown_stack` |
 
-`summary()` never contains a secret on any result, regardless of the flags used
-to build it.
+Every workflow takes the client as its first argument and returns a Pydantic
+result.
 
 ## Safety model
 
-Nothing applies, deletes, or overrides by default. This is the rule the whole
-package is built around, and it holds even when a caller asks nicely.
+**Nothing applies, deletes, approves or overwrites state by default.** This holds
+even when you ask nicely, and it is the rule the package is built around.
 
 - A destructive step with neither `confirmed=True` nor a `confirm` callback
-  **stops and returns** `phase="awaiting_confirmation"`. It does not raise, and
-  it does not proceed.
+  **stops and returns** — it does not raise, and it does not proceed. Branch on
+  `result.phase`.
 - `confirmed=True` means *the caller asserts a human approved this*. An agent
-  sets it only after explicit human approval.
-- A plan containing destroys or replaces is **refused** unless
-  `allow_destroy=True` is passed as well — `confirmed=True` alone is not enough.
-- A run whose **policy checks failed** is refused the same way. `policy=` selects
-  the strictness: `require_pass` (default) blocks on any hard or soft failure,
-  `allow_advisory` blocks only on hard failures, `ignore` skips the check. An
-  `overridden` check counts as passing — someone already made that call.
+  sets it only after real human approval.
+- A plan that destroys or replaces resources is **refused** unless
+  `allow_destroy=True` as well. `confirmed=True` alone is not enough.
+- A run whose **policy checks failed** is refused the same way. `policy=` sets
+  the strictness: `require_pass` (default), `allow_advisory` (hard failures
+  only), or `ignore`.
 - There is no `auto_apply=True` anywhere in this package.
 
-The gate applies its rules in a fixed order, so a refusal the caller *cannot*
-override with `confirmed=True` is always reported first:
+Gate rules apply in a fixed order, so a refusal you *cannot* override with
+`confirmed=True` is always reported first:
 
 ```
 refused_destructive  →  refused_policy  →  rejected  →  awaiting_confirmation
@@ -96,10 +82,46 @@ To hand an agent a client that physically cannot mutate anything:
 tfe = TFEClient(TFEConfig(read_only=True))    # or PYTFE_READ_ONLY=1
 ```
 
-Every write raises `ReadOnlyViolation`, including configuration-version and
-registry-module uploads, which bypass `HTTPTransport.request` and would slip
-past a naive gate. `TFEConfig(before_request=hook)` sees every request, and the
-hook may raise to block one.
+Every write then raises `ReadOnlyViolation`, including the configuration-version
+and registry uploads that bypass the normal request path.
+`TFEConfig(before_request=hook)` sees every request and may raise to block one.
+
+## Secrets
+
+Terraform data is full of credentials, so two rules apply everywhere:
+
+- **State is redacted by default.** `download_state` and `state_inventory` strip
+  every value Terraform flagged in `sensitive_attributes`, plus any root output
+  marked `sensitive: true`. `redacted_paths` tells you what was removed, so
+  "this resource has no password" is distinguishable from "the password was
+  stripped". Pass `redact_sensitive=False` only when you need the secrets.
+- **Analysis returns paths, never values.** `analyze_plan` tells you that
+  `aws_db_instance.main.password` changed, without telling you what to.
+
+`summary()` never contains a secret on any result, whatever flags built it.
+
+## Errors and waiting
+
+Everything raises `pytfe.errors.TFEError` subclasses, so one `except` catches
+the lot:
+
+```python
+from pytfe.errors import TFEError, WorkflowTimeout
+
+try:
+    result = run_from_directory(tfe, "./terraform", workspace_id=ws_id)
+except WorkflowTimeout as exc:
+    print("timed out; last saw:", exc.last)   # the last observed object
+except TFEError as exc:
+    print(exc, "|", exc.hint)                 # hint names the next thing to try
+    log.error(exc.to_dict())                  # JSON-serializable, for an agent
+```
+
+- Every wait takes `timeout=` and raises `WorkflowTimeout`, carrying the last
+  observed object on `.last` — "timed out" alone is not actionable.
+- Most errors carry an actionable `.hint`, and `to_dict()` returns
+  `{type, message, status, hint, errors}` to feed back to a model.
+- `WorkflowTimeout` also subclasses `TimeoutError`, so either `except` works.
 
 ## Conventions
 
@@ -107,48 +129,42 @@ hook may raise to block one.
 |---|---|
 | Identifiers first, options last | Matches the resource layer. |
 | Either addressing form | `workspace_id="ws-…"`, or `organization=` + `workspace_name=`. |
-| Idempotent `ensure_*` | A second call with the same spec makes zero write requests and returns `action="unchanged"`. |
+| Idempotent `ensure_*` | A second call with the same spec makes **zero write requests** and returns `action="unchanged"`. |
 | `dry_run=True` | Reads only, reports `changes`, makes zero write requests. |
-| Explicit timeouts | Every wait takes `timeout=` and raises `WorkflowTimeout`, which carries the last observed value on `.last`. |
-| `summary()` on every result | Small, JSON-serializable, never contains secrets. Use it instead of dumping a whole result into an agent's context. |
+| `summary()` on every result | Small, JSON-serializable, no secrets. Use it instead of putting a whole result into an agent's context. |
 | Unset means unmanaged | A `WorkspaceSpec` field you never set is never touched; setting it to `None` clears it. |
-| Errors are typed | Everything subclasses `TFEError`, so `except TFEError:` keeps working. Most carry an actionable `.hint`. |
+| `*Spec` inputs reject typos | Unknown field names raise — unlike the SDK's `*Options` models, which silently drop them. |
 
-## Workflows
+## Reference
 
 ### Runs
 
 | Workflow | Kind | Notes |
 |---|---|---|
 | `run_from_directory` | destructive (gated) | Upload a directory, plan, stop at the gate. The whole API-driven run. |
+| `queue_run` | destructive (gated) | Run a workspace's **existing** configuration — the VCS case — and `refresh_only=True` for drift detection. |
+| `ensure_configuration_version` | write | Create, package, upload and wait, without queueing a run. |
 | `speculative_plan` | read | Never applies. The safe default for "what would this change?" |
 | `wait_for_run` | read | Returns the `Run`, not a bool. `until="plan_done"` or `"terminal"`. |
-| `plan_summary` | read | Counts and addresses from plan JSON, falling back to plan attributes. |
-| `analyze_plan` | read | Attribute-level: *which* attribute of which resource changes, plus `action_reason`. Paths only, never values. |
-| `ensure_configuration_version` | write | The create/package/upload/wait sequence on its own, without queueing a run. |
-| `queue_run` | destructive (gated) | Queue a run with **no local directory** — the VCS-driven case, and `refresh_only` drift detection. |
+| `plan_summary` | read | Counts and addresses, from plan JSON or the plan's own counters. |
+| `analyze_plan` | read | Which attribute changed, plus `action_reason` so `replace_because_cannot_update` is visible. Paths only, never values. |
 | `apply_with_gate` | destructive (gated) | Apply an already-planned run. |
 | `diagnose_run` | read | Why a run failed, plus a suggested next step. |
 | `resolve_policy_override` | destructive (gated) | Override a soft-failed policy and continue, or discard the run. |
-| `cancel_run` | destructive (ungated) | Escalates to force-cancel after `force_after`. Cancelling destroys nothing, so it is not gated. |
-| `destroy_run` | destructive (gated) | Requires the workspace's `allow_destroy_plan`. Gated unconditionally — there is no `allow_destroy` to set, because destruction is the point. |
+| `cancel_run` | destructive (ungated) | Escalates to force-cancel after `force_after`. Cancelling destroys nothing. |
+| `destroy_run` | destructive (gated) | Requires the workspace's `allow_destroy_plan`. |
 
 ### Workspaces
 
 | Workflow | Kind | Notes |
 |---|---|---|
 | `find_workspaces` | read | Server-side filters where they exist, local filters where they do not. |
-| `workspace_status` | read | One `health` verdict: `ok`/`drifted`/`errored`/`locked`/`never_run`. |
+| `workspace_status` | read | One verdict: `ok`/`drifted`/`errored`/`locked`/`never_run`. |
 | `ensure_workspace` | write | Create or converge. Idempotent, `dry_run`. |
 | `ensure_variables` | write | Converge variables. Sensitive values are never echoed back. |
-
-### Workspaces (lifecycle)
-
-| Workflow | Kind | Notes |
-|---|---|---|
+| `ensure_variable_set` | write | The set, its variables, and its workspace/project attachments. |
 | `lock` / `unlock` | write | Idempotent. `unlock(force=True)` breaks another actor's lock. |
-| `ensure_variable_set` | write | Converges the set, its variables, and its workspace/project attachments. |
-| `clone_workspace` | write | Copies settings and non-sensitive variables. Sensitive values cannot be read back, so each one is listed in `manual_followups`. |
+| `clone_workspace` | write | Copies settings and non-sensitive variables; sensitive ones are listed as manual follow-ups. |
 | `teardown_workspace` | destructive (gated) | Destroy, then delete. Refuses while resources remain unless `force=True`. |
 
 ### State
@@ -156,140 +172,114 @@ hook may raise to block one.
 | Workflow | Kind | Notes |
 |---|---|---|
 | `read_outputs` | read | Waits for `resources_processed` first — the step most scripts miss. |
-| `download_state` | read | **Redacts by default.** `summary()` omits the state body; `redacted_paths` says what was removed. |
-| `state_inventory` | read | `include_attributes=True` carries each instance's attributes — how you get "every machine with its IP". |
-| `push_state` | destructive (gated) | Locks, enforces the serial floor and lineage match, unlocks in a `finally`. Reports `still_locked` if the unlock fails. |
-| `rollback_state` | destructive (gated) | Uses the API's own rollback endpoint. No version is ever deleted. |
-| `migrate_state` | destructive (gated) | Copies state between workspaces; warns if the target already has state. |
+| `download_state` | read | **Redacts by default**; `redacted_paths` says what went. |
+| `state_inventory` | read | `include_attributes=True` carries each instance's attributes. |
+| `push_state` | destructive (gated) | Locks, enforces the serial floor and lineage match, unlocks in a `finally`. |
+| `rollback_state` | destructive (gated) | Uses the API's own rollback; no version is ever deleted. |
+| `migrate_state` | destructive (gated) | Copies state between workspaces. |
 
 ### Fleet
 
-All take `concurrency` and resolve their work list on the calling thread before
-fanning out. One workspace failing never aborts the others.
+All take `concurrency=` and resolve their work list before fanning out. One
+workspace failing never aborts the others — its error is captured on the item.
 
 | Workflow | Kind | Notes |
 |---|---|---|
-| `bulk_speculative_plan` | read | Plans one directory against many workspaces. Never applies. |
+| `bulk_speculative_plan` | read | One directory planned against many workspaces. |
 | `bulk_update` | write (gated) | Fleet-wide writes are gated even though single-workspace `ensure_workspace` is not. |
-| `bulk_variable_rotate` | write (gated) | Built for credential rotation. |
-| `org_inventory` | read | Every workspace's health; renders as CSV via `to_csv()`. |
-| `resource_inventory` | read | "Where is this resource type deployed?" across an organization. |
+| `bulk_variable_rotate` | write (gated) | Credential rotation. |
+| `org_inventory` | read | Every workspace's health; `to_csv()` included. |
+| `resource_inventory` | read | "Where is this resource type deployed?" |
 
 ### Governance
 
 | Workflow | Kind | Notes |
 |---|---|---|
-| `onboard_team` | write | Team, members, workspace access. Members are never removed unless `prune_members=True` and `confirmed=True`. |
+| `onboard_team` | write | Team, members, workspace access. Members are never removed unless `prune_members` **and** `confirmed`. |
 | `ensure_policy_set` | write | Find-or-create, then attach workspaces. |
 | `ensure_run_task` | write | Organization task plus per-workspace enforcement levels. |
-| `ensure_notification` | write | Never logs `url` or `token` — a webhook URL routinely embeds a secret. |
+| `ensure_notification` | write | Never logs `url` or `token` — a webhook URL often embeds a secret. |
 | `ensure_run_trigger` | write | Converges inbound triggers with set semantics. |
 | `ensure_project` | write | Find-or-create, then move workspaces in. |
-| `setup_oidc_dynamic_credentials` | write | Writes the `TFC_*_PROVIDER_AUTH` env variables. See the note below. |
+| `setup_oidc_dynamic_credentials` | write | Writes the `TFC_*_PROVIDER_AUTH` variables. |
 | `token_audit` | read | Organization, team and agent tokens with expiry. Values are never returned. |
-| `setup_agent_pool` | write | The agent token is returned **once** on the result and excluded from `summary()`. |
-
-### Terraform Enterprise only
-
-Each refuses to run against HCP Terraform.
-
-| Workflow | Kind | Notes |
-|---|---|---|
-| `admin_bootstrap` | write | Creates the first organization. The admin API has no org-create endpoint, so the normal one is used. |
-| `identity_bootstrap` | write | SAML and SCIM settings. |
-| `tfe_health` | read | Composed from admin reads — see the note below. |
+| `setup_agent_pool` | write | The agent token is returned **once** and is excluded from `summary()`. |
 
 ### Stacks
 
-Stacks change the shape of the loop, so these are not the workspace workflows
-with different nouns. A workspace is one configuration → one run → one plan →
-apply. A stack is one configuration → N deployments (in deployment groups) → N
-deployment runs, each with its own plan and its own approval, and
-`.tfdeploy.hcl` orchestration rules may auto-approve some of them.
-
-So **every stack result is a matrix keyed by deployment name**, every gate is per
-deployment, and the verb is *approve*, not *apply*. Names follow the
-`terraform stacks` CLI where one exists.
-
-| Workflow | Kind | Notes |
-|---|---|---|
-| `stack_status` | read | Resolves the latest configuration and builds the per-deployment matrix. Health is `healthy`/`deploying`/`awaiting_approval`/`errored`/`never_deployed`. |
-| `wait_for_stack_configuration` | read | Three stopping points: `prepared`, `plans_ready` (every run gated or finished — the moment a human is needed), `completed`. |
-| `stack_fetch_and_run` | destructive (gated) | The whole loop over the VCS fetch path. Stops at `awaiting_approval` with the matrix. |
-| `speculative_stack_plan` | read | `-speculative` equivalent. Never approves, and doubles as configuration validation since a bad `.tfcomponent.hcl` fails at prepare. |
-| `approve_stack_plans` | destructive (gated) | Per configuration or per group. Re-reads to confirm, and reports **partial** approval. |
-| `diagnose_stack_configuration` | read | Separates prepare-time failure from a failed deployment step, and blocked-behind-a-predecessor from actually failed. |
-| `teardown_stack` | destructive (gated ×2) | Destroys via the `destroy_all` create option — no HCL editing — then deletes. `force=True` orphans resources. |
+A stack is not a workspace with more nouns: one configuration fans out to N
+deployments, each with its own run, plan and approval, and `.tfdeploy.hcl` rules
+may auto-approve some. So **results are a matrix keyed by deployment name**, the
+gate is per deployment, and the verb is *approve*.
 
 ```python
 result = stack_fetch_and_run(tfe, "st-abc")
 if result.phase == "awaiting_approval":
     for name, d in result.deployments.items():
-        print(name, d.status, "gated" if d.awaiting_approval else "")
+        print(name, d.status, "GATED" if d.awaiting_approval else "")
     approve_stack_plans(tfe, configuration_id=result.configuration_id, confirmed=True)
 ```
 
-Three honest limits, each visible in the API rather than papered over:
+| Workflow | Kind | Notes |
+|---|---|---|
+| `stack_status` | read | Latest configuration, the per-deployment matrix, and a health verdict. |
+| `wait_for_stack_configuration` | read | `prepared`, `plans_ready` (the moment a human is needed), or `completed`. |
+| `stack_fetch_and_run` | destructive (gated) | The whole loop over the VCS fetch path. |
+| `speculative_stack_plan` | read | Never approves; doubles as configuration validation. |
+| `approve_stack_plans` | destructive (gated) | Re-reads to confirm, and reports **partial** approval. |
+| `diagnose_stack_configuration` | read | Separates a prepare failure from a failed deployment step. |
+| `teardown_stack` | destructive (gated ×2) | Destroys via `destroy_all`, then deletes. `force=True` orphans resources. |
 
-- **No `stack_run_from_directory`.** `StackConfigurationSource.MANUAL` is the
-  default but unreachable — there is no upload method and no upload-URL field —
-  so every workflow here drives the VCS `FETCH` path.
-- **A stack plan's blast radius is not readable.** No plan JSON, no counters and
-  no policy check exist at any stack level, so the gate cannot compute
-  `is_destructive`. These workflows report the step holding each plan
-  (`plan_description_step_id`) and let `confirmed`/`confirm` be the whole gate,
-  rather than inventing a signal that is not there.
-- **`approve_all_plans` clears a whole group.** A run that reaches the gate
-  between the enumeration and the POST is approved too. The result carries
-  `enumerated_at` and the list it saw, so the gap is visible.
+Three things to plan around:
 
-### Registry
+- **The stack must be VCS-backed.** There is no way to upload a configuration
+  from a local directory, so there is no `stack_run_from_directory`.
+- **You decide whether a stack plan is safe.** Nothing on the Stacks API reports
+  how destructive one is, so pass a `confirm` callback, or fetch the plan with
+  `download_artifact` using each deployment's `plan_description_step_id`.
+- **Approving clears a whole deployment group**, including a run that arrives
+  between the enumeration and the approval. The result carries `enumerated_at`
+  and the list it saw.
+
+### Terraform Enterprise and the registry
 
 | Workflow | Kind | Notes |
 |---|---|---|
-| `publish_module_version` | write | Packages the directory itself, because `registry_modules.upload()` raises `NotImplementedError`. |
-| `publish_provider_version` | write | Provider, version, `SHA256SUMS` + signature, then every platform binary. Idempotent. |
-| `no_code_provision` | destructive (gated) | Creates a workspace from a no-code module and gates its first run. |
+| `admin_bootstrap` | write | Creates the first organization. TFE only. |
+| `identity_bootstrap` | write | SAML and SCIM settings. TFE only. |
+| `tfe_health` | read | Composed from admin reads — see [Known gaps](#known-gaps). TFE only. |
+| `publish_module_version` | write | Packages the directory itself. |
+| `publish_provider_version` | write | Provider, version, `SHA256SUMS` + signature, then every platform binary. |
+| `no_code_provision` | destructive (gated) | Workspace from a no-code module, then a gated first run. |
 
-## Run-status classification
+## Status classification
 
-The piece with the highest value per line. Every `RunStatus` member belongs to
-exactly one phase, and a test asserts it, so a new upstream status fails CI
-instead of silently making a waiter spin until timeout.
+Usable on its own, and how you stop writing status strings into your own code:
 
 ```python
-from pytfe.workflows import phase_of, is_terminal, run_is_confirmable
+from pytfe.workflows import is_terminal, phase_of, run_is_confirmable
 
 phase_of("planned_and_finished")   # RunPhase.TERMINAL
 phase_of("policy_soft_failed")     # RunPhase.AWAITING_DECISION
-phase_of("some_future_status")     # RunPhase.IN_PROGRESS - keep polling
+phase_of("some_future_status")     # RunPhase.IN_PROGRESS — keep polling
 ```
 
-`AWAITING_DECISION` is the distinction that matters and that no hand-rolled set
-in this repository made: a run paused for a policy override is **not** in
-progress and will never become terminal on its own. A waiter that treats it as
-in-progress hangs until timeout.
+`AWAITING_DECISION` is the distinction that matters: a run paused for a policy
+override is **not** in progress and will never become terminal on its own. A
+poller that treats it as in-progress hangs until timeout.
 
-Prefer `run_is_confirmable(run)`, which reads `run.actions.is_confirmable` from
-the wire and only falls back to the status sets when the API omitted the block.
+Prefer `run_is_confirmable(run)`, which reads the wire's own answer and falls
+back to the status sets only when the API omitted it. Stacks have the same thing
+at four levels in `stack_phases` — `run_is_awaiting_approval`,
+`configuration_is_prepared`, and the level-prefixed frozensets.
 
-## Packaging configuration directories
+## Using this from an agent
 
-`package_directory` applies Terraform's own exclusions (`.git/`, `.terraform/`,
-any `.terraformignore`, with `.terraform/modules/` re-included) and produces a
-byte-reproducible archive.
-
-This is not the same as `pytfe.utils.pack_contents`, which
-`configuration_versions.upload` uses: that walks the whole tree with no
-exclusions, so it uploads `.git/`, cached provider binaries, and any
-`*.auto.tfvars` secrets file. `run_from_directory` uses `package_directory` and
-the public `upload_tar_gzip` instead.
-
-## Discovery from an installed wheel
+`pytfe.describe()` lists workflows separately from resources, because they
+behave differently — a resource method is one request, a workflow may block for
+minutes:
 
 ```python
-import pytfe
-
 manifest = pytfe.describe()
 manifest["workflows"]["run_from_directory"]
 # {'signature': '(client, directory, *, ...)',
@@ -297,80 +287,25 @@ manifest["workflows"]["run_from_directory"]
 #  'blocking': True, 'mutating': True, 'gated': True, 'dry_run': False}
 ```
 
-Workflows are reported as a sibling key to `resources`, not mixed into it: a
-resource method is one request, a workflow may block for minutes. The
-`blocking`/`mutating`/`gated`/`dry_run` flags are the things a signature cannot
-tell you. `pytfe.llms_txt()` carries the same orientation in prose.
-
-## Reading resources out of state
-
-```python
-inv = state_inventory(tfe, ws_id, include_attributes=True)
-ips = [r.attributes["public_ip"] for r in inv.resources
-       if r.type == "aws_instance" and r.attributes]
-```
-
-`include_attributes` forces the state-download path, because the cheaper
-workspace-resources endpoint carries no attributes. Each *instance* becomes its
-own row — a resource with `count` or `for_each` produces `web[0]`, `web[1]` —
-and sensitive values are already gone.
-
-This is the piece the `hashicorp.terraform` Ansible collection had to build for
-itself before it could write a dynamic inventory; the redaction logic here
-follows its implementation.
-
-## Two workflows that differ from the obvious design
-
-**`setup_oidc_dynamic_credentials` writes variables, not OIDC configurations.**
-The `aws_/azure_/gcp_/vault_oidc_configurations` namespaces look like the right
-target and are not: they are gated behind the HYOK entitlement, they are four
-disjoint namespaces with four disjoint option models, and none of them exposes
-`list()` — so they cannot back an idempotent, single-entry-point workflow.
-Standard-tier dynamic credentials are the `TFC_*_PROVIDER_AUTH` environment
-variables, exactly as `docs/scenarios/oidc-dynamic-credentials.md` describes.
-The per-provider variable names live in one table, `OIDC_VARIABLES`.
-
-**`tfe_health` is composed, not reported.** There is no health or ping endpoint
-in the API, and `client.admin` has no general-settings namespace — only the
-eleven enumerated sub-namespaces. So `tfe_health` assembles a summary from the
-admin endpoints that do exist (organizations, users, runs, Terraform versions).
-It tells you reachability and queue pressure, not a server-reported status.
+Those four flags are what a signature cannot tell you. `pytfe.agent.classify()`
+does the same for the resource methods, returning `read`/`write`/`destructive`/
+`local` so a harness can gate on it, and `pytfe.llms_txt()` carries a short
+orientation for a model working from the installed package.
 
 ## Known gaps
 
-| Gap | Effect |
+| Gap | What it means for you |
 |---|---|
-| `plans.logs()` / `applies.logs()` are placeholder stubs returning `""` | `diagnose_run` cannot include a log excerpt. It records a warning and exposes `log_read_url` so a caller can fetch the log directly. Its structured signals — stage, status, policy failures, errored-state availability — are derived without logs and are always populated. |
-| `registry_modules.upload()` raises `NotImplementedError` | `publish_module_version` packages the directory itself and uses the public `upload_tar_gzip`. |
-| `client.users` exposes no user-token namespace | `token_audit` cannot enumerate user API tokens, and says so in its warnings. |
-
-## Publishing a provider
-
-`publish_provider_version` runs the whole private-provider sequence. Build the
-platform list from a goreleaser-style output directory:
-
-```python
-from pathlib import Path
-from pytfe.workflows import ProviderPlatformSpec, publish_provider_version
-
-shasums = Path("dist/terraform-provider-widget_1.0.0_SHA256SUMS").read_bytes()
-
-publish_provider_version(
-    tfe, "acme", "widget", "1.0.0",
-    gpg_key_id="32966F3FB5AC1129",          # already registered with the org
-    shasums=shasums,
-    shasums_sig=Path("dist/terraform-provider-widget_1.0.0_SHA256SUMS.sig").read_bytes(),
-    platforms=ProviderPlatformSpec.from_release_dir("dist", shasums=shasums),
-)
-```
-
-`from_release_dir` pairs each `SHA256SUMS` entry with the zip actually present
-on disk and derives `os`/`arch` from the conventional
-`<name>_<version>_<os>_<arch>.zip` filename, so entries with no matching file
-are skipped rather than failing mid-upload.
+| `plans.logs()` / `applies.logs()` are placeholder stubs | `diagnose_run` cannot include log text. It exposes `log_read_url` so you can fetch it, and its structured signals — stage, status, policy failures, errored-state availability — are always populated. |
+| No configuration upload for stacks | `stack_fetch_and_run` and `speculative_stack_plan` need a VCS-backed stack. |
+| Prepare-time stack diagnostics are unreachable | The relationship carries only a link with no list method behind it, so `diagnose_stack_configuration` gives you `prepare_log_url` instead. |
+| `tfe_health` has no backing endpoint | Composed from admin reads, so it reports reachability and queue pressure rather than a server-reported status. |
+| No user-token namespace | `token_audit` covers organization, team and agent tokens only, and says so in its warnings. |
+| `setup_oidc_dynamic_credentials` writes variables | The `*_oidc_configurations` resources are HYOK-gated and cannot back an idempotent workflow; standard-tier dynamic credentials are the `TFC_*_PROVIDER_AUTH` variables. |
 
 ## See also
 
 - [`docs/scenarios/`](../scenarios/) — the prose walkthroughs these workflows encode
 - [`examples/workflows/`](../../examples/workflows/) — runnable end-to-end scripts
+- [`docs/api/index.md`](../api/index.md) — the underlying resource API
 - [`AGENTS.md`](../../AGENTS.md) — conventions for contributing

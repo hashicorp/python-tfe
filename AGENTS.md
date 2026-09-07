@@ -6,7 +6,7 @@ If you are a human contributor, the same conventions apply to you — but the mo
 
 ## What this repo is
 
-`pytfe` is the official Python SDK for the HCP Terraform and Terraform Enterprise V2 API. It wraps roughly 50 resource services (workspaces, runs, policies, teams, agents, …) and is consumed by downstream projects. Source layout:
+`pytfe` is the official Python SDK for the HCP Terraform and Terraform Enterprise V2 API. It wraps 81 resource services (workspaces, runs, policies, teams, agents, stacks, …) and is consumed by downstream projects. Source layout:
 
 ```
 src/pytfe/
@@ -20,6 +20,9 @@ src/pytfe/
   utils.py             # Validation + small helpers
   models/              # Pydantic v2 models, one file per resource
   resources/           # Service classes, one file per resource
+  workflows/           # Multi-step operations built ONLY on the public API
+                       #   (see "Before you write a polling loop" below)
+  agent/               # Helpers for agent/MCP tooling (method classification)
 
 tests/units/           # Pytest unit tests with mocked transport, one file per resource
 examples/              # Runnable CLI demos, one file per resource (or extended)
@@ -49,6 +52,41 @@ Before adding a new resource, endpoint, enum, or non-obvious response parser, ve
 
 Use the official docs and go-tfe as the first sources of truth. OpenAPI and live probes are supporting evidence, especially for endpoints that are newly released or not fully documented yet. When behavior is surprising, note the source you checked in the PR description, test name, example header, or a short code comment.
 
+## Before you write a polling loop, a waiter, or a multi-step sequence
+
+`pytfe.workflows` already has one. Check it before writing your own — this is
+the single most common way generated code diverges from the codebase.
+
+```python
+from pytfe.workflows import wait_for_run, phase_of, is_terminal
+```
+
+Specifically, do not hand-roll any of these:
+
+| If you are about to… | Use instead |
+|---|---|
+| write `while True: … time.sleep(n)` around a run | `wait_for_run(client, run_id, until=…)` |
+| write a set of "terminal"/"confirmable" run statuses | `status.py` — `phase_of`, `is_terminal`, `run_is_confirmable` |
+| sequence create-CV → upload → run → poll → apply | `run_from_directory`, or `queue_run` for a VCS workspace |
+| tar a configuration directory | `package_directory` — `utils.pack_contents` ships `.git/` and `.terraform/` |
+| read state and hand it onward | `download_state` / `state_inventory` — they redact by default |
+| classify a stack status at any of its four levels | `stack_phases` |
+
+Rules that apply when you change anything under `workflows/` or `agent/`:
+
+* **Public surface only.** No `client._transport`, no `._list`, no `.t`, no
+  `httpx`. `tests/contract/test_isolation.py` fails the build otherwise.
+* **`time.sleep` lives in `_poll.wait_until` and nowhere else.** Every wait takes
+  a `timeout` and raises `WorkflowTimeout` carrying the last observed value.
+* **Nothing applies, deletes or approves by default.** A destructive workflow
+  takes `confirmed=True` or a `confirm` callback and otherwise *returns* a
+  result whose phase says it is waiting — it does not raise.
+* **Add every new `(resource, method)` pair you call to
+  `workflows/_surface.py`**, then run `make surface-snapshot`. The contract test
+  fails on the first call otherwise.
+* Errors belong in `errors.py`, not a private module, so `except TFEError:` and
+  `from pytfe.errors import …` keep working for downstream consumers.
+
 ## The cardinal rules
 
 A handful of conventions are pervasive enough that you'll regret breaking them. In rough order of "how loudly it breaks at review time":
@@ -60,6 +98,10 @@ A handful of conventions are pervasive enough that you'll regret breaking them. 
 2b. **Top-level response/resource models inherit `TFEModel`, not `BaseModel`.** It's config-light (you keep your own `model_config`) and adds the lossless `.relationships`/`.included`/`.related()`/`.has_*` accessors. Wire the resource's parser to call `attach_jsonapi(model, data, included)` so they're populated. Options/sub-object/enum models stay on `BaseModel`. ([MODELS.md](docs/MODELS.md) — TFEModel vs BaseModel)
 
 3. **`model_dump(by_alias=True, exclude_none=True)` for write payloads.** Without `by_alias=True` you'll send snake_case to the API and it will silently drop the fields. Add `mode="json"` if the options contain enums.
+
+3b. **Give a new error an actionable `hint`.** `TFEError` takes a keyword-only
+   `hint` and exposes `to_dict()`; the transport fills the hint in per status.
+   It is what an agent reads to self-correct, so name the call to try next.
 
 4. **For new public APIs, prefer typed `TFEError` subclasses.** The error hierarchy in `errors.py` is part of the public API, and downstream consumers often `except TFEError:` once. Existing methods still expose many `ValueError` paths; do not change those established exceptions unless the breaking-change impact is explicitly accepted.
 
