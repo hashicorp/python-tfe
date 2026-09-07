@@ -174,9 +174,11 @@
   `tf_policy_override` fix in v1.4.1.
 * `backoff_jitter` was stored on the transport and never applied, so every
   concurrent caller retried a 429 at identical instants. Backoff is now jittered.
-* Cookies are refused at the jar rather than only cleared after each response
-  through `request()`, so the two upload paths that bypass `request()` can no
-  longer leave a session cookie that overrides bearer auth on later calls.
+* Cookies are now dropped by a transport response hook rather than only being
+  cleared inside `request()`, so the upload paths that bypass `request()` can no
+  longer leave a session cookie that silently overrides bearer auth on later
+  calls. (A custom no-store jar cannot do this: httpx's `Client.cookies` setter
+  rewraps whatever it is given in a plain `Cookies`, discarding the subclass.)
 * `TFEConfig` read `timeout`, `verify_tls`, `max_retries` and `ca_bundle` once at
   import time, so environment variables set after importing `pytfe` were ignored.
   They now resolve per instantiation, matching `address` and `token`.

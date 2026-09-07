@@ -242,3 +242,53 @@ def test_workspace_not_found_is_still_a_not_found() -> None:
     assert isinstance(error, NotFound)
     assert isinstance(error, TFEError)
     assert error.hint and "find_workspaces" in error.hint
+
+
+# --------------------------------------------------------------------------
+# Cookie policy
+#
+# The SDK authenticates with a bearer token. A retained Set-Cookie session
+# silently overrides that auth and produces 401/404 on later requests, so no
+# cookie may survive any request - including the uploads that bypass request().
+# --------------------------------------------------------------------------
+
+
+def _cookie_client() -> tuple[TFEClient, httpx.Client]:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200, json={"data": []}, headers={"Set-Cookie": "_atlas_session=abc; Path=/"}
+        )
+
+    client = make_client()
+    client._transport._sync = httpx.Client(
+        transport=httpx.MockTransport(handler),
+        event_hooks={
+            "request": [client._transport._gate],
+            "response": [client._transport._forget_cookies],
+        },
+    )
+    return client, client._transport._sync
+
+
+def test_cookies_are_dropped_after_a_normal_request() -> None:
+    client, sync = _cookie_client()
+    try:
+        client._transport.request("GET", "/api/v2/organizations")
+        assert dict(sync.cookies) == {}
+    finally:
+        client.close()
+
+
+def test_cookies_are_dropped_after_a_bypass_upload() -> None:
+    """configuration_version/registry uploads call _sync.put directly.
+
+    A custom jar cannot cover this: httpx's Client.cookies setter rewraps
+    whatever it is given in a plain Cookies, so a no-store subclass is silently
+    discarded. The response hook is what actually holds.
+    """
+    client, sync = _cookie_client()
+    try:
+        sync.put("https://archivist.terraform.io/v1/object/abc", content=b"x")
+        assert dict(sync.cookies) == {}
+    finally:
+        client.close()

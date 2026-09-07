@@ -30,19 +30,6 @@ _RETRY_STATUSES = {429, 502, 503, 504}
 ABSOLUTE_URL_RE = re.compile(r"^https?://", re.I)
 
 
-class _NoStoreCookies(httpx.Cookies):
-    """A cookie jar that never retains anything.
-
-    This SDK authenticates with a bearer token, never cookies. Some endpoints
-    (notably ``/api/meta/ip-ranges``) return a session cookie which, if kept,
-    silently overrides bearer auth and produces 401/404 on later requests.
-    Refusing at the jar covers the upload paths that bypass ``request()``.
-    """
-
-    def extract_cookies(self, response: httpx.Response) -> None:
-        return None
-
-
 #: Actionable next step per HTTP status, surfaced as ``TFEError.hint``.
 def _hint_for(status: int, errors: list[dict | str]) -> str | None:
     if status == 401:
@@ -137,12 +124,25 @@ class HTTPTransport:
             timeout=timeout,
             verify=ca_bundle or verify_tls,
             proxy=proxies,
-            event_hooks={"request": [self._gate]},
+            event_hooks={"request": [self._gate], "response": [self._forget_cookies]},
         )
-        # A Set-Cookie from any endpoint would otherwise override bearer auth on
-        # later requests. request() clears the jar per response, but the two
-        # bypass PUTs above do not, so refuse cookies at the jar instead.
-        self._sync.cookies = _NoStoreCookies()
+
+    def _forget_cookies(self, response: httpx.Response) -> None:
+        """Drop any cookie the server tried to set.
+
+        This SDK authenticates with a bearer token, never cookies. Some
+        endpoints (notably ``/api/meta/ip-ranges``) return a Set-Cookie session
+        which, if retained, silently overrides bearer auth and produces 401/404
+        on later requests.
+
+        It has to be a response hook rather than a custom jar: httpx's
+        ``Client.cookies`` setter rewraps whatever it is given in a plain
+        ``Cookies``, so a subclass that refuses to store is silently discarded.
+        The hook runs after httpx has extracted cookies, and unlike the clear in
+        :meth:`request` it also covers the uploads that bypass it.
+        """
+        if self._sync.cookies:
+            self._sync.cookies.clear()
 
     def _gate(self, request: httpx.Request) -> None:
         """Enforce read-only and run the caller's ``before_request`` hook.
