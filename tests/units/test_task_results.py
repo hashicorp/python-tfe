@@ -1,3 +1,5 @@
+# Copyright IBM Corp. 2025, 2026
+
 from unittest.mock import Mock
 
 import pytest

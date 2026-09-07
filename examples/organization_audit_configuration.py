@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright IBM Corp. 2025, 2026
+
 """Organization audit configuration operations example.
 
 Demonstrates:

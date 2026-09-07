@@ -1,3 +1,5 @@
+# Copyright IBM Corp. 2025, 2026
+
 import os
 
 from pytfe import TFEClient

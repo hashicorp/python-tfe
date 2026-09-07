@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Copyright IBM Corp. 2025, 2026
+
 """Team-workspace access example.
 
 Demonstrates the new ``client.team_workspace_accesses`` resource (the

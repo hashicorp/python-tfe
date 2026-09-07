@@ -1,3 +1,5 @@
+# Copyright IBM Corp. 2025, 2026
+
 """Example usage of the Users API.
 
 This example demonstrates how to read a user by ID using the Python TFE SDK.

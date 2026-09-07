@@ -1,3 +1,5 @@
+# Copyright IBM Corp. 2025, 2026
+
 from __future__ import annotations
 
 from typing import Any
