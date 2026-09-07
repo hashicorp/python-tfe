@@ -1,31 +1,68 @@
 # Copyright IBM Corp. 2025, 2026
 # SPDX-License-Identifier: MPL-2.0
 
-"""Stack workflows.
+"""Deploy, inspect and tear down HCP Terraform Stacks.
 
-Stacks change the shape of the loop, so these are not the workspace workflows
-with different nouns. A workspace is one configuration, one run, one plan, one
-apply. A stack is one configuration fanning out to N deployments, grouped into
-deployment groups, each deployment getting its own run, its own plan and its own
-approval - and ``.tfdeploy.hcl`` orchestration rules may auto-approve some of
-them. So every result here is a **matrix keyed by deployment name**, every gate
-is per deployment, and the verb is *approve*, not *apply*.
+Use these instead of driving ``client.stack_*`` by hand: one stack deployment
+spans five API levels (configuration, deployment group, deployment run, step,
+diagnostic) with no status filter below the stack, so hand-rolling the walk takes
+roughly thirty requests and four separate status vocabularies.
 
-Names follow the ``terraform stacks`` CLI where one exists, so a caller or an
-agent that knows the CLI recognises the workflow.
+Deploy a stack and stop for approval::
 
-Two limits of the current API surface shape what is here:
+    from pytfe import TFEClient
+    from pytfe.workflows import approve_stack_plans, stack_fetch_and_run
 
-* **There is no manual configuration upload.**
-  ``StackConfigurationSource.MANUAL`` is the default but unreachable - no upload
-  method, no upload-URL field - so there is no ``stack_run_from_directory``.
-  Everything below drives the VCS ``FETCH`` path, which is the stable one.
-* **A plan's blast radius is not readable.** No plan JSON, no counters, no
-  policy check exists at any stack level; the plan description is an artifact
-  whose schema this SDK does not model. So the gate cannot compute
-  ``is_destructive`` the way the run-side gate does. These workflows report the
-  step that holds each plan and let ``confirmed``/``confirm`` be the whole gate,
-  rather than inventing a destructiveness signal that is not there.
+    with TFEClient() as tfe:
+        result = stack_fetch_and_run(tfe, "st-abc")
+
+        if result.phase == "awaiting_approval":
+            for name, d in result.deployments.items():
+                print(name, d.status, "GATED" if d.awaiting_approval else "")
+            # ...after a human decides:
+            approve_stack_plans(tfe, configuration_id=result.configuration_id,
+                                confirmed=True)
+
+Check what is waiting on you, across every deployment::
+
+    status = stack_status(tfe, "st-abc")
+    status.health                                    # 'awaiting_approval'
+    [d.deployment for d in status.deployments.values() if d.awaiting_approval]
+
+Results are a matrix, not a single status
+-----------------------------------------
+A stack has no one plan and no one status: a configuration fans out to N
+deployments, each with its own run, plan and approval. So ``result.deployments``
+is a dict keyed by deployment name (``"dev"``, ``"production"``), and both
+:class:`~pytfe.workflows.models.StackRunResult` and
+:class:`~pytfe.workflows.models.StackStatus` carry one. Branch on
+``result.phase`` for the overall outcome, then read the matrix for detail.
+``.awaiting`` and ``.failed`` are shortcuts over it.
+
+What to expect when building on this
+------------------------------------
+* **Approval is per deployment, and the verb is approve, not apply.** Some
+  deployments may be auto-approved by ``.tfdeploy.hcl`` orchestration rules and
+  never appear at the gate.
+* **Approving clears a whole deployment group.** A run that reaches the gate
+  between the enumeration and the approval is approved too, so
+  :func:`approve_stack_plans` reports ``enumerated_at`` and re-reads each run to
+  say what actually cleared - including partial approval, when the approver
+  lacks permission on every plan in the group.
+* **The stack must be VCS-backed.** These workflows fetch the configuration from
+  the connected repository; the SDK exposes no way to upload one from a local
+  directory, so there is no ``stack_run_from_directory``.
+* **You decide whether a plan is safe to approve.** Unlike a workspace run,
+  nothing on the Stacks API reports how destructive a plan is. Pass a
+  ``confirm`` callback to inspect the matrix and decide, or fetch the plan
+  yourself with ``download_artifact`` using the ``plan_description_step_id`` on
+  each deployment.
+* **Waiting takes a stopping point.** ``until="plans_ready"`` returns when every
+  deployment is gated or finished - the moment a human is needed - while
+  ``until="completed"`` waits for the whole deployment to finish.
+
+Function names mirror the ``terraform stacks`` CLI where one exists, so the same
+vocabulary works in a playbook, a script and a prompt.
 """
 
 from __future__ import annotations
@@ -702,10 +739,12 @@ def diagnose_stack_configuration(
       failed. Diagnostics hang off the step.
 
     Note:
-        Debug-log artifacts are not downloaded. They are credential-bearing and
-        this SDK has no validated redaction path for them, so the owning step id
-        is reported in ``debug_log_step_ids`` and the caller fetches the bytes
-        deliberately.
+        Two things are reported rather than fetched, both deliberately. Debug-log
+        artifacts can carry credentials, so ``debug_log_step_ids`` gives you the
+        step to pass to ``download_artifact``. And prepare-time diagnostics are
+        not reachable through this SDK at all - the relationship is a bare
+        related link with no list method behind it - so ``prepare_log_url`` is
+        the usable path to a prepare failure's detail.
 
     Args:
         client: The client to read through.
@@ -746,11 +785,16 @@ def diagnose_stack_configuration(
                 result.diagnostics.append(_diagnostic_row(diagnostic))
             except TFEError as exc:
                 result.warnings.append(f"diagnostic {ref} unreadable: {exc}")
+        result.prepare_log_url = (
+            getattr(configuration, "preparing_event_stream_url", None) or None
+        )
         if not result.diagnostics:
             result.warnings.append(
-                "the configuration reports no readable diagnostics; the "
-                "preparing_event_stream_url on the configuration carries the "
-                "prepare log"
+                "prepare-time diagnostics are not reachable through this SDK: "
+                "the configuration's stack-diagnostics relationship carries "
+                "only a related link, and client.stack_diagnostics exposes "
+                "read(id)/acknowledge(id) but no list-by-configuration. Read "
+                "prepare_log_url for the failure detail."
             )
         result.suggestion = _suggest(result.diagnostics)
         return result

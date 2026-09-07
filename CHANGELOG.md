@@ -140,6 +140,13 @@
   * `approve_stack_plans` re-reads each run after approving, because
     `approve_all_plans` returns no body, and reports **partial** approval - an
     approver without permission on every plan in a group clears only some.
+  * `diagnose_stack_configuration` reports `prepare_log_url` for a
+    prepare-time failure. Verified against the live API: a configuration's
+    `stack-diagnostics` relationship carries only a related link with no `data`
+    array, and `client.stack_diagnostics` exposes `read`/`acknowledge` but no
+    list-by-configuration, so those diagnostics cannot be fetched through this
+    SDK at all. The prepare log is the usable path, and the result now hands it
+    to the caller instead of an empty list.
 
 ### Runs without a local directory
 

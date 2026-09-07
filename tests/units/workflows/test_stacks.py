@@ -504,3 +504,27 @@ def test_steps_unavailable_does_not_break_the_matrix(client: Any) -> None:
     client.stack_deployment_steps.list.side_effect = TFEError("forbidden")
     result = stack_status(client, "st-1")
     assert "dev" in result.deployments
+
+
+def test_prepare_failure_surfaces_the_log_url(client: Any) -> None:
+    """Prepare-time diagnostics are unreachable through this SDK.
+
+    Verified live: the configuration's stack-diagnostics relationship carries
+    only {"links": {"related": ...}} with no data array, and
+    client.stack_diagnostics has read/acknowledge but no list-by-configuration.
+    So the workflow must hand the caller the prepare log instead of an empty
+    diagnostics list.
+    """
+    client.stacks.read.return_value = make_stack()
+    client.stack_configurations.read.return_value = StackConfiguration.model_validate(
+        {
+            "id": "sc-1",
+            "status": "failed",
+            "preparing-event-stream-url": "https://archivist.terraform.io/v1/object/abc",
+        }
+    )
+    result = diagnose_stack_configuration(client, "sc-1")
+    assert result.stage == "prepare"
+    assert result.prepare_log_url == "https://archivist.terraform.io/v1/object/abc"
+    assert any("not reachable through this SDK" in w for w in result.warnings)
+    assert result.summary()["prepare_log_url"]

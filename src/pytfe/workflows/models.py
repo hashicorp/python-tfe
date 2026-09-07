@@ -1375,10 +1375,19 @@ class StackFailure(WorkflowResult):
     failed_deployments: list[str] = Field(default_factory=list)
     blocked_deployments: list[str] = Field(default_factory=list)
     debug_log_step_ids: dict[str, str] = Field(default_factory=dict)
-    """Deployment -> step id whose debug-log artifact a caller can download.
+    """Deployment -> step id whose debug-log artifact you can download.
 
-    The bytes are not fetched: they are credential-bearing and this SDK has no
-    validated redaction path for them.
+    Fetch with ``client.stack_deployment_steps.download_artifact(step_id, ...)``.
+    The bytes are not fetched for you: they can carry credentials, and this SDK
+    has no validated redaction path for them.
+    """
+    prepare_log_url: str | None = None
+    """Where to read the prepare log when a configuration failed to prepare.
+
+    Prepare-time diagnostics are not reachable through this SDK: the
+    configuration's ``stack-diagnostics`` relationship carries only a related
+    link, and there is no list-by-configuration method to follow it. This URL is
+    the usable path to the failure detail.
     """
     suggestion: str | None = None
 
@@ -1395,6 +1404,7 @@ class StackFailure(WorkflowResult):
                 "first_error": (
                     self.diagnostics[0].summary if self.diagnostics else None
                 ),
+                "prepare_log_url": self.prepare_log_url,
                 "suggestion": self.suggestion,
             }
         )

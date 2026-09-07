@@ -1,30 +1,40 @@
 # Copyright IBM Corp. 2025, 2026
 # SPDX-License-Identifier: MPL-2.0
 
-"""Status classification for the four levels of a stack deployment.
+"""Ask what a stack status means, without hard-coding status strings.
 
-A workspace run has one status vocabulary. A stack has four - configuration,
-deployment group, deployment run, deployment step - and none of them ships a way
-to ask whether a value is final. That is the same gap :mod:`pytfe.workflows.status`
-closes for runs, four times over.
+A stack deployment reports status at four levels - configuration, deployment
+group, deployment run, deployment step - each with its own vocabulary and none
+with a way to ask whether a value is final. Use these predicates in your own
+polling, dashboards and alerting rather than writing the string sets yourself::
 
-Two properties matter more here than on the run side:
+    from pytfe.workflows import run_is_awaiting_approval, run_phase, StackPhase
 
-* **The operator gate is a status, not an action.** A deployment run parked in
-  ``pre-deploying-pending-operator`` or ``deploying-pending-operator``, and a step
-  in ``pending-operator``, will never move on their own. A waiter that treats
-  them as in-progress spins until timeout on work that is waiting for a human.
-* **Every name here is level-prefixed.** ``pytfe.workflows`` re-exports into one
-  flat namespace, so an unprefixed ``TERMINAL`` would shadow the run-side set and
-  a run waiter would silently start testing against stack statuses.
+    for run in tfe.stack_deployment_runs.list(group_id):
+        if run_is_awaiting_approval(run.status):
+            notify_approver(run.deployment)
+        elif run_phase(run.status) is StackPhase.TERMINAL:
+            record_outcome(run.deployment, run.status)
 
-The module is ``stack_phases`` rather than ``stack_status`` so it does not
-collide with the :func:`~pytfe.workflows.stacks.stack_status` workflow, which
-would otherwise shadow it in the flat ``pytfe.workflows`` namespace.
+Every status falls into exactly one :class:`StackPhase`:
 
-Each partition is total: ``tests/units/workflows/test_stacks.py`` asserts
-every member of every enum lands in exactly one bucket, so a new status added
-upstream fails CI rather than being silently misread.
+``TERMINAL``
+    Finished. Nothing more happens without new work.
+``AWAITING_APPROVAL``
+    Parked for an operator. **This will never advance on its own** - a poller
+    that treats it as in-progress waits forever on work that needs a human.
+    Deployment runs report it as ``pre-deploying-pending-operator`` or
+    ``deploying-pending-operator``; steps report ``pending-operator``.
+``IN_PROGRESS``
+    Still working, including a step ``blocked`` behind a predecessor, and any
+    status this SDK does not recognise - so a newly added upstream status keeps
+    your loop polling rather than being read as finished.
+
+Names are prefixed by level (``CONFIG_``, ``GROUP_``, ``RUN_``, ``STEP_``)
+because ``pytfe.workflows`` exports everything into one namespace alongside the
+workspace-run classification in :mod:`pytfe.workflows.status`. Use the frozensets
+directly (``RUN_TERMINAL``, ``STEP_FAILED``, …) when you want set membership
+instead of a predicate.
 """
 
 from __future__ import annotations
