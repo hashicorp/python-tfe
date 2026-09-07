@@ -310,6 +310,13 @@
     "read": [
       "stack_configuration_id",
       "options"
+    ],
+    "upload": [
+      "stack_configuration_id",
+      "archive"
+    ],
+    "upload_url": [
+      "stack_configuration_id"
     ]
   },
   "stack_deployment_groups": {
@@ -342,6 +349,10 @@
     ]
   },
   "stack_diagnostics": {
+    "list_for_configuration": [
+      "stack_configuration_id",
+      "options"
+    ],
     "read": [
       "stack_diagnostic_id"
     ]

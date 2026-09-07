@@ -145,11 +145,11 @@ catches sub-resources that a covered namespace does not reach.
 
 Coverage against the [go-tfe OpenAPI spec](https://github.com/hashicorp/go-tfe/blob/main/v2/openapi/spec.json)
 (`HCP Terraform/Terraform Enterprise API v2-Beta`, revision `0b4885e7`): pytfe implements
-**194 of 300** documented path shapes.
+**196 of 300** documented path shapes.
 
 | Area | Missing endpoints | Notes |
 |---|---|---|
-| **stacks** (10) | `GET /stack-approvals/{id}`<br>`GET /stack-configurations/{id}/stack-deployment-runs`<br>`GET /stack-configurations/{id}/stack-diagnostics`<br>`GET /stack-configurations/{id}/stack-published-outputs`<br>`GET /stack-configurations/{id}/upload-url`<br>`POST /stack-deployment-steps/{id}/fail`<br>`GET /stacks/{id}/latest-output-summary`<br>`GET /stacks/{id}/stack-deployments/{id}/stack-deployment-runs`<br>`GET /stacks/{id}/stack-output-consumers/downstream`<br>`GET /stacks/{id}/stack-output-consumers/upstream` | Manual stack configuration upload (`upload-url`) is here — adding it would unblock a directory-based stack run. |
+| **stacks** (8) | `GET /stack-approvals/{id}`<br>`GET /stack-configurations/{id}/stack-deployment-runs`<br>`GET /stack-configurations/{id}/stack-published-outputs`<br>`POST /stack-deployment-steps/{id}/fail`<br>`GET /stacks/{id}/latest-output-summary`<br>`GET /stacks/{id}/stack-deployments/{id}/stack-deployment-runs`<br>`GET /stacks/{id}/stack-output-consumers/downstream`<br>`GET /stacks/{id}/stack-output-consumers/upstream` | The remaining gaps are read-side conveniences: output consumers, approvals and summaries. |
 | **github-app-installations** (7) | `GET /admin/github-app-installations`<br>`POST /admin/github-app-installations/refresh`<br>`GET /github-app-installations`<br>`GET /github-app-installations/{id}/repos`<br>`GET /organizations/{id}/github-app-installations`<br>`POST /organizations/{id}/github-app-installations/{id}/link-account`<br>`GET /organizations/{id}/github-app-installations/{id}/repos` | Partially covered; the repo/link-account sub-resources are missing. |
 | **provider-sets** (7) | `DELETE,GET,POST /organizations/{id}/provider-sets`<br>`GET /organizations/{id}/provider-sets/{id}`<br>`GET /projects/{id}/provider-sets`<br>`DELETE,GET,PATCH /provider-sets/{id}`<br>`DELETE,POST /provider-sets/{id}/relationships/projects`<br>`DELETE,POST /provider-sets/{id}/relationships/workspaces`<br>`GET /workspaces/{id}/provider-sets` | Whole feature absent: no `client.provider_sets`. |
 | **configuration-versions** (5) | `POST /configuration-versions/{id}/actions/permanently_delete_backing_data`<br>`POST /configuration-versions/{id}/actions/restore_backing_data`<br>`POST /configuration-versions/{id}/actions/soft_delete_backing_data`<br>`GET /runs/{id}/configuration-version`<br>`GET /runs/{id}/configuration-version/download` | — |
@@ -197,15 +197,9 @@ plan's JSON schema at `/runs/{id}/plan/json-schema` rather than
 rather than `/workspaces/{id}/relationships/tag-bindings`. Check the resource
 module before concluding a capability is absent.
 
-Three of these are load-bearing for the workflow layer, and
-[`docs/workflows/README.md`](workflows/README.md) documents the consequences:
+One of these is load-bearing for the workflow layer, and
+[`docs/workflows/README.md`](workflows/README.md) documents the consequence:
 
-- `GET /stack-configurations/{id}/upload-url` — without it there is no way to
-  upload a stack configuration from a local directory, which is why
-  `pytfe.workflows` has no `stack_run_from_directory`.
-- `GET /stack-configurations/{id}/stack-diagnostics` — prepare-time stack
-  diagnostics are unreachable, so `diagnose_stack_configuration` returns the
-  prepare log URL instead.
 - `GET,POST /users/{id}/authentication-tokens` — user API tokens cannot be
   enumerated, which `token_audit` reports as a warning.
 

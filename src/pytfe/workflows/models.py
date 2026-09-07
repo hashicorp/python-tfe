@@ -1349,8 +1349,25 @@ class StackApprovalResult(WorkflowResult):
         return f"{self.phase}: {len(self.approved)}/{len(self.approvals)} approved"
 
 
+class StackDiagnosticError(BaseModel):
+    """One error inside a diagnostic, with the source location that caused it."""
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    severity: str | None = None
+    summary: str | None = None
+    detail: str | None = None
+    filename: str | None = None
+    line: int | None = None
+
+
 class StackDiagnosticRow(BaseModel):
-    """One diagnostic emitted by a configuration or a deployment step."""
+    """One diagnostic emitted by a configuration or a deployment step.
+
+    ``summary`` and ``detail`` are a rollup ("HCP Terraform reported 2 errors").
+    The errors themselves, each with the file and line that caused it, are in
+    ``errors`` - that is what to show a user.
+    """
 
     model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
 
@@ -1358,6 +1375,7 @@ class StackDiagnosticRow(BaseModel):
     severity: str | None = None
     summary: str | None = None
     detail: str | None = None
+    errors: list[StackDiagnosticError] = Field(default_factory=list)
     acknowledged: bool = False
     deployment: str | None = None
     step_id: str | None = None

@@ -10,6 +10,7 @@ from typing import Any
 from pytfe.models.configuration_version import IngressAttributes
 
 from .._jsonapi import attach_jsonapi, parse_relationships
+from ..errors import InvalidStackConfigurationIDError, NotFound
 from ..models.stack import Stack
 from ..models.stack_configuration import (
     StackConfiguration,
@@ -18,7 +19,17 @@ from ..models.stack_configuration import (
     StackConfigurationReadOptions,
     StackConfigurationSource,
 )
+from ..utils import valid_string_id
 from ._base import _Service
+
+#: Both reasons a configuration has no upload URL. HCP returns a bare 404 for
+#: each, so the difference has to be explained rather than reported.
+_NO_UPLOAD_URL_HINT = (
+    "Only a configuration created with source=MANUAL awaits an upload, and only "
+    "until its source arrives: a VCS-sourced configuration never has an upload "
+    "URL, and a manual one stops having one once it has been uploaded. Create a "
+    "new configuration to upload again."
+)
 
 
 class StackConfigurations(_Service):
@@ -134,6 +145,123 @@ class StackConfigurations(_Service):
         payload = r.json()
         data = payload.get("data", {})
         return self._stack_configuration_from(data, payload.get("included"))
+
+    def upload_url(self, stack_configuration_id: str) -> str:
+        """Return the URL to upload a stack configuration's source.
+
+        A configuration created with :attr:`StackConfigurationSource.MANUAL`
+        waits for its source to be uploaded. The create response does not carry
+        the upload location, so it is fetched separately.
+
+        Args:
+            stack_configuration_id: The configuration ID (e.g. ``"stc-abc123"``).
+
+        Returns:
+            The presigned upload URL.
+
+        Raises:
+            InvalidStackConfigurationIDError: If the ID is empty or malformed.
+            NotFound: If the configuration has no upload pending - because its
+                source came from VCS, or because it has already been uploaded.
+                The exception's ``hint`` says which.
+            TFEError: If the API request fails.
+
+        Example:
+            >>> configuration = client.stack_configurations.create("st-xyz789")
+            >>> client.stack_configurations.upload_url(configuration.id)
+            'https://archivist.terraform.io/v1/object/...'
+        """
+        if not valid_string_id(stack_configuration_id):
+            raise InvalidStackConfigurationIDError()
+
+        path = f"/api/v2/stack-configurations/{stack_configuration_id}/upload-url"
+        try:
+            payload = self.t.request("GET", path).json()
+        except NotFound as exc:
+            # The API answers 404 rather than an empty body, and does so in two
+            # cases worth telling apart from a mistyped ID.
+            raise NotFound(
+                f"stack configuration {stack_configuration_id} has no upload URL",
+                status=404,
+                hint=_NO_UPLOAD_URL_HINT,
+            ) from exc
+        # This endpoint does not return a JSON:API resource object: `data` is a
+        # bare object carrying only `source-upload-url`.
+        data = payload.get("data") or {}
+        url = data.get("source-upload-url")
+        if not isinstance(url, str) or not url:
+            raise NotFound(
+                f"stack configuration {stack_configuration_id} has no upload URL",
+                status=404,
+                hint=_NO_UPLOAD_URL_HINT,
+            )
+        return url
+
+    def upload(self, stack_configuration_id: str, archive: bytes) -> None:
+        """Upload a packaged stack configuration.
+
+        Resolves the upload URL and PUTs the archive to it.
+
+        Args:
+            stack_configuration_id: The configuration ID (e.g. ``"stc-abc123"``).
+            archive: The ``.tar.gz`` bytes. Build one with
+                :func:`pytfe.workflows.package_directory`, which applies
+                Terraform's own exclusions.
+
+        Returns:
+            None.
+
+        Raises:
+            InvalidStackConfigurationIDError: If the ID is empty or malformed.
+            ValueError: If ``archive`` is empty.
+            NotFound: If the configuration has no upload pending.
+            TFEError: If the upload fails.
+
+        Example:
+            >>> from pytfe.workflows import package_directory
+            >>> configuration = client.stack_configurations.create("st-xyz789")
+            >>> client.stack_configurations.upload(
+            ...     configuration.id, package_directory("./stack")
+            ... )
+        """
+        if not archive:
+            raise ValueError("archive must not be empty")
+        url = self.upload_url(stack_configuration_id)
+        self.upload_to(url, archive)
+
+    def upload_to(self, upload_url: str, archive: bytes) -> None:
+        """PUT a packaged stack configuration to an already-resolved URL.
+
+        Use :meth:`upload` unless you resolved the URL yourself.
+
+        Args:
+            upload_url: The presigned URL from :meth:`upload_url`.
+            archive: The ``.tar.gz`` bytes.
+
+        Returns:
+            None.
+
+        Raises:
+            ValueError: If ``archive`` is empty.
+            NotFound: If the upload URL has expired.
+            AuthError: If the token may not upload to this URL.
+            TFEError: If the upload fails.
+
+        Example:
+            >>> url = client.stack_configurations.upload_url("stc-abc123")
+            >>> client.stack_configurations.upload_to(url, archive)
+        """
+        if not archive:
+            raise ValueError("archive must not be empty")
+        # Through the transport, so the upload inherits retries, typed error
+        # translation and the read-only gate. The bearer token is required:
+        # these URLs point at HashiCorp's Archivist.
+        self.t.request(
+            "PUT",
+            upload_url,
+            data=archive,
+            headers={"Content-Type": "application/octet-stream"},
+        )
 
     def _stack_configuration_from(
         self,

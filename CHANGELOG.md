@@ -87,6 +87,30 @@
   sequence, and `ProviderPlatformSpec.from_release_dir()` to build the platform
   list from a goreleaser-style output directory.
 
+### New: manual stack configuration upload
+
+* Added `client.stack_configurations.upload_url()`, `.upload()` and
+  `.upload_to()`, the endpoint a stack configuration created with
+  `source=manual` needs in order to receive its source. Unlike every other
+  JSON:API response in the SDK, `GET /stack-configurations/{id}/upload-url`
+  returns a bare object carrying only `source-upload-url` - no type, id or
+  attributes - so it is parsed directly rather than through
+  `parse_relationships`.
+  * The upload goes through `HTTPTransport.request`, so it inherits retries,
+    typed error translation and the read-only request gate. The bearer token is
+    sent deliberately: these URLs point at Archivist.
+  * `upload_url` is classified as a read by `pytfe.agent.classify()` despite
+    its verb, because it is a GET that a read-only client is allowed to make.
+  * The API answers a bare 404 both when a configuration was sourced from VCS
+    and when its upload URL has already been spent, so the error carries a hint
+    naming both. Verified live: an upload URL is single-use.
+* Added `client.stack_diagnostics.list_for_configuration()`. The diagnostics
+  explaining why a configuration failed to *prepare* live on the configuration,
+  not on any deployment step - a configuration that fails to prepare has no
+  runs. This endpoint appears in the configuration's `stack-diagnostics`
+  relationship as a related link with no `data` array; it was previously
+  reported as unreachable, but the link resolves and returns them.
+
 ### Secrets in state and plans
 
 * `download_state` and `state_inventory` now **redact by default**. Raw state
@@ -118,16 +142,16 @@
 
 ### New: Stacks workflows
 
-* Added seven Stacks workflows and a four-level status classification. Stacks
+* Added eight Stacks workflows and a four-level status classification. Stacks
   change the shape of the loop, so these are not the workspace workflows with
   different nouns: a workspace is one configuration, one run, one plan, one
   apply, while a stack is one configuration fanning out to N deployments, each
   with its own run, plan and approval. Every result is therefore a matrix keyed
   by deployment name, every gate is per deployment, and the verb is *approve*.
   * `stack_status`, `wait_for_stack_configuration`, `stack_fetch_and_run`,
-    `speculative_stack_plan`, `approve_stack_plans`,
-    `diagnose_stack_configuration`, `teardown_stack`. Names follow the
-    `terraform stacks` CLI where one exists.
+    `stack_run_from_directory`, `speculative_stack_plan`,
+    `approve_stack_plans`, `diagnose_stack_configuration`, `teardown_stack`.
+    Names follow the `terraform stacks` CLI where one exists.
   * `pytfe.workflows.stack_phases` partitions all four status vocabularies -
     configuration, deployment group, deployment run, deployment step - which
     none of them shipped a way to do. The operator gates
@@ -135,18 +159,29 @@
     in-progress, so a waiter stops for the human instead of spinning to timeout.
     Names are level-prefixed so they cannot shadow the run-side classification
     in the flat `pytfe.workflows` namespace.
+  * `stack_run_from_directory` uploads a configuration from a local directory,
+    so a stack with no VCS repository can be run from a working copy, a CI
+    checkout or generated HCL. The directory is packaged with Terraform's own
+    exclusions and must carry a `.terraform-version` and a
+    `.terraform.lock.hcl` at its root; without them the configuration fails at
+    prepare, and `diagnose_stack_configuration` names the missing file.
+  * A speculative stack configuration reports `phase="planned"`, not
+    `"completed"`. Its deployment runs reach `succeeded` without applying
+    anything, so the terminal status alone would claim a deployment that never
+    happened.
   * `teardown_stack` drives destruction through the `destroy_all` configuration
     option rather than by editing `.tfdeploy.hcl`.
   * `approve_stack_plans` re-reads each run after approving, because
     `approve_all_plans` returns no body, and reports **partial** approval - an
     approver without permission on every plan in a group clears only some.
-  * `diagnose_stack_configuration` reports `prepare_log_url` for a
-    prepare-time failure. Verified against the live API: a configuration's
-    `stack-diagnostics` relationship carries only a related link with no `data`
-    array, and `client.stack_diagnostics` exposes `read`/`acknowledge` but no
-    list-by-configuration, so those diagnostics cannot be fetched through this
-    SDK at all. The prepare log is the usable path, and the result now hands it
-    to the caller instead of an empty list.
+  * `diagnose_stack_configuration` separates a prepare failure, where the
+    configuration itself is invalid and no deployment runs exist, from a plan
+    or apply failure on a deployment step. It lists the configuration's own
+    diagnostics for the former, and falls back to `prepare_log_url` when a
+    failure reports none. Each diagnostic's `summary` is only a rollup
+    ("reported 2 errors"), so `StackDiagnosticRow.errors` carries the
+    individual errors with the file and line that caused each - which is what
+    a caller needs in order to fix the configuration.
 
 ### Runs without a local directory
 

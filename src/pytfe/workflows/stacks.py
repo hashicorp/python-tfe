@@ -49,9 +49,10 @@ What to expect when building on this
   :func:`approve_stack_plans` reports ``enumerated_at`` and re-reads each run to
   say what actually cleared - including partial approval, when the approver
   lacks permission on every plan in the group.
-* **The stack must be VCS-backed.** These workflows fetch the configuration from
-  the connected repository; the SDK exposes no way to upload one from a local
-  directory, so there is no ``stack_run_from_directory``.
+* **Two ways in, and they pick the workflow.** ``stack_fetch_and_run`` fetches
+  the configuration from the stack's connected repository and needs a VCS-backed
+  stack; ``stack_run_from_directory`` uploads one from a local directory and
+  works with any stack. Everything after the source is identical.
 * **You decide whether a plan is safe to approve.** Unlike a workspace run,
   nothing on the Stacks API reports how destructive a plan is. Pass a
   ``confirm`` callback to inspect the matrix and decide, or fetch the plan
@@ -68,6 +69,7 @@ vocabulary works in a playbook, a script and a prompt.
 from __future__ import annotations
 
 import logging
+import os
 import time
 from collections.abc import Callable
 from datetime import datetime, timezone
@@ -79,11 +81,13 @@ from ..models.stack_configuration import (
     StackConfigurationCreateOptions,
     StackConfigurationSource,
 )
+from ._package import package_directory
 from ._poll import wait_until
 from .models import (
     StackApproval,
     StackApprovalResult,
     StackDeploymentState,
+    StackDiagnosticError,
     StackDiagnosticRow,
     StackFailure,
     StackRunPhase,
@@ -107,6 +111,7 @@ __all__ = [
     "wait_for_stack_configuration",
     "stack_status",
     "stack_fetch_and_run",
+    "stack_run_from_directory",
     "speculative_stack_plan",
     "approve_stack_plans",
     "diagnose_stack_configuration",
@@ -117,6 +122,12 @@ __all__ = [
 StackConfirm = Callable[[dict[str, StackDeploymentState]], bool]
 
 _SUGGESTIONS: tuple[tuple[str, str], ...] = (
+    (
+        ".terraform-version",
+        "The uploaded directory has no .terraform-version file. A stack "
+        "configuration must pin its Terraform version: add a .terraform-version "
+        "file containing a version such as 1.14.0 at the root of the directory.",
+    ),
     (
         "no such deployment",
         "A deployment named in selected_deployments is not declared in "
@@ -358,6 +369,124 @@ def _finish_phase(matrix: dict[str, StackDeploymentState]) -> StackRunPhase:
     return "planned"
 
 
+def _drive_configuration(
+    client: TFEClient,
+    stack_id: str,
+    configuration_id: str,
+    *,
+    started: float,
+    deployments: list[str] | None,
+    speculative: bool,
+    confirmed: bool,
+    confirm: StackConfirm | None,
+    allow_destroy: bool,
+    timeout: float,
+    on_status: Callable[[Any], None] | None,
+    _sleep: Callable[[float], None] | None,
+    _clock: Callable[[], float] | None,
+) -> StackRunResult:
+    """Drive an already-created configuration to a decision.
+
+    Shared by every workflow that creates a configuration, whatever the source:
+    wait for prepare, wait for the plans, build the matrix, then stop at the
+    approval gate unless the caller confirmed.
+    """
+    prepared = wait_for_stack_configuration(
+        client,
+        configuration_id,
+        until="prepared",
+        timeout=timeout,
+        on_status=on_status,
+        _sleep=_sleep,
+        _clock=_clock,
+    )
+    if not configuration_is_prepared(prepared.status):
+        return StackRunResult(
+            stack_id=stack_id,
+            configuration_id=configuration_id,
+            configuration_status=_value(prepared.status),
+            phase="prepare_failed",
+            ok=False,
+            speculative=speculative,
+            duration_s=time.monotonic() - started,
+            warnings=[
+                "configuration failed to prepare; call "
+                "diagnose_stack_configuration() for the diagnostics"
+            ],
+        )
+
+    settled = wait_for_stack_configuration(
+        client,
+        configuration_id,
+        until="plans_ready",
+        timeout=timeout,
+        on_status=on_status,
+        _sleep=_sleep,
+        _clock=_clock,
+    )
+    matrix = _matrix(client, configuration_id)
+
+    result = StackRunResult(
+        stack_id=stack_id,
+        configuration_id=configuration_id,
+        configuration_status=_value(settled.status),
+        phase=_finish_phase(matrix),
+        deployments=matrix,
+        speculative=speculative,
+        duration_s=time.monotonic() - started,
+    )
+    if result.phase == "errored":
+        result.ok = False
+
+    # A speculative configuration can never be approved, so stop here whatever
+    # the caller passed. Its runs reach a terminal status without applying
+    # anything, so "completed" would claim a deployment that never happened:
+    # report the plans as ready instead.
+    if speculative:
+        if result.phase in ("awaiting_approval", "completed"):
+            result.phase = "planned"
+        return result
+    if result.phase != "awaiting_approval":
+        return result
+
+    if confirm is not None and not confirm(matrix):
+        result.phase = "rejected"
+        return result
+    if confirm is None and not confirmed:
+        return result
+
+    approval = approve_stack_plans(
+        client,
+        configuration_id=configuration_id,
+        deployments=deployments,
+        confirmed=True,
+        allow_destroy=allow_destroy,
+    )
+    for name in approval.approved:
+        if name in result.deployments:
+            result.deployments[name].approved = True
+    result.warnings.extend(approval.warnings)
+
+    final = wait_for_stack_configuration(
+        client,
+        configuration_id,
+        until="completed",
+        timeout=timeout,
+        on_status=on_status,
+        _sleep=_sleep,
+        _clock=_clock,
+    )
+    result.configuration_status = _value(final.status)
+    result.deployments = _matrix(client, configuration_id)
+    for name in approval.approved:
+        if name in result.deployments:
+            result.deployments[name].approved = True
+    result.phase = _finish_phase(result.deployments)
+    result.ok = result.phase == "completed"
+    result.duration_s = time.monotonic() - started
+    return result
+
+
 def stack_fetch_and_run(
     client: TFEClient,
     stack_id: str,
@@ -430,8 +559,9 @@ def stack_fetch_and_run(
         raise WorkflowError(
             f"stack {stack_id} has no VCS repository attached",
             hint=(
-                "Only VCS-backed stacks can be run through this workflow: the "
-                "SDK exposes no manual configuration upload."
+                "Attach a repository to the stack, or call "
+                "stack_run_from_directory() to upload a configuration from a "
+                "local directory instead."
             ),
         )
 
@@ -449,96 +579,136 @@ def stack_fetch_and_run(
         "created stack configuration %s for stack %s", configuration_id, stack_id
     )
 
-    prepared = wait_for_stack_configuration(
+    return _drive_configuration(
         client,
+        stack_id,
         configuration_id,
-        until="prepared",
+        started=started,
+        deployments=deployments,
+        speculative=speculative,
+        confirmed=confirmed,
+        confirm=confirm,
+        allow_destroy=allow_destroy,
         timeout=timeout,
         on_status=on_status,
         _sleep=_sleep,
         _clock=_clock,
     )
-    if not configuration_is_prepared(prepared.status):
+
+
+def stack_run_from_directory(
+    client: TFEClient,
+    stack_id: str,
+    directory: str | os.PathLike[str],
+    *,
+    deployments: list[str] | None = None,
+    speculative: bool = False,
+    destroy_all: bool = False,
+    confirmed: bool = False,
+    confirm: StackConfirm | None = None,
+    allow_destroy: bool = False,
+    timeout: float = 3600,
+    on_status: Callable[[Any], None] | None = None,
+    _sleep: Callable[[float], None] | None = None,
+    _clock: Callable[[], float] | None = None,
+) -> StackRunResult:
+    """Upload a local stack configuration directory and drive it to a decision.
+
+    The stack analogue of :func:`~pytfe.workflows.run_from_directory`, and the
+    equivalent of ``terraform stacks configuration upload``. Use it to run a
+    stack from a working copy, a CI checkout or a generated configuration -
+    anywhere the source is on disk rather than in a connected repository.
+    :func:`stack_fetch_and_run` is the counterpart for a VCS-backed stack.
+
+    The directory is packaged with Terraform's own exclusions (``.git/``,
+    ``.terraform/`` and any ``.terraformignore``) and PUT to a presigned URL, so
+    what deploys is what Terraform itself would have sent. It should hold the
+    ``.tfcomponent.hcl`` and ``.tfdeploy.hcl`` at its root.
+
+    Like every workflow here, this stops at the approval gate: it uploads,
+    prepares and plans, but approves nothing unless ``confirmed=True`` or a
+    ``confirm`` callback says so.
+
+    Args:
+        client: The client to act through.
+        stack_id: The stack to run.
+        directory: The configuration directory to upload.
+        deployments: Restrict the run to these deployment names.
+        speculative: Plan only; the configuration can never be applied. Pair
+            with a pull request check, where nothing should be deployable.
+        destroy_all: Plan the destruction of every deployment. Requires
+            ``allow_destroy=True``.
+        confirmed: The caller asserts a human approved the plans.
+        confirm: Called with the deployment matrix; return True to approve.
+        allow_destroy: Permit a destroying configuration.
+        timeout: Seconds to wait for the whole loop.
+        on_status: Called with the configuration on every poll.
+
+    Returns:
+        A :class:`~pytfe.workflows.models.StackRunResult`. Branch on ``phase``
+        and read ``deployments`` for the per-deployment matrix.
+
+    Raises:
+        ValueError: If ``directory`` is not an existing directory.
+        WorkflowTimeout: If the configuration does not settle in time.
+        TFEError: If the upload or any API call fails.
+
+    Example:
+        >>> result = stack_run_from_directory(client, "st-abc", "./stack")
+        >>> result.phase
+        'awaiting_approval'
+        >>> approve_stack_plans(
+        ...     client, configuration_id=result.configuration_id, confirmed=True
+        ... )
+    """
+    started = time.monotonic()
+
+    if destroy_all and not allow_destroy:
         return StackRunResult(
             stack_id=stack_id,
-            configuration_id=configuration_id,
-            configuration_status=_value(prepared.status),
-            phase="prepare_failed",
+            phase="refused_destructive",
             ok=False,
-            speculative=speculative,
+            warnings=["destroy_all=True requires allow_destroy=True"],
             duration_s=time.monotonic() - started,
-            warnings=[
-                "configuration failed to prepare; call "
-                "diagnose_stack_configuration() for the diagnostics"
-            ],
         )
 
-    settled = wait_for_stack_configuration(
-        client,
+    # Package before creating anything: a bad directory should not leave an
+    # empty configuration waiting forever for a source that never arrives.
+    archive = package_directory(directory)
+
+    configuration = client.stack_configurations.create(
+        stack_id,
+        StackConfigurationCreateOptions(
+            speculative_enabled=speculative,
+            destroy_all=destroy_all,
+            selected_deployments=deployments,
+        ),
+        StackConfigurationSource.MANUAL,
+    )
+    configuration_id = configuration.id or ""
+    logger.info(
+        "created stack configuration %s for stack %s, uploading %d bytes",
         configuration_id,
-        until="plans_ready",
-        timeout=timeout,
-        on_status=on_status,
-        _sleep=_sleep,
-        _clock=_clock,
+        stack_id,
+        len(archive),
     )
-    matrix = _matrix(client, configuration_id)
+    client.stack_configurations.upload(configuration_id, archive)
 
-    result = StackRunResult(
-        stack_id=stack_id,
-        configuration_id=configuration_id,
-        configuration_status=_value(settled.status),
-        phase=_finish_phase(matrix),
-        deployments=matrix,
-        speculative=speculative,
-        duration_s=time.monotonic() - started,
-    )
-    if result.phase == "errored":
-        result.ok = False
-
-    # A speculative configuration can never be approved, so stop here whatever
-    # the caller passed.
-    if speculative or result.phase != "awaiting_approval":
-        if result.phase == "awaiting_approval":
-            result.phase = "planned"
-        return result
-
-    if confirm is not None and not confirm(matrix):
-        result.phase = "rejected"
-        return result
-    if confirm is None and not confirmed:
-        return result
-
-    approval = approve_stack_plans(
+    return _drive_configuration(
         client,
-        configuration_id=configuration_id,
+        stack_id,
+        configuration_id,
+        started=started,
         deployments=deployments,
-        confirmed=True,
+        speculative=speculative,
+        confirmed=confirmed,
+        confirm=confirm,
         allow_destroy=allow_destroy,
-    )
-    for name in approval.approved:
-        if name in result.deployments:
-            result.deployments[name].approved = True
-    result.warnings.extend(approval.warnings)
-
-    final = wait_for_stack_configuration(
-        client,
-        configuration_id,
-        until="completed",
         timeout=timeout,
         on_status=on_status,
         _sleep=_sleep,
         _clock=_clock,
     )
-    result.configuration_status = _value(final.status)
-    result.deployments = _matrix(client, configuration_id)
-    for name in approval.approved:
-        if name in result.deployments:
-            result.deployments[name].approved = True
-    result.phase = _finish_phase(result.deployments)
-    result.ok = result.phase == "completed"
-    result.duration_s = time.monotonic() - started
-    return result
 
 
 def speculative_stack_plan(
@@ -775,26 +945,22 @@ def diagnose_stack_configuration(
     if configuration.status in CONFIG_FAILED:
         result.stage = "prepare"
         result.ok = False
-        # Configuration diagnostics are reachable only as a raw relationship;
-        # read each by id.
-        for ref in _diagnostic_refs(configuration):
-            if len(result.diagnostics) >= max_diagnostics:
-                break
-            try:
-                diagnostic = client.stack_diagnostics.read(ref)
+        try:
+            for diagnostic in client.stack_diagnostics.list_for_configuration(
+                configuration_id
+            ):
+                if len(result.diagnostics) >= max_diagnostics:
+                    break
                 result.diagnostics.append(_diagnostic_row(diagnostic))
-            except TFEError as exc:
-                result.warnings.append(f"diagnostic {ref} unreadable: {exc}")
+        except TFEError as exc:
+            result.warnings.append(f"could not list prepare diagnostics: {exc}")
         result.prepare_log_url = (
             getattr(configuration, "preparing_event_stream_url", None) or None
         )
         if not result.diagnostics:
             result.warnings.append(
-                "prepare-time diagnostics are not reachable through this SDK: "
-                "the configuration's stack-diagnostics relationship carries "
-                "only a related link, and client.stack_diagnostics exposes "
-                "read(id)/acknowledge(id) but no list-by-configuration. Read "
-                "prepare_log_url for the failure detail."
+                "the configuration reported no diagnostics; read "
+                "prepare_log_url for the raw prepare event stream"
             )
         result.suggestion = _suggest(result.diagnostics)
         return result
@@ -845,37 +1011,54 @@ def diagnose_stack_configuration(
     return result
 
 
-def _diagnostic_refs(configuration: Any) -> list[str]:
-    """Ids from a configuration's raw stack-diagnostics relationship."""
-    try:
-        relationship = (configuration.relationships or {}).get(
-            "stack-diagnostics"
-        ) or {}
-    except (AttributeError, TypeError):
-        return []
-    data = relationship.get("data")
-    if isinstance(data, dict):
-        data = [data]
-    if not isinstance(data, list):
-        return []
-    return [
-        d["id"] for d in data if isinstance(d, dict) and isinstance(d.get("id"), str)
-    ]
-
-
 def _diagnostic_row(diagnostic: Any) -> StackDiagnosticRow:
     return StackDiagnosticRow(
         id=getattr(diagnostic, "id", None),
         severity=getattr(diagnostic, "severity", None),
         summary=getattr(diagnostic, "summary", None),
         detail=getattr(diagnostic, "detail", None),
+        errors=_diagnostic_errors(diagnostic),
         acknowledged=bool(getattr(diagnostic, "acknowledged", False)),
     )
 
 
+def _diagnostic_errors(diagnostic: Any) -> list[StackDiagnosticError]:
+    """Flatten a diagnostic's nested ``diags`` into the errors it reports.
+
+    The top-level summary only counts them; each entry here names the file and
+    line, which is what a caller needs to fix the configuration.
+    """
+    rows: list[StackDiagnosticError] = []
+    for diag in getattr(diagnostic, "diags", None) or []:
+        if not isinstance(diag, dict):
+            continue
+        location = diag.get("range")
+        location = location if isinstance(location, dict) else {}
+        start = location.get("start")
+        start = start if isinstance(start, dict) else {}
+        rows.append(
+            StackDiagnosticError(
+                severity=diag.get("severity"),
+                summary=diag.get("summary"),
+                detail=diag.get("detail"),
+                filename=location.get("filename"),
+                line=start.get("line"),
+            )
+        )
+    return rows
+
+
 def _suggest(diagnostics: list[StackDiagnosticRow]) -> str | None:
+    # The nested errors carry the real message; the rollup only counts them.
     haystack = " ".join(
-        f"{d.summary or ''} {d.detail or ''}" for d in diagnostics
+        " ".join(
+            [d.summary or "", d.detail or ""]
+            + [
+                f"{e.summary or ''} {e.detail or ''} {e.filename or ''}"
+                for e in d.errors
+            ]
+        )
+        for d in diagnostics
     ).lower()
     for needle, advice in _SUGGESTIONS:
         if needle in haystack:

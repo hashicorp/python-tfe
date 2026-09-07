@@ -12,10 +12,16 @@ import pytest
 
 from pytfe.errors import TFEError, WorkflowError
 from pytfe.models.stack import Stack
-from pytfe.models.stack_configuration import StackConfiguration
+from pytfe.models.stack_configuration import (
+    StackConfiguration,
+    StackConfigurationSource,
+)
 from pytfe.models.stack_deployment_group import StackDeploymentGroup
 from pytfe.models.stack_deployment_run import DeploymentRunStatus, StackDeploymentRun
-from pytfe.models.stack_deployment_step import StackDeploymentStep
+from pytfe.models.stack_deployment_step import (
+    StackDeploymentStep,
+    StackDiagnostic,
+)
 from pytfe.workflows import (
     StackPhase,
     approve_stack_plans,
@@ -25,6 +31,7 @@ from pytfe.workflows import (
     run_phase,
     speculative_stack_plan,
     stack_fetch_and_run,
+    stack_run_from_directory,
     stack_status,
     step_phase,
     teardown_stack,
@@ -506,14 +513,11 @@ def test_steps_unavailable_does_not_break_the_matrix(client: Any) -> None:
     assert "dev" in result.deployments
 
 
-def test_prepare_failure_surfaces_the_log_url(client: Any) -> None:
-    """Prepare-time diagnostics are unreachable through this SDK.
+def test_prepare_failure_lists_the_configuration_diagnostics(client: Any) -> None:
+    """Prepare diagnostics come from the configuration, not from any step.
 
-    Verified live: the configuration's stack-diagnostics relationship carries
-    only {"links": {"related": ...}} with no data array, and
-    client.stack_diagnostics has read/acknowledge but no list-by-configuration.
-    So the workflow must hand the caller the prepare log instead of an empty
-    diagnostics list.
+    A configuration that fails to prepare has no deployment runs, so the
+    step-level diagnostics the rest of this workflow reads do not exist yet.
     """
     client.stacks.read.return_value = make_stack()
     client.stack_configurations.read.return_value = StackConfiguration.model_validate(
@@ -523,8 +527,238 @@ def test_prepare_failure_surfaces_the_log_url(client: Any) -> None:
             "preparing-event-stream-url": "https://archivist.terraform.io/v1/object/abc",
         }
     )
+    client.stack_diagnostics.list_for_configuration.return_value = iter(
+        [
+            StackDiagnostic.model_validate(
+                {
+                    "id": "std-1",
+                    "severity": "error",
+                    "summary": "Diagnostics reported",
+                    "detail": "HCP Terraform reported 2 errors.",
+                    "diags": [
+                        {
+                            "severity": "error",
+                            "summary": "Cannot read .terraform-version file",
+                            "detail": "does not contain the version selection file.",
+                            "range": {
+                                "filename": ".terraform-version",
+                                "start": {"line": 1, "column": 1},
+                            },
+                        },
+                        {"severity": "error", "summary": "Error while loading source"},
+                    ],
+                }
+            )
+        ]
+    )
+
     result = diagnose_stack_configuration(client, "sc-1")
+
     assert result.stage == "prepare"
+    assert result.ok is False
+    client.stack_diagnostics.list_for_configuration.assert_called_once_with("sc-1")
     assert result.prepare_log_url == "https://archivist.terraform.io/v1/object/abc"
-    assert any("not reachable through this SDK" in w for w in result.warnings)
+    assert not any("not reachable" in w for w in result.warnings)
+
+    # The rollup counts the errors; the nested entries name them.
+    (diagnostic,) = result.diagnostics
+    assert diagnostic.summary == "Diagnostics reported"
+    assert [e.summary for e in diagnostic.errors] == [
+        "Cannot read .terraform-version file",
+        "Error while loading source",
+    ]
+    assert diagnostic.errors[0].filename == ".terraform-version"
+    assert diagnostic.errors[0].line == 1
+    # A diagnostic with no range still parses rather than being dropped.
+    assert diagnostic.errors[1].filename is None
+
+    # The commonest first-upload failure gets an actionable suggestion.
+    assert result.suggestion is not None
+    assert ".terraform-version" in result.suggestion
+    assert json.dumps(result.summary())
+
+
+def test_prepare_failure_without_diagnostics_hands_back_the_log(
+    client: Any,
+) -> None:
+    client.stacks.read.return_value = make_stack()
+    client.stack_configurations.read.return_value = StackConfiguration.model_validate(
+        {
+            "id": "sc-1",
+            "status": "failed",
+            "preparing-event-stream-url": "https://archivist.terraform.io/v1/object/abc",
+        }
+    )
+    client.stack_diagnostics.list_for_configuration.return_value = iter([])
+
+    result = diagnose_stack_configuration(client, "sc-1")
+
+    assert result.diagnostics == []
+    assert any("prepare_log_url" in w for w in result.warnings)
     assert result.summary()["prepare_log_url"]
+
+
+def test_prepare_diagnostics_failure_is_reported_not_raised(client: Any) -> None:
+    client.stacks.read.return_value = make_stack()
+    client.stack_configurations.read.return_value = StackConfiguration.model_validate(
+        {"id": "sc-1", "status": "failed"}
+    )
+    client.stack_diagnostics.list_for_configuration.side_effect = TFEError("forbidden")
+
+    result = diagnose_stack_configuration(client, "sc-1")
+
+    assert result.stage == "prepare"
+    assert any("could not list prepare diagnostics" in w for w in result.warnings)
+
+
+# --------------------------------------------------------------------------
+# stack_run_from_directory - the manual upload path
+# --------------------------------------------------------------------------
+
+
+def _stack_dir(tmp_path: Any) -> Any:
+    directory = tmp_path / "stack"
+    directory.mkdir()
+    (directory / "components.tfcomponent.hcl").write_text('component "app" {}\n')
+    (directory / "deployments.tfdeploy.hcl").write_text('deployment "dev" {}\n')
+    return directory
+
+
+def test_run_from_directory_uploads_then_stops_at_the_gate(
+    client: Any, clock: Any, tmp_path: Any
+) -> None:
+    stage(
+        client,
+        [make_run("dev", "succeeded"), make_run("prod", "deploying-pending-operator")],
+    )
+    result = stack_run_from_directory(
+        client, "st-1", _stack_dir(tmp_path), _sleep=clock.sleep, _clock=clock.time
+    )
+
+    assert result.phase == "awaiting_approval"
+    assert [d.deployment for d in result.awaiting] == ["prod"]
+    client.stack_deployment_groups.approve_all_plans.assert_not_called()
+
+    # MANUAL source, not FETCH: the source is the archive, not the repository.
+    _, _, source = client.stack_configurations.create.call_args[0]
+    assert source is StackConfigurationSource.MANUAL
+
+    configuration_id, archive = client.stack_configurations.upload.call_args[0]
+    assert configuration_id == "sc-1"
+    assert archive.startswith(b"\x1f\x8b")  # gzip
+
+
+def test_run_from_directory_needs_no_vcs(
+    client: Any, clock: Any, tmp_path: Any
+) -> None:
+    """The reason this workflow exists: a stack with no repository attached."""
+    stage(client, [make_run("dev", "succeeded")])
+    client.stacks.read.return_value = Stack.model_validate({"id": "st-1", "name": "s"})
+
+    result = stack_run_from_directory(
+        client, "st-1", _stack_dir(tmp_path), _sleep=clock.sleep, _clock=clock.time
+    )
+
+    assert result.phase == "completed"
+
+
+def test_run_from_directory_refuses_destroy_without_permission(
+    client: Any, tmp_path: Any
+) -> None:
+    result = stack_run_from_directory(
+        client, "st-1", _stack_dir(tmp_path), destroy_all=True
+    )
+    assert result.phase == "refused_destructive"
+    client.stack_configurations.create.assert_not_called()
+    client.stack_configurations.upload.assert_not_called()
+
+
+def test_run_from_directory_packages_before_creating_anything(
+    client: Any, tmp_path: Any
+) -> None:
+    """A bad path must not leave a configuration stranded with no source."""
+    with pytest.raises(ValueError, match="existing directory"):
+        stack_run_from_directory(client, "st-1", tmp_path / "absent")
+    client.stack_configurations.create.assert_not_called()
+
+
+def test_run_from_directory_approves_when_confirmed(
+    client: Any, clock: Any, tmp_path: Any
+) -> None:
+    stage(client, [make_run("prod", "deploying-pending-operator")])
+    # The gate clears only once approve_all_plans is called, so the wait for
+    # "completed" is driven by the approval rather than settling on its own.
+    current = [make_run("prod", "deploying-pending-operator")]
+    client.stack_deployment_runs.list.side_effect = lambda *a, **k: iter(list(current))
+    client.stack_deployment_runs.read.side_effect = lambda rid: current[0]
+
+    def clear_gate(_group_id: str) -> None:
+        current[0] = make_run("prod", "succeeded")
+
+    client.stack_deployment_groups.approve_all_plans.side_effect = clear_gate
+
+    result = stack_run_from_directory(
+        client,
+        "st-1",
+        _stack_dir(tmp_path),
+        confirmed=True,
+        _sleep=clock.sleep,
+        _clock=clock.time,
+    )
+
+    client.stack_deployment_groups.approve_all_plans.assert_called_once_with("sdg-1")
+    assert result.deployments["prod"].approved is True
+
+
+def test_run_from_directory_speculative_never_approves(
+    client: Any, clock: Any, tmp_path: Any
+) -> None:
+    stage(client, [make_run("prod", "deploying-pending-operator")])
+
+    result = stack_run_from_directory(
+        client,
+        "st-1",
+        _stack_dir(tmp_path),
+        speculative=True,
+        confirmed=True,
+        _sleep=clock.sleep,
+        _clock=clock.time,
+    )
+
+    assert result.phase == "planned"
+    client.stack_deployment_groups.approve_all_plans.assert_not_called()
+    options = client.stack_configurations.create.call_args[0][1]
+    assert options.speculative_enabled is True
+
+
+def test_speculative_completion_is_reported_as_planned(
+    client: Any, clock: Any, tmp_path: Any
+) -> None:
+    """A speculative configuration's runs finish without applying anything.
+
+    Verified live: every deployment reaches `succeeded`, which would otherwise
+    be read as a completed deployment.
+    """
+    stage(client, [make_run("dev", "succeeded"), make_run("staging", "succeeded")])
+
+    result = stack_run_from_directory(
+        client,
+        "st-1",
+        _stack_dir(tmp_path),
+        speculative=True,
+        _sleep=clock.sleep,
+        _clock=clock.time,
+    )
+
+    assert result.phase == "planned"
+    assert result.ok is True
+
+
+def test_non_speculative_completion_stays_completed(
+    client: Any, clock: Any, tmp_path: Any
+) -> None:
+    stage(client, [make_run("dev", "succeeded")])
+    result = stack_run_from_directory(
+        client, "st-1", _stack_dir(tmp_path), _sleep=clock.sleep, _clock=clock.time
+    )
+    assert result.phase == "completed"

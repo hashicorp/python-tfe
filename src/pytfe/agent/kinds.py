@@ -136,6 +136,10 @@ OVERRIDES: dict[tuple[str, str], Kind] = {
     # Creating a state version overwrites a workspace's state.
     ("state_versions", "create"): Kind.DESTRUCTIVE,
     ("state_versions", "upload"): Kind.DESTRUCTIVE,
+    # Fetching a stack configuration's upload URL is a GET. It reserves nothing,
+    # and a read-only client is allowed to make it - so classifying it by its
+    # "upload" prefix would have the agent layer refuse what the gate permits.
+    ("stack_configurations", "upload_url"): Kind.READ,
     # Locking is reversible and destroys nothing.
     ("workspaces", "lock"): Kind.WRITE,
     ("workspaces", "unlock"): Kind.WRITE,

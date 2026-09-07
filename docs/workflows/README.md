@@ -224,7 +224,8 @@ if result.phase == "awaiting_approval":
 |---|---|---|
 | `stack_status` | read | Latest configuration, the per-deployment matrix, and a health verdict. |
 | `wait_for_stack_configuration` | read | `prepared`, `plans_ready` (the moment a human is needed), or `completed`. |
-| `stack_fetch_and_run` | destructive (gated) | The whole loop over the VCS fetch path. |
+| `stack_fetch_and_run` | destructive (gated) | The whole loop, fetching the configuration from the stack's VCS repository. |
+| `stack_run_from_directory` | destructive (gated) | The same loop, uploading the configuration from a local directory. No VCS needed. |
 | `speculative_stack_plan` | read | Never approves; doubles as configuration validation. |
 | `approve_stack_plans` | destructive (gated) | Re-reads to confirm, and reports **partial** approval. |
 | `diagnose_stack_configuration` | read | Separates a prepare failure from a failed deployment step. |
@@ -232,8 +233,12 @@ if result.phase == "awaiting_approval":
 
 Three things to plan around:
 
-- **The stack must be VCS-backed.** There is no way to upload a configuration
-  from a local directory, so there is no `stack_run_from_directory`.
+- **Two ways in.** `stack_fetch_and_run` needs a VCS-backed stack;
+  `stack_run_from_directory` uploads from disk and works with any stack.
+  Everything after the source is identical. An uploaded directory must carry a
+  `.terraform-version` and a `.terraform.lock.hcl` at its root, or the
+  configuration fails at prepare — `diagnose_stack_configuration` names the
+  missing file.
 - **You decide whether a stack plan is safe.** Nothing on the Stacks API reports
   how destructive one is, so pass a `confirm` callback, or fetch the plan with
   `download_artifact` using each deployment's `plan_description_step_id`.
@@ -297,8 +302,6 @@ orientation for a model working from the installed package.
 | Gap | What it means for you |
 |---|---|
 | `plans.logs()` / `applies.logs()` are placeholder stubs | `diagnose_run` cannot include log text. It exposes `log_read_url` so you can fetch it, and its structured signals — stage, status, policy failures, errored-state availability — are always populated. |
-| No configuration upload for stacks | `stack_fetch_and_run` and `speculative_stack_plan` need a VCS-backed stack. |
-| Prepare-time stack diagnostics are unreachable | The relationship carries only a link with no list method behind it, so `diagnose_stack_configuration` gives you `prepare_log_url` instead. |
 | `tfe_health` has no backing endpoint | Composed from admin reads, so it reports reachability and queue pressure rather than a server-reported status. |
 | No user-token namespace | `token_audit` covers organization, team and agent tokens only, and says so in its warnings. |
 | `setup_oidc_dynamic_credentials` writes variables | The `*_oidc_configurations` resources are HYOK-gated and cannot back an idempotent workflow; standard-tier dynamic credentials are the `TFC_*_PROVIDER_AUTH` variables. |

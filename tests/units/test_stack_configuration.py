@@ -8,6 +8,7 @@ from unittest.mock import Mock
 import pytest
 
 from pytfe._http import HTTPTransport
+from pytfe.errors import InvalidStackConfigurationIDError, TFEError
 from pytfe.models.configuration_version import IngressAttributes
 from pytfe.models.stack import Stack
 from pytfe.models.stack_configuration import (
@@ -353,3 +354,80 @@ class TestStackConfigurations:
 
         _, kwargs = mock_transport.request.call_args
         assert kwargs["params"]["include"] == "ingress_attributes,stack_diagnostics"
+
+
+class TestStackConfigurationUpload:
+    """Uploading a manually-sourced stack configuration."""
+
+    @pytest.fixture
+    def mock_transport(self):
+        return Mock(spec=HTTPTransport)
+
+    @pytest.fixture
+    def service(self, mock_transport):
+        return StackConfigurations(mock_transport)
+
+    def test_upload_url_reads_the_bare_data_object(self, service, mock_transport):
+        # This endpoint does not return a JSON:API resource: `data` carries only
+        # `source-upload-url`, with no type/id/attributes.
+        mock_transport.request.return_value = Mock(
+            json=Mock(
+                return_value={
+                    "data": {"source-upload-url": "https://archivist.example/o/1"}
+                }
+            )
+        )
+
+        url = service.upload_url("stc-abc123")
+
+        assert url == "https://archivist.example/o/1"
+        method, path = mock_transport.request.call_args[0]
+        assert method == "GET"
+        assert path == "/api/v2/stack-configurations/stc-abc123/upload-url"
+
+    def test_upload_url_rejects_an_invalid_id(self, service):
+        with pytest.raises(InvalidStackConfigurationIDError):
+            service.upload_url("")
+
+    def test_upload_url_explains_a_missing_url(self, service, mock_transport):
+        # What a VCS-sourced configuration returns: no upload is pending.
+        mock_transport.request.return_value = Mock(json=Mock(return_value={"data": {}}))
+
+        with pytest.raises(TFEError) as exc:
+            service.upload_url("stc-abc123")
+
+        assert "no upload URL" in str(exc.value)
+        assert "source=MANUAL" in (exc.value.hint or "")
+
+    def test_upload_resolves_then_puts_the_archive(self, service, mock_transport):
+        mock_transport.request.return_value = Mock(
+            json=Mock(
+                return_value={
+                    "data": {"source-upload-url": "https://archivist.example/o/1"}
+                }
+            )
+        )
+
+        service.upload("stc-abc123", b"TARGZBYTES")
+
+        get_call, put_call = mock_transport.request.call_args_list
+        assert get_call[0][0] == "GET"
+        assert put_call[0] == ("PUT", "https://archivist.example/o/1")
+        assert put_call[1]["data"] == b"TARGZBYTES"
+        assert put_call[1]["headers"]["Content-Type"] == "application/octet-stream"
+
+    def test_upload_refuses_an_empty_archive(self, service, mock_transport):
+        # Fail before the GET: an empty upload would leave the configuration
+        # stuck waiting for a source it will never get.
+        with pytest.raises(ValueError, match="must not be empty"):
+            service.upload("stc-abc123", b"")
+        mock_transport.request.assert_not_called()
+
+    def test_upload_to_skips_resolution(self, service, mock_transport):
+        service.upload_to("https://archivist.example/o/2", b"BYTES")
+
+        assert mock_transport.request.call_count == 1
+        assert mock_transport.request.call_args[0] == (
+            "PUT",
+            "https://archivist.example/o/2",
+        )
