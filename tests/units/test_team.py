@@ -1,3 +1,5 @@
+# Copyright IBM Corp. 2025, 2026
+
 """Unit tests for the team resource."""
 
 from unittest.mock import Mock, patch

@@ -1,3 +1,5 @@
+# Copyright IBM Corp. 2025, 2026
+
 from __future__ import annotations
 
 from collections.abc import Iterator

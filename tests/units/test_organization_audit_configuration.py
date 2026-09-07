@@ -1,3 +1,5 @@
+# Copyright IBM Corp. 2025, 2026
+
 """Unit tests for organization audit configuration service."""
 
 import os
