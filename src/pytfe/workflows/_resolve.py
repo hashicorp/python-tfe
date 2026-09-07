@@ -11,10 +11,15 @@ and resolve once, so a caller never has to know which form a given step needs.
 from __future__ import annotations
 
 from ..client import TFEClient
-from ..errors import WORKSPACE_NOT_FOUND_HINT, NotFound, WorkspaceNotFound
+from ..errors import WORKSPACE_NOT_FOUND_HINT, NotFound, TFEError, WorkspaceNotFound
 from ..models.workspace import Workspace
 
-__all__ = ["resolve_workspace", "workspace_web_url"]
+__all__ = [
+    "resolve_workspace",
+    "organization_of",
+    "workspace_web_url",
+    "run_web_url",
+]
 
 
 def resolve_workspace(
@@ -66,6 +71,25 @@ def resolve_workspace(
         "pass workspace_id, or both organization and workspace_name",
         hint=WORKSPACE_NOT_FOUND_HINT,
     )
+
+
+def organization_of(
+    client: TFEClient, workspace: Workspace, fallback: str | None = None
+) -> str:
+    """Organization name for a workspace.
+
+    ``Workspace`` carries no ``organization_name`` field, so this reads the
+    parsed relationship and falls back to whatever the caller supplied.
+    """
+    try:
+        if workspace.has_relationships:
+            org = workspace.related("organization")
+            name = getattr(org, "name", None) or getattr(org, "id", None)
+            if isinstance(name, str):
+                return name
+    except (AttributeError, TFEError):
+        pass
+    return fallback or ""
 
 
 def workspace_web_url(client: TFEClient, organization: str, workspace_name: str) -> str:

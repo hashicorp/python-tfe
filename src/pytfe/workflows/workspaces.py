@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import fnmatch
 import logging
+from collections.abc import Callable
 from datetime import datetime
 from typing import Any, Literal
 
@@ -19,20 +20,33 @@ from ..models.variable import (
     VariableCreateOptions,
     VariableUpdateOptions,
 )
+from ..models.variable_set import (
+    VariableSetApplyToProjectsOptions,
+    VariableSetApplyToWorkspacesOptions,
+    VariableSetCreateOptions,
+    VariableSetUpdateOptions,
+    VariableSetVariableCreateOptions,
+    VariableSetVariableUpdateOptions,
+)
 from ..models.workspace import (
     VCSRepo,
     Workspace,
     WorkspaceAddTagsOptions,
     WorkspaceCreateOptions,
     WorkspaceListOptions,
+    WorkspaceLockOptions,
     WorkspaceRemoveTagsOptions,
     WorkspaceUpdateOptions,
 )
 from ._resolve import resolve_workspace
 from ._result import Change, EnsureResult
 from .models import (
+    CloneResult,
     EnsureVariablesResult,
+    LockResult,
+    TeardownResult,
     VariableSpec,
+    VCSRepoSpec,
     WorkspaceList,
     WorkspaceSpec,
     WorkspaceStatus,
@@ -46,6 +60,11 @@ __all__ = [
     "workspace_status",
     "ensure_workspace",
     "ensure_variables",
+    "lock",
+    "unlock",
+    "ensure_variable_set",
+    "clone_workspace",
+    "teardown_workspace",
 ]
 
 #: WorkspaceSpec fields that map 1:1 onto the options models by name.
@@ -656,4 +675,497 @@ def ensure_variables(
         result.action = "updated" if not result.created else "created"
     else:
         result.action = "unchanged"
+    return result
+
+
+def lock(client: TFEClient, workspace_id: str, *, reason: str = "") -> LockResult:
+    """Lock a workspace, or report that it was already locked.
+
+    Args:
+        client: The client to act through.
+        workspace_id: Target workspace.
+        reason: Recorded with the lock.
+
+    Returns:
+        A :class:`~pytfe.workflows.models.LockResult` whose ``action`` is
+        ``"locked"`` or ``"unchanged"``.
+
+    Raises:
+        TFEError: If the lock is rejected.
+
+    Example:
+        >>> lock(client, "ws-YnyXLq9fy38afEeb", reason="migrating state")
+    """
+    workspace = client.workspaces.read_by_id(workspace_id)
+    if workspace.locked:
+        locked_by = getattr(workspace, "locked_by", None)
+        return LockResult(
+            action="unchanged",
+            workspace_id=workspace_id,
+            locked=True,
+            locked_by=getattr(locked_by, "id", None) if locked_by else None,
+        )
+    locked = client.workspaces.lock(workspace_id, WorkspaceLockOptions(reason=reason))
+    return LockResult(
+        action="locked",
+        workspace_id=workspace_id,
+        locked=True,
+        locked_by=getattr(getattr(locked, "locked_by", None), "id", None),
+    )
+
+
+def unlock(client: TFEClient, workspace_id: str, *, force: bool = False) -> LockResult:
+    """Unlock a workspace, or report that it was already unlocked.
+
+    Note:
+        ``force=True`` uses the force-unlock endpoint. Forcing a lock that a
+        running apply holds can corrupt state, so it is not the default - but it
+        is not gated either, because unlocking by itself destroys nothing.
+
+    Args:
+        client: The client to act through.
+        workspace_id: Target workspace.
+        force: Break a lock held by another actor.
+
+    Returns:
+        A :class:`~pytfe.workflows.models.LockResult`.
+
+    Raises:
+        TFEError: If the unlock is rejected.
+
+    Example:
+        >>> unlock(client, "ws-YnyXLq9fy38afEeb")
+    """
+    workspace = client.workspaces.read_by_id(workspace_id)
+    if not workspace.locked:
+        return LockResult(action="unchanged", workspace_id=workspace_id, locked=False)
+    if force:
+        client.workspaces.force_unlock(workspace_id)
+    else:
+        client.workspaces.unlock(workspace_id)
+    return LockResult(action="unlocked", workspace_id=workspace_id, locked=False)
+
+
+def ensure_variable_set(
+    client: TFEClient,
+    organization: str,
+    name: str,
+    *,
+    variables: list[VariableSpec] | None = None,
+    description: str | None = None,
+    global_: bool = False,
+    workspace_ids: set[str] | None = None,
+    project_ids: set[str] | None = None,
+    prune: bool = False,
+    confirmed: bool = False,
+    dry_run: bool = False,
+) -> EnsureResult:
+    """Create a variable set, or converge an existing one.
+
+    Converges three things with set semantics: the set's own attributes, the
+    variables inside it, and the workspaces and projects it is applied to.
+    Idempotent.
+
+    Args:
+        client: The client to act through.
+        organization: Organization that owns the set.
+        name: Variable-set name, used to find an existing set.
+        variables: Desired variables in the set.
+        description: Set description.
+        global_: Apply to every workspace in the organization.
+        workspace_ids: Workspaces to apply the set to. ``None`` leaves
+            attachments unmanaged.
+        project_ids: Projects to apply the set to.
+        prune: Delete variables in the set that are not in ``variables``.
+            Destructive; requires ``confirmed=True``.
+        confirmed: Required for ``prune``.
+        dry_run: Read only; report what would change.
+
+    Returns:
+        An :class:`~pytfe.workflows._result.EnsureResult`.
+
+    Raises:
+        TFEError: If the API rejects a write.
+
+    Example:
+        >>> ensure_variable_set(client, "acme", "shared-aws",
+        ...                     variables=[VariableSpec(key="region", value="eu-west-1")],
+        ...                     workspace_ids={"ws-1", "ws-2"})
+    """
+    existing = next(
+        (vs for vs in client.variable_sets.list(organization) if vs.name == name),
+        None,
+    )
+    changes: list[Change] = []
+
+    if existing is None:
+        if dry_run:
+            return EnsureResult(
+                action="would_create",
+                resource_type="variable-sets",
+                changes=[Change(field="name", before=None, after=name)],
+            )
+        existing = client.variable_sets.create(
+            organization,
+            VariableSetCreateOptions(
+                name=name, description=description, global_=global_
+            ),
+        )
+        changes.append(Change(field="name", before=None, after=name))
+        action = "created"
+    else:
+        attribute_changes: dict[str, Any] = {}
+        if description is not None and existing.description != description:
+            attribute_changes["description"] = description
+            changes.append(
+                Change(
+                    field="description", before=existing.description, after=description
+                )
+            )
+        if bool(getattr(existing, "global_", False)) != global_:
+            attribute_changes["global_"] = global_
+            changes.append(
+                Change(
+                    field="global",
+                    before=getattr(existing, "global_", False),
+                    after=global_,
+                )
+            )
+        if attribute_changes and not dry_run:
+            client.variable_sets.update(
+                existing.id or "", VariableSetUpdateOptions(**attribute_changes)
+            )
+        action = "updated" if changes else "unchanged"
+
+    set_id = existing.id or ""
+
+    if variables is not None:
+        current = {v.key: v for v in client.variable_set_variables.list(set_id)}
+        desired_keys = {spec.key for spec in variables}
+        for spec in variables:
+            found = current.get(spec.key)
+            if found is None:
+                changes.append(
+                    Change.redacted(spec.key)
+                    if spec.sensitive
+                    else Change(field=spec.key, before=None, after=spec.value)
+                )
+                if not dry_run:
+                    client.variable_set_variables.create(
+                        set_id,
+                        VariableSetVariableCreateOptions(
+                            key=spec.key,
+                            value=spec.value,
+                            category=spec.category,
+                            hcl=spec.hcl,
+                            sensitive=spec.sensitive,
+                            description=spec.description,
+                        ),
+                    )
+            elif spec.sensitive or found.sensitive or found.value != spec.value:
+                changes.append(
+                    Change.redacted(spec.key)
+                    if spec.sensitive or found.sensitive
+                    else Change(field=spec.key, before=found.value, after=spec.value)
+                )
+                if not dry_run:
+                    client.variable_set_variables.update(
+                        set_id,
+                        found.id or "",
+                        VariableSetVariableUpdateOptions(
+                            key=spec.key,
+                            value=spec.value,
+                            category=spec.category,
+                            hcl=spec.hcl,
+                            sensitive=spec.sensitive,
+                            description=spec.description,
+                        ),
+                    )
+        if prune:
+            extra = [v for key, v in current.items() if key not in desired_keys]
+            if extra and not confirmed:
+                return EnsureResult(
+                    action="awaiting_confirmation",
+                    resource_id=set_id,
+                    resource_type="variable-sets",
+                    changes=changes,
+                    warnings=[
+                        "prune=True would delete: "
+                        + ", ".join(sorted(v.key or "" for v in extra))
+                    ],
+                )
+            for variable in extra:
+                changes.append(
+                    Change(field=variable.key or "", before=variable.value, after=None)
+                )
+                if not dry_run:
+                    client.variable_set_variables.delete(set_id, variable.id or "")
+
+    if workspace_ids is not None:
+        applied = {
+            ws.id
+            for ws in client.workspaces.list(organization)
+            if ws.id in workspace_ids
+        }
+        if applied and not dry_run:
+            client.variable_sets.apply_to_workspaces(
+                set_id,
+                VariableSetApplyToWorkspacesOptions(
+                    workspaces=[Workspace(id=i) for i in sorted(applied)]
+                ),
+            )
+        if applied:
+            changes.append(
+                Change(field="workspaces", before=None, after=sorted(applied))
+            )
+
+    if project_ids is not None:
+        if not dry_run:
+            client.variable_sets.apply_to_projects(
+                set_id,
+                VariableSetApplyToProjectsOptions(
+                    projects=[Project(id=i) for i in sorted(project_ids)]
+                ),
+            )
+        changes.append(Change(field="projects", before=None, after=sorted(project_ids)))
+
+    if dry_run:
+        return EnsureResult(
+            action="would_update" if changes else "unchanged",
+            resource_id=set_id,
+            resource_type="variable-sets",
+            changes=changes,
+        )
+    return EnsureResult(
+        action=action
+        if action == "created"
+        else ("updated" if changes else "unchanged"),
+        resource_id=set_id,
+        resource_type="variable-sets",
+        changes=changes,
+    )
+
+
+def _spec_from_workspace(workspace: Workspace) -> WorkspaceSpec:
+    """Read a workspace's current settings back into a WorkspaceSpec."""
+    project = getattr(workspace, "project", None)
+    vcs = getattr(workspace, "vcs_repo", None)
+    values: dict[str, Any] = {
+        field: _current_value(workspace, field) for field in _DIRECT_FIELDS
+    }
+    values["project_id"] = getattr(project, "id", None)
+    values["tags"] = set(workspace.tag_names or [])
+    if vcs is not None and getattr(vcs, "identifier", None):
+        values["vcs_repo"] = VCSRepoSpec(
+            identifier=vcs.identifier,
+            branch=getattr(vcs, "branch", None),
+            oauth_token_id=getattr(vcs, "oauth_token_id", None),
+            github_app_installation_id=getattr(vcs, "gha_installation_id", None),
+            ingress_submodules=bool(getattr(vcs, "ingress_submodules", False)),
+        )
+    return WorkspaceSpec(**values)
+
+
+def clone_workspace(
+    client: TFEClient,
+    source_workspace_id: str,
+    *,
+    target_organization: str,
+    target_name: str,
+    target_project_id: str | None = None,
+    copy_variables: bool = True,
+    copy_state: bool = False,
+    spec_overrides: WorkspaceSpec | None = None,
+    confirmed: bool = False,
+    dry_run: bool = False,
+) -> CloneResult:
+    """Copy a workspace's settings, variables and optionally its state.
+
+    Sensitive variable values cannot be read back from the API, so they are
+    never copied. Every sensitive variable in the source is listed in
+    ``manual_followups`` for a human to set on the target.
+
+    Args:
+        client: The client to act through.
+        source_workspace_id: Workspace to copy from.
+        target_organization: Organization to create the copy in.
+        target_name: Name for the copy.
+        target_project_id: Project for the copy.
+        copy_variables: Copy non-sensitive variables.
+        copy_state: Migrate state to the target. Destructive; requires
+            ``confirmed=True``.
+        spec_overrides: Settings to override on the copy. Fields set here win
+            over the source's values.
+        confirmed: Required for ``copy_state``.
+        dry_run: Read only; report what would change.
+
+    Returns:
+        A :class:`~pytfe.workflows.models.CloneResult`.
+
+    Raises:
+        WorkspaceNotFound: If the source cannot be resolved.
+        TFEError: If the API rejects a write.
+
+    Example:
+        >>> clone_workspace(client, "ws-source", target_organization="acme",
+        ...                 target_name="web-staging")
+    """
+    source = resolve_workspace(client, source_workspace_id)
+    spec = _spec_from_workspace(source)
+
+    if target_project_id is not None:
+        spec = spec.model_copy(update={"project_id": target_project_id})
+    if spec_overrides is not None:
+        spec = spec.model_copy(
+            update={
+                field: getattr(spec_overrides, field)
+                for field in spec_overrides.model_fields_set
+            }
+        )
+
+    result = CloneResult(source_workspace_id=source.id)
+    ensured = ensure_workspace(
+        client, target_organization, target_name, spec=spec, dry_run=dry_run
+    )
+    result.target_workspace_id = ensured.resource_id
+    result.action = (
+        "would_create"
+        if dry_run
+        else ("created" if ensured.action == "created" else "updated")
+    )
+
+    if copy_variables:
+        for variable in client.variables.list(source.id or ""):
+            key = variable.key or ""
+            if variable.sensitive:
+                result.manual_followups.append(
+                    f"set sensitive variable {key!r} on the target; its value "
+                    "cannot be read from the source"
+                )
+                continue
+            result.copied_variables.append(key)
+            if dry_run or not ensured.resource_id:
+                continue
+            client.variables.create(
+                ensured.resource_id,
+                VariableCreateOptions(
+                    key=key,
+                    value=variable.value or "",
+                    category=getattr(variable.category, "value", variable.category)
+                    or "terraform",
+                    hcl=bool(variable.hcl),
+                    sensitive=False,
+                    description=variable.description,
+                ),
+            )
+
+    if copy_state and ensured.resource_id and not dry_run:
+        from .state import migrate_state
+
+        migration = migrate_state(
+            client, source.id or "", ensured.resource_id, confirmed=confirmed
+        )
+        result.state_migrated = migration.action == "pushed"
+        result.warnings.extend(migration.warnings)
+        if not result.state_migrated:
+            result.manual_followups.append(
+                "state was not migrated: pass confirmed=True to copy_state"
+            )
+    return result
+
+
+def teardown_workspace(
+    client: TFEClient,
+    workspace_id: str | None = None,
+    *,
+    organization: str | None = None,
+    workspace_name: str | None = None,
+    destroy_first: bool = True,
+    force: bool = False,
+    confirmed: bool = False,
+    confirm: Callable[[Any], bool] | None = None,
+    timeout: float = 3600,
+) -> TeardownResult:
+    """Destroy a workspace's resources, then delete the workspace.
+
+    Destructive and gated. By default it refuses to delete a workspace that
+    still tracks resources: use ``destroy_first=True`` to destroy them, or
+    ``force=True`` to delete the workspace and orphan them.
+
+    Args:
+        client: The client to act through.
+        workspace_id: Target workspace, by ID.
+        organization: Organization name, with ``workspace_name``.
+        workspace_name: Workspace name, with ``organization``.
+        destroy_first: Queue a destroy run before deleting.
+        force: Delete even if resources remain. Orphans real infrastructure.
+        confirmed: The caller asserts a human approved this.
+        confirm: Called with the destroy plan; return True to proceed.
+        timeout: Seconds to wait for the destroy run.
+
+    Returns:
+        A :class:`~pytfe.workflows.models.TeardownResult`.
+
+    Raises:
+        WorkspaceNotFound: If the workspace cannot be resolved.
+        TFEError: If the API rejects the delete.
+
+    Example:
+        >>> teardown_workspace(client, organization="acme",
+        ...                    workspace_name="scratch", confirmed=True)
+    """
+    from .runs import destroy_run
+
+    workspace = resolve_workspace(
+        client, workspace_id, organization=organization, workspace_name=workspace_name
+    )
+    ws_id = workspace.id or ""
+    result = TeardownResult(
+        workspace_id=ws_id, resources_remaining=workspace.resource_count
+    )
+
+    if not confirmed and confirm is None:
+        result.action = "awaiting_confirmation"
+        result.warnings.append(
+            f"would destroy {workspace.resource_count or 0} resource(s) and delete "
+            f"workspace {workspace.name!r}"
+        )
+        return result
+
+    if destroy_first and (workspace.resource_count or 0) > 0:
+        destroyed = destroy_run(
+            client,
+            ws_id,
+            message="Teardown by pytfe.workflows",
+            confirmed=confirmed,
+            confirm=confirm,
+            timeout=timeout,
+        )
+        result.destroy_run_id = destroyed.run_id
+        result.warnings.extend(destroyed.warnings)
+        if not destroyed.applied:
+            result.action = "refused"
+            result.ok = False
+            result.warnings.append(
+                f"destroy run did not complete ({destroyed.phase}); "
+                "the workspace was not deleted"
+            )
+            return result
+        result.resources_remaining = client.workspaces.read_by_id(ws_id).resource_count
+
+    remaining = result.resources_remaining or 0
+    if remaining > 0 and not force:
+        result.action = "refused"
+        result.ok = False
+        result.warnings.append(
+            f"{remaining} resource(s) still tracked; pass force=True to delete "
+            "the workspace anyway and orphan them"
+        )
+        return result
+
+    if force:
+        client.workspaces.delete_by_id(ws_id)
+    else:
+        client.workspaces.safe_delete_by_id(ws_id)
+    result.action = "deleted"
     return result

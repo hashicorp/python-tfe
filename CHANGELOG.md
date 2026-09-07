@@ -30,6 +30,38 @@
   reproducible archive. `pytfe.utils.pack_contents`, used by
   `configuration_versions.upload`, applies no exclusions at all and would upload
   `.git/` and cached provider binaries.
+* Added the second tier of workflows, covering the rest of `docs/scenarios/`:
+  * **Runs** - `resolve_policy_override`, `cancel_run`, `destroy_run`.
+  * **Workspaces** - `lock`, `unlock`, `ensure_variable_set`, `clone_workspace`,
+    `teardown_workspace`.
+  * **State** - `download_state`, `state_inventory`, `push_state`,
+    `rollback_state`, `migrate_state`.
+  * **Fleet** - `bulk_speculative_plan`, `bulk_update`, `bulk_variable_rotate`,
+    `org_inventory`, `resource_inventory`.
+  * **Governance** - `onboard_team`, `ensure_policy_set`, `ensure_run_task`,
+    `ensure_notification`, `ensure_run_trigger`, `ensure_project`,
+    `setup_oidc_dynamic_credentials`, `token_audit`, `setup_agent_pool`.
+  * **Terraform Enterprise** - `admin_bootstrap`, `identity_bootstrap`,
+    `tfe_health`. Each refuses to run against HCP Terraform.
+  * **Registry** - `publish_module_version`, `no_code_provision`.
+* Notes on three tier-2 workflows that differ from the obvious design:
+  * `setup_oidc_dynamic_credentials` writes the documented `TFC_*_PROVIDER_AUTH`
+    environment variables rather than using the `*_oidc_configurations`
+    resources. Those four namespaces are gated behind the HYOK entitlement, take
+    four disjoint option models, and none exposes `list()`, so they cannot back
+    an idempotent single-entry-point workflow.
+  * `tfe_health` is composed from the admin endpoints that exist
+    (organizations, users, runs, Terraform versions). There is no health or ping
+    endpoint, so it reports reachability and queue pressure rather than a
+    server-reported status.
+  * `publish_provider_version` raises `CoreGap`: no method in pytfe uploads
+    provider SHASUMS, their signature, or platform binaries, so it cannot be
+    built on the public API.
+* Fleet workflows share one client across a `ThreadPoolExecutor`. Their work
+  lists are materialized on the calling thread first, because `list_*` methods
+  return single-use, lazily-paginating iterators that must not be driven from
+  worker threads. One workspace failing never aborts the rest; its error is
+  captured via `TFEError.to_dict()`.
 * `pytfe.describe()` now also reports `workflow_count` and `workflows`, as keys
   alongside `resources` rather than mixed into it, since a workflow may block for
   minutes while a resource method is a single request. Each entry carries

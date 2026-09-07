@@ -98,6 +98,9 @@ hook may raise to block one.
 | `plan_summary` | read | Counts and addresses from plan JSON, falling back to plan attributes. |
 | `apply_with_gate` | destructive (gated) | Apply an already-planned run. |
 | `diagnose_run` | read | Why a run failed, plus a suggested next step. |
+| `resolve_policy_override` | destructive (gated) | Override a soft-failed policy and continue, or discard the run. |
+| `cancel_run` | destructive (ungated) | Escalates to force-cancel after `force_after`. Cancelling destroys nothing, so it is not gated. |
+| `destroy_run` | destructive (gated) | Requires the workspace's `allow_destroy_plan`. Gated unconditionally — there is no `allow_destroy` to set, because destruction is the point. |
 
 ### Workspaces
 
@@ -108,11 +111,70 @@ hook may raise to block one.
 | `ensure_workspace` | write | Create or converge. Idempotent, `dry_run`. |
 | `ensure_variables` | write | Converge variables. Sensitive values are never echoed back. |
 
+### Workspaces (lifecycle)
+
+| Workflow | Kind | Notes |
+|---|---|---|
+| `lock` / `unlock` | write | Idempotent. `unlock(force=True)` breaks another actor's lock. |
+| `ensure_variable_set` | write | Converges the set, its variables, and its workspace/project attachments. |
+| `clone_workspace` | write | Copies settings and non-sensitive variables. Sensitive values cannot be read back, so each one is listed in `manual_followups`. |
+| `teardown_workspace` | destructive (gated) | Destroy, then delete. Refuses while resources remain unless `force=True`. |
+
 ### State
 
 | Workflow | Kind | Notes |
 |---|---|---|
 | `read_outputs` | read | Waits for `resources_processed` first — the step most scripts miss. |
+| `download_state` | read | `summary()` omits the state body; it is large and may hold secrets. |
+| `state_inventory` | read | Prefers the workspace-resources endpoint over downloading state. |
+| `push_state` | destructive (gated) | Locks, enforces the serial floor and lineage match, unlocks in a `finally`. Reports `still_locked` if the unlock fails. |
+| `rollback_state` | destructive (gated) | Uses the API's own rollback endpoint. No version is ever deleted. |
+| `migrate_state` | destructive (gated) | Copies state between workspaces; warns if the target already has state. |
+
+### Fleet
+
+All take `concurrency` and resolve their work list on the calling thread before
+fanning out. One workspace failing never aborts the others.
+
+| Workflow | Kind | Notes |
+|---|---|---|
+| `bulk_speculative_plan` | read | Plans one directory against many workspaces. Never applies. |
+| `bulk_update` | write (gated) | Fleet-wide writes are gated even though single-workspace `ensure_workspace` is not. |
+| `bulk_variable_rotate` | write (gated) | Built for credential rotation. |
+| `org_inventory` | read | Every workspace's health; renders as CSV via `to_csv()`. |
+| `resource_inventory` | read | "Where is this resource type deployed?" across an organization. |
+
+### Governance
+
+| Workflow | Kind | Notes |
+|---|---|---|
+| `onboard_team` | write | Team, members, workspace access. Members are never removed unless `prune_members=True` and `confirmed=True`. |
+| `ensure_policy_set` | write | Find-or-create, then attach workspaces. |
+| `ensure_run_task` | write | Organization task plus per-workspace enforcement levels. |
+| `ensure_notification` | write | Never logs `url` or `token` — a webhook URL routinely embeds a secret. |
+| `ensure_run_trigger` | write | Converges inbound triggers with set semantics. |
+| `ensure_project` | write | Find-or-create, then move workspaces in. |
+| `setup_oidc_dynamic_credentials` | write | Writes the `TFC_*_PROVIDER_AUTH` env variables. See the note below. |
+| `token_audit` | read | Organization, team and agent tokens with expiry. Values are never returned. |
+| `setup_agent_pool` | write | The agent token is returned **once** on the result and excluded from `summary()`. |
+
+### Terraform Enterprise only
+
+Each refuses to run against HCP Terraform.
+
+| Workflow | Kind | Notes |
+|---|---|---|
+| `admin_bootstrap` | write | Creates the first organization. The admin API has no org-create endpoint, so the normal one is used. |
+| `identity_bootstrap` | write | SAML and SCIM settings. |
+| `tfe_health` | read | Composed from admin reads — see the note below. |
+
+### Registry
+
+| Workflow | Kind | Notes |
+|---|---|---|
+| `publish_module_version` | write | Packages the directory itself, because `registry_modules.upload()` raises `NotImplementedError`. |
+| `no_code_provision` | destructive (gated) | Creates a workspace from a no-code module and gates its first run. |
+| `publish_provider_version` | — | Raises `CoreGap`. See the gaps table below. |
 
 ## Run-status classification
 
@@ -165,12 +227,31 @@ resource method is one request, a workflow may block for minutes. The
 `blocking`/`mutating`/`gated`/`dry_run` flags are the things a signature cannot
 tell you. `pytfe.llms_txt()` carries the same orientation in prose.
 
+## Two workflows that differ from the obvious design
+
+**`setup_oidc_dynamic_credentials` writes variables, not OIDC configurations.**
+The `aws_/azure_/gcp_/vault_oidc_configurations` namespaces look like the right
+target and are not: they are gated behind the HYOK entitlement, they are four
+disjoint namespaces with four disjoint option models, and none of them exposes
+`list()` — so they cannot back an idempotent, single-entry-point workflow.
+Standard-tier dynamic credentials are the `TFC_*_PROVIDER_AUTH` environment
+variables, exactly as `docs/scenarios/oidc-dynamic-credentials.md` describes.
+The per-provider variable names live in one table, `OIDC_VARIABLES`.
+
+**`tfe_health` is composed, not reported.** There is no health or ping endpoint
+in the API, and `client.admin` has no general-settings namespace — only the
+eleven enumerated sub-namespaces. So `tfe_health` assembles a summary from the
+admin endpoints that do exist (organizations, users, runs, Terraform versions).
+It tells you reachability and queue pressure, not a server-reported status.
+
 ## Known gaps
 
 | Gap | Effect |
 |---|---|
 | `plans.logs()` / `applies.logs()` are placeholder stubs returning `""` | `diagnose_run` cannot include a log excerpt. It records a warning and exposes `log_read_url` so a caller can fetch the log directly. Its structured signals — stage, status, policy failures, errored-state availability — are derived without logs and are always populated. |
-| `registry_modules.upload()` raises `NotImplementedError` | No module-publishing workflow ships. |
+| `registry_modules.upload()` raises `NotImplementedError` | `publish_module_version` packages the directory itself and uses the public `upload_tar_gzip`. |
+| No method uploads provider SHASUMS, signatures or platform binaries | `publish_provider_version` raises `CoreGap`. It needs new methods in `resources/`. |
+| `client.users` exposes no user-token namespace | `token_audit` cannot enumerate user API tokens, and says so in its warnings. |
 
 ## See also
 

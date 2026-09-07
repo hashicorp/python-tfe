@@ -17,7 +17,13 @@ from collections.abc import Callable
 from typing import Any, Literal
 
 from ..client import TFEClient
-from ..errors import NotFound, RunNotConfirmable, TFEError, UploadFailed
+from ..errors import (
+    NotFound,
+    RunNotConfirmable,
+    TFEError,
+    UploadFailed,
+    WorkflowTimeout,
+)
 from ..models.configuration_version import (
     ConfigurationVersion,
     ConfigurationVersionCreateOptions,
@@ -26,7 +32,7 @@ from ..models.run import Run, RunApplyOptions, RunCreateOptions, RunVariable
 from ..models.workspace import Workspace
 from ._package import package_directory
 from ._poll import wait_until
-from ._resolve import resolve_workspace, run_web_url
+from ._resolve import organization_of, resolve_workspace, run_web_url
 from .models import PlanSummary, PolicyResult, RunFailure, RunResult
 from .status import RunPhase, is_plan_done, is_terminal, phase_of, run_is_confirmable
 
@@ -40,6 +46,9 @@ __all__ = [
     "apply_with_gate",
     "run_from_directory",
     "speculative_plan",
+    "resolve_policy_override",
+    "cancel_run",
+    "destroy_run",
 ]
 
 #: Called with the plan summary; return True to proceed with a destructive step.
@@ -534,23 +543,6 @@ def apply_with_gate(
     return _finish(client, final, summary, started)
 
 
-def _organization_of(workspace: Workspace, fallback: str | None) -> str:
-    """Organization name for a workspace.
-
-    ``Workspace`` carries no ``organization_name`` field, so this reads the
-    parsed relationship and falls back to whatever the caller passed.
-    """
-    try:
-        if workspace.has_relationships:
-            org = workspace.related("organization")
-            name = getattr(org, "name", None) or getattr(org, "id", None)
-            if isinstance(name, str):
-                return name
-    except (AttributeError, TFEError):
-        pass
-    return fallback or ""
-
-
 def _workspace_id_of(run: Run) -> str | None:
     try:
         workspace = run.related("workspace") if run.has_relationships else None
@@ -721,7 +713,10 @@ def run_from_directory(
     )
     run_id = run.id or ""
     url = run_web_url(
-        client, _organization_of(workspace, organization), workspace.name or "", run_id
+        client,
+        organization_of(client, workspace, organization),
+        workspace.name or "",
+        run_id,
     )
     logger.info("queued run %s", run_id)
 
@@ -832,3 +827,346 @@ def speculative_plan(
         timeout=timeout,
         on_status=on_status,
     )
+
+
+def resolve_policy_override(
+    client: TFEClient,
+    run_id: str,
+    *,
+    action: Literal["override", "discard"],
+    reason: str = "",
+    confirmed: bool = False,
+    confirm: Confirm | None = None,
+    allow_destroy: bool = False,
+    timeout: float = 1800,
+    on_status: Callable[[Run], None] | None = None,
+    _sleep: Callable[[float], None] | None = None,
+    _clock: Callable[[], float] | None = None,
+) -> RunResult:
+    """Resolve a run paused on a failed policy check.
+
+    A soft-failed policy leaves a run in a state that never resolves on its own.
+    This either overrides the failing checks and continues to the gated apply,
+    or discards the run.
+
+    Overriding is destructive and gated exactly like an apply: ``confirmed=True``
+    or a ``confirm`` callback is required, and a destructive plan still needs
+    ``allow_destroy=True``. Discarding is not gated - it destroys nothing.
+
+    Args:
+        client: The client to act through.
+        run_id: The paused run.
+        action: ``"override"`` to continue, ``"discard"`` to abandon the run.
+        reason: Comment recorded with the decision.
+        confirmed: The caller asserts a human approved the override.
+        confirm: Called with the plan summary; return True to override.
+        allow_destroy: Permit a destructive plan after overriding.
+        timeout: Seconds to wait for the run to finish.
+        on_status: Called with the run on every poll.
+
+    Returns:
+        A :class:`~pytfe.workflows.models.RunResult` whose ``phase`` is
+        ``"applied"``, ``"errored"``, ``"rejected"``, ``"refused_destructive"``
+        or ``"awaiting_confirmation"``.
+
+    Raises:
+        TFEError: If the run or its policy checks cannot be read.
+
+    Example:
+        >>> resolve_policy_override(client, run.id, action="override",
+        ...                         reason="approved by platform team",
+        ...                         confirmed=True)
+    """
+    started = time.monotonic()
+    run = client.runs.read(run_id)
+    status = getattr(run.status, "value", run.status)
+    checks = _policy_results(client, run_id)
+    failed = [c for c in checks if c.passed is False]
+
+    if action == "discard":
+        from ..models.run import RunDiscardOptions
+
+        client.runs.discard(run_id, RunDiscardOptions(comment=reason or None))
+        return RunResult(
+            run_id=run_id,
+            workspace_id=_workspace_id_of(run),
+            phase="rejected",
+            status=status,
+            run=run,
+            duration_s=time.monotonic() - started,
+        )
+
+    summary = plan_summary(client, run_id)
+    summary.policy_results = checks
+    blocked = _gate(
+        summary, confirmed=confirmed, confirm=confirm, allow_destroy=allow_destroy
+    )
+    if blocked:
+        return RunResult(
+            run_id=run_id,
+            workspace_id=_workspace_id_of(run),
+            phase=blocked,
+            status=status,
+            plan=summary,
+            ok=blocked != "refused_destructive",
+            run=run,
+            duration_s=time.monotonic() - started,
+        )
+
+    overridden: list[str] = []
+    for check in failed:
+        if not check.overridable or not check.id:
+            continue
+        client.policy_checks.override(check.id)
+        overridden.append(check.id)
+    logger.info("overrode %d policy check(s) on run %s", len(overridden), run_id)
+
+    client.runs.apply(run_id, RunApplyOptions(comment=reason or None))
+    final = wait_for_run(
+        client,
+        run_id,
+        until="terminal",
+        timeout=timeout,
+        on_status=on_status,
+        _sleep=_sleep,
+        _clock=_clock,
+    )
+    result = _finish(client, final, summary, started)
+    if not overridden and failed:
+        result.warnings.append(
+            "no failing policy check was overridable; the run was applied without "
+            "overriding anything"
+        )
+    return result
+
+
+def cancel_run(
+    client: TFEClient,
+    run_id: str,
+    *,
+    reason: str = "",
+    force_after: float = 60,
+    timeout: float = 300,
+    on_status: Callable[[Run], None] | None = None,
+    _sleep: Callable[[float], None] | None = None,
+    _clock: Callable[[], float] | None = None,
+) -> RunResult:
+    """Cancel a run, escalating to a force-cancel if it does not stop.
+
+    Note:
+        This is the one destructive-tier workflow that is *not* gated. Cancelling
+        stops work in progress; it never destroys infrastructure. A run cancelled
+        mid-apply can leave partially-applied resources, which is why
+        ``force_after`` gives the graceful cancel a chance first.
+
+    Args:
+        client: The client to act through.
+        run_id: The run to cancel.
+        reason: Comment recorded with the cancellation.
+        force_after: Seconds to wait for a graceful cancel before force-cancelling.
+        timeout: Total seconds to wait for the run to stop.
+        on_status: Called with the run on every poll.
+
+    Returns:
+        A :class:`~pytfe.workflows.models.RunResult`.
+
+    Raises:
+        WorkflowTimeout: If the run never reaches a terminal state.
+        TFEError: If the cancel is rejected.
+
+    Example:
+        >>> cancel_run(client, "run-CZcmD7eagjhyXAvx", reason="superseded")
+    """
+    from ..models.run import RunCancelOptions, RunForceCancelOptions
+
+    started = time.monotonic()
+    run = client.runs.read(run_id)
+    if is_terminal(run.status):
+        return RunResult(
+            run_id=run_id,
+            workspace_id=_workspace_id_of(run),
+            phase="errored" if run.status != "applied" else "applied",
+            status=getattr(run.status, "value", run.status),
+            run=run,
+            warnings=["run had already finished; nothing to cancel"],
+            duration_s=time.monotonic() - started,
+        )
+
+    client.runs.cancel(run_id, RunCancelOptions(comment=reason or None))
+
+    try:
+        final = wait_for_run(
+            client,
+            run_id,
+            until="terminal",
+            timeout=force_after,
+            on_status=on_status,
+            _sleep=_sleep,
+            _clock=_clock,
+        )
+    except WorkflowTimeout:
+        current = client.runs.read(run_id)
+        actions = current.actions
+        if actions is not None and actions.is_force_cancelable:
+            logger.info("escalating to force-cancel for run %s", run_id)
+            client.runs.force_cancel(
+                run_id, RunForceCancelOptions(comment=reason or None)
+            )
+        final = wait_for_run(
+            client,
+            run_id,
+            until="terminal",
+            timeout=timeout,
+            on_status=on_status,
+            _sleep=_sleep,
+            _clock=_clock,
+        )
+
+    status = getattr(final.status, "value", final.status)
+    return RunResult(
+        run_id=run_id,
+        workspace_id=_workspace_id_of(final),
+        phase="errored" if status != "applied" else "applied",
+        status=status,
+        ok=status in ("canceled", "discarded"),
+        run=final,
+        duration_s=time.monotonic() - started,
+    )
+
+
+def destroy_run(
+    client: TFEClient,
+    workspace_id: str | None = None,
+    *,
+    organization: str | None = None,
+    workspace_name: str | None = None,
+    message: str = "Destroy by pytfe.workflows",
+    confirmed: bool = False,
+    confirm: Confirm | None = None,
+    timeout: float = 3600,
+    on_status: Callable[[Run], None] | None = None,
+    _sleep: Callable[[float], None] | None = None,
+    _clock: Callable[[], float] | None = None,
+) -> RunResult:
+    """Queue and apply a destroy run against a workspace's current configuration.
+
+    The most destructive operation in this package. It is gated unconditionally:
+    ``confirmed=True`` or a ``confirm`` callback is mandatory, and unlike other
+    workflows there is no ``allow_destroy`` to set, because destruction is the
+    entire point.
+
+    Requires the workspace's ``allow_destroy_plan`` to be enabled; otherwise the
+    workflow refuses before queueing anything.
+
+    Args:
+        client: The client to act through.
+        workspace_id: Target workspace, by ID.
+        organization: Organization name, with ``workspace_name``.
+        workspace_name: Workspace name, with ``organization``.
+        message: Run message.
+        confirmed: The caller asserts a human approved this destruction.
+        confirm: Called with the plan summary; return True to destroy.
+        timeout: Seconds to wait for the run.
+        on_status: Called with the run on every poll.
+
+    Returns:
+        A :class:`~pytfe.workflows.models.RunResult`.
+
+    Raises:
+        WorkspaceNotFound: If the workspace cannot be resolved.
+        WorkflowTimeout: If the run does not settle in time.
+
+    Example:
+        >>> destroy_run(client, organization="acme", workspace_name="scratch",
+        ...             confirmed=True)
+    """
+    started = time.monotonic()
+    workspace = resolve_workspace(
+        client, workspace_id, organization=organization, workspace_name=workspace_name
+    )
+    ws_id = workspace.id or ""
+
+    if not workspace.allow_destroy_plan:
+        return RunResult(
+            workspace_id=ws_id,
+            phase="refused_destructive",
+            ok=False,
+            warnings=[
+                "workspace has allow_destroy_plan disabled; enable it with "
+                "ensure_workspace(spec=WorkspaceSpec(allow_destroy_plan=True)) "
+                "before destroying"
+            ],
+            duration_s=time.monotonic() - started,
+        )
+
+    run = client.runs.create(
+        RunCreateOptions(
+            workspace=Workspace(id=ws_id), message=message, is_destroy=True
+        )
+    )
+    run_id = run.id or ""
+    url = run_web_url(
+        client,
+        organization_of(client, workspace, organization),
+        workspace.name or "",
+        run_id,
+    )
+
+    planned = wait_for_run(
+        client,
+        run_id,
+        until="plan_done",
+        timeout=timeout,
+        on_status=on_status,
+        _sleep=_sleep,
+        _clock=_clock,
+    )
+    status = getattr(planned.status, "value", planned.status)
+    if status in ("errored", "canceled", "discarded"):
+        return RunResult(
+            run_id=run_id,
+            workspace_id=ws_id,
+            phase="errored",
+            status=status,
+            ok=False,
+            failure=diagnose_run(client, run_id),
+            url=url,
+            run=planned,
+            duration_s=time.monotonic() - started,
+        )
+
+    summary = plan_summary(client, run_id)
+    # allow_destroy is implied - destruction is the whole point - but an
+    # explicit human decision is not.
+    blocked = _gate(summary, confirmed=confirmed, confirm=confirm, allow_destroy=True)
+    if blocked:
+        return RunResult(
+            run_id=run_id,
+            workspace_id=ws_id,
+            phase=blocked,
+            status=status,
+            plan=summary,
+            url=url,
+            run=planned,
+            duration_s=time.monotonic() - started,
+        )
+
+    client.runs.apply(run_id, RunApplyOptions(comment=message))
+    final = wait_for_run(
+        client,
+        run_id,
+        until="terminal",
+        timeout=timeout,
+        on_status=on_status,
+        _sleep=_sleep,
+        _clock=_clock,
+    )
+    result = _finish(client, final, summary, started)
+    result.url = url
+    if result.applied:
+        remaining = client.workspaces.read_by_id(ws_id).resource_count
+        if remaining:
+            result.warnings.append(
+                f"{remaining} resource(s) still tracked after the destroy run"
+            )
+    return result

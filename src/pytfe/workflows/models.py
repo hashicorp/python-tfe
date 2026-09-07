@@ -37,6 +37,22 @@ __all__ = [
     "Outputs",
     "EnsureVariablesResult",
     "RunPhaseName",
+    "StateDownload",
+    "ResourceRow",
+    "StateInventory",
+    "PushStateResult",
+    "LockResult",
+    "CloneResult",
+    "TeardownResult",
+    "FleetItem",
+    "FleetResult",
+    "OrgInventory",
+    "ResourceInventory",
+    "TokenRow",
+    "TokenAudit",
+    "AgentPoolSetup",
+    "PublishResult",
+    "TFEHealth",
 ]
 
 RunPhaseName = Literal[
@@ -463,3 +479,482 @@ class EnsureVariablesResult(WorkflowResult):
 
 # Re-exported so callers need only one import site.
 EnsureResult = EnsureResult
+
+
+# ── Tier-2 results ──────────────────────────────────────────────────────────
+
+
+class StateDownload(WorkflowResult):
+    """A workspace's state, downloaded and parsed."""
+
+    kind: Kind = "read"
+    workspace_id: str | None = None
+    state_version_id: str | None = None
+    serial: int | None = None
+    lineage: str | None = None
+    terraform_version: str | None = None
+    size_bytes: int = 0
+    state: dict[str, Any] = Field(default_factory=dict)
+
+    def summary(self) -> dict[str, Any]:
+        """Digest. Omits ``state`` entirely - it is large and may hold secrets."""
+        out = super().summary()
+        out.update(
+            {
+                "workspace_id": self.workspace_id,
+                "state_version_id": self.state_version_id,
+                "serial": self.serial,
+                "lineage": self.lineage,
+                "size_bytes": self.size_bytes,
+                "resource_count": len(self.state.get("resources") or []),
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return f"state serial {self.serial} ({self.size_bytes} bytes)"
+
+
+class ResourceRow(BaseModel):
+    """One resource instance in a workspace's state."""
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    workspace_id: str | None = None
+    workspace_name: str | None = None
+    address: str
+    type: str | None = None
+    provider: str | None = None
+    module: str | None = None
+    mode: str | None = None
+
+
+class StateInventory(WorkflowResult):
+    """What a workspace actually manages."""
+
+    kind: Kind = "read"
+    workspace_id: str | None = None
+    resources: list[ResourceRow] = Field(default_factory=list)
+    by_type: dict[str, int] = Field(default_factory=dict)
+    by_provider: dict[str, int] = Field(default_factory=dict)
+    truncated: bool = False
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "workspace_id": self.workspace_id,
+                "count": len(self.resources),
+                "truncated": self.truncated,
+                "by_type": dict(sorted(self.by_type.items())[:25]),
+                "by_provider": self.by_provider,
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return f"{len(self.resources)} resource(s)"
+
+
+class PushStateResult(WorkflowResult):
+    """Outcome of a state write."""
+
+    kind: Kind = "destructive"
+    action: Literal["pushed", "awaiting_confirmation", "refused", "unchanged"] = (
+        "pushed"
+    )
+    workspace_id: str | None = None
+    state_version_id: str | None = None
+    serial_before: int | None = None
+    serial_after: int | None = None
+    lineage: str | None = None
+    still_locked: bool = False
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "action": self.action,
+                "workspace_id": self.workspace_id,
+                "state_version_id": self.state_version_id,
+                "serial_before": self.serial_before,
+                "serial_after": self.serial_after,
+                "still_locked": self.still_locked,
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return f"{self.action}: serial {self.serial_before} -> {self.serial_after}"
+
+
+class LockResult(WorkflowResult):
+    """Outcome of a lock or unlock."""
+
+    kind: Kind = "write"
+    action: Literal["locked", "unlocked", "unchanged"] = "unchanged"
+    workspace_id: str | None = None
+    locked: bool = False
+    locked_by: str | None = None
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "action": self.action,
+                "workspace_id": self.workspace_id,
+                "locked": self.locked,
+                "locked_by": self.locked_by,
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return f"{self.workspace_id}: {self.action}"
+
+
+class CloneResult(WorkflowResult):
+    """Outcome of cloning a workspace."""
+
+    kind: Kind = "write"
+    action: Literal["created", "updated", "unchanged", "would_create"] = "created"
+    source_workspace_id: str | None = None
+    target_workspace_id: str | None = None
+    copied_variables: list[str] = Field(default_factory=list)
+    manual_followups: list[str] = Field(default_factory=list)
+    state_migrated: bool = False
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "action": self.action,
+                "source_workspace_id": self.source_workspace_id,
+                "target_workspace_id": self.target_workspace_id,
+                "copied_variables": self.copied_variables,
+                "manual_followups": self.manual_followups,
+                "state_migrated": self.state_migrated,
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return f"cloned -> {self.target_workspace_id} ({self.action})"
+
+
+class TeardownResult(WorkflowResult):
+    """Outcome of tearing a workspace down."""
+
+    kind: Kind = "destructive"
+    action: Literal["deleted", "awaiting_confirmation", "refused", "not_found"] = (
+        "awaiting_confirmation"
+    )
+    workspace_id: str | None = None
+    destroy_run_id: str | None = None
+    resources_remaining: int | None = None
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "action": self.action,
+                "workspace_id": self.workspace_id,
+                "destroy_run_id": self.destroy_run_id,
+                "resources_remaining": self.resources_remaining,
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return f"{self.workspace_id}: {self.action}"
+
+
+class FleetItem(BaseModel):
+    """One workspace's outcome inside a fleet workflow."""
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    workspace: WorkspaceSummary
+    result: Any = None
+    error: dict[str, Any] | None = None
+
+    @property
+    def ok(self) -> bool:
+        return self.error is None
+
+
+class FleetResult(WorkflowResult):
+    """Aggregate of a workflow fanned out over many workspaces.
+
+    One workspace failing never aborts the others; its error is captured via
+    ``TFEError.to_dict()`` and reported alongside the successes.
+    """
+
+    kind: Kind = "write"
+    items: list[FleetItem] = Field(default_factory=list)
+    succeeded: int = 0
+    failed: int = 0
+    skipped: int = 0
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "succeeded": self.succeeded,
+                "failed": self.failed,
+                "skipped": self.skipped,
+                "failures": [
+                    {
+                        "workspace": item.workspace.name,
+                        "error": (item.error or {}).get("message"),
+                    }
+                    for item in self.items
+                    if item.error
+                ][:25],
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return f"{self.succeeded} ok, {self.failed} failed, {self.skipped} skipped"
+
+
+class OrgInventory(WorkflowResult):
+    """Every workspace in an organization, with its health."""
+
+    kind: Kind = "read"
+    organization: str
+    rows: list[WorkspaceStatus] = Field(default_factory=list)
+    by_terraform_version: dict[str, int] = Field(default_factory=dict)
+    by_execution_mode: dict[str, int] = Field(default_factory=dict)
+    drifted: list[str] = Field(default_factory=list)
+    locked: list[str] = Field(default_factory=list)
+    errored: list[str] = Field(default_factory=list)
+
+    def to_csv(self) -> str:
+        """Render the inventory as CSV, one row per workspace."""
+        import csv
+        import io
+
+        buffer = io.StringIO()
+        writer = csv.writer(buffer)
+        writer.writerow(
+            [
+                "id",
+                "name",
+                "health",
+                "terraform_version",
+                "execution_mode",
+                "locked",
+                "resource_count",
+                "latest_run_status",
+            ]
+        )
+        for row in self.rows:
+            writer.writerow(
+                [
+                    row.id,
+                    row.name,
+                    row.health,
+                    row.terraform_version or "",
+                    row.execution_mode or "",
+                    row.locked,
+                    row.resource_count if row.resource_count is not None else "",
+                    (row.latest_run or {}).get("status") or "",
+                ]
+            )
+        return buffer.getvalue()
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "organization": self.organization,
+                "count": len(self.rows),
+                "by_terraform_version": self.by_terraform_version,
+                "by_execution_mode": self.by_execution_mode,
+                "drifted": self.drifted[:25],
+                "locked": self.locked[:25],
+                "errored": self.errored[:25],
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return f"{len(self.rows)} workspace(s) in {self.organization}"
+
+
+class ResourceInventory(WorkflowResult):
+    """Managed resources across an organization."""
+
+    kind: Kind = "read"
+    organization: str
+    rows: list[ResourceRow] = Field(default_factory=list)
+    by_type: dict[str, int] = Field(default_factory=dict)
+    by_provider: dict[str, int] = Field(default_factory=dict)
+    by_workspace: dict[str, int] = Field(default_factory=dict)
+    truncated: bool = False
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "organization": self.organization,
+                "count": len(self.rows),
+                "truncated": self.truncated,
+                "by_type": dict(sorted(self.by_type.items())[:25]),
+                "by_provider": self.by_provider,
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return (
+            f"{len(self.rows)} resource(s) across {len(self.by_workspace)} workspace(s)"
+        )
+
+
+class TokenRow(BaseModel):
+    """One API token, described without ever exposing its value."""
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    id: str | None = None
+    kind: Literal["organization", "team", "agent"]
+    owner: str | None = None
+    description: str | None = None
+    created_at: datetime | None = None
+    expired_at: datetime | None = None
+    last_used_at: datetime | None = None
+    expired: bool = False
+    expiring: bool = False
+
+
+class TokenAudit(WorkflowResult):
+    """Every token this credential can enumerate, and when it expires."""
+
+    kind: Kind = "read"
+    organization: str
+    tokens: list[TokenRow] = Field(default_factory=list)
+    expiring_within_days: int = 30
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "organization": self.organization,
+                "count": len(self.tokens),
+                "expired": [t.id for t in self.tokens if t.expired],
+                "expiring": [t.id for t in self.tokens if t.expiring],
+                "by_kind": {
+                    kind: sum(1 for t in self.tokens if t.kind == kind)
+                    for kind in ("organization", "team", "agent")
+                },
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        expiring = sum(1 for t in self.tokens if t.expiring or t.expired)
+        return f"{len(self.tokens)} token(s), {expiring} expiring or expired"
+
+
+class AgentPoolSetup(WorkflowResult):
+    """Outcome of setting up an agent pool.
+
+    ``token`` is returned exactly once, because the API shows an agent token's
+    value only at creation. It is deliberately excluded from ``summary()``.
+    """
+
+    kind: Kind = "write"
+    action: Literal["created", "updated", "unchanged", "would_create"] = "unchanged"
+    agent_pool_id: str | None = None
+    name: str | None = None
+    token: str | None = None
+    token_id: str | None = None
+    assigned_workspace_ids: list[str] = Field(default_factory=list)
+    agent_connected: bool = False
+
+    def summary(self) -> dict[str, Any]:
+        """Digest. Never contains the token value."""
+        out = super().summary()
+        out.update(
+            {
+                "action": self.action,
+                "agent_pool_id": self.agent_pool_id,
+                "name": self.name,
+                "token_id": self.token_id,
+                "token_returned": self.token is not None,
+                "assigned_workspace_ids": self.assigned_workspace_ids,
+                "agent_connected": self.agent_connected,
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return f"agent pool {self.name}: {self.action}"
+
+
+class PublishResult(WorkflowResult):
+    """Outcome of publishing a registry artifact."""
+
+    kind: Kind = "write"
+    action: Literal["published", "unchanged", "would_publish"] = "published"
+    module_id: str | None = None
+    name: str | None = None
+    provider: str | None = None
+    version: str | None = None
+    status: str | None = None
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "action": self.action,
+                "name": self.name,
+                "provider": self.provider,
+                "version": self.version,
+                "status": self.status,
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return f"{self.name}/{self.provider} {self.version}: {self.action}"
+
+
+class TFEHealth(WorkflowResult):
+    """A Terraform Enterprise instance summary, assembled from admin reads.
+
+    Note:
+        There is no health or ping endpoint in the API. This is composed from
+        the admin namespaces that do exist - organizations, runs, users and
+        Terraform versions - so it reports reachability and queue pressure
+        rather than a server-reported health status.
+    """
+
+    kind: Kind = "read"
+    reachable: bool = False
+    organization_count: int | None = None
+    user_count: int | None = None
+    run_queue_depth: int | None = None
+    runs_by_status: dict[str, int] = Field(default_factory=dict)
+    terraform_versions: int | None = None
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "reachable": self.reachable,
+                "organization_count": self.organization_count,
+                "user_count": self.user_count,
+                "run_queue_depth": self.run_queue_depth,
+                "runs_by_status": self.runs_by_status,
+                "terraform_versions": self.terraform_versions,
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        state = "reachable" if self.reachable else "unreachable"
+        return f"TFE {state}, {self.run_queue_depth} run(s) queued"

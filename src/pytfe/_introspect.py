@@ -105,6 +105,11 @@ def _describe_workflows() -> dict[str, Any]:
             signature = str(inspect.signature(member))
         except (TypeError, ValueError):  # pragma: no cover - defensive
             signature = "(...)"
+        # A workflow acts through a client. Pure helpers such as phase_of() and
+        # package_directory() are useful but are not operations against the API,
+        # and listing them here would pad an agent's tool surface.
+        if "client" not in list(inspect.signature(member).parameters)[:1]:
+            continue
         entry: dict[str, Any] = {
             "signature": signature,
             "summary": _summary(member),

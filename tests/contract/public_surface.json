@@ -1,4 +1,67 @@
 {
+  "admin.organizations": {
+    "list": [
+      "options"
+    ]
+  },
+  "admin.runs": {
+    "list": [
+      "options"
+    ]
+  },
+  "admin.saml_settings": {
+    "update": [
+      "options"
+    ]
+  },
+  "admin.scim_settings": {
+    "update": [
+      "options"
+    ]
+  },
+  "admin.smtp_settings": {
+    "update": [
+      "options"
+    ]
+  },
+  "admin.terraform_versions": {
+    "list": []
+  },
+  "admin.users": {
+    "list": [
+      "options"
+    ]
+  },
+  "agent_pools": {
+    "assign_to_workspaces": [
+      "agent_pool_id",
+      "options"
+    ],
+    "create": [
+      "organization",
+      "options"
+    ],
+    "list": [
+      "organization",
+      "options"
+    ]
+  },
+  "agent_tokens": {
+    "create": [
+      "agent_pool_id",
+      "options"
+    ],
+    "list": [
+      "agent_pool_id",
+      "options"
+    ]
+  },
+  "agents": {
+    "list": [
+      "agent_pool_id",
+      "options"
+    ]
+  },
   "applies": {
     "errored_state": [
       "apply_id"
@@ -34,6 +97,37 @@
       "cost_estimate_id"
     ]
   },
+  "no_code_modules": {
+    "create_workspace": [
+      "no_code_module_id",
+      "options"
+    ]
+  },
+  "notification_configurations": {
+    "create": [
+      "subscribable_id",
+      "options"
+    ],
+    "list": [
+      "subscribable_id",
+      "options"
+    ],
+    "update": [
+      "notification_config_id",
+      "options"
+    ]
+  },
+  "organization_tokens": {
+    "read": [
+      "organization"
+    ]
+  },
+  "organizations": {
+    "create": [
+      "options"
+    ],
+    "list": []
+  },
   "plans": {
     "logs": [
       "plan_id"
@@ -55,6 +149,96 @@
     "list": [
       "run_id",
       "options"
+    ],
+    "override": [
+      "policy_check_id"
+    ]
+  },
+  "policy_sets": {
+    "add_workspaces": [
+      "policy_set_id",
+      "options"
+    ],
+    "create": [
+      "organization",
+      "options"
+    ],
+    "list": [
+      "organization",
+      "options"
+    ],
+    "update": [
+      "policy_set_id",
+      "options"
+    ]
+  },
+  "projects": {
+    "create": [
+      "organization",
+      "options"
+    ],
+    "list": [
+      "organization",
+      "options"
+    ],
+    "move_workspaces": [
+      "project_id",
+      "workspace_ids"
+    ],
+    "update": [
+      "project_id",
+      "options"
+    ]
+  },
+  "registry_modules": {
+    "create": [
+      "organization",
+      "options"
+    ],
+    "create_version": [
+      "module_id",
+      "options"
+    ],
+    "list_versions": [
+      "module_id"
+    ],
+    "read": [
+      "module_id"
+    ],
+    "read_version": [
+      "module_id",
+      "version"
+    ],
+    "upload_tar_gzip": [
+      "upload_url",
+      "archive"
+    ]
+  },
+  "run_tasks": {
+    "create": [
+      "organization_id",
+      "options"
+    ],
+    "list": [
+      "organization_id",
+      "options"
+    ],
+    "update": [
+      "run_task_id",
+      "options"
+    ]
+  },
+  "run_triggers": {
+    "create": [
+      "workspace_id",
+      "options"
+    ],
+    "delete": [
+      "run_trigger_id"
+    ],
+    "list": [
+      "workspace_id",
+      "options"
     ]
   },
   "runs": {
@@ -62,10 +246,18 @@
       "run_id",
       "options"
     ],
+    "cancel": [
+      "run_id",
+      "options"
+    ],
     "create": [
       "options"
     ],
     "discard": [
+      "run_id",
+      "options"
+    ],
+    "force_cancel": [
       "run_id",
       "options"
     ],
@@ -84,8 +276,108 @@
     ]
   },
   "state_versions": {
+    "download": [
+      "state_version_id"
+    ],
+    "list": [
+      "options"
+    ],
+    "read": [
+      "state_version_id"
+    ],
     "read_current": [
       "workspace_id"
+    ],
+    "rollback": [
+      "workspace_id",
+      "rollback_state_version_id"
+    ],
+    "upload": [
+      "workspace",
+      "raw_state",
+      "raw_json_state",
+      "options",
+      "organization"
+    ]
+  },
+  "team_tokens": {
+    "list": [
+      "organization",
+      "options"
+    ]
+  },
+  "team_workspace_accesses": {
+    "add": [
+      "options"
+    ],
+    "list": [
+      "workspace_id"
+    ],
+    "update": [
+      "team_workspace_access_id",
+      "options"
+    ]
+  },
+  "teams": {
+    "add_users": [
+      "team_id",
+      "usernames"
+    ],
+    "create": [
+      "organization",
+      "options"
+    ],
+    "list": [
+      "organization",
+      "options"
+    ],
+    "list_users": [
+      "team_id"
+    ],
+    "remove_users": [
+      "team_id",
+      "usernames"
+    ]
+  },
+  "variable_set_variables": {
+    "create": [
+      "variable_set_id",
+      "options"
+    ],
+    "delete": [
+      "variable_set_id",
+      "variable_id"
+    ],
+    "list": [
+      "variable_set_id",
+      "options"
+    ],
+    "update": [
+      "variable_set_id",
+      "variable_id",
+      "options"
+    ]
+  },
+  "variable_sets": {
+    "apply_to_projects": [
+      "variable_set_id",
+      "options"
+    ],
+    "apply_to_workspaces": [
+      "variable_set_id",
+      "options"
+    ],
+    "create": [
+      "organization",
+      "options"
+    ],
+    "list": [
+      "organization",
+      "options"
+    ],
+    "update": [
+      "variable_set_id",
+      "options"
     ]
   },
   "variables": {
@@ -107,6 +399,27 @@
       "options"
     ]
   },
+  "workspace_resources": {
+    "list": [
+      "workspace_id",
+      "options"
+    ]
+  },
+  "workspace_run_tasks": {
+    "create": [
+      "workspace_id",
+      "options"
+    ],
+    "list": [
+      "workspace_id",
+      "options"
+    ],
+    "update": [
+      "workspace_id",
+      "workspace_task_id",
+      "options"
+    ]
+  },
   "workspaces": {
     "add_tags": [
       "workspace_id",
@@ -116,8 +429,18 @@
       "organization",
       "options"
     ],
+    "delete_by_id": [
+      "workspace_id"
+    ],
+    "force_unlock": [
+      "workspace_id"
+    ],
     "list": [
       "organization",
+      "options"
+    ],
+    "lock": [
+      "workspace_id",
       "options"
     ],
     "read": [
@@ -130,6 +453,12 @@
     "remove_tags": [
       "workspace_id",
       "options"
+    ],
+    "safe_delete_by_id": [
+      "workspace_id"
+    ],
+    "unlock": [
+      "workspace_id"
     ],
     "update_by_id": [
       "workspace_id",
