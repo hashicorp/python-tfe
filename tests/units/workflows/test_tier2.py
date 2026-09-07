@@ -604,3 +604,50 @@ def test_platform_specs_from_a_release_dir(tmp_path: Any) -> None:
     specs = ProviderPlatformSpec.from_release_dir(str(tmp_path), shasums=shasums)
     assert {(s.os, s.arch) for s in specs} == {("linux", "amd64"), ("darwin", "arm64")}
     assert {s.shasum for s in specs} == {"aaa", "bbb"}
+
+
+# --------------------------------------------------------------------------
+# ensure_variable_set attachment idempotence
+#
+# Regression found by comparing against the Ansible collection, which reads the
+# set's current attachments and attaches only on a miss
+# (plugins/action/workspace_bootstrap.py:176-182). The first implementation here
+# called apply_to_workspaces unconditionally, so a repeat call always reported
+# action="updated" and issued a write.
+# --------------------------------------------------------------------------
+
+
+def make_variable_set(**kw: Any) -> Any:
+    from pytfe.models.variable_set import VariableSet
+
+    payload: dict[str, Any] = {"id": "varset-1", "name": "shared", "global": False}
+    payload.update(kw)
+    return VariableSet.model_validate(payload)
+
+
+def test_variable_set_attachment_is_idempotent(client: Any) -> None:
+    from pytfe.workflows import ensure_variable_set
+
+    client.variable_sets.list.return_value = iter([make_variable_set()])
+    client.variable_sets.read.return_value = make_variable_set(
+        workspaces=[{"id": "ws-1", "name": "web"}]
+    )
+    result = ensure_variable_set(client, "acme", "shared", workspace_ids={"ws-1"})
+    assert result.action == "unchanged"
+    client.variable_sets.apply_to_workspaces.assert_not_called()
+
+
+def test_variable_set_attaches_only_the_missing_workspaces(client: Any) -> None:
+    from pytfe.workflows import ensure_variable_set
+
+    client.variable_sets.list.return_value = iter([make_variable_set()])
+    client.variable_sets.read.return_value = make_variable_set(
+        workspaces=[{"id": "ws-1", "name": "web"}]
+    )
+    result = ensure_variable_set(
+        client, "acme", "shared", workspace_ids={"ws-1", "ws-2"}
+    )
+    assert result.action == "updated"
+    options = client.variable_sets.apply_to_workspaces.call_args.args[1]
+    # Only the workspace that was not already attached.
+    assert [w.id for w in options.workspaces] == ["ws-2"]

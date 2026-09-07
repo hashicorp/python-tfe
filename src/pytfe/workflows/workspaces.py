@@ -24,6 +24,7 @@ from ..models.variable_set import (
     VariableSetApplyToProjectsOptions,
     VariableSetApplyToWorkspacesOptions,
     VariableSetCreateOptions,
+    VariableSetReadOptions,
     VariableSetUpdateOptions,
     VariableSetVariableCreateOptions,
     VariableSetVariableUpdateOptions,
@@ -901,33 +902,51 @@ def ensure_variable_set(
                 if not dry_run:
                     client.variable_set_variables.delete(set_id, variable.id or "")
 
-    if workspace_ids is not None:
-        applied = {
-            ws.id
-            for ws in client.workspaces.list(organization)
-            if ws.id in workspace_ids
-        }
-        if applied and not dry_run:
-            client.variable_sets.apply_to_workspaces(
-                set_id,
-                VariableSetApplyToWorkspacesOptions(
-                    workspaces=[Workspace(id=i) for i in sorted(applied)]
-                ),
+    # Attachments converge against what is already attached, so a repeat call
+    # issues no write. Reading the set back with its relations hydrated is the
+    # only way to know: apply_to_* always counts as a request, so calling it
+    # unconditionally would report "updated" forever.
+    attached_workspaces: set[str] = set()
+    attached_projects: set[str] = set()
+    if workspace_ids is not None or project_ids is not None:
+        try:
+            hydrated = client.variable_sets.read(
+                set_id, VariableSetReadOptions(include=["workspaces", "projects"])
             )
-        if applied:
-            changes.append(
-                Change(field="workspaces", before=None, after=sorted(applied))
+            attached_workspaces = {w.id for w in (hydrated.workspaces or []) if w.id}
+            attached_projects = {p.id for p in (hydrated.projects or []) if p.id}
+        except TFEError as exc:
+            logger.debug(
+                "could not read attachments for variable set %s: %s", set_id, exc
             )
 
-    if project_ids is not None:
-        if not dry_run:
-            client.variable_sets.apply_to_projects(
-                set_id,
-                VariableSetApplyToProjectsOptions(
-                    projects=[Project(id=i) for i in sorted(project_ids)]
-                ),
+    if workspace_ids is not None:
+        missing = sorted(workspace_ids - attached_workspaces)
+        if missing:
+            changes.append(
+                Change(field="workspaces.attached", before=None, after=missing)
             )
-        changes.append(Change(field="projects", before=None, after=sorted(project_ids)))
+            if not dry_run:
+                client.variable_sets.apply_to_workspaces(
+                    set_id,
+                    VariableSetApplyToWorkspacesOptions(
+                        workspaces=[Workspace(id=i) for i in missing]
+                    ),
+                )
+
+    if project_ids is not None:
+        missing_projects = sorted(project_ids - attached_projects)
+        if missing_projects:
+            changes.append(
+                Change(field="projects.attached", before=None, after=missing_projects)
+            )
+            if not dry_run:
+                client.variable_sets.apply_to_projects(
+                    set_id,
+                    VariableSetApplyToProjectsOptions(
+                        projects=[Project(id=i) for i in missing_projects]
+                    ),
+                )
 
     if dry_run:
         return EnsureResult(
