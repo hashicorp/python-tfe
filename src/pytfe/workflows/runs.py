@@ -31,9 +31,19 @@ from ..models.configuration_version import (
 from ..models.run import Run, RunApplyOptions, RunCreateOptions, RunVariable
 from ..models.workspace import Workspace
 from ._package import package_directory
+from ._plan import changed_paths, sensitive_paths, unknown_paths
 from ._poll import wait_until
 from ._resolve import organization_of, resolve_workspace, run_web_url
-from .models import PlanSummary, PolicyResult, RunFailure, RunResult
+from ._result import Change, EnsureResult
+from .models import (
+    OutputChange,
+    PlanAnalysis,
+    PlanSummary,
+    PolicyResult,
+    ResourceChange,
+    RunFailure,
+    RunResult,
+)
 from .status import RunPhase, is_plan_done, is_terminal, phase_of, run_is_confirmable
 
 logger = logging.getLogger("pytfe.workflows")
@@ -49,6 +59,10 @@ __all__ = [
     "resolve_policy_override",
     "cancel_run",
     "destroy_run",
+    "analyze_plan",
+    "ensure_configuration_version",
+    "queue_run",
+    "PolicyMode",
 ]
 
 #: Called with the plan summary; return True to proceed with a destructive step.
@@ -145,13 +159,22 @@ def _policy_results(client: TFEClient, run_id: str) -> list[PolicyResult]:
             status = getattr(check, "status", None)
             status_value = getattr(status, "value", status)
             actions = getattr(check, "actions", None)
+            scope = getattr(check, "scope", None)
             out.append(
                 PolicyResult(
                     id=getattr(check, "id", None),
-                    name=getattr(check, "scope", None) or getattr(check, "id", None),
+                    name=getattr(check, "id", None),
+                    scope=getattr(scope, "value", scope),
                     status=status_value,
-                    passed=status_value == "passed" if status_value else None,
+                    # An overridden check has already been decided by a human,
+                    # so it counts as passing rather than as a failure.
+                    passed=(
+                        status_value in ("passed", "overridden")
+                        if status_value
+                        else None
+                    ),
                     hard_failed=status_value == "hard_failed",
+                    soft_failed=status_value == "soft_failed",
                     overridable=bool(getattr(actions, "is_overridable", False)),
                 )
             )
@@ -437,16 +460,37 @@ def diagnose_run(client: TFEClient, run_id: str, *, max_lines: int = 60) -> RunF
     return result
 
 
+#: How a workflow treats a run whose policy checks did not pass.
+PolicyMode = Literal["require_pass", "allow_advisory", "ignore"]
+
+
+def _policy_block(plan: PlanSummary, policy: PolicyMode) -> bool:
+    """True when policy results should stop the apply."""
+    if policy == "ignore":
+        return False
+    if policy == "allow_advisory":
+        return any(p.hard_failed for p in plan.policy_results)
+    return any(p.blocking for p in plan.policy_results)
+
+
 def _gate(
     plan: PlanSummary,
     *,
     confirmed: bool,
     confirm: Confirm | None,
     allow_destroy: bool,
+    policy: PolicyMode = "require_pass",
 ) -> str | None:
-    """Apply the destructive-gate rules. Returns a blocking phase, or None."""
+    """Apply the gate rules in order. Returns a blocking phase, or None.
+
+    Order matters: a refusal the caller cannot override with ``confirmed=True``
+    is checked first, so a destructive or policy-failing plan is reported as
+    refused rather than as merely awaiting confirmation.
+    """
     if plan.is_destructive and not allow_destroy:
         return "refused_destructive"
+    if _policy_block(plan, policy):
+        return "refused_policy"
     if confirm is not None:
         return None if confirm(plan) else "rejected"
     if not confirmed:
@@ -461,6 +505,7 @@ def apply_with_gate(
     confirmed: bool = False,
     confirm: Confirm | None = None,
     allow_destroy: bool = False,
+    policy: PolicyMode = "require_pass",
     comment: str | None = None,
     timeout: float = 1800,
     on_status: Callable[[Run], None] | None = None,
@@ -507,7 +552,11 @@ def apply_with_gate(
 
     summary = plan_summary(client, run_id)
     blocked = _gate(
-        summary, confirmed=confirmed, confirm=confirm, allow_destroy=allow_destroy
+        summary,
+        confirmed=confirmed,
+        confirm=confirm,
+        allow_destroy=allow_destroy,
+        policy=policy,
     )
     if blocked:
         return RunResult(
@@ -516,7 +565,7 @@ def apply_with_gate(
             phase=blocked,
             status=getattr(run.status, "value", run.status),
             plan=summary,
-            ok=blocked != "refused_destructive",
+            ok=blocked not in ("refused_destructive", "refused_policy"),
             run=run,
             duration_s=time.monotonic() - started,
         )
@@ -599,6 +648,7 @@ def run_from_directory(
     confirmed: bool = False,
     confirm: Confirm | None = None,
     allow_destroy: bool = False,
+    policy: PolicyMode = "require_pass",
     on_reject: Literal["discard", "leave"] = "discard",
     timeout: float = 1800,
     upload_timeout: float = 120,
@@ -668,31 +718,16 @@ def run_from_directory(
             duration_s=time.monotonic() - started,
         )
 
-    logger.info("creating configuration version for workspace %s", ws_id)
-    config_version = client.configuration_versions.create(
-        ws_id,
-        ConfigurationVersionCreateOptions(
-            auto_queue_runs=False, speculative=speculative or None
-        ),
+    cv_id = (
+        ensure_configuration_version(
+            client,
+            directory,
+            workspace_id=ws_id,
+            speculative=speculative,
+            timeout=upload_timeout,
+        ).resource_id
+        or ""
     )
-    if not config_version.upload_url:
-        raise UploadFailed("configuration version did not include an upload URL")
-
-    archive = package_directory(directory)
-    client.configuration_versions.upload_tar_gzip(
-        config_version.upload_url, io.BytesIO(archive)
-    )
-
-    cv_id = config_version.id or ""
-    processed = wait_until(
-        lambda: client.configuration_versions.read(cv_id),
-        lambda cv: getattr(cv.status, "value", cv.status) in ("uploaded", "errored"),
-        timeout=upload_timeout,
-        interval=1.0,
-        description=f"configuration version {cv_id} to finish uploading",
-    )
-    if getattr(processed.status, "value", processed.status) == "errored":
-        raise UploadFailed(f"configuration version {cv_id} errored during upload")
 
     variables = (
         [RunVariable(key=k, value=v) for k, v in run_variables.items()]
@@ -750,7 +785,11 @@ def run_from_directory(
         return _result("planned", plan=summary)
 
     blocked = _gate(
-        summary, confirmed=confirmed, confirm=confirm, allow_destroy=allow_destroy
+        summary,
+        confirmed=confirmed,
+        confirm=confirm,
+        allow_destroy=allow_destroy,
+        policy=policy,
     )
     if blocked == "rejected" and on_reject == "discard":
         try:
@@ -759,7 +798,9 @@ def run_from_directory(
             logger.debug("could not discard run %s: %s", run_id, exc)
     if blocked:
         return _result(
-            blocked, plan=summary, ok=blocked not in ("refused_destructive",)
+            blocked,
+            plan=summary,
+            ok=blocked not in ("refused_destructive", "refused_policy"),
         )
 
     client.runs.apply(run_id, RunApplyOptions(comment=None))
@@ -898,8 +939,14 @@ def resolve_policy_override(
 
     summary = plan_summary(client, run_id)
     summary.policy_results = checks
+    # policy="ignore": overriding the failed policy is the entire purpose of
+    # this workflow, so the policy gate must not block it.
     blocked = _gate(
-        summary, confirmed=confirmed, confirm=confirm, allow_destroy=allow_destroy
+        summary,
+        confirmed=confirmed,
+        confirm=confirm,
+        allow_destroy=allow_destroy,
+        policy="ignore",
     )
     if blocked:
         return RunResult(
@@ -908,7 +955,7 @@ def resolve_policy_override(
             phase=blocked,
             status=status,
             plan=summary,
-            ok=blocked != "refused_destructive",
+            ok=blocked not in ("refused_destructive", "refused_policy"),
             run=run,
             duration_s=time.monotonic() - started,
         )
@@ -1043,6 +1090,7 @@ def destroy_run(
     message: str = "Destroy by pytfe.workflows",
     confirmed: bool = False,
     confirm: Confirm | None = None,
+    policy: PolicyMode = "require_pass",
     timeout: float = 3600,
     on_status: Callable[[Run], None] | None = None,
     _sleep: Callable[[float], None] | None = None,
@@ -1138,7 +1186,9 @@ def destroy_run(
     summary = plan_summary(client, run_id)
     # allow_destroy is implied - destruction is the whole point - but an
     # explicit human decision is not.
-    blocked = _gate(summary, confirmed=confirmed, confirm=confirm, allow_destroy=True)
+    blocked = _gate(
+        summary, confirmed=confirmed, confirm=confirm, allow_destroy=True, policy=policy
+    )
     if blocked:
         return RunResult(
             run_id=run_id,
@@ -1169,4 +1219,380 @@ def destroy_run(
             result.warnings.append(
                 f"{remaining} resource(s) still tracked after the destroy run"
             )
+    return result
+
+
+def analyze_plan(
+    client: TFEClient,
+    run_id: str | None = None,
+    *,
+    plan_id: str | None = None,
+    payload: dict[str, Any] | None = None,
+    max_resources: int = 200,
+) -> PlanAnalysis:
+    """Explain a plan at attribute level: what changes, and why.
+
+    :func:`plan_summary` answers "how many things change". This answers "which
+    attribute of which resource", which is what a drift review or an approval
+    decision actually turns on - including ``action_reason``, so
+    ``replace_because_cannot_update`` is visible rather than showing up as an
+    unexplained destroy-and-recreate.
+
+    Only attribute *paths* are returned, never values. A plan's ``before`` and
+    ``after`` blocks hold real infrastructure data, and the document routinely
+    exceeds 20MB.
+
+    Args:
+        client: The client to read through.
+        run_id: The run whose plan to analyze.
+        plan_id: A plan ID, as an alternative to ``run_id``.
+        payload: An already-fetched plan JSON document, to analyze without a
+            request. Useful for testing and for re-analyzing a stored plan.
+        max_resources: Cap on resource changes collected.
+
+    Returns:
+        A :class:`~pytfe.workflows.models.PlanAnalysis`.
+
+    Raises:
+        ValueError: If no ``run_id``, ``plan_id`` or ``payload`` is given.
+        TFEError: If the plan JSON cannot be read.
+
+    Example:
+        >>> analysis = analyze_plan(client, "run-CZcmD7eagjhyXAvx")
+        >>> analysis.replaced_because
+        {'aws_instance.web': 'replace_because_cannot_update'}
+        >>> [str(r) for r in analysis.destructive]
+        ['delete/create aws_instance.web']
+    """
+    if payload is None and not run_id and not plan_id:
+        raise ValueError("pass run_id, plan_id or payload")
+
+    result = PlanAnalysis(run_id=run_id, plan_id=plan_id)
+
+    if payload is None:
+        try:
+            payload = (
+                client.plans.read_json_output_for_run(run_id)
+                if run_id
+                else client.plans.read_json_output(plan_id or "")
+            )
+        except TFEError as exc:
+            result.ok = False
+            result.warnings.append(f"plan JSON unavailable: {exc}")
+            return result
+
+    if not payload:
+        result.ok = False
+        result.warnings.append(
+            "plan JSON is empty; speculative and archived plans may not expose it"
+        )
+        return result
+
+    for entry in payload.get("resource_changes") or []:
+        change = entry.get("change") or {}
+        actions = [a for a in (change.get("actions") or []) if a != "no-op"]
+        if not actions:
+            continue
+        if len(result.resources) >= max_resources:
+            result.truncated = True
+            break
+        result.resources.append(
+            ResourceChange(
+                address=entry.get("address", ""),
+                type=entry.get("type"),
+                name=entry.get("name"),
+                provider=entry.get("provider_name"),
+                module=entry.get("module_address"),
+                index_key=entry.get("index"),
+                actions=actions,
+                action_reason=entry.get("action_reason"),
+                changed_attributes=changed_paths(change),
+                computed_attributes=unknown_paths(change),
+                sensitive_attributes=sensitive_paths(change),
+            )
+        )
+
+    for name, output in (payload.get("output_changes") or {}).items():
+        change = output or {}
+        actions = [a for a in (change.get("actions") or []) if a != "no-op"]
+        if not actions:
+            continue
+        result.output_changes.append(
+            OutputChange(
+                name=name,
+                actions=actions,
+                sensitive=bool(
+                    change.get("after_sensitive") or change.get("before_sensitive")
+                ),
+            )
+        )
+
+    result.drift = [
+        entry.get("address", "")
+        for entry in (payload.get("resource_drift") or [])
+        if entry.get("address")
+    ]
+    return result
+
+
+def ensure_configuration_version(
+    client: TFEClient,
+    directory: str | os.PathLike[str],
+    *,
+    workspace_id: str | None = None,
+    organization: str | None = None,
+    workspace_name: str | None = None,
+    speculative: bool = False,
+    timeout: float = 120,
+) -> EnsureResult:
+    """Upload a configuration directory and wait for it to be processed.
+
+    The create/package/upload/wait sequence on its own, so a caller can prepare a
+    configuration version without also queueing a run - useful when the run
+    options are decided later, or when several runs share one upload.
+
+    The directory is packaged with Terraform's exclusions (``.git/``,
+    ``.terraform/``, any ``.terraformignore``), not with
+    ``pytfe.utils.pack_contents``, which would ship provider binaries.
+
+    Args:
+        client: The client to act through.
+        directory: Local configuration directory to upload.
+        workspace_id: Target workspace, by ID.
+        organization: Organization name, with ``workspace_name``.
+        workspace_name: Workspace name, with ``organization``.
+        speculative: Mark the version speculative, so it can only be planned.
+        timeout: Seconds to wait for the upload to be processed.
+
+    Returns:
+        An :class:`~pytfe.workflows._result.EnsureResult` whose ``resource_id``
+        is the configuration version ID.
+
+    Raises:
+        WorkspaceNotFound: If the workspace cannot be resolved.
+        UploadFailed: If no upload URL is returned, or processing errors.
+        WorkflowTimeout: If processing does not finish in time.
+
+    Example:
+        >>> cv = ensure_configuration_version(
+        ...     client, "./terraform", organization="acme", workspace_name="web"
+        ... )
+        >>> queue_run(client, workspace_id=ws.id, configuration_version_id=cv.resource_id)
+    """
+    workspace = resolve_workspace(
+        client, workspace_id, organization=organization, workspace_name=workspace_name
+    )
+    ws_id = workspace.id or ""
+
+    logger.info("creating configuration version for workspace %s", ws_id)
+    config_version = client.configuration_versions.create(
+        ws_id,
+        ConfigurationVersionCreateOptions(
+            auto_queue_runs=False, speculative=speculative or None
+        ),
+    )
+    if not config_version.upload_url:
+        raise UploadFailed("configuration version did not include an upload URL")
+
+    archive = package_directory(directory)
+    client.configuration_versions.upload_tar_gzip(
+        config_version.upload_url, io.BytesIO(archive)
+    )
+
+    cv_id = config_version.id or ""
+    processed = wait_until(
+        lambda: client.configuration_versions.read(cv_id),
+        lambda cv: getattr(cv.status, "value", cv.status) in ("uploaded", "errored"),
+        timeout=timeout,
+        interval=1.0,
+        description=f"configuration version {cv_id} to finish uploading",
+    )
+    if getattr(processed.status, "value", processed.status) == "errored":
+        raise UploadFailed(f"configuration version {cv_id} errored during upload")
+
+    return EnsureResult(
+        action="created",
+        resource_id=cv_id,
+        resource_type="configuration-versions",
+        changes=[Change(field="size_bytes", before=None, after=len(archive))],
+    )
+
+
+def queue_run(
+    client: TFEClient,
+    *,
+    workspace_id: str | None = None,
+    organization: str | None = None,
+    workspace_name: str | None = None,
+    configuration_version_id: str | None = None,
+    message: str = "Queued by pytfe.workflows",
+    plan_only: bool = False,
+    is_destroy: bool = False,
+    target_addrs: list[str] | None = None,
+    replace_addrs: list[str] | None = None,
+    run_variables: dict[str, str] | None = None,
+    refresh_only: bool = False,
+    confirmed: bool = False,
+    confirm: Confirm | None = None,
+    allow_destroy: bool = False,
+    policy: PolicyMode = "require_pass",
+    timeout: float = 1800,
+    on_status: Callable[[Run], None] | None = None,
+    _sleep: Callable[[float], None] | None = None,
+    _clock: Callable[[], float] | None = None,
+) -> RunResult:
+    """Queue a run without uploading a configuration directory.
+
+    Every other run-creating workflow requires a local directory.
+    This is the case for a VCS-connected workspace, where the configuration
+    already lives in the workspace - and for a refresh-only run, which is how
+    drift is detected.
+
+    Omitting ``configuration_version_id`` uses the workspace's current
+    configuration, which is what a VCS-driven workspace wants.
+
+    Args:
+        client: The client to act through.
+        workspace_id: Target workspace, by ID.
+        organization: Organization name, with ``workspace_name``.
+        workspace_name: Workspace name, with ``organization``.
+        configuration_version_id: Configuration to run. Defaults to the
+            workspace's current one.
+        message: Run message.
+        plan_only: Queue a plan-only run.
+        is_destroy: Queue a destroy run.
+        target_addrs: ``-target`` addresses.
+        replace_addrs: ``-replace`` addresses.
+        run_variables: One-off run variables.
+        refresh_only: Refresh state without proposing changes. This is the
+            drift-detection run.
+        confirmed: The caller asserts a human approved applying this.
+        confirm: Called with the plan summary; return True to apply.
+        allow_destroy: Permit a destructive plan.
+        policy: How to treat failed policy checks.
+        timeout: Seconds to wait for the run.
+        on_status: Called with the run on every poll.
+
+    Returns:
+        A :class:`~pytfe.workflows.models.RunResult`. Branch on ``.phase``.
+
+    Raises:
+        WorkspaceNotFound: If the workspace cannot be resolved.
+        WorkflowTimeout: If the run does not settle in time.
+
+    Example:
+        >>> # Detect drift on a VCS-connected workspace, changing nothing.
+        >>> result = queue_run(
+        ...     client, organization="acme", workspace_name="web",
+        ...     refresh_only=True, plan_only=True,
+        ... )
+        >>> result.plan.has_changes
+        False
+    """
+    started = time.monotonic()
+    workspace = resolve_workspace(
+        client, workspace_id, organization=organization, workspace_name=workspace_name
+    )
+    ws_id = workspace.id or ""
+
+    if is_destroy and not allow_destroy:
+        return RunResult(
+            workspace_id=ws_id,
+            phase="refused_destructive",
+            ok=False,
+            warnings=["is_destroy=True requires allow_destroy=True"],
+            duration_s=time.monotonic() - started,
+        )
+
+    variables = (
+        [RunVariable(key=k, value=v) for k, v in run_variables.items()]
+        if run_variables
+        else None
+    )
+    run = client.runs.create(
+        RunCreateOptions(
+            workspace=Workspace(id=ws_id),
+            configuration_version=(
+                ConfigurationVersion(id=configuration_version_id)
+                if configuration_version_id
+                else None
+            ),
+            message=message,
+            is_destroy=is_destroy or None,
+            plan_only=plan_only or None,
+            refresh_only=refresh_only or None,
+            target_addrs=target_addrs,
+            replace_addrs=replace_addrs,
+            variables=variables,
+        )
+    )
+    run_id = run.id or ""
+    url = run_web_url(
+        client,
+        organization_of(client, workspace, organization),
+        workspace.name or "",
+        run_id,
+    )
+
+    planned = wait_for_run(
+        client,
+        run_id,
+        until="plan_done",
+        timeout=timeout,
+        on_status=on_status,
+        _sleep=_sleep,
+        _clock=_clock,
+    )
+    status = getattr(planned.status, "value", planned.status)
+
+    def build(phase: str, **kw: Any) -> RunResult:
+        return RunResult(
+            run_id=run_id,
+            workspace_id=ws_id,
+            configuration_version_id=configuration_version_id,
+            phase=phase,
+            status=status,
+            url=url,
+            run=planned,
+            duration_s=time.monotonic() - started,
+            **kw,
+        )
+
+    if status in ("errored", "canceled", "discarded"):
+        return build("errored", ok=False, failure=diagnose_run(client, run_id))
+    if status == "planned_and_finished":
+        return build("no_changes", plan=plan_summary(client, run_id))
+
+    summary = plan_summary(client, run_id)
+    if phase_of(planned.status) is RunPhase.AWAITING_DECISION:
+        return build("awaiting_policy_override", plan=summary, ok=False)
+    if plan_only or refresh_only:
+        return build("planned", plan=summary)
+
+    blocked = _gate(
+        summary,
+        confirmed=confirmed,
+        confirm=confirm,
+        allow_destroy=allow_destroy,
+        policy=policy,
+    )
+    if blocked:
+        return build(
+            blocked,
+            plan=summary,
+            ok=blocked not in ("refused_destructive", "refused_policy"),
+        )
+
+    client.runs.apply(run_id, RunApplyOptions(comment=None))
+    final = wait_for_run(
+        client,
+        run_id,
+        until="terminal",
+        timeout=timeout,
+        on_status=on_status,
+        _sleep=_sleep,
+        _clock=_clock,
+    )
+    result = _finish(client, final, summary, started)
+    result.url = url
     return result

@@ -431,7 +431,7 @@ def no_code_provision(
             phase=blocked,
             status=status,
             plan=summary,
-            ok=blocked != "refused_destructive",
+            ok=blocked not in ("refused_destructive", "refused_policy"),
             run=planned,
             duration_s=time.monotonic() - started,
         )

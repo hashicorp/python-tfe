@@ -87,6 +87,47 @@
   sequence, and `ProviderPlatformSpec.from_release_dir()` to build the platform
   list from a goreleaser-style output directory.
 
+### Secrets in state and plans
+
+* `download_state` and `state_inventory` now **redact by default**. Raw state
+  holds provider credentials, generated passwords and private keys in plain
+  text, and both workflows previously returned it untouched while `read_outputs`
+  redacted - an asymmetry that made state unsafe to hand to an agent. Values
+  flagged in a resource instance's `sensitive_attributes` are removed, as are
+  root outputs marked `sensitive: true`, and `redacted_paths` reports what went.
+  Pass `redact_sensitive=False` for the previous behaviour.
+  * The traversal follows the implementation in the `hashicorp.terraform`
+    Ansible collection, which solved the same problem before it could cache
+    state on disk - including the rule that a sensitive *list index* drops the
+    whole owning attribute, because deleting one element shifts the indices that
+    later sensitive paths refer to. Sensitive root outputs are handled here and
+    are not in the collection's version.
+  * Exported as `redact_state()` / `redact_attributes()` for direct use.
+* Added `analyze_plan`, which answers "which attribute of which resource
+  changes" - the question a drift review or an approval turns on, and one
+  `plan_summary`'s counters cannot. It reports changed, computed
+  (unknown-after-apply) and sensitive attribute *paths* separately, plus
+  `action_reason`, so `replace_because_cannot_update` is visible rather than
+  appearing as an unexplained destroy-and-recreate. Only paths are returned,
+  never values.
+* `state_inventory(include_attributes=True)` carries each resource instance's
+  attributes, which is what answers "what is the public_ip of every instance in
+  this workspace". It forces the state path, since the workspace-resources
+  endpoint carries no attributes, and enumerates instances so a resource with
+  `count`/`for_each` yields one row each.
+
+### Runs without a local directory
+
+* Added `queue_run`, which queues a run against a workspace's existing
+  configuration. Every other run-creating workflow required a local directory,
+  so a VCS-connected workspace - the majority - could not be run at all. It also
+  exposes `refresh_only`, which is how drift is detected; `RunCreateOptions`
+  has had the field all along and no workflow set it.
+* Added `ensure_configuration_version`, the create/package/upload/wait sequence
+  on its own. It was previously locked inside `run_from_directory`, which is why
+  downstream consumers re-implemented it - and did so without Terraform's
+  exclusions, uploading `.git/` and cached provider binaries.
+
 ### Read-only clients and request hooks
 
 * `TFEConfig` gained `read_only` (also honouring `PYTFE_READ_ONLY`) and
@@ -102,6 +143,25 @@
 
 ## Bug Fixes
 
+* `apply_with_gate` and the other gated run workflows now honour policy results.
+  `_gate` received the `PlanSummary` carrying `policy_results` and read only
+  `is_destructive`, so a run whose policy checks failed was not blocked by pytfe
+  on `confirmed=True`. A new `policy=` argument selects the strictness, and a
+  failure now reports `phase="refused_policy"`. The check taxonomy was also
+  wrong: `soft_failed` was not recognised at all, `overridden` was counted as a
+  failure rather than as a decision someone already made, and `PolicyResult.name`
+  was being populated with the check's *scope* enum. Fixing it in
+  `_policy_results` corrects `plan_summary`, `diagnose_run` and
+  `resolve_policy_override` together.
+* `read_outputs(include_sensitive=True)` returned `None` for every sensitive
+  output instead of its value. The current-outputs listing redacts them - as
+  `resources/state_version_outputs.py` documents - so the workflow now re-reads
+  each sensitive output individually, which is the endpoint that carries values.
+  A failure to re-read reports a warning rather than silently returning nothing.
+* State rows now use the provider *source address*
+  (`registry.terraform.io/hashicorp/aws`) parsed from the `provider["..."]`
+  wrapper, rather than a fragile `split('"')` that could pick up the wrong
+  segment.
 * Fixed `RegistryProviderVersion.shasums_upload_url()` and its three sibling
   accessors, which returned the literal string `"None"` instead of raising when
   the link was absent. `str(self.links.get(...))` produces `"None"` for a

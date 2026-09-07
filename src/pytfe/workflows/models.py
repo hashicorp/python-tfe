@@ -32,6 +32,9 @@ __all__ = [
     "WorkspaceList",
     "WorkspaceStatus",
     "PlanSummary",
+    "PlanAnalysis",
+    "ResourceChange",
+    "OutputChange",
     "PolicyResult",
     "RunFailure",
     "RunResult",
@@ -62,6 +65,7 @@ RunPhaseName = Literal[
     "awaiting_confirmation",
     "awaiting_policy_override",
     "refused_destructive",
+    "refused_policy",
     "rejected",
     "applied",
     "errored",
@@ -329,10 +333,21 @@ class PolicyResult(BaseModel):
 
     id: str | None = None
     name: str | None = None
+    scope: str | None = None
     status: str | None = None
     passed: bool | None = None
     hard_failed: bool = False
+    soft_failed: bool = False
     overridable: bool = False
+
+    @property
+    def blocking(self) -> bool:
+        """True when this check should stop an apply.
+
+        A check that was explicitly ``overridden`` is not blocking - someone
+        already made that call - and neither is one still ``pending``/``queued``.
+        """
+        return self.hard_failed or self.soft_failed
 
 
 class PlanSummary(WorkflowResult):
@@ -393,6 +408,119 @@ class PlanSummary(WorkflowResult):
         if self.replace:
             base += f" replace {self.replace}"
         return f"{base} ({'DESTRUCTIVE' if self.is_destructive else 'no destroys'})"
+
+
+class ResourceChange(BaseModel):
+    """What a plan does to one resource instance, at attribute level."""
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    address: str
+    type: str | None = None
+    name: str | None = None
+    provider: str | None = None
+    module: str | None = None
+    index_key: int | str | None = None
+    actions: list[str] = Field(default_factory=list)
+    action_reason: str | None = None
+    changed_attributes: list[str] = Field(default_factory=list)
+    computed_attributes: list[str] = Field(default_factory=list)
+    sensitive_attributes: list[str] = Field(default_factory=list)
+
+    @property
+    def is_replace(self) -> bool:
+        """True when the resource is destroyed and recreated."""
+        return "create" in self.actions and "delete" in self.actions
+
+    @property
+    def is_destroy(self) -> bool:
+        """True when the resource is destroyed and not recreated."""
+        return "delete" in self.actions and "create" not in self.actions
+
+    @property
+    def is_destructive(self) -> bool:
+        """True when applying this loses the existing resource."""
+        return self.is_replace or self.is_destroy
+
+    def __str__(self) -> str:
+        verb = "/".join(self.actions) or "no-op"
+        return f"{verb} {self.address}"
+
+
+class OutputChange(BaseModel):
+    """What a plan does to one root output."""
+
+    model_config = ConfigDict(populate_by_name=True, validate_by_name=True)
+
+    name: str
+    actions: list[str] = Field(default_factory=list)
+    sensitive: bool = False
+
+
+class PlanAnalysis(WorkflowResult):
+    """Attribute-level detail for a plan.
+
+    The layer between :class:`PlanSummary`'s counters and a plan document that
+    routinely exceeds 20MB. Only attribute *paths* are ever carried - never
+    values, which contain real infrastructure data.
+    """
+
+    kind: Kind = "read"
+    run_id: str | None = None
+    plan_id: str | None = None
+    resources: list[ResourceChange] = Field(default_factory=list)
+    output_changes: list[OutputChange] = Field(default_factory=list)
+    drift: list[str] = Field(default_factory=list)
+    truncated: bool = False
+
+    @property
+    def destructive(self) -> list[ResourceChange]:
+        """Only the changes that lose an existing resource."""
+        return [r for r in self.resources if r.is_destructive]
+
+    @property
+    def replaced_because(self) -> dict[str, str]:
+        """Address -> Terraform's stated reason, for every replacement.
+
+        ``replace_because_cannot_update`` is the answer to "why is this being
+        destroyed when I only changed a tag", and it is otherwise invisible.
+        """
+        return {
+            r.address: r.action_reason
+            for r in self.resources
+            if r.is_replace and r.action_reason
+        }
+
+    def touching(self, attribute: str) -> list[ResourceChange]:
+        """Every change whose changed or computed paths include ``attribute``."""
+        return [
+            r
+            for r in self.resources
+            if attribute in r.changed_attributes or attribute in r.computed_attributes
+        ]
+
+    def summary(self) -> dict[str, Any]:
+        out = super().summary()
+        out.update(
+            {
+                "run_id": self.run_id,
+                "plan_id": self.plan_id,
+                "resource_count": len(self.resources),
+                "destructive_count": len(self.destructive),
+                "truncated": self.truncated,
+                "destructive": [str(r) for r in self.destructive[:20]],
+                "replaced_because": dict(list(self.replaced_because.items())[:20]),
+                "output_changes": [o.name for o in self.output_changes],
+                "drift": self.drift[:20],
+            }
+        )
+        return out
+
+    def __str__(self) -> str:
+        return (
+            f"{len(self.resources)} resource change(s), "
+            f"{len(self.destructive)} destructive"
+        )
 
 
 class RunFailure(WorkflowResult):
@@ -573,6 +701,8 @@ class StateDownload(WorkflowResult):
     terraform_version: str | None = None
     size_bytes: int = 0
     state: dict[str, Any] = Field(default_factory=dict)
+    redacted: bool = False
+    redacted_paths: list[str] = Field(default_factory=list)
 
     def summary(self) -> dict[str, Any]:
         """Digest. Omits ``state`` entirely - it is large and may hold secrets."""
@@ -585,6 +715,8 @@ class StateDownload(WorkflowResult):
                 "lineage": self.lineage,
                 "size_bytes": self.size_bytes,
                 "resource_count": len(self.state.get("resources") or []),
+                "redacted": self.redacted,
+                "redacted_paths": self.redacted_paths[:25],
             }
         )
         return out
@@ -605,6 +737,14 @@ class ResourceRow(BaseModel):
     provider: str | None = None
     module: str | None = None
     mode: str | None = None
+    attributes: dict[str, Any] | None = None
+    """The instance's state attributes, when requested.
+
+    Populated only by ``state_inventory(..., include_attributes=True)``, which
+    forces the state-download path - the workspace-resources endpoint does not
+    carry attributes. Sensitive values are removed unless redaction is disabled.
+    """
+    index_key: int | str | None = None
 
 
 class StateInventory(WorkflowResult):
@@ -616,13 +756,18 @@ class StateInventory(WorkflowResult):
     by_type: dict[str, int] = Field(default_factory=dict)
     by_provider: dict[str, int] = Field(default_factory=dict)
     truncated: bool = False
+    redacted_paths: list[str] = Field(default_factory=list)
 
     def summary(self) -> dict[str, Any]:
+        """Digest. Never includes resource attributes - they are unbounded in
+        size and, even after redaction, are the caller's data rather than a
+        summary."""
         out = super().summary()
         out.update(
             {
                 "workspace_id": self.workspace_id,
                 "count": len(self.resources),
+                "redacted_paths": self.redacted_paths[:25],
                 "truncated": self.truncated,
                 "by_type": dict(sorted(self.by_type.items())[:25]),
                 "by_provider": self.by_provider,

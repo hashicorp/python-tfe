@@ -8,12 +8,14 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 from collections.abc import Callable
 from typing import Any
 
 from ..client import TFEClient
 from ..errors import TFEError, WorkflowError
 from ._poll import wait_until
+from ._redact import redact_state
 from ._resolve import organization_of, resolve_workspace
 from ._result import SENSITIVE
 from .models import (
@@ -96,12 +98,31 @@ def read_outputs(
         name = getattr(output, "name", None)
         if not name:
             continue
-        if getattr(output, "sensitive", False):
-            result.sensitive_keys.append(name)
-            value = getattr(output, "value", None)
-            result.values[name] = value if include_sensitive else SENSITIVE
-        else:
+        if not getattr(output, "sensitive", False):
             result.values[name] = getattr(output, "value", None)
+            continue
+
+        result.sensitive_keys.append(name)
+        if not include_sensitive:
+            result.values[name] = SENSITIVE
+            continue
+
+        # The listing endpoint returns sensitive outputs with a null value
+        # (see resources/state_version_outputs.py). Re-read the individual
+        # output, which does carry the value, so include_sensitive=True is not
+        # silently a lie.
+        output_id = getattr(output, "id", None)
+        if not output_id:
+            result.values[name] = SENSITIVE
+            result.warnings.append(
+                f"{name}: sensitive output has no id to re-read; value withheld"
+            )
+            continue
+        try:
+            result.values[name] = client.state_version_outputs.read(output_id).value
+        except TFEError as exc:
+            result.values[name] = SENSITIVE
+            result.warnings.append(f"{name}: could not read sensitive value: {exc}")
 
     return result
 
@@ -124,6 +145,7 @@ def download_state(
     organization: str | None = None,
     workspace_name: str | None = None,
     state_version_id: str | None = None,
+    redact_sensitive: bool = True,
     timeout: float = 300,
 ) -> StateDownload:
     """Download and parse a workspace's state.
@@ -137,11 +159,18 @@ def download_state(
         organization: Organization name, with ``workspace_name``.
         workspace_name: Workspace name, with ``organization``.
         state_version_id: A specific version. Defaults to the current one.
+        redact_sensitive: Remove values Terraform flagged as sensitive. On by
+            default: raw state contains provider credentials, generated
+            passwords and private keys in plain text, and this result is
+            routinely handed to an agent or written to disk. Pass False only
+            when the caller genuinely needs the secrets.
         timeout: Seconds to wait for state processing.
 
     Returns:
         A :class:`~pytfe.workflows.models.StateDownload`. ``summary()`` omits
-        the state body, which is large and may contain secrets.
+        the state body, which is large. ``redacted_paths`` lists what was
+        removed, so "no password here" is distinguishable from "the password
+        was stripped".
 
     Raises:
         WorkspaceNotFound: If the workspace cannot be resolved.
@@ -176,6 +205,9 @@ def download_state(
 
     raw = client.state_versions.download(state_version.id or "")
     parsed = _parse_state(raw)
+    removed: list[str] = []
+    if redact_sensitive:
+        parsed, removed = redact_state(parsed)
     return StateDownload(
         workspace_id=ws_id or None,
         state_version_id=state_version.id,
@@ -187,10 +219,32 @@ def download_state(
         ),
         size_bytes=len(raw),
         state=parsed,
+        redacted=redact_sensitive,
+        redacted_paths=removed,
     )
 
 
-def _rows_from_state(state: dict[str, Any], max_resources: int) -> list[ResourceRow]:
+#: State records a provider as ``provider["registry.terraform.io/hashicorp/aws"]``.
+_PROVIDER_RE = re.compile(r'provider\["([^"]+)"\]')
+
+
+def _provider_name(raw: str | None) -> str | None:
+    """Extract the provider source address from a state ``provider`` string."""
+    if not raw:
+        return None
+    match = _PROVIDER_RE.search(raw)
+    return match.group(1) if match else raw
+
+
+def _rows_from_state(
+    state: dict[str, Any], max_resources: int, *, include_attributes: bool = False
+) -> list[ResourceRow]:
+    """Build one row per resource *instance* in a state document.
+
+    A resource with ``count``/``for_each`` has several instances, each with its
+    own attributes, so instances are enumerated rather than collapsed to the
+    resource.
+    """
     rows: list[ResourceRow] = []
     for resource in state.get("resources") or []:
         if len(rows) >= max_resources:
@@ -199,17 +253,37 @@ def _rows_from_state(state: dict[str, Any], max_resources: int) -> list[Resource
         rtype = resource.get("type")
         name = resource.get("name")
         prefix = f"{module}." if module else ""
-        rows.append(
-            ResourceRow(
-                address=f"{prefix}{rtype}.{name}",
-                type=rtype,
-                provider=(resource.get("provider") or "").split('"')[-2]
-                if '"' in (resource.get("provider") or "")
-                else resource.get("provider"),
-                module=module,
-                mode=resource.get("mode"),
+        base = f"{prefix}{rtype}.{name}"
+        provider = _provider_name(resource.get("provider"))
+        mode = resource.get("mode")
+
+        instances = resource.get("instances") or [{}]
+        for instance in instances:
+            if len(rows) >= max_resources:
+                break
+            index_key = (
+                instance.get("index_key") if isinstance(instance, dict) else None
             )
-        )
+            address = base if index_key is None else f"{base}[{index_key!r}]"
+            rows.append(
+                ResourceRow(
+                    address=address,
+                    type=rtype,
+                    provider=provider,
+                    module=module,
+                    mode=mode,
+                    index_key=index_key,
+                    attributes=(
+                        (
+                            instance.get("attributes")
+                            if isinstance(instance, dict)
+                            else None
+                        )
+                        if include_attributes
+                        else None
+                    ),
+                )
+            )
     return rows
 
 
@@ -220,6 +294,8 @@ def state_inventory(
     organization: str | None = None,
     workspace_name: str | None = None,
     max_resources: int = 500,
+    include_attributes: bool = False,
+    redact_sensitive: bool = True,
     prefer_api: bool = True,
 ) -> StateInventory:
     """List the resources a workspace manages.
@@ -234,7 +310,14 @@ def state_inventory(
         organization: Organization name, with ``workspace_name``.
         workspace_name: Workspace name, with ``organization``.
         max_resources: Cap on rows collected.
-        prefer_api: Try the workspace-resources endpoint first.
+        include_attributes: Populate each row's ``attributes`` with the
+            instance's state attributes. Forces the state-download path, since
+            the workspace-resources endpoint does not carry attributes. This is
+            what answers "what is the public_ip of every instance here".
+        redact_sensitive: Remove Terraform-flagged sensitive values from those
+            attributes. On by default.
+        prefer_api: Try the workspace-resources endpoint first. Ignored when
+            ``include_attributes`` is set.
 
     Returns:
         A :class:`~pytfe.workflows.models.StateInventory`.
@@ -254,7 +337,9 @@ def state_inventory(
     result = StateInventory(workspace_id=ws_id)
 
     rows: list[ResourceRow] = []
-    if prefer_api:
+    # The workspace-resources endpoint is cheaper but carries no attributes, so
+    # it cannot serve include_attributes.
+    if prefer_api and not include_attributes:
         try:
             for resource in client.workspace_resources.list(ws_id):
                 if len(rows) >= max_resources:
@@ -276,8 +361,11 @@ def state_inventory(
             rows = []
 
     if not rows:
-        download = download_state(client, ws_id)
-        rows = _rows_from_state(download.state, max_resources)
+        download = download_state(client, ws_id, redact_sensitive=redact_sensitive)
+        result.redacted_paths = download.redacted_paths
+        rows = _rows_from_state(
+            download.state, max_resources, include_attributes=include_attributes
+        )
         for row in rows:
             row.workspace_id = ws_id
             row.workspace_name = workspace.name

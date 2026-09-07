@@ -52,6 +52,7 @@ from ..errors import (
 )
 from ._package import package_directory
 from ._poll import wait_until
+from ._redact import redact_attributes, redact_state
 from ._resolve import resolve_workspace
 from ._result import Change, EnsureResult, WorkflowResult
 from .admin import admin_bootstrap, identity_bootstrap, is_hcp_terraform, tfe_health
@@ -83,12 +84,15 @@ from .models import (
     FleetResult,
     LockResult,
     OrgInventory,
+    OutputChange,
     Outputs,
+    PlanAnalysis,
     PlanSummary,
     PolicyResult,
     ProviderPlatformSpec,
     PublishResult,
     PushStateResult,
+    ResourceChange,
     ResourceInventory,
     ResourceRow,
     RunFailure,
@@ -113,11 +117,15 @@ from .registry import (
 )
 from .runs import (
     Confirm,
+    PolicyMode,
+    analyze_plan,
     apply_with_gate,
     cancel_run,
     destroy_run,
     diagnose_run,
+    ensure_configuration_version,
     plan_summary,
+    queue_run,
     resolve_policy_override,
     run_from_directory,
     speculative_plan,
@@ -164,9 +172,12 @@ __all__ = [
     "ensure_workspace",
     "ensure_variables",
     "run_from_directory",
+    "ensure_configuration_version",
+    "queue_run",
     "speculative_plan",
     "wait_for_run",
     "plan_summary",
+    "analyze_plan",
     "diagnose_run",
     "apply_with_gate",
     "read_outputs",
@@ -208,6 +219,7 @@ __all__ = [
     "WorkspaceSpec",
     "VCSRepoSpec",
     "VariableSpec",
+    "PolicyMode",
     "ProviderPlatformSpec",
     "WorkspaceFilter",
     "Confirm",
@@ -222,6 +234,9 @@ __all__ = [
     "WorkspaceList",
     "WorkspaceStatus",
     "PlanSummary",
+    "PlanAnalysis",
+    "ResourceChange",
+    "OutputChange",
     "PolicyResult",
     "RunFailure",
     "RunResult",
@@ -266,5 +281,7 @@ __all__ = [
     # Helpers
     "wait_until",
     "package_directory",
+    "redact_state",
+    "redact_attributes",
     "resolve_workspace",
 ]

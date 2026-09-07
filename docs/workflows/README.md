@@ -48,6 +48,23 @@ with TFEClient() as tfe:
         apply_with_gate(tfe, result.run_id, confirmed=True)
 ```
 
+## Secrets
+
+Two rules, because raw Terraform data is full of credentials:
+
+- **State is redacted by default.** `download_state` and `state_inventory` strip
+  every value Terraform flagged in `sensitive_attributes`, plus any root output
+  marked `sensitive: true`. `redacted_paths` reports what was removed, so "this
+  resource has no password" is distinguishable from "the password was stripped".
+  Pass `redact_sensitive=False` only when you genuinely need the secrets.
+- **Analysis returns paths, never values.** `analyze_plan` tells you that
+  `aws_db_instance.main.password` changed without telling you what it changed to.
+  A plan's `before`/`after` blocks are real infrastructure data and routinely
+  exceed 20MB; neither belongs in an agent's context.
+
+`summary()` never contains a secret on any result, regardless of the flags used
+to build it.
+
 ## Safety model
 
 Nothing applies, deletes, or overrides by default. This is the rule the whole
@@ -60,7 +77,18 @@ package is built around, and it holds even when a caller asks nicely.
   sets it only after explicit human approval.
 - A plan containing destroys or replaces is **refused** unless
   `allow_destroy=True` is passed as well — `confirmed=True` alone is not enough.
+- A run whose **policy checks failed** is refused the same way. `policy=` selects
+  the strictness: `require_pass` (default) blocks on any hard or soft failure,
+  `allow_advisory` blocks only on hard failures, `ignore` skips the check. An
+  `overridden` check counts as passing — someone already made that call.
 - There is no `auto_apply=True` anywhere in this package.
+
+The gate applies its rules in a fixed order, so a refusal the caller *cannot*
+override with `confirmed=True` is always reported first:
+
+```
+refused_destructive  →  refused_policy  →  rejected  →  awaiting_confirmation
+```
 
 To hand an agent a client that physically cannot mutate anything:
 
@@ -96,6 +124,9 @@ hook may raise to block one.
 | `speculative_plan` | read | Never applies. The safe default for "what would this change?" |
 | `wait_for_run` | read | Returns the `Run`, not a bool. `until="plan_done"` or `"terminal"`. |
 | `plan_summary` | read | Counts and addresses from plan JSON, falling back to plan attributes. |
+| `analyze_plan` | read | Attribute-level: *which* attribute of which resource changes, plus `action_reason`. Paths only, never values. |
+| `ensure_configuration_version` | write | The create/package/upload/wait sequence on its own, without queueing a run. |
+| `queue_run` | destructive (gated) | Queue a run with **no local directory** — the VCS-driven case, and `refresh_only` drift detection. |
 | `apply_with_gate` | destructive (gated) | Apply an already-planned run. |
 | `diagnose_run` | read | Why a run failed, plus a suggested next step. |
 | `resolve_policy_override` | destructive (gated) | Override a soft-failed policy and continue, or discard the run. |
@@ -125,8 +156,8 @@ hook may raise to block one.
 | Workflow | Kind | Notes |
 |---|---|---|
 | `read_outputs` | read | Waits for `resources_processed` first — the step most scripts miss. |
-| `download_state` | read | `summary()` omits the state body; it is large and may hold secrets. |
-| `state_inventory` | read | Prefers the workspace-resources endpoint over downloading state. |
+| `download_state` | read | **Redacts by default.** `summary()` omits the state body; `redacted_paths` says what was removed. |
+| `state_inventory` | read | `include_attributes=True` carries each instance's attributes — how you get "every machine with its IP". |
 | `push_state` | destructive (gated) | Locks, enforces the serial floor and lineage match, unlocks in a `finally`. Reports `still_locked` if the unlock fails. |
 | `rollback_state` | destructive (gated) | Uses the API's own rollback endpoint. No version is ever deleted. |
 | `migrate_state` | destructive (gated) | Copies state between workspaces; warns if the target already has state. |
@@ -226,6 +257,23 @@ Workflows are reported as a sibling key to `resources`, not mixed into it: a
 resource method is one request, a workflow may block for minutes. The
 `blocking`/`mutating`/`gated`/`dry_run` flags are the things a signature cannot
 tell you. `pytfe.llms_txt()` carries the same orientation in prose.
+
+## Reading resources out of state
+
+```python
+inv = state_inventory(tfe, ws_id, include_attributes=True)
+ips = [r.attributes["public_ip"] for r in inv.resources
+       if r.type == "aws_instance" and r.attributes]
+```
+
+`include_attributes` forces the state-download path, because the cheaper
+workspace-resources endpoint carries no attributes. Each *instance* becomes its
+own row — a resource with `count` or `for_each` produces `web[0]`, `web[1]` —
+and sensitive values are already gone.
+
+This is the piece the `hashicorp.terraform` Ansible collection had to build for
+itself before it could write a dynamic inventory; the redaction logic here
+follows its implementation.
 
 ## Two workflows that differ from the obvious design
 
