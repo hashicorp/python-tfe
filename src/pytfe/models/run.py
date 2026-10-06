@@ -151,6 +151,7 @@ class Run(TFEModel):
     task_stages: list[TaskStage] | None = Field(None, alias="task-stages")
     workspace: Workspace | None = Field(None, alias="workspace")
     comments: list[Comment] | None = Field(None, alias="comments")
+    debugging_mode: bool | None = Field(None, alias="debugging-mode")
 
 
 class RunActions(BaseModel):
@@ -318,6 +319,7 @@ class RunCreateOptions(BaseModel):
     auto_apply: bool | None = Field(None, alias="auto-apply")
     variables: list[RunVariable] | None = Field(None, alias="variables")
     invoke_action_addrs: list[str] | None = Field(None, alias="invoke-action-addrs")
+    debugging_mode: bool | None = Field(None, alias="debugging-mode")
 
 
 class RunReadOptions(BaseModel):
